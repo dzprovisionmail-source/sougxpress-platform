@@ -6,6 +6,10 @@ export default function RootLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="login" />
       <Stack.Screen name="founder" />
+      <Stack.Screen name="customer-auth" />
+      <Stack.Screen name="merchant-auth" />
+      <Stack.Screen name="driver-auth" />
+      <Stack.Screen name="guest-marketplace" />
     </Stack>
   );
 }
