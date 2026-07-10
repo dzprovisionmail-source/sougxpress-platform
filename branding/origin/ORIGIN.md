@@ -3,6 +3,9 @@
 ## Historical Context
 The identity of SougXpress Platform was born from an iterative collaboration between AI and human vision. This directory preserves the very first concepts that sparked the visual direction of the project.
 
+The first official Brand Concept boards are stored inside:
+`branding/origin/concepts/ai-generated/`
+
 ## Preservation Rules
 1. **Historical Only**: The concepts in `concepts/ai-generated/` are for inspiration and historical reference only.
 2. **Not Production Ready**: These are NOT official logos. They must not be used in the production app or marketing without formal evolution and approval.
