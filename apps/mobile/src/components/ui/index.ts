@@ -8,3 +8,5 @@ export * from "./CategoryItem";
 export * from "./SectionHeader";
 export * from "./BottomNavigation";
 export * from "./MarketplaceHeader";
+export * from "./Badge";
+export * from "./QuantitySelector";

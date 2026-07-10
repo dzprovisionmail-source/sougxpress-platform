@@ -8,6 +8,7 @@ import {
   I18nManager,
   TouchableOpacity
 } from "react-native";
+import { useRouter } from "expo-router";
 import { 
   Typography, 
   SearchBar, 
@@ -22,6 +23,7 @@ import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "../constants/theme";
 
 export default function GuestMarketplaceScreen() {
+  const router = useRouter();
   const [theme, setTheme] = useState<ThemeType>(DEFAULT_THEME);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("home");
@@ -123,6 +125,7 @@ export default function GuestMarketplaceScreen() {
                 storeName={prod.store}
                 image={prod.image}
                 theme={theme}
+                onPress={() => router.push("/product-details")}
               />
             ))}
           </ScrollView>
@@ -132,7 +135,7 @@ export default function GuestMarketplaceScreen() {
         <View style={styles.section}>
           <SectionHeader title="متاجر مميزة" onSeeAll={() => {}} theme={theme} />
           {featuredStores.map(store => (
-            <Card key={store.id} variant="outline" theme={theme} style={styles.storeCard}>
+            <Card key={store.id} variant="outline" theme={theme} style={styles.storeCard} onPress={() => router.push("/store-details")}>
               <View style={[styles.storeRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                 <View style={[styles.storeIcon, { backgroundColor: colors.bgSurface }]}>
                   <Typography variant="h2" color="brand">{store.name[0]}</Typography>

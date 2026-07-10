@@ -10,6 +10,8 @@ export default function RootLayout() {
       <Stack.Screen name="merchant-auth" />
       <Stack.Screen name="driver-auth" />
       <Stack.Screen name="guest-marketplace" />
+      <Stack.Screen name="store-details" />
+      <Stack.Screen name="product-details" />
     </Stack>
   );
 }
