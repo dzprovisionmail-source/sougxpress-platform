@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Soug-XPRESS Founder OS",
+    "slug": "soug-xpress-founder-os",
+    "scheme": "sougxpressv2",
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
