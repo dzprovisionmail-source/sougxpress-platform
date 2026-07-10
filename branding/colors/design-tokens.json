@@ -1,0 +1,18 @@
+{
+  "brand": {
+    "primary": "",
+    "secondary": "",
+    "accent": ""
+  },
+  "ui": {
+    "background": "",
+    "surface": "",
+    "border": ""
+  },
+  "status": {
+    "success": "",
+    "warning": "",
+    "error": "",
+    "info": ""
+  }
+}
