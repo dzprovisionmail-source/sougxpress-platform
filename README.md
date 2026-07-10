@@ -38,7 +38,13 @@ For deep dives into the platform's DNA, architecture, and design, refer to the f
 
 ## Development
 
-The legacy repository is for historical reference only. All new development, architectural decisions, and production-ready work must happen in this repository.
+**SougXpress Platform** is the official active repository. The legacy repository ([dzprovisionmail-source/Soug-XPRESS.](https://github.com/dzprovisionmail-source/Soug-XPRESS.)) is for historical reference only. All new development, architectural decisions, and production-ready work must happen in this repository.
+
+- **Official Repository:** [dzprovisionmail-source/sougxpress-platform](https://github.com/dzprovisionmail-source/sougxpress-platform)
+- **Primary Language:** Arabic (RTL)
+- **Primary Market:** Ain Sefra, Algeria
+- **Governance Center:** Founder OS
+
 
 ---
 
