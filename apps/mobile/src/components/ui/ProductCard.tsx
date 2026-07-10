@@ -39,13 +39,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       theme={theme}
     >
       <View style={styles.imageContainer}>
-        {/* Placeholder image using colors if URI is empty */}
         <Image 
           source={{ uri: image || "https://via.placeholder.com/150" }} 
-          style={styles.image}
+          style={[styles.image, { backgroundColor: colors.bgSurface }]}
           resizeMode="cover"
         />
-        <TouchableOpacity style={styles.favoriteButton}>
+        <TouchableOpacity 
+          style={[styles.favoriteButton, { backgroundColor: colors.bgBase }]}
+          activeOpacity={0.7}
+        >
           <Ionicons name="heart-outline" size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
@@ -65,7 +67,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <Typography variant="h2" color="brand">
             {price}
           </Typography>
-          <TouchableOpacity style={styles.addButton}>
+          <TouchableOpacity style={styles.addButton} activeOpacity={0.7}>
             <Ionicons name="add-circle" size={28} color={colors.primary} />
           </TouchableOpacity>
         </View>
@@ -74,16 +76,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   );
 };
 
+const CARD_WIDTH = 160;
+const IMAGE_HEIGHT = 120;
+const ICON_BUTTON_SIZE = 44;
+
 const styles = StyleSheet.create({
   container: {
-    width: 160,
+    width: CARD_WIDTH,
     padding: 0,
     marginRight: TOKENS.spacing.md,
     marginBottom: TOKENS.spacing.sm,
   },
   imageContainer: {
     width: "100%",
-    height: 120,
+    height: IMAGE_HEIGHT,
     position: "relative",
   },
   image: {
@@ -96,13 +102,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: TOKENS.spacing.sm,
     right: TOKENS.spacing.sm,
-    backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: TOKENS.radius.full,
     padding: TOKENS.spacing.xs,
     width: 32,
     height: 32,
     alignItems: "center",
     justifyContent: "center",
+    ...TOKENS.shadows.premium,
+    shadowOpacity: 0.1,
   },
   content: {
     padding: TOKENS.spacing.md,
@@ -116,8 +123,8 @@ const styles = StyleSheet.create({
     marginTop: TOKENS.spacing.sm,
   },
   addButton: {
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: ICON_BUTTON_SIZE,
+    minHeight: ICON_BUTTON_SIZE,
     alignItems: "center",
     justifyContent: "center",
   }

@@ -6,7 +6,6 @@ import {
   SafeAreaView, 
   StatusBar,
   I18nManager,
-  Dimensions,
   TouchableOpacity
 } from "react-native";
 import { 
@@ -21,8 +20,6 @@ import {
 } from "../components/ui";
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "../constants/theme";
-
-const { width } = Dimensions.get("window");
 
 export default function GuestMarketplaceScreen() {
   const [theme, setTheme] = useState<ThemeType>(DEFAULT_THEME);
@@ -144,7 +141,7 @@ export default function GuestMarketplaceScreen() {
                   <Typography variant="h3">{store.name}</Typography>
                   <Typography variant="caption" color="secondary">{store.category}</Typography>
                 </View>
-                <View style={styles.ratingBadge}>
+                <View style={[styles.ratingBadge, { backgroundColor: colors.bgSurface }]}>
                   <Typography variant="caption" style={{ color: colors.accent }}>★ {store.rating}</Typography>
                 </View>
               </View>
@@ -152,19 +149,25 @@ export default function GuestMarketplaceScreen() {
           ))}
         </View>
 
-        {/* Theme Toggle (For testing purposes as requested) */}
+        {/* Theme Toggle */}
         <View style={[styles.section, styles.themeToggle]}>
           <Typography variant="caption" color="secondary" align="center">تغيير المظهر للتجربة:</Typography>
           <View style={styles.themeButtons}>
-            <TouchableOpacity onPress={() => setTheme("dark")} style={[styles.themeBtn, theme === "dark" && styles.activeThemeBtn]}>
-              <Typography variant="caption">Dark</Typography>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setTheme("light")} style={[styles.themeBtn, theme === "light" && styles.activeThemeBtn]}>
-              <Typography variant="caption">Light</Typography>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setTheme("ivory")} style={[styles.themeBtn, theme === "ivory" && styles.activeThemeBtn]}>
-              <Typography variant="caption">Ivory</Typography>
-            </TouchableOpacity>
+            {(["dark", "light", "ivory"] as ThemeType[]).map((t) => (
+              <TouchableOpacity 
+                key={t}
+                onPress={() => setTheme(t)} 
+                style={[
+                  styles.themeBtn, 
+                  { borderColor: colors.borderSubtle },
+                  theme === t && { borderColor: colors.primary, backgroundColor: colors.bgSurface }
+                ]}
+              >
+                <Typography variant="caption" color={theme === t ? "brand" : "secondary"}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </Typography>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
@@ -234,7 +237,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: "rgba(255, 171, 64, 0.1)",
   },
   themeToggle: {
     padding: TOKENS.spacing.lg,
@@ -250,10 +252,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#ccc",
-  },
-  activeThemeBtn: {
-    borderColor: TOKENS.colors.brandPrimary,
-    backgroundColor: "rgba(0, 229, 255, 0.1)",
   }
 });

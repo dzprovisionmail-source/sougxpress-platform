@@ -4,7 +4,6 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   I18nManager,
-  SafeAreaView
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Typography } from "./Typography";
@@ -38,9 +37,6 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     { id: "orders", label: "طلباتي", icon: "cart-outline", activeIcon: "cart" },
     { id: "profile", label: "حسابي", icon: "person-outline", activeIcon: "person" },
   ];
-
-  // Mirrored items for RTL if needed, but labels are already Arabic.
-  // The layout direction handles the order.
 
   return (
     <View style={[
@@ -82,12 +78,15 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   );
 };
 
+const NAV_HEIGHT = 70;
+const ICON_BUTTON_SIZE = 44;
+
 const styles = StyleSheet.create({
   container: {
-    height: 70,
+    height: NAV_HEIGHT,
     borderTopWidth: 1,
-    paddingBottom: 8,
-    paddingTop: 8,
+    paddingBottom: TOKENS.spacing.sm,
+    paddingTop: TOKENS.spacing.sm,
     ...TOKENS.shadows.premium,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.05,
@@ -97,10 +96,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    minHeight: 44,
+    minHeight: ICON_BUTTON_SIZE,
   },
   label: {
-    marginTop: 4,
+    marginTop: TOKENS.spacing.xs,
     fontWeight: "600",
   },
   activeIndicator: {

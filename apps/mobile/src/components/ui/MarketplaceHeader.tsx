@@ -4,7 +4,6 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   I18nManager,
-  Image
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TOKENS } from "../../constants/tokens";
@@ -28,7 +27,6 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
   return (
     <View style={[styles.container, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
       <View style={[styles.logoContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-        {/* Logo Placeholder - In a real app, this would be the official SVG/Image */}
         <View style={[styles.logoCircle, { backgroundColor: colors.primary }]}>
           <Ionicons name="cart" size={20} color={colors.textOnBrand} />
         </View>
@@ -43,7 +41,7 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
           style={[styles.iconButton, { backgroundColor: colors.bgSurface }]}
         >
           <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
-          <View style={[styles.badge, { backgroundColor: colors.accent }]} />
+          <View style={[styles.badge, { backgroundColor: colors.accent, borderColor: colors.bgBase }]} />
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -57,9 +55,13 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
   );
 };
 
+const HEADER_HEIGHT = 60;
+const LOGO_SIZE = 36;
+const ACTION_SIZE = 44;
+
 const styles = StyleSheet.create({
   container: {
-    height: 60,
+    height: HEADER_HEIGHT,
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: TOKENS.spacing.lg,
@@ -69,15 +71,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+    borderRadius: LOGO_SIZE / 2,
     alignItems: "center",
     justifyContent: "center",
     marginHorizontal: TOKENS.spacing.xs,
   },
   logoText: {
-    fontSize: 22,
+    fontSize: TOKENS.typography.sizes.xl,
     fontWeight: "800",
     letterSpacing: -0.5,
   },
@@ -85,8 +87,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconButton: {
-    width: 44,
-    height: 44,
+    width: ACTION_SIZE,
+    height: ACTION_SIZE,
     borderRadius: TOKENS.radius.full,
     alignItems: "center",
     justifyContent: "center",
@@ -102,6 +104,5 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 2,
-    borderColor: "white",
   }
 });
