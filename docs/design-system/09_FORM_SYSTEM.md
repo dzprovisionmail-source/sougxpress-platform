@@ -28,11 +28,13 @@ In Soug-XPRESS V2, forms are critical interfaces for data input, acting as **gov
 | **Error** | Red border (`status-error`), error icon | Below input, `status-error` text | Text alignment, icon mirroring |
 | **Success** | Green border (`status-success`), success icon | Below input, `status-success` text | Text alignment, icon mirroring |
 | **Disabled** | Reduced opacity, `cursor-not-allowed` | N/A | N/A |
+| **Loading** | `ActivityIndicator` (spinner) | Replaces submit button or inside | Center aligned |
 
-### 2.3. Required Fields
-
-- All mandatory fields must be clearly marked with an asterisk (`*`).
-- Submission is blocked until all required fields are valid.
+### 2.3. Best Practices for Mobile Forms
+- **Validation Timing**: Validate on `onBlur` or `onSubmit`. Avoid validating on every keystroke to prevent performance jank.
+- **Keyboard Optimization**: Always set the correct `keyboardType` (email-address, numeric, etc.) and use `onSubmitEditing` to focus the next field.
+- **Mandatory Labels**: All inputs must have a visible label and an `accessibilityLabel` for screen readers. Never rely on placeholders alone.
+- **Submission Guard**: Disable the submit button during asynchronous processing to prevent double submissions.
 
 ### 2.4. Dropdown Behavior
 

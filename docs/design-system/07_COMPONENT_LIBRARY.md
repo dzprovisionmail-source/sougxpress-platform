@@ -70,7 +70,13 @@ Provide feedback during data fetching or when content is unavailable.
 |---|---|---|---|---|
 | **Empty State** | No content to display | Search results, empty carts | Clear message, optional illustration | Text flow |
 | **Loading State** | Data is being fetched | Initial load, data refresh | Skeleton loaders, spinners | Animation direction |
-| **Skeleton Loader** | Placeholder for content | Content loading | `aria-busy="true"` | Animation direction |
+| **Skeleton Loader** | Placeholder for content | Content loading | `aria-busy="true"`, shimmer effect | Animation direction |
+
+### 2.9. Component Performance & Quality Rules
+- **Virtualization**: All lists (Basic Card or Interactive Card lists) over 50 items must use `FlatList` with `keyExtractor`.
+- **Haptic Feedback**: Primary buttons should trigger a subtle haptic response on mobile.
+- **Image Optimization**: Use `expo-image` for all card assets to handle caching and shimmer-on-load automatically.
+- **Gesture Support**: Modals and Bottom Sheets must support "swipe-to-dismiss" in addition to a visible close button.
 
 ### 2.7. Dialogs & Modals
 

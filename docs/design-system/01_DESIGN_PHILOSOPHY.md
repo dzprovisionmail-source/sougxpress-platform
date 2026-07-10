@@ -31,10 +31,11 @@ Dark mode is the primary state, not an option.
 - **Rationale**: Reduces eye strain for merchants/drivers, saves battery on mobile devices, and emphasizes the "Operating System" feel.
 - **Contrast**: High-contrast ratios (WCAG AAA target) ensure legibility in varied lighting conditions of the city.
 
-### 2.3. Mobile-First & React Native Optimized
-The platform lives in the pockets of the citizens.
-- **Touch-First**: All targets are minimum 44x44px.
-- **Expo/React Native Ready**: Components are designed to be easily implemented using Tailwind (NativeWind) or standard React Native stylesheets.
+### 2.3. Mobile-First & Performance-Driven
+The platform lives in the pockets of the citizens and must perform flawlessly on all devices.
+- **Touch-First & Accessible**: All targets are minimum 44x44px with mandatory `accessibilityLabel` for icon-only actions.
+- **60 FPS Performance**: Mandatory use of `FlatList` virtualization, `React.memo`, and UI-thread animations (Reanimated) to ensure zero-jank scrolling.
+- **Native-First Interactions**: Use `Pressable` for tactile feedback and `KeyboardAvoidingView` for frictionless data entry.
 
 ---
 

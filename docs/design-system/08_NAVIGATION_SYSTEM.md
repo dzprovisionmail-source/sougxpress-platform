@@ -58,8 +58,10 @@ Visual**: Clear, large buttons with role-specific icons.
 
 ### 5.3. Navigation Hierarchy
 
-- **Breadcrumbs**: Used in complex FOS or Merchant interfaces to show current location within a multi-level structure.
-- **Back Button**: Consistent behavior across all screens, always returning to the previous logical state.
+- **Breadcrumbs**: Used in complex FOS or Merchant interfaces to show current location within a multi-level structure (depth 3+).
+- **Back Button**: Consistent behavior across all screens, preserving navigation history properly. Use `navigation.goBack()` in React Native.
+- **Deep Linking**: URLs must reflect the current state (query params or hash) to allow sharing and direct access.
+- **Bottom Tabs**: Maximum of 5 primary items. Move secondary actions to a "More" or "Settings" menu.
 
 ---
 
