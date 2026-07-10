@@ -1,18 +1,45 @@
 {
   "brand": {
-    "primary": "",
-    "secondary": "",
-    "accent": ""
-  },
-  "ui": {
-    "background": "",
-    "surface": "",
-    "border": ""
+    "primary": "#00E5FF",
+    "secondary": "#7C4DFF",
+    "accent": "#FFAB40"
   },
   "status": {
-    "success": "",
-    "warning": "",
-    "error": "",
-    "info": ""
+    "success": "#00C853",
+    "warning": "#FFD600",
+    "error": "#D50000",
+    "info": "#2979FF"
+  },
+  "themes": {
+    "dark": {
+      "bg-base": "#000000",
+      "bg-surface": "#121212",
+      "bg-elevated": "#1E1E1E",
+      "border-subtle": "#2C2C2C",
+      "text-primary": "#FFFFFF",
+      "text-secondary": "#B0B0B0",
+      "text-disabled": "#4F4F4F",
+      "text-on-brand": "#000000"
+    },
+    "light": {
+      "bg-base": "#FFFFFF",
+      "bg-surface": "#F5F5F5",
+      "bg-elevated": "#FFFFFF",
+      "border-subtle": "#E0E0E0",
+      "text-primary": "#000000",
+      "text-secondary": "#757575",
+      "text-disabled": "#BDBDBD",
+      "text-on-brand": "#FFFFFF"
+    },
+    "ivory": {
+      "bg-base": "#FFFBF0",
+      "bg-surface": "#FFF5E6",
+      "bg-elevated": "#FFFFFF",
+      "border-subtle": "#F0E0C0",
+      "text-primary": "#2C1A0A",
+      "text-secondary": "#5D4037",
+      "text-disabled": "#A1887F",
+      "text-on-brand": "#FFFFFF"
+    }
   }
 }
