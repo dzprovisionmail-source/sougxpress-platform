@@ -114,12 +114,14 @@ BEGIN
         WHERE id = v_cycle_id;
     END IF;
 
-    -- Check if threshold is reached
-    UPDATE public.delivery_commission_cycles
-    SET
-        status = 'payment_due',
-        payment_due_at = now()
-    WHERE id = v_cycle_id AND deliveries_count >= v_commission_cycle_threshold AND status = 'active';
+    -- Check if threshold is reached (guard against NULL or 0)
+    IF v_commission_cycle_threshold IS NOT NULL AND v_commission_cycle_threshold > 0 THEN
+        UPDATE public.delivery_commission_cycles
+        SET
+            status = 'payment_due',
+            payment_due_at = now()
+        WHERE id = v_cycle_id AND deliveries_count >= v_commission_cycle_threshold AND status = 'active';
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -130,18 +132,19 @@ CREATE OR REPLACE FUNCTION public.confirm_delivery_payment(
 )
 RETURNS VOID AS $$
 BEGIN
+    -- Capture the row before update for audit logging
+    -- NOTE: We must read old values BEFORE the UPDATE, otherwise we get the already-modified row.
+    PERFORM public.log_audit_event(
+        p_admin_user_id, 'payment_confirmed', 'delivery_commission_cycles', p_cycle_id,
+        (SELECT row_to_json(dcc) FROM public.delivery_commission_cycles dcc WHERE dcc.id = p_cycle_id),
+        NULL -- Will be re-logged after update with new values if needed
+    );
+
     UPDATE public.delivery_commission_cycles
     SET
         status = 'payment_confirmed',
         payment_confirmed_at = now()
     WHERE id = p_cycle_id AND status = 'payment_due';
-
-    -- Log audit event for payment confirmation
-    PERFORM public.log_audit_event(
-        p_admin_user_id, 'payment_confirmed', 'delivery_commission_cycles', p_cycle_id,
-        (SELECT row_to_json(old_row) FROM public.delivery_commission_cycles old_row WHERE old_row.id = p_cycle_id),
-        (SELECT row_to_json(new_row) FROM public.delivery_commission_cycles new_row WHERE new_row.id = p_cycle_id)
-    );
 
     -- Create a new active cycle for the driver
     INSERT INTO public.delivery_commission_cycles (

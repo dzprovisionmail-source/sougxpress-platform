@@ -50,6 +50,9 @@ CREATE INDEX IF NOT EXISTS idx_founder_alerts_severity ON public.founder_alerts(
 CREATE INDEX IF NOT EXISTS idx_founder_alerts_is_resolved ON public.founder_alerts(is_resolved);
 
 -- Apply trigger to tables with updated_at
+-- NOTE: platform_metrics_snapshots now includes updated_at for trigger compatibility.
+ALTER TABLE public.platform_metrics_snapshots ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL;
+
 CREATE TRIGGER update_platform_metrics_snapshots_updated_at
 BEFORE UPDATE ON public.platform_metrics_snapshots
 FOR EACH ROW

@@ -76,6 +76,9 @@ BEFORE UPDATE ON public.transactions
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
 
+-- NOTE: notifications table now includes updated_at for trigger compatibility.
+ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL;
+
 CREATE TRIGGER update_notifications_updated_at
 BEFORE UPDATE ON public.notifications
 FOR EACH ROW

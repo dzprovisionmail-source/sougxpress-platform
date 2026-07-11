@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.driver_locations (
     driver_id UUID PRIMARY KEY REFERENCES public.drivers(id) ON DELETE CASCADE,
     latitude NUMERIC NOT NULL,
     longitude NUMERIC NOT NULL,
-    last_updated TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
 
 -- Add indexes for performance
@@ -36,7 +36,7 @@ BEFORE UPDATE ON public.drivers
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_driver_locations_last_updated
+CREATE TRIGGER update_driver_locations_updated_at
 BEFORE UPDATE ON public.driver_locations
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();

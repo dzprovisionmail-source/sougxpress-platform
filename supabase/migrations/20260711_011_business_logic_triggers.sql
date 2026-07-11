@@ -33,7 +33,11 @@ BEGIN
         END IF;
 
         -- Create transaction for platform commission
-        SELECT customer_id, store_id INTO v_customer_id, v_merchant_id FROM public.orders WHERE id = NEW.id;
+        -- NOTE: orders stores store_id, not merchant_id. We resolve merchant_id through stores.
+        SELECT o.customer_id, s.merchant_id INTO v_customer_id, v_merchant_id
+        FROM public.orders o
+        JOIN public.stores s ON o.store_id = s.id
+        WHERE o.id = NEW.id;
         PERFORM public.create_order_transaction(
             NEW.id,
             v_customer_id,

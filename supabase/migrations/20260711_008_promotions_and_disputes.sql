@@ -61,6 +61,9 @@ BEFORE UPDATE ON public.promotions
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
 
+-- NOTE: promotion_redemptions now includes updated_at for trigger compatibility.
+ALTER TABLE public.promotion_redemptions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL;
+
 CREATE TRIGGER update_promotion_redemptions_updated_at
 BEFORE UPDATE ON public.promotion_redemptions
 FOR EACH ROW

@@ -114,4 +114,58 @@ This file records what has happened across all AI sessions and human interaction
 
 ---
 
-*Last updated: 2026-07-09*
+## Session 6 — Migration Implementation (Previous Session, committed as d8e1e27)
+
+**Focus:** Creation of the full V2 database schema (13 migrations), RLS policies, financial functions, business logic triggers, and seed data.
+
+**What happened:**
+- 13 SQL migration files created in `supabase/migrations/` (001 through 013).
+- Migrations cover: zones/customers, merchants/stores, products, orders, drivers, deliveries, finance/notifications, promotions/disputes, founder operating system, financial logic functions, business logic triggers, RLS policies, and Ain Sefra seed data.
+- Brain documentation files updated to reflect the new architecture assets.
+- All committed and pushed in a single commit `d8e1e27` with message `feat(database): implementation of V2 architecture assets, migrations, and documentation sync`.
+
+**Key facts:**
+- The Brain files were NOT updated to record this work at the time — `PROJECT_MEMORY.md`, `CURRENT_SESSION.md`, `NEXT_TASK.md`, and `DECISIONS.md` still reflected Session 5 state.
+- No GitHub Actions workflow was created.
+- No static validation was performed before commit.
+
+---
+
+## Session 7 — Static Validation, Correction, and CI Workflow
+
+**Focus:** Static validation of all 13 migrations, correction of critical bugs, creation of GitHub Actions CI workflow, and Brain synchronization.
+
+**What happened:**
+- All 13 migration files were read and analyzed for syntax, dependencies, triggers, functions, indexes, and RLS.
+- 8 critical SQL bugs found and fixed:
+  - Migrations 005, 007, 008, 009 had triggers on tables without `updated_at` columns (resolved by adding `updated_at` via `ALTER TABLE ADD COLUMN IF NOT EXISTS`).
+  - `handle_order_status_change` passed `store_id` as `merchant_id` to transaction creation (fixed to join through `stores`).
+  - `confirm_delivery_payment` read old/new row AFTER update instead of before (fixed).
+  - `increment_delivery_commission_counter` had no NULL/0 guard on threshold (fixed).
+- 70 schema drift points documented across 16 tables (migrations vs V2 docs) — NOT corrected, per Founder approval constraint.
+- GitHub Actions workflow created at `.github/workflows/migration-test.yml` for automated migration testing with Docker/PostgreSQL.
+- Validation report created at `docs/validation/STATIC_VALIDATION_REPORT.md`.
+- All Brain files updated: `CURRENT_SESSION.md`, `PROJECT_MEMORY.md`, `CHANGELOG.md`, `NEXT_TASK.md`.
+
+**Key findings:**
+- RLS coverage: 25/25 tables — VERIFIED.
+- Dependency order: correct — VERIFIED.
+- `get_user_role()` remains a placeholder function — KNOWN RISK.
+- Static validation result: PASSED.
+
+**Important Artifacts:**
+
+| Artifact | Location | Status |
+|----------|----------|--------|
+| 13 Migrations | `supabase/migrations/20260711_001..013` | Static validation PASSED |
+| GitHub Actions workflow | `.github/workflows/migration-test.yml` | Created, untested |
+| Validation report | `docs/validation/STATIC_VALIDATION_REPORT.md` | Created |
+| Schema drift record | `docs/validation/STATIC_VALIDATION_REPORT.md` §2 | 70 drift points documented |
+| Architectural Report | `SOUG-XPRESS_V2_ARCHITECTURAL_REPORT.md` | Reference only — superseded |
+| V2 Strategy README | `docs/v2/00_README.md` | Active — superseded by Constitution |
+| Constitution Proposal | `docs/v2/CONSTITUTION_PROPOSAL.md` | Blueprint only — awaiting Founder approval |
+| Project Brain | `docs/brain/` | Active — updated |
+| V1 Migration | `supabase/migrations/001_initial_missing_objects.sql` | Historical reference — sealed |
+| V1 Application | `apps/` | Historical reference — sealed |
+
+*Last updated: 2026-07-11*
