@@ -67,4 +67,10 @@ AI agents (Governed Participants) access the database through specific service r
 
 ---
 
-*Last updated: 2026-07-09*
+*Last updated: 2026-07-11*
+
+## 7. Implémentation des Politiques RLS
+
+Les politiques de sécurité au niveau des lignes (RLS) sont implémentées de manière détaillée dans le fichier de migration SQL `supabase/migrations/20260711_012_rls_policies.sql`. Ce fichier contient les définitions `ENABLE ROW LEVEL SECURITY` pour chaque table concernée et les politiques `CREATE POLICY` spécifiques pour les opérations `SELECT`, `INSERT`, `UPDATE`, et `DELETE` pour chaque rôle utilisateur (`customer`, `merchant`, `driver`, `admin`, `founder`).
+
+La fonction `public.get_user_role(user_id UUID)` est utilisée pour déterminer le rôle de l\'utilisateur et est un élément clé de l\'application de ces politiques.

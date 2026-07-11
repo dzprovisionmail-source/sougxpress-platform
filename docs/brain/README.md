@@ -18,6 +18,10 @@ This is not a collection of specifications. It is a **living memory** that persi
 | `DECISIONS.md` | Approved and pending decisions. The locked record of what is decided. |
 | `CHANGELOG.md` | Chronological audit trail of every significant change. |
 | `AI_HANDOFF.md` | Operational guide for AI agents: rules, boundaries, workflow, handoff protocol. |
+| `MODULAR_ARCHITECTURE_DEFINITION.md` | Définition de l'architecture modulaire de Soug-XPRESS V2. |
+| `NAMING_CONVENTIONS_AND_REUSABLE_COMPONENTS.md` | Conventions de nommage et composants réutilisables. |
+| `COMMUNICATION_AND_DEPENDENCY_MAP.md` | Carte de communication et de dépendance. |
+| `IMPLEMENTATION_ROADMAP.md` | Feuille de route d'implémentation de production. |
 
 ## How to Use This Brain
 
@@ -65,13 +69,10 @@ The Brain does not override the Constitution. The Constitution, once ratified, w
 
 ## Constraints
 
-The Project Brain is a documentation-only system. These constraints are permanent unless the Founder explicitly changes them:
+The Project Brain is the operational memory that ensures every agent works from the same understanding. The following constraints are active for this session:
 
 - No application code modified (`apps/`)
-- No Supabase modified (`supabase/`)
-- No SQL generated
-- No migrations created
-- No commits or pushes without explicit Founder instruction
+- No commits or pushes without explicit instruction
 
 ---
 
