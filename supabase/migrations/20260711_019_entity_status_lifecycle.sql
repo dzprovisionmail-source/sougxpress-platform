@@ -11,28 +11,64 @@
 
 -- Customers: active, suspended, blocked
 ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
-ALTER TABLE public.customers ADD CONSTRAINT customers_status_check
-    CHECK (status IN ('active', 'suspended', 'blocked'));
+-- CHECK constraints use DO blocks for idempotency (no IF NOT EXISTS for CHECK)
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'customers_status_check' AND conrelid = 'public.customers'::regclass
+    ) THEN
+        ALTER TABLE public.customers ADD CONSTRAINT customers_status_check
+            CHECK (status IN ('active', 'suspended', 'blocked'));
+    END IF;
+END $$;
 
 -- Merchants: pending, active, suspended, rejected
 ALTER TABLE public.merchants ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
-ALTER TABLE public.merchants ADD CONSTRAINT merchants_status_check
-    CHECK (status IN ('pending', 'active', 'suspended', 'rejected'));
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'merchants_status_check' AND conrelid = 'public.merchants'::regclass
+    ) THEN
+        ALTER TABLE public.merchants ADD CONSTRAINT merchants_status_check
+            CHECK (status IN ('pending', 'active', 'suspended', 'rejected'));
+    END IF;
+END $$;
 
 -- Stores: pending, active, paused, suspended, closed
 ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
-ALTER TABLE public.stores ADD CONSTRAINT stores_status_check
-    CHECK (status IN ('pending', 'active', 'paused', 'suspended', 'closed'));
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'stores_status_check' AND conrelid = 'public.stores'::regclass
+    ) THEN
+        ALTER TABLE public.stores ADD CONSTRAINT stores_status_check
+            CHECK (status IN ('pending', 'active', 'paused', 'suspended', 'closed'));
+    END IF;
+END $$;
 
 -- Products: draft, active, out_of_stock, hidden, archived
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
-ALTER TABLE public.products ADD CONSTRAINT products_status_check
-    CHECK (status IN ('draft', 'active', 'out_of_stock', 'hidden', 'archived'));
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'products_status_check' AND conrelid = 'public.products'::regclass
+    ) THEN
+        ALTER TABLE public.products ADD CONSTRAINT products_status_check
+            CHECK (status IN ('draft', 'active', 'out_of_stock', 'hidden', 'archived'));
+    END IF;
+END $$;
 
 -- Drivers: pending, active, suspended
 ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
-ALTER TABLE public.drivers ADD CONSTRAINT drivers_status_check
-    CHECK (status IN ('pending', 'active', 'suspended'));
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'drivers_status_check' AND conrelid = 'public.drivers'::regclass
+    ) THEN
+        ALTER TABLE public.drivers ADD CONSTRAINT drivers_status_check
+            CHECK (status IN ('pending', 'active', 'suspended'));
+    END IF;
+END $$;
 
 -- =============================================================================
 -- Part 2: Add indexes on status columns
@@ -66,30 +102,35 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trg_customers_status_change ON public.customers;
 CREATE TRIGGER trg_customers_status_change
     AFTER UPDATE ON public.customers
     FOR EACH ROW
     WHEN (OLD.status IS DISTINCT FROM NEW.status)
     EXECUTE FUNCTION public.handle_entity_status_change();
 
+DROP TRIGGER IF EXISTS trg_merchants_status_change ON public.merchants;
 CREATE TRIGGER trg_merchants_status_change
     AFTER UPDATE ON public.merchants
     FOR EACH ROW
     WHEN (OLD.status IS DISTINCT FROM NEW.status)
     EXECUTE FUNCTION public.handle_entity_status_change();
 
+DROP TRIGGER IF EXISTS trg_stores_status_change ON public.stores;
 CREATE TRIGGER trg_stores_status_change
     AFTER UPDATE ON public.stores
     FOR EACH ROW
     WHEN (OLD.status IS DISTINCT FROM NEW.status)
     EXECUTE FUNCTION public.handle_entity_status_change();
 
+DROP TRIGGER IF EXISTS trg_products_status_change ON public.products;
 CREATE TRIGGER trg_products_status_change
     AFTER UPDATE ON public.products
     FOR EACH ROW
     WHEN (OLD.status IS DISTINCT FROM NEW.status)
     EXECUTE FUNCTION public.handle_entity_status_change();
 
+DROP TRIGGER IF EXISTS trg_drivers_status_change ON public.drivers;
 CREATE TRIGGER trg_drivers_status_change
     AFTER UPDATE ON public.drivers
     FOR EACH ROW
