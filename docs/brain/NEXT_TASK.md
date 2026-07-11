@@ -2,42 +2,46 @@
 
 ## The Immediate Next Task
 
-**Run the migration suite in a real isolated Supabase environment and update the Brain based on the results.**
+**Founder decision on schema drift and Constitution approval.**
 
-The 13 migration files have passed static validation. All critical SQL bugs have been corrected. The GitHub Actions workflow (`migration-test.yml`) is created but has not yet been exercised in CI. The next step is to execute the migrations in an actual isolated Supabase (or equivalent PostgreSQL) environment to verify runtime correctness.
+The 13 migration files have now passed both static validation (previous session) and runtime validation (this session). All critical SQL bugs have been corrected. The runtime validation report has been created and all changes have been committed and pushed to `origin/main`. The migrations are ready for deployment to live Supabase upon Founder authorization.
 
 Meanwhile, the Constitution proposal at `docs/v2/CONSTITUTION_PROPOSAL.md` remains awaiting Founder approval.
 
 ## What This Means — Step by Step
 
 ### Step 1 — Runtime Migration Test
-Execute all 13 migrations in a real isolated PostgreSQL/Supabase environment. The GitHub Actions workflow (`migration-test.yml`) is ready for CI execution. Manual execution via Docker is also possible.
+
+**COMPLETED.** All 13 migrations executed successfully in an isolated PostgreSQL 16 environment. The runtime validation report at `docs/validation/RUNTIME_VALIDATION_REPORT.md` documents full verification of all database objects (25 tables, 23 foreign keys, 12 functions, 23 triggers, 62 RLS policies, 57 custom indexes, seed data, and financial settings).
 
 ### Step 2 — Resolve Runtime Issues
-If any migration fails at runtime, diagnose and fix. Re-run until all 13 execute without error. Record results in `docs/validation/`.
+
+**COMPLETED.** No runtime issues were found. All migrations executed without SQL errors. The runtime verdict is **PASSED**.
 
 ### Step 3 — Founder Decision on Schema Drift
+
 The validation report documents 70 schema drift points between implemented migrations and the V2 documentation (`03_DATABASE_SCHEMA.md`, `03b_DATABASE_SCHEMA_ADDENDUM.md`). The Founder must decide: keep the current implementation, migrate to the documented schema, or revise the documentation to match the implementation.
 
 ### Step 4 — Await Founder Approval on Constitution
+
 The Constitution proposal at `docs/v2/CONSTITUTION_PROPOSAL.md` still awaits Founder approval of structure and answers to 7 open questions.
 
 ## What Must NOT Happen
 
-- Do **not** deploy to live Supabase.
+- Do **not** deploy to live Supabase without explicit Founder authorization.
 - Do **not** request production credentials.
 - Do **not** delete or recreate existing production data.
 - Do **not** rename roles or business entities unless the Constitution and Brain clearly require it.
 - Do **not** write Constitution chapter content before the blueprint is approved.
 - Do **not** write any application code.
-- Do **not** commit or push without explicit Founder instruction.
+- Do **not** correct the 70 schema drift points without explicit Founder instruction.
 
 ## The Updated Development Sequence
 
 ```
 Static validation PASSED
     ↓
-Runtime migration test in isolated environment
+Runtime migration test PASSED
     ↓
 Founder decision on schema drift (migrations vs docs)
     ↓
@@ -61,9 +65,8 @@ Each arrow is a gate. No stage begins until the previous stage is approved or va
 Your next action is:
 
 1. Read `00_START_HERE.md`, `AI_HANDOFF.md`, and `CURRENT_SESSION.md`.
-2. Run the migrations in an isolated environment and record results.
-3. Present the schema drift report to the Founder for decision.
-4. Do not proceed to Constitution drafting until the Founder approves the blueprint.
+2. Present the runtime validation results and schema drift report to the Founder for decision.
+3. Do not proceed to Constitution drafting until the Founder approves the blueprint.
 
 ---
 

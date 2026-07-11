@@ -2,32 +2,38 @@
 
 ## Session Focus
 
-**Validation statique et correction des 13 migrations SQL V2 + création du workflow GitHub Actions.**
+**Runtime validation of the 13 SQL migrations V2 in an isolated PostgreSQL environment, creation of the runtime validation report, and synchronization of the Project Brain.**
 
 ## What Is Happening Right Now
 
-Cette session est dédiée à la validation statique des 13 migrations SQL créées lors de la session précédente (commit d8e1e27), la correction des bugs critiques, la création du workflow GitHub Actions pour le test automatisé des migrations, et la mise à jour du Project Brain.
+This session completed the runtime validation of the 13 SQL migrations (001 through 013) that had previously passed static validation. All migrations were executed successfully in a clean, isolated PostgreSQL 16 environment. All database objects were verified, the runtime validation report was created, the Brain documents were updated, and all changes were committed and pushed to `origin/main`.
 
 ## Current Phase
 
-**Phase 4 - Validation statique, correction SQL, et création de workflow CI**
+**Phase Complete — Runtime Validation PASSED, all artifacts committed and pushed.**
 
 ## What Has Been Done This Session
 
-1.  Inspection complète des 13 migrations SQL (001 à 013).
-2.  Validation des dépendances, clés étrangères, fonctions, triggers, index et RLS.
-3.  Correction de 8 bugs critiques (triggers sur tables sans colonne `updated_at` dans 005, 007, 008, 009).
-4.  Correction de 3 problèmes fonctionnels (merchant_id dans trigger order, old_row avant UPDATE dans `confirm_delivery_payment`, guard NULL sur `commission_cycle_threshold`).
-5.  Création du workflow GitHub Actions `.github/workflows/migration-test.yml` pour le test automatisé des migrations avec Docker/PostgreSQL.
-6.  Création du rapport de validation statique `docs/validation/STATIC_VALIDATION_REPORT.md`.
-7.  Mise à jour de `CURRENT_SESSION.md`, `PROJECT_MEMORY.md`, `CHANGELOG.md`, et `NEXT_TASK.md`.
-8.  Enregistrement des 70 écarts de schéma entre les migrations et la documentation V2 (sans correction, par contrainte).
+1.  Recreated an isolated PostgreSQL 16 environment with a minimal Supabase `auth.users` compatibility stub.
+2.  Executed all 13 migrations (001 through 013) sequentially from a clean database — all passed without SQL errors.
+3.  Verified all expected database objects:
+    -   **25/25 tables** present in the `public` schema.
+    -   **23/23 foreign keys** correctly established.
+    -   **12/12 custom functions** present and callable.
+    -   **23/23 triggers** correctly attached to their target tables.
+    -   **RLS enabled on all 25 tables** with 62 policies verified.
+    -   **57 custom indexes** present (excluding auto-generated PK/FK indexes).
+    -   **Ain Sefra seed data**: 1 zone created correctly.
+    -   **Financial settings**: all 4 keys present with correct values (150 DZD, 20%, threshold 50).
+4.  Created `docs/validation/RUNTIME_VALIDATION_REPORT.md` with full runtime verification results.
+5.  Updated `docs/brain/CURRENT_SESSION.md` and `docs/brain/NEXT_TASK.md`.
+6.  Committed and pushed all authorized changes to `origin/main`.
 
 ## What Has Not Been Done This Session
 
--   Les écarts de schéma entre migrations et documentation V2 n'ont pas été corrigés (nécessite l'approbation explicite du Founder).
--   Le test runtime dans un environnement Supabase isolé n'a pas été exécuté.
--   La documentation V2 n'a pas été mise à jour pour refléter l'implémentation réelle.
+-   The 70 schema drift points between migrations and V2 documentation have **not** been corrected (requires explicit Founder approval).
+-   The Constitution proposal remains awaiting Founder approval.
+-   The `_000_auth_stub.sql` file was added as a testing-only artifact and is not part of the application.
 
 ## Active Constraints
 
@@ -40,7 +46,7 @@ Cette session est dédiée à la validation statique des 13 migrations SQL cré�
 
 ## Blocking Item
 
-Aucun élément bloquant. La validation statique est terminée. Le prochain test nécessaire est un test runtime dans un environnement Supabase isolé.
+Aucun élément bloquant. La validation runtime est terminée et **PASSED**. Les prochaines étapes dépendent du Founder: décision sur les 70 écarts de schéma et approbation de la Constitution.
 
 ## Session Date
 
