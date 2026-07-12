@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Typography, Input, Button, Card } from "../ui";
+import { Typography, Input, Button } from "../ui";
 import { TOKENS } from "../../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
@@ -51,6 +51,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const [selectedZoneId, setSelectedZoneId] = useState<string>("");
   const [zones, setZones] = useState<Zone[]>([]);
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
   useEffect(() => {
     fetchZones();
@@ -76,7 +77,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        await handleRoleGating(session.user.id);
+        await handleProvisioningAndGating(session.user.id, session.user.email || "");
       }
     } catch (error) {
       console.error("Session check error:", error);
@@ -85,43 +86,115 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     }
   };
 
-  const handleRoleGating = async (userId: string) => {
+  const handleProvisioningAndGating = async (userId: string, userEmail: string) => {
+    // 1. Check/Provision Profile
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
-    if (profileError || !profile) return;
-
-    if (profile.role !== role) {
-      // Role mismatch - we don't sign out automatically here to allow user to see other roles
-      // but we don't let them proceed in this specific auth flow
+    if (profileError) {
+      Alert.alert("خطأ في البيانات", "تعذر التحقق من ملفك الشخصي. يرجى المحاولة لاحقاً.");
       return;
     }
 
-    // Check status for specific roles
-    let status = "active";
-    if (role === "customer") {
-      const { data } = await supabase.from("customers").select("status").eq("id", userId).single();
-      status = data?.status || "active";
-    } else if (role === "merchant") {
-      const { data } = await supabase.from("merchants").select("status").eq("id", userId).single();
-      status = data?.status || "pending";
-    } else if (role === "driver") {
-      const { data } = await supabase.from("drivers").select("status").eq("id", userId).single();
-      status = data?.status || "pending";
+    let userRole = profile?.role;
+
+    if (!profile) {
+      // Provision profile if missing
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert({ id: userId, role })
+        .select()
+        .single();
+      
+      if (insertError) {
+        Alert.alert("خطأ في التسجيل", "فشل إنشاء الملف الشخصي. يرجى المحاولة لاحقاً.");
+        return;
+      }
+      userRole = role;
     }
 
+    // 2. Role Mismatch Check
+    if (userRole !== role) {
+      Alert.alert("خطأ في الوصول", `هذا الحساب مسجل كـ ${userRole} وليس ${role}. يرجى تسجيل الدخول من البوابة الصحيحة.`);
+      return;
+    }
+
+    // 3. Provision Role-Specific Entity (Idempotent)
+    let status = "pending";
+    try {
+      if (role === "customer") {
+        const { data: customer, error: cQueryError } = await supabase.from("customers").select("status").eq("id", userId).maybeSingle();
+        if (cQueryError) throw cQueryError;
+        
+        if (!customer) {
+          const { error: cInsertError } = await supabase.from("customers").insert({
+            id: userId,
+            email: userEmail,
+            first_name: firstName || "User",
+            last_name: lastName || "",
+            phone_number: phoneNumber || "",
+            zone_id: selectedZoneId || null,
+            status: "active",
+          });
+          if (cInsertError) throw cInsertError;
+          status = "active";
+        } else {
+          status = customer.status;
+        }
+      } else if (role === "merchant") {
+        const { data: merchant, error: mQueryError } = await supabase.from("merchants").select("status").eq("id", userId).maybeSingle();
+        if (mQueryError) throw mQueryError;
+
+        if (!merchant) {
+          const { error: mInsertError } = await supabase.from("merchants").insert({
+            id: userId,
+            business_name: businessName || "Store",
+            contact_email: userEmail,
+            contact_phone: phoneNumber || "",
+            zone_id: selectedZoneId || null,
+            status: "pending",
+          });
+          if (mInsertError) throw mInsertError;
+          status = "pending";
+        } else {
+          status = merchant.status;
+        }
+      } else if (role === "driver") {
+        const { data: driver, error: dQueryError } = await supabase.from("drivers").select("status").eq("id", userId).maybeSingle();
+        if (dQueryError) throw dQueryError;
+
+        if (!driver) {
+          const { error: dInsertError } = await supabase.from("drivers").insert({
+            id: userId,
+            first_name: firstName || "Driver",
+            last_name: lastName || "",
+            email: userEmail,
+            phone_number: phoneNumber || "",
+            zone_id: selectedZoneId || null,
+            status: "pending",
+          });
+          if (dInsertError) throw dInsertError;
+          status = "pending";
+        } else {
+          status = driver.status;
+        }
+      }
+    } catch (err) {
+      Alert.alert("خطأ في التجهيز", "فشل إعداد بيانات الحساب. يرجى التواصل مع الدعم.");
+      return;
+    }
+
+    // 4. Status Gating
     setApprovalStatus(status);
 
     if (status === "active") {
       if (role === "customer") {
         router.replace("/guest-marketplace");
-      } else {
-        // Redirect to role dashboard if exists, else stay
-        // router.replace(`/${role}-dashboard`);
       }
+      // Future: add merchant/driver dashboard routes here
     }
   };
 
@@ -140,9 +213,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         });
 
         if (error) throw error;
-        await handleRoleGating(data.user.id);
+        await handleProvisioningAndGating(data.user.id, data.user.email || "");
       } else {
-        // Validation for Sign Up
+        // Sign Up Validation
         if (!firstName || !lastName || !phoneNumber || !selectedZoneId) {
           Alert.alert("خطأ", "يرجى ملء جميع الحقول المطلوبة واختيار المنطقة");
           setLoading(false);
@@ -157,49 +230,26 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              role,
+              first_name: firstName,
+              last_name: lastName,
+              phone_number: phoneNumber,
+              zone_id: selectedZoneId,
+              business_name: role === "merchant" ? businessName : undefined,
+            }
+          }
         });
 
         if (error) throw error;
-        if (!data.user) throw new Error("فشل إنشاء المستخدم");
 
-        const userId = data.user.id;
-
-        // Provisioning (Idempotent: RLS/Triggers handle profiles)
-        // Note: profiles.role is source of truth, inserted by trigger or manually if allowed
-        await supabase.from("profiles").insert({ id: userId, role }).select().single();
-
-        if (role === "customer") {
-          await supabase.from("customers").upsert({
-            id: userId,
-            email,
-            first_name: firstName,
-            last_name: lastName,
-            phone_number: phoneNumber,
-            zone_id: selectedZoneId,
-            status: "active",
-          });
-        } else if (role === "merchant") {
-          await supabase.from("merchants").upsert({
-            id: userId,
-            business_name: businessName,
-            contact_email: email,
-            contact_phone: phoneNumber,
-            zone_id: selectedZoneId,
-            status: "pending",
-          });
-        } else if (role === "driver") {
-          await supabase.from("drivers").upsert({
-            id: userId,
-            first_name: firstName,
-            last_name: lastName,
-            email,
-            phone_number: phoneNumber,
-            zone_id: selectedZoneId,
-            status: "pending",
-          });
+        if (data.user && !data.session) {
+          // Email confirmation required
+          setNeedsConfirmation(true);
+        } else if (data.user && data.session) {
+          await handleProvisioningAndGating(data.user.id, data.user.email || "");
         }
-
-        await handleRoleGating(userId);
       }
     } catch (error: any) {
       Alert.alert("خطأ", error.message || "حدث خطأ ما");
@@ -216,18 +266,32 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     );
   }
 
-  // Approval Gating Screens
+  if (needsConfirmation) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+        <View style={styles.statusContainer}>
+          <Typography variant="h1" align="center" style={styles.statusTitle}>تأكيد البريد الإلكتروني</Typography>
+          <Typography variant="body" color="secondary" align="center" style={styles.statusMessage}>
+            تم إرسال رابط تأكيد إلى بريدك الإلكتروني. يرجى تأكيد الحساب ثم تسجيل الدخول.
+          </Typography>
+          <Button title="العودة لتسجيل الدخول" onPress={() => { setNeedsConfirmation(false); setIsLogin(true); }} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (approvalStatus && approvalStatus !== "active") {
+    const isBlocked = ["suspended", "blocked", "rejected"].includes(approvalStatus);
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
         <View style={styles.statusContainer}>
           <Typography variant="h1" align="center" style={styles.statusTitle}>
-            {approvalStatus === "pending" ? "قيد المراجعة" : "الحساب معطل"}
+            {isBlocked ? "الحساب معطل" : "قيد المراجعة"}
           </Typography>
           <Typography variant="body" color="secondary" align="center" style={styles.statusMessage}>
-            {approvalStatus === "pending" 
-              ? "طلبك قيد المراجعة من قبل الإدارة. سنقوم بتفعيل حسابك قريباً."
-              : "عذراً، تم تعليق أو رفض حسابك. يرجى التواصل مع الدعم الفني."}
+            {isBlocked 
+              ? "عذراً، تم تعليق أو رفض حسابك. يرجى التواصل مع الدعم الفني."
+              : "طلبك قيد المراجعة من قبل الإدارة. سنقوم بتفعيل حسابك قريباً."}
           </Typography>
           <Button 
             title="تسجيل الخروج" 
@@ -253,52 +317,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <Typography variant="h1" align="center" style={styles.title}>
-              {titleAr}
-            </Typography>
-            <Typography variant="body" color="secondary" align="center">
-              {subtitleAr}
-            </Typography>
+            <Typography variant="h1" align="center" style={styles.title}>{titleAr}</Typography>
+            <Typography variant="body" color="secondary" align="center">{subtitleAr}</Typography>
           </View>
 
           <View style={styles.form}>
             {!isLogin && (
               <>
                 <View style={[styles.row, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                  <Input
-                    label="الاسم الأول"
-                    placeholder="أحمد"
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    style={{ flex: 1 }}
-                  />
-                  <Input
-                    label="اللقب"
-                    placeholder="علي"
-                    value={lastName}
-                    onChangeText={setLastName}
-                    style={{ flex: 1 }}
-                  />
+                  <Input label="الاسم الأول" placeholder="أحمد" value={firstName} onChangeText={setFirstName} style={{ flex: 1 }} />
+                  <Input label="اللقب" placeholder="علي" value={lastName} onChangeText={setLastName} style={{ flex: 1 }} />
                 </View>
                 {role === "merchant" && (
-                  <Input
-                    label="اسم المتجر"
-                    placeholder="متجر السعادة"
-                    value={businessName}
-                    onChangeText={setBusinessName}
-                  />
+                  <Input label="اسم المتجر" placeholder="متجر السعادة" value={businessName} onChangeText={setBusinessName} />
                 )}
-                <Input
-                  label="رقم الهاتف"
-                  placeholder="06XXXXXXXX"
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
-                  keyboardType="phone-pad"
-                />
+                <Input label="رقم الهاتف" placeholder="06XXXXXXXX" value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" />
                 
-                <Typography variant="caption" color="secondary" style={styles.label}>
-                  اختر المنطقة (عين صفراء)
-                </Typography>
+                <Typography variant="caption" color="secondary" style={styles.label}>اختر المنطقة (عين صفراء)</Typography>
                 <View style={styles.zonesGrid}>
                   {zones.map((zone) => (
                     <TouchableOpacity
@@ -312,11 +347,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                         }
                       ]}
                     >
-                      <Typography 
-                        variant="caption" 
-                        align="center"
-                        style={{ color: selectedZoneId === zone.id ? colors.primary : colors.textPrimary }}
-                      >
+                      <Typography variant="caption" align="center" style={{ color: selectedZoneId === zone.id ? colors.primary : colors.textPrimary }}>
                         {zone.name}
                       </Typography>
                     </TouchableOpacity>
@@ -325,42 +356,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               </>
             )}
 
-            <Input
-              label="البريد الإلكتروني"
-              placeholder="example@mail.com"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-            />
+            <Input label="البريد الإلكتروني" placeholder="example@mail.com" value={email} onChangeText={setEmail} keyboardType="email-address" />
+            <Input label="كلمة المرور" placeholder="********" value={password} onChangeText={setPassword} secureTextEntry />
 
-            <Input
-              label="كلمة المرور"
-              placeholder="********"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-
-            <Button
-              title={isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"}
-              onPress={handleAuth}
-              loading={loading}
-              style={styles.submitBtn}
-            />
-
-            <Button
-              title={isLogin ? "ليس لديك حساب؟ سجل الآن" : "لديك حساب بالفعل؟ سجل دخولك"}
-              variant="ghost"
-              onPress={() => setIsLogin(!isLogin)}
-            />
+            <Button title={isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"} onPress={handleAuth} loading={loading} style={styles.submitBtn} />
+            <Button title={isLogin ? "ليس لديك حساب؟ سجل الآن" : "لديك حساب بالفعل؟ سجل دخولك"} variant="ghost" onPress={() => setIsLogin(!isLogin)} />
           </View>
 
-          <Button
-            title="العودة للرئيسية"
-            variant="outline"
-            onPress={() => router.push("/")}
-            style={styles.backBtn}
-          />
+          <Button title="العودة للرئيسية" variant="outline" onPress={() => router.push("/")} style={styles.backBtn} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -368,65 +371,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scrollContent: {
-    padding: TOKENS.spacing.xl,
-    paddingTop: TOKENS.spacing["3xl"],
-  },
-  header: {
-    marginBottom: TOKENS.spacing["2xl"],
-  },
-  title: {
-    color: TOKENS.colors.brandPrimary,
-    marginBottom: TOKENS.spacing.xs,
-  },
-  form: {
-    gap: TOKENS.spacing.sm,
-  },
-  row: {
-    gap: TOKENS.spacing.md,
-    width: "100%",
-  },
-  label: {
-    marginBottom: TOKENS.spacing.xs,
-    fontWeight: "600",
-  },
-  zonesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: TOKENS.spacing.sm,
-    marginBottom: TOKENS.spacing.md,
-  },
-  zoneItem: {
-    paddingVertical: TOKENS.spacing.sm,
-    paddingHorizontal: TOKENS.spacing.md,
-    borderRadius: TOKENS.radius.sm,
-    borderWidth: 1,
-    minWidth: "30%",
-  },
-  submitBtn: {
-    marginTop: TOKENS.spacing.md,
-  },
-  backBtn: {
-    marginTop: TOKENS.spacing.xl,
-  },
-  statusContainer: {
-    flex: 1,
-    justifyContent: "center",
-    padding: TOKENS.spacing.xl,
-    gap: TOKENS.spacing.lg,
-  },
-  statusTitle: {
-    color: TOKENS.colors.brandPrimary,
-  },
-  statusMessage: {
-    marginBottom: TOKENS.spacing.xl,
-  },
+  safeArea: { flex: 1 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  scrollContent: { padding: TOKENS.spacing.xl, paddingTop: TOKENS.spacing["3xl"] },
+  header: { marginBottom: TOKENS.spacing["2xl"] },
+  title: { color: TOKENS.colors.brandPrimary, marginBottom: TOKENS.spacing.xs },
+  form: { gap: TOKENS.spacing.sm },
+  row: { gap: TOKENS.spacing.md, width: "100%" },
+  label: { marginBottom: TOKENS.spacing.xs, fontWeight: "600" },
+  zonesGrid: { flexDirection: "row", flexWrap: "wrap", gap: TOKENS.spacing.sm, marginBottom: TOKENS.spacing.md },
+  zoneItem: { paddingVertical: TOKENS.spacing.sm, paddingHorizontal: TOKENS.spacing.md, borderRadius: TOKENS.radius.sm, borderWidth: 1, minWidth: "30%" },
+  submitBtn: { marginTop: TOKENS.spacing.md },
+  backBtn: { marginTop: TOKENS.spacing.xl },
+  statusContainer: { flex: 1, justifyContent: "center", padding: TOKENS.spacing.xl, gap: TOKENS.spacing.lg },
+  statusTitle: { color: TOKENS.colors.brandPrimary },
+  statusMessage: { marginBottom: TOKENS.spacing.xl },
 });
