@@ -2,51 +2,80 @@ name: Deploy to Supabase Staging
 
 on:
   workflow_dispatch:
+    inputs:
+      reset_staging:
+        description: "Reset staging before applying migrations"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Link Staging Project
+      - name: Link staging project
         run: |
-          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} -p ${{ secrets.SUPABASE_DB_PASSWORD }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          supabase link \
+            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}" \
+            --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
 
-      - name: Apply Migrations
+      - name: Exclude CI-only auth stub
         run: |
-          # Remove auth stub to avoid conflicts with real Supabase Auth
-          rm supabase/migrations/_000_auth_stub.sql
-          # Apply migrations
-          supabase db push
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          rm -f supabase/migrations/_000_auth_stub.sql
 
-      - name: Verify Deployment
+      - name: Apply migrations
         run: |
-          # Basic verification of key tables
-          supabase db query "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public';"
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          if [ "${{ inputs.reset_staging }}" = "true" ]; then
+            echo "Resetting the staging database..."
+            supabase db reset --linked --no-seed --yes
+          else
+            echo "Applying pending migrations..."
+            supabase db push --linked --include-all --yes
+          fi
 
-      - name: Generate TypeScript Types
+      - name: Verify migration history
         run: |
-          supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJECT_ID }} > src/types/supabase.ts
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          supabase migration list --linked
 
-      - name: Commit and Push Updated Types
+      - name: Lint staging database
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          supabase db lint --linked --fail-on error
+
+      - name: Generate TypeScript types
+        run: |
+          mkdir -p src/types
+          supabase gen types typescript \
+            --project-id "${{ secrets.SUPABASE_PROJECT_ID }}" \
+            --schema public \
+            > src/types/supabase.ts
+
+      - name: Commit generated types
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/types/supabase.ts
-          git commit -m "chore: update supabase types from staging" || echo "No changes to commit"
-          git push
+
+          if git diff --cached --quiet; then
+            echo "No TypeScript type changes."
+          else
+            git commit -m "chore: update Supabase types from staging"
+            git push origin HEAD:main
+          fi
