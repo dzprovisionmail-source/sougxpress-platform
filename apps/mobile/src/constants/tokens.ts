@@ -2,15 +2,21 @@
  * SougXpress Design Tokens
  * 
  * Official source of truth for all UI constants.
- * Based on docs/design-system/
+ * Based on branding/colors/design-tokens.json and brand concept boards.
+ * 
+ * Brand Direction:
+ * - Orange (#FF8A00) is the main action/accent color
+ * - Brand Blue (#0D47A1) is secondary, used in logo and brand accents
+ * - Dark mode: black/deep navy background
+ * - Cyan glow reduced to minimal/removed
  */
 
 export const TOKENS = {
   colors: {
-    // Brand
-    brandPrimary: "#00E5FF",
-    brandSecondary: "#7C4DFF",
-    brandAccent: "#FFAB40",
+    // Brand — Updated to match SougXpress official identity
+    brandPrimary: "#FF8A00",    // Orange — main action/accent color
+    brandSecondary: "#0D47A1",  // Brand Blue — secondary brand accent, logo
+    brandAccent: "#FFAB40",     // Warm Amber — secondary warm accent
     
     // Status
     statusSuccess: "#00C853",
@@ -18,7 +24,7 @@ export const TOKENS = {
     statusWarning: "#FFD600",
     statusInfo: "#2979FF",
     
-    // Dark Palette (Primary)
+    // Dark Palette (Primary Mode)
     dark: {
       bgBase: "#000000",
       bgSurface: "#121212",
@@ -30,7 +36,7 @@ export const TOKENS = {
       textOnBrand: "#000000",
     },
     
-    // Light Palette
+    // Light Palette — Fixed for readability
     light: {
       bgBase: "#FFFFFF",
       bgSurface: "#F5F5F5",
@@ -42,7 +48,7 @@ export const TOKENS = {
       textOnBrand: "#FFFFFF",
     },
     
-    // Ivory Palette (Warm Light)
+    // Ivory Palette (Warm Light) — Fixed for readability
     ivory: {
       bgBase: "#FFFBF0",
       bgSurface: "#FFF5E6",
@@ -96,9 +102,9 @@ export const TOKENS = {
   
   shadows: {
     premium: {
-      shadowColor: "#00E5FF",
+      shadowColor: "#FF8A00",
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.08,
       shadowRadius: 12,
       elevation: 4,
     }

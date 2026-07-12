@@ -27,11 +27,11 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
   return (
     <View style={[styles.container, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
       <View style={[styles.logoContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-        <View style={[styles.logoCircle, { backgroundColor: colors.primary }]}>
-          <Ionicons name="cart" size={20} color={colors.textOnBrand} />
+        <View style={[styles.logoCircle, { backgroundColor: TOKENS.colors.brandPrimary }]}>
+          <Ionicons name="cart" size={20} color={TOKENS.colors.dark.textOnBrand} />
         </View>
-        <Typography variant="h1" color="brand" style={styles.logoText}>
-          SougXpress
+        <Typography variant="h1" align="right" style={styles.logoText}>
+          سوق إكسبريس
         </Typography>
       </View>
 
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: TOKENS.spacing.lg,
-    marginTop: TOKENS.spacing.sm,
+    paddingTop: TOKENS.spacing.sm,
   },
   logoContainer: {
     alignItems: "center",
@@ -82,6 +82,7 @@ const styles = StyleSheet.create({
     fontSize: TOKENS.typography.sizes.xl,
     fontWeight: "800",
     letterSpacing: -0.5,
+    color: TOKENS.colors.brandPrimary,
   },
   actions: {
     alignItems: "center",

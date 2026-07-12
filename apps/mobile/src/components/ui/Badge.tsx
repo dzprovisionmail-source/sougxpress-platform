@@ -31,7 +31,7 @@ export const Badge: React.FC<BadgeProps> = ({
         return { backgroundColor: "rgba(244, 67, 54, 0.1)", color: colors.error };
       case "primary":
       default:
-        return { backgroundColor: "rgba(0, 229, 255, 0.1)", color: colors.primary };
+        return { backgroundColor: "rgba(255, 138, 0, 0.1)", color: colors.primary };
     }
   };
 

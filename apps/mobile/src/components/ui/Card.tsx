@@ -40,7 +40,7 @@ export const Card: React.FC<CardProps> = ({
           backgroundColor: colors.bgSurface,
           ...TOKENS.shadows.premium,
           shadowColor: theme === "dark" ? TOKENS.colors.brandPrimary : "#000000",
-          shadowOpacity: theme === "dark" ? 0.05 : 0.1,
+          shadowOpacity: theme === "dark" ? 0.08 : 0.08,
         };
     }
   };

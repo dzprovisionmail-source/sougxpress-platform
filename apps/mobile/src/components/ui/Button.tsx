@@ -149,12 +149,10 @@ const styles = StyleSheet.create({
     fontFamily: TOKENS.typography.families.arabic,
   },
   disabledButton: {
-    backgroundColor: "#E0E0E0",
-    borderColor: "#BDBDBD",
     shadowOpacity: 0,
     elevation: 0,
   },
   disabledText: {
-    color: "#9E9E9E",
+    opacity: 0.5,
   },
 });

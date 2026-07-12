@@ -31,7 +31,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
       {onSeeAll && (
         <TouchableOpacity onPress={onSeeAll} style={styles.button}>
           <Typography variant="caption" color="brand" style={styles.seeAllText}>
-            {isRTL ? "عرض الكل" : "See All"}
+            {"عرض الكل"}
           </Typography>
         </TouchableOpacity>
       )}

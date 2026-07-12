@@ -343,7 +343,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                         styles.zoneItem,
                         { 
                           borderColor: selectedZoneId === zone.id ? colors.primary : colors.borderSubtle,
-                          backgroundColor: selectedZoneId === zone.id ? "rgba(0, 229, 255, 0.1)" : colors.bgSurface
+                          backgroundColor: selectedZoneId === zone.id ? "rgba(255, 138, 0, 0.1)" : colors.bgSurface
                         }
                       ]}
                     >

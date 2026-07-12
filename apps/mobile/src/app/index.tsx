@@ -1,57 +1,24 @@
 import React from "react";
 import { Link } from "expo-router";
-import { View, ScrollView, StyleSheet, SafeAreaView, I18nManager } from "react-native";
+import { View, ScrollView, StyleSheet, SafeAreaView, I18nManager, TouchableOpacity } from "react-native";
 import { Typography, Card, Button } from "../components/ui";
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
 
 /**
- * Intent Gateway — Sprint 2 Refactor
+ * SougXPRESS Entry Screen — UI Refinement Sprint
  * 
- * Official entry point using the new SougXpress UI Kit.
- * Respects: Premium, Minimal, Arabic First, Dark Mode First.
+ * First visible screen when opening the app:
+ * - Large SougXPRESS brand mark
+ * - Slogan: "سوقك يوصلك لبابك"
+ * - Subtitle: "سوق عين الصفراء"
+ * - Primary action button: "الدخول إلى السوق"
+ * - Button opens the existing role-selection flow (intent gateway)
+ * 
+ * Uses only orange/black brand direction. No cyan.
  */
 
-interface IntentOption {
-  id: string;
-  emoji: string;
-  titleAr: string;
-  descriptionAr: string;
-  route: string;
-}
-
-const INTENT_OPTIONS: IntentOption[] = [
-  {
-    id: "customer",
-    emoji: "🛍️",
-    titleAr: "أريد التسوق",
-    descriptionAr: "اكتشف المتاجر المحلية واطلب ما تحتاجه.",
-    route: "/customer-auth",
-  },
-  {
-    id: "merchant",
-    emoji: "🏪",
-    titleAr: "أريد بيع منتجاتي",
-    descriptionAr: "أنشئ متجرك وابدأ البيع بعد اعتماد حسابك.",
-    route: "/merchant-auth",
-  },
-  {
-    id: "driver",
-    emoji: "🛵",
-    titleAr: "أريد العمل كموصل",
-    descriptionAr: "انضم إلى فريق التوصil بعد الموافقة.",
-    route: "/driver-auth",
-  },
-  {
-    id: "guest",
-    emoji: "👀",
-    titleAr: "استكشف السوق أولًا",
-    descriptionAr: "تصفح المتاجر والمنتجات دون إنشاء حساب.",
-    route: "/guest-marketplace",
-  },
-];
-
-export default function IntentGateway() {
+export default function EntryScreen() {
   const colors = getThemeColors(DEFAULT_THEME);
   const isRTL = I18nManager.isRTL;
 
@@ -62,37 +29,47 @@ export default function IntentGateway() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Typography variant="display" align="center" style={styles.brandTitle}>
-            سوق إكسبريس
-          </Typography>
-          <Typography variant="h3" color="secondary" align="center">
+        {/* Brand Logo Area */}
+        <View style={styles.logoArea}>
+          {/* Logo mark: orange cart circle with X */}
+          <View style={styles.logoMark}>
+            <View style={styles.logoCircle}>
+              <View style={styles.logoInner}>
+                <Typography variant="display" style={styles.logoX}>X</Typography>
+              </View>
+            </View>
+          </View>
+
+          {/* Brand wordmark */}
+          <View style={[styles.wordmarkRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            <Typography variant="display" style={styles.sougText}>
+              سوق
+            </Typography>
+            <Typography variant="display" style={styles.xpressText}>
+              إكسبريس
+            </Typography>
+          </View>
+
+          {/* Slogan */}
+          <Typography variant="h1" style={styles.slogan} align="center">
             سوقك يوصلك لبابك
+          </Typography>
+
+          {/* Subtitle */}
+          <Typography variant="body" color="secondary" align="center">
+            سوق عين الصفراء
           </Typography>
         </View>
 
-        {/* Intent Options List */}
-        <View style={styles.optionsContainer}>
-          {INTENT_OPTIONS.map((option) => (
-            <Link key={option.id} href={option.route} asChild>
-              <Card variant="elevated" style={styles.intentCard}>
-                <View style={[styles.cardContent, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                  <View style={styles.emojiWrapper}>
-                    <Typography style={styles.emoji}>{option.emoji}</Typography>
-                  </View>
-                  <View style={styles.textWrapper}>
-                    <Typography variant="h3" style={styles.intentTitle}>
-                      {option.titleAr}
-                    </Typography>
-                    <Typography variant="caption" color="secondary">
-                      {option.descriptionAr}
-                    </Typography>
-                  </View>
-                </View>
-              </Card>
-            </Link>
-          ))}
+        {/* Role Selection Gateway */}
+        <View style={styles.gatewayContainer}>
+          <Link href="/login" asChild>
+            <TouchableOpacity activeOpacity={0.8} style={styles.enterButton}>
+              <Typography variant="h2" style={styles.enterButtonText}>
+                الدخول إلى السوق
+              </Typography>
+            </TouchableOpacity>
+          </Link>
         </View>
 
         {/* Footer */}
@@ -118,47 +95,74 @@ const styles = StyleSheet.create({
     paddingHorizontal: TOKENS.spacing.lg,
     paddingTop: TOKENS.spacing["3xl"],
     paddingBottom: TOKENS.spacing.xl,
+    alignItems: "center",
   },
-  header: {
+  logoArea: {
+    alignItems: "center",
     marginBottom: TOKENS.spacing["3xl"],
-    alignItems: "center",
   },
-  brandTitle: {
-    color: TOKENS.colors.brandPrimary,
-    marginBottom: TOKENS.spacing.xs,
+  logoMark: {
+    marginBottom: TOKENS.spacing.lg,
   },
-  optionsContainer: {
-    gap: TOKENS.spacing.md,
-    flex: 1,
-  },
-  intentCard: {
-    marginBottom: TOKENS.spacing.xs,
-  },
-  cardContent: {
-    alignItems: "center",
-    gap: TOKENS.spacing.lg,
-  },
-  emojiWrapper: {
-    width: 60,
-    height: 60,
-    borderRadius: TOKENS.radius.md,
-    backgroundColor: "rgba(0, 229, 255, 0.05)",
+  logoCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: TOKENS.colors.brandPrimary,
     alignItems: "center",
     justifyContent: "center",
   },
-  emoji: {
-    fontSize: 32,
+  logoInner: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#000000",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  textWrapper: {
-    flex: 1,
+  logoX: {
+    color: TOKENS.colors.brandPrimary,
+    fontWeight: "900",
   },
-  intentTitle: {
-    marginBottom: 4,
+  wordmarkRow: {
+    alignItems: "center",
+    gap: TOKENS.spacing.sm,
+    marginBottom: TOKENS.spacing.md,
+  },
+  sougText: {
+    color: TOKENS.colors.brandPrimary,
+    fontWeight: "900",
+  },
+  xpressText: {
+    color: TOKENS.colors.brandPrimary,
+    fontWeight: "900",
+  },
+  slogan: {
+    color: TOKENS.colors.brandAccent,
+    marginBottom: TOKENS.spacing.xs,
+  },
+  gatewayContainer: {
+    width: "100%",
+    marginTop: TOKENS.spacing["2xl"],
+    marginBottom: TOKENS.spacing.xl,
+  },
+  enterButton: {
+    width: "100%",
+    backgroundColor: TOKENS.colors.brandPrimary,
+    borderRadius: TOKENS.radius.full,
+    paddingVertical: TOKENS.spacing.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  enterButtonText: {
+    color: TOKENS.colors.dark.textOnBrand,
+    fontWeight: "700",
   },
   footer: {
-    marginTop: TOKENS.spacing["2xl"],
+    marginTop: "auto",
     paddingTop: TOKENS.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.05)",
+    borderTopColor: "rgba(255, 255, 255, 0.08)",
+    width: "100%",
   },
 });
