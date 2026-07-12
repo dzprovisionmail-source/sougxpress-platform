@@ -54,3 +54,5 @@ Thumbs.db
 *.diff
 *.orig
 *.rej
+
+apps/mobile/.env.local

@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, TextStyle, StyleSheet, I18nManager } from "react-native";
+import { Text, TextProps, TextStyle, StyleProp, StyleSheet, I18nManager } from "react-native";
 import { TOKENS } from "../../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
 
@@ -8,7 +8,8 @@ interface TypographyProps {
   variant?: "display" | "h1" | "h2" | "h3" | "body" | "caption" | "button";
   color?: "primary" | "secondary" | "disabled" | "brand" | "error" | "success";
   align?: "left" | "center" | "right" | "auto";
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;
+  numberOfLines?: TextProps["numberOfLines"];
   theme?: "dark" | "light" | "ivory";
 }
 
@@ -18,6 +19,7 @@ export const Typography: React.FC<TypographyProps> = ({
   color = "primary",
   align = "auto",
   style,
+  numberOfLines,
   theme = DEFAULT_THEME
 }) => {
   const colors = getThemeColors(theme);
@@ -63,6 +65,7 @@ export const Typography: React.FC<TypographyProps> = ({
 
   return (
     <Text
+    numberOfLines={numberOfLines}
       style={[
         {
           fontFamily: TOKENS.typography.families.arabic,

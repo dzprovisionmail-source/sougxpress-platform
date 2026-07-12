@@ -1,12 +1,12 @@
 import React from "react";
-import { View, StyleSheet, ViewStyle, TouchableOpacity } from "react-native";
+import { View, StyleSheet, StyleProp, ViewStyle, TouchableOpacity } from "react-native";
 import { TOKENS } from "../../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
 
 interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   variant?: "elevated" | "outline" | "flat";
   theme?: "dark" | "light" | "ivory";
 }

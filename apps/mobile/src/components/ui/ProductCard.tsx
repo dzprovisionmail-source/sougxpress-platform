@@ -1,3 +1,4 @@
+import type { StyleProp, ViewStyle } from "react-native";
 import React from "react";
 import { 
   View, 
@@ -18,6 +19,7 @@ interface ProductCardProps {
   image: string;
   storeName?: string;
   onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
   theme?: ThemeType;
 }
 
@@ -27,6 +29,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   image,
   storeName,
   onPress,
+  style,
   theme = DEFAULT_THEME
 }) => {
   const colors = getThemeColors(theme);
@@ -35,7 +38,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <Card 
       onPress={onPress} 
-      style={styles.container}
+      style={[styles.container, style]}
       theme={theme}
     >
       <View style={styles.imageContainer}>
