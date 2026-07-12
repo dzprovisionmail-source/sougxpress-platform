@@ -2,6 +2,12 @@ name: Deploy to Supabase Staging
 
 on:
   workflow_dispatch:
+    inputs:
+      reset_staging:
+        description: 'Reset the staging database before applying migrations'
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   deploy:
@@ -25,8 +31,14 @@ jobs:
         run: |
           # Remove auth stub to avoid conflicts with real Supabase Auth
           rm supabase/migrations/_000_auth_stub.sql
-          # Apply migrations
-          supabase db push
+          
+          if [ "${{ github.event.inputs.reset_staging }}" = "true" ]; then
+            echo "Resetting staging database..."
+            supabase db reset --linked --no-seed --yes
+          else
+            echo "Pushing migrations to staging..."
+            supabase db push --linked --include-all --yes
+          fi
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
