@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -8,15 +8,21 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Typography, Input, Button } from "../ui";
+import { Typography, Input, Button, Card } from "../ui";
 import { TOKENS } from "../../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
-import { Database } from "../../../../../src/types/supabase";
 
 type Role = "customer" | "merchant" | "driver";
+
+interface Zone {
+  id: string;
+  name: string;
+}
 
 interface AuthScreenProps {
   role: Role;
@@ -35,12 +41,89 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [selectedZoneId, setSelectedZoneId] = useState<string>("");
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchZones();
+    checkExistingSession();
+  }, []);
+
+  const fetchZones = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("zones")
+        .select("id, name")
+        .eq("status", "active")
+        .eq("city", "Ain Sefra");
+
+      if (error) throw error;
+      setZones(data || []);
+    } catch (error) {
+      console.error("Error fetching zones:", error);
+    }
+  };
+
+  const checkExistingSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await handleRoleGating(session.user.id);
+      }
+    } catch (error) {
+      console.error("Session check error:", error);
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
+  const handleRoleGating = async (userId: string) => {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+
+    if (profileError || !profile) return;
+
+    if (profile.role !== role) {
+      // Role mismatch - we don't sign out automatically here to allow user to see other roles
+      // but we don't let them proceed in this specific auth flow
+      return;
+    }
+
+    // Check status for specific roles
+    let status = "active";
+    if (role === "customer") {
+      const { data } = await supabase.from("customers").select("status").eq("id", userId).single();
+      status = data?.status || "active";
+    } else if (role === "merchant") {
+      const { data } = await supabase.from("merchants").select("status").eq("id", userId).single();
+      status = data?.status || "pending";
+    } else if (role === "driver") {
+      const { data } = await supabase.from("drivers").select("status").eq("id", userId).single();
+      status = data?.status || "pending";
+    }
+
+    setApprovalStatus(status);
+
+    if (status === "active") {
+      if (role === "customer") {
+        router.replace("/guest-marketplace");
+      } else {
+        // Redirect to role dashboard if exists, else stay
+        // router.replace(`/${role}-dashboard`);
+      }
+    }
+  };
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -57,26 +140,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         });
 
         if (error) throw error;
-
-        // Check profile role
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", data.user.id)
-          .single();
-
-        if (profileError) throw profileError;
-
-        if (profile.role !== role) {
-          await supabase.auth.signOut();
-          throw new Error(`هذا الحساب مسجل كـ ${profile.role} وليس ${role}`);
-        }
-
-        router.replace(role === "customer" ? "/guest-marketplace" : "/");
+        await handleRoleGating(data.user.id);
       } else {
         // Validation for Sign Up
-        if (!firstName || !lastName || !phoneNumber) {
-          Alert.alert("خطأ", "يرجى ملء جميع الحقول المطلوبة");
+        if (!firstName || !lastName || !phoneNumber || !selectedZoneId) {
+          Alert.alert("خطأ", "يرجى ملء جميع الحقول المطلوبة واختيار المنطقة");
           setLoading(false);
           return;
         }
@@ -96,57 +164,42 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
         const userId = data.user.id;
 
-        // 1. Create Profile (Role is handled by RLS/Trigger but we pass it for clarity)
-        const { error: pError } = await supabase
-          .from("profiles")
-          .insert({ id: userId, role });
-        
-        if (pError && !pError.message.includes("already exists")) throw pError;
+        // Provisioning (Idempotent: RLS/Triggers handle profiles)
+        // Note: profiles.role is source of truth, inserted by trigger or manually if allowed
+        await supabase.from("profiles").insert({ id: userId, role }).select().single();
 
-        // 2. Create Role-Specific Record
         if (role === "customer") {
-          const { error: cError } = await supabase.from("customers").insert({
+          await supabase.from("customers").upsert({
             id: userId,
             email,
             first_name: firstName,
             last_name: lastName,
             phone_number: phoneNumber,
+            zone_id: selectedZoneId,
             status: "active",
           });
-          if (cError) throw cError;
         } else if (role === "merchant") {
-          const { error: mError } = await supabase.from("merchants").insert({
+          await supabase.from("merchants").upsert({
             id: userId,
             business_name: businessName,
             contact_email: email,
             contact_phone: phoneNumber,
+            zone_id: selectedZoneId,
             status: "pending",
           });
-          if (mError) throw mError;
         } else if (role === "driver") {
-          const { error: dError } = await supabase.from("drivers").insert({
+          await supabase.from("drivers").upsert({
             id: userId,
             first_name: firstName,
             last_name: lastName,
             email,
             phone_number: phoneNumber,
+            zone_id: selectedZoneId,
             status: "pending",
           });
-          if (dError) throw dError;
         }
 
-        Alert.alert(
-          "نجاح",
-          role === "customer" 
-            ? "تم إنشاء الحساب بنجاح" 
-            : "تم تقديم الطلب بنجاح. يرجى انتظار مراجعة الإدارة."
-        );
-        
-        if (role === "customer") {
-          router.replace("/guest-marketplace");
-        } else {
-          setIsLogin(true);
-        }
+        await handleRoleGating(userId);
       }
     } catch (error: any) {
       Alert.alert("خطأ", error.message || "حدث خطأ ما");
@@ -154,6 +207,40 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // Approval Gating Screens
+  if (approvalStatus && approvalStatus !== "active") {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+        <View style={styles.statusContainer}>
+          <Typography variant="h1" align="center" style={styles.statusTitle}>
+            {approvalStatus === "pending" ? "قيد المراجعة" : "الحساب معطل"}
+          </Typography>
+          <Typography variant="body" color="secondary" align="center" style={styles.statusMessage}>
+            {approvalStatus === "pending" 
+              ? "طلبك قيد المراجعة من قبل الإدارة. سنقوم بتفعيل حسابك قريباً."
+              : "عذراً، تم تعليق أو رفض حسابك. يرجى التواصل مع الدعم الفني."}
+          </Typography>
+          <Button 
+            title="تسجيل الخروج" 
+            variant="outline" 
+            onPress={async () => {
+              await supabase.auth.signOut();
+              setApprovalStatus(null);
+            }} 
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
@@ -183,7 +270,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     placeholder="أحمد"
                     value={firstName}
                     onChangeText={setFirstName}
-                    style={{ flex: 1, marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }}
+                    style={{ flex: 1 }}
                   />
                   <Input
                     label="اللقب"
@@ -208,6 +295,33 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   onChangeText={setPhoneNumber}
                   keyboardType="phone-pad"
                 />
+                
+                <Typography variant="caption" color="secondary" style={styles.label}>
+                  اختر المنطقة (عين صفراء)
+                </Typography>
+                <View style={styles.zonesGrid}>
+                  {zones.map((zone) => (
+                    <TouchableOpacity
+                      key={zone.id}
+                      onPress={() => setSelectedZoneId(zone.id)}
+                      style={[
+                        styles.zoneItem,
+                        { 
+                          borderColor: selectedZoneId === zone.id ? colors.primary : colors.borderSubtle,
+                          backgroundColor: selectedZoneId === zone.id ? "rgba(0, 229, 255, 0.1)" : colors.bgSurface
+                        }
+                      ]}
+                    >
+                      <Typography 
+                        variant="caption" 
+                        align="center"
+                        style={{ color: selectedZoneId === zone.id ? colors.primary : colors.textPrimary }}
+                      >
+                        {zone.name}
+                      </Typography>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </>
             )}
 
@@ -257,6 +371,11 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   scrollContent: {
     padding: TOKENS.spacing.xl,
     paddingTop: TOKENS.spacing["3xl"],
@@ -275,10 +394,39 @@ const styles = StyleSheet.create({
     gap: TOKENS.spacing.md,
     width: "100%",
   },
+  label: {
+    marginBottom: TOKENS.spacing.xs,
+    fontWeight: "600",
+  },
+  zonesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: TOKENS.spacing.sm,
+    marginBottom: TOKENS.spacing.md,
+  },
+  zoneItem: {
+    paddingVertical: TOKENS.spacing.sm,
+    paddingHorizontal: TOKENS.spacing.md,
+    borderRadius: TOKENS.radius.sm,
+    borderWidth: 1,
+    minWidth: "30%",
+  },
   submitBtn: {
     marginTop: TOKENS.spacing.md,
   },
   backBtn: {
     marginTop: TOKENS.spacing.xl,
+  },
+  statusContainer: {
+    flex: 1,
+    justifyContent: "center",
+    padding: TOKENS.spacing.xl,
+    gap: TOKENS.spacing.lg,
+  },
+  statusTitle: {
+    color: TOKENS.colors.brandPrimary,
+  },
+  statusMessage: {
+    marginBottom: TOKENS.spacing.xl,
   },
 });
