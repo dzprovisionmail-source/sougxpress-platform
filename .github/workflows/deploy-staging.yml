@@ -19,6 +19,7 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
     steps:
       - name: Checkout code
@@ -27,15 +28,15 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v3
         with:
-          version: latest
+          version: 2.84.2
 
       - name: Link staging project
         run: |
           supabase link \
-            --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}" \
-            --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
+            --project-ref "$SUPABASE_PROJECT_ID" \
+            --password "$SUPABASE_DB_PASSWORD"
 
       - name: Exclude CI-only auth stub
         run: |
@@ -44,26 +45,48 @@ jobs:
       - name: Apply migrations
         run: |
           if [ "${{ inputs.reset_staging }}" = "true" ]; then
-            echo "Resetting the staging database..."
-            supabase db reset --linked --no-seed --yes
+            echo "Repairing legacy migration history if present..."
+
+            supabase migration repair \
+              20260711 \
+              --status reverted \
+              --linked \
+              --password "$SUPABASE_DB_PASSWORD" || true
+
+            echo "Resetting staging database and applying all migrations..."
+
+            supabase db reset \
+              --linked \
+              --no-seed \
+              --yes
           else
             echo "Applying pending migrations..."
-            supabase db push --linked --include-all --yes
+
+            supabase db push \
+              --linked \
+              --include-all \
+              --yes \
+              --password "$SUPABASE_DB_PASSWORD"
           fi
 
       - name: Verify migration history
         run: |
-          supabase migration list --linked
+          supabase migration list \
+            --linked \
+            --password "$SUPABASE_DB_PASSWORD"
 
       - name: Lint staging database
         run: |
-          supabase db lint --linked --fail-on error
+          supabase db lint \
+            --linked \
+            --fail-on error
 
       - name: Generate TypeScript types
         run: |
           mkdir -p src/types
+
           supabase gen types typescript \
-            --project-id "${{ secrets.SUPABASE_PROJECT_ID }}" \
+            --project-id "$SUPABASE_PROJECT_ID" \
             --schema public \
             > src/types/supabase.ts
 
@@ -71,6 +94,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add src/types/supabase.ts
 
           if git diff --cached --quiet; then
@@ -78,4 +102,4 @@ jobs:
           else
             git commit -m "chore: update Supabase types from staging"
             git push origin HEAD:main
-          fi
+          fi            
