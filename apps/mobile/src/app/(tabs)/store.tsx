@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   Store as StoreIcon, Images, ShoppingBag, CirclePlus, BadgePercent, Clock3, Phone, MapPinned, Globe,
   PackageOpen, ChartColumn, Star, LogOut, SquarePen, BadgeInfo, MessageCircle, Share2
@@ -161,6 +161,14 @@ const StoreScreen = () => {
 
       {/* Store Activity */}
       <ProfileCard icon={<ChartColumn color={colors.primary} size={iconSizes.default} />} title="نشاط المتجر">
+        {isMerchantView && (
+          <Button 
+            title="مركز الطلبات" 
+            onPress={() => router.push('/merchant-orders')} 
+            variant="primary" 
+            style={{ marginBottom: spacing.md }}
+          />
+        )}
         <ProfileRow label="عدد الطلبات" value="120" /> {/* Placeholder */}
         <ProfileRow label="عدد المنتجات" value="50" /> {/* Placeholder */}
         <ProfileRow label="عدد التقييمات" value="30" /> {/* Placeholder */}
