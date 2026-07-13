@@ -1,158 +1,142 @@
-import React from "react";
-import { 
-  TouchableOpacity, 
-  Text, 
-  StyleSheet, 
-  ActivityIndicator, 
-  ViewStyle, 
-  TextStyle,
-  Animated
-} from "react-native";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
+
+import React from 'react';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import { colors } from '../../design/colors';
+import { spacing } from '../../design/spacing';
+import { radius } from '../../design/radius';
+import { typography } from '../../design/typography';
 
 interface ButtonProps {
-  title: string;
+  title?: string;
   onPress: () => void;
-  variant?: "primary" | "secondary" | "outline" | "ghost";
-  size?: "sm" | "md" | "lg";
-  disabled?: boolean;
-  loading?: boolean;
+  variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost';
+  isLoading?: boolean;
+  icon?: React.ReactNode;
   style?: ViewStyle;
   textStyle?: TextStyle;
-  theme?: "dark" | "light" | "ivory";
+  disabled?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
-  variant = "primary",
-  size = "md",
-  disabled = false,
-  loading = false,
+  variant = 'primary',
+  isLoading = false,
+  icon,
   style,
   textStyle,
-  theme = DEFAULT_THEME
+  disabled = false,
 }) => {
-  const colors = getThemeColors(theme);
-  const scaleAnim = new Animated.Value(1);
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.98,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const getVariantStyles = () => {
+  const getButtonStyles = () => {
     switch (variant) {
-      case "secondary":
+      case 'primary':
         return {
-          button: { backgroundColor: colors.bgSurface, borderWidth: 1, borderColor: colors.borderSubtle },
-          text: { color: colors.textPrimary },
+          backgroundColor: colors.primary,
+          borderColor: colors.primary,
         };
-      case "outline":
+      case 'secondary':
         return {
-          button: { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.primary },
-          text: { color: colors.primary },
+          backgroundColor: colors.textSecondary,
+          borderColor: colors.textSecondary,
         };
-      case "ghost":
+      case 'danger':
         return {
-          button: { backgroundColor: "transparent" },
-          text: { color: colors.textSecondary },
+          backgroundColor: colors.error,
+          borderColor: colors.error,
         };
-      case "primary":
+      case 'outline':
+        return {
+          backgroundColor: 'transparent',
+          borderColor: colors.primary,
+          borderWidth: 1,
+        };
+      case 'ghost':
+        return {
+          backgroundColor: 'transparent',
+          borderColor: 'transparent',
+        };
       default:
         return {
-          button: { backgroundColor: colors.primary },
-          text: { color: colors.textOnBrand },
+          backgroundColor: colors.primary,
+          borderColor: colors.primary,
         };
     }
   };
 
-  const getSizeStyles = () => {
-    switch (size) {
-      case "sm":
+  const getButtonTextStyles = () => {
+    switch (variant) {
+      case 'primary':
+      case 'danger':
         return {
-          button: { paddingVertical: TOKENS.spacing.xs, paddingHorizontal: TOKENS.spacing.md, height: 36 },
-          text: { fontSize: TOKENS.typography.sizes.sm },
+          color: colors.white,
         };
-      case "lg":
+      case 'secondary':
+      case 'ghost':
         return {
-          button: { paddingVertical: TOKENS.spacing.lg, paddingHorizontal: TOKENS.spacing.xl, height: 56 },
-          text: { fontSize: TOKENS.typography.sizes.lg },
+          color: colors.text,
         };
-      case "md":
+      case 'outline':
+        return {
+          color: colors.primary,
+        };
       default:
         return {
-          button: { paddingVertical: TOKENS.spacing.md, paddingHorizontal: TOKENS.spacing.lg, height: 48 },
-          text: { fontSize: TOKENS.typography.sizes.base },
+          color: colors.white,
         };
     }
   };
-
-  const variantStyles = getVariantStyles();
-  const sizeStyles = getSizeStyles();
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <TouchableOpacity
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={disabled || loading}
-        activeOpacity={0.8}
-        style={[
-          styles.baseButton,
-          variantStyles.button,
-          sizeStyles.button,
-          disabled && styles.disabledButton,
-          style
-        ]}
-      >
-        {loading ? (
-          <ActivityIndicator color={variant === "primary" ? colors.textOnBrand : colors.primary} />
-        ) : (
-          <Text style={[
-            styles.baseText,
-            variantStyles.text,
-            sizeStyles.text,
-            disabled && styles.disabledText,
-            textStyle
-          ]}>
-            {title}
-          </Text>
-        )}
-      </TouchableOpacity>
-    </Animated.View>
+    <TouchableOpacity
+      style={[
+        styles.buttonBase,
+        getButtonStyles(),
+        style,
+        (isLoading || disabled) && styles.disabledButton,
+      ]}
+      onPress={onPress}
+      disabled={isLoading || disabled}
+    >
+      {isLoading ? (
+        <ActivityIndicator color={getButtonTextStyles().color} />
+      ) : (
+        <>
+          {icon && <>{icon}</>}
+          {title && (
+            <Text style={[
+              styles.buttonTextBase,
+              getButtonTextStyles(),
+              textStyle,
+              icon && styles.buttonTextWithIcon,
+            ]}>
+              {title}
+            </Text>
+          )}
+        </>
+      )}
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  baseButton: {
-    borderRadius: TOKENS.radius.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    ...TOKENS.shadows.premium,
+  buttonBase: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.small,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row-reverse', // RTL support
   },
-  baseText: {
-    fontWeight: "600",
-    textAlign: "center",
-    fontFamily: TOKENS.typography.families.arabic,
+  buttonTextBase: {
+    ...typography.button,
+    textAlign: 'center',
+  },
+  buttonTextWithIcon: {
+    marginRight: spacing.sm, // Space between icon and text in RTL
   },
   disabledButton: {
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  disabledText: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
 });
+
+export default Button;

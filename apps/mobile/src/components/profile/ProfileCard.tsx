@@ -1,6 +1,10 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Card from '../ui/Card';
+import { typography } from '../../design/typography';
+import { colors } from '../../design/colors';
+import { spacing } from '../../design/spacing';
 
 interface ProfileCardProps {
   icon: React.ReactNode;
@@ -10,7 +14,7 @@ interface ProfileCardProps {
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ icon, title, children }) => {
   return (
-    <View style={styles.card}>
+    <Card style={styles.card}>
       <View style={styles.cardHeader}>
         {icon}
         <Text style={styles.cardTitle}>{title}</Text>
@@ -18,33 +22,24 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ icon, title, children }) => {
       <View style={styles.cardContent}>
         {children}
       </View>
-    </View>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFF',
-    borderRadius: 15,
-    marginHorizontal: 20,
-    marginVertical: 10,
-    padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    // Overrides or additional styles for ProfileCard specific layout
+    padding: spacing.md,
   },
   cardHeader: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse', // RTL
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginLeft: 10,
+    ...typography.title,
+    color: colors.text,
+    marginRight: spacing.sm, // Adjust for RTL
   },
   cardContent: {
     // Styles for content inside the card

@@ -1,23 +1,45 @@
 
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { CircleUserRound, Camera } from 'lucide-react-native';
+import { Camera } from 'lucide-react-native';
+import AvatarUploader from './AvatarUploader';
+import { colors } from '../../design/colors';
+import { typography } from '../../design/typography';
+import { spacing } from '../../design/spacing';
+import { radius } from '../../design/radius';
 
-const ProfileHeader = () => {
+interface ProfileHeaderProps {
+  avatarUrl?: string | null;
+  onAvatarUpload?: (url: string) => void;
+  name: string;
+  phoneNumber: string;
+  badgeText: string;
+  description: string;
+}
+
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+  avatarUrl,
+  onAvatarUpload,
+  name,
+  phoneNumber,
+  badgeText,
+  description,
+}) => {
   return (
     <View style={styles.container}>
       <View style={styles.avatarContainer}>
-        <CircleUserRound size={80} color="#000" /> {/* Placeholder for avatar */}
-        <TouchableOpacity style={styles.cameraButton}>
-          <Camera size={20} color="#FFF" />
-        </TouchableOpacity>
+        {onAvatarUpload ? (
+          <AvatarUploader avatarUrl={avatarUrl} onUpload={onAvatarUpload} size={80} />
+        ) : (
+          <AvatarUploader avatarUrl={avatarUrl} onUpload={() => {}} size={80} /> // Non-editable view
+        )}
       </View>
-      <Text style={styles.name}>اسم المستخدم</Text>
-      <Text style={styles.phoneNumber}>+966 50 123 4567</Text>
+      <Text style={styles.name}>{name}</Text>
+      <Text style={styles.phoneNumber}>{phoneNumber}</Text>
       <View style={styles.badgeContainer}>
-        <Text style={styles.badgeText}>⭐ العضوية الذهبية</Text>
+        <Text style={styles.badgeText}>{badgeText}</Text>
       </View>
-      <Text style={styles.description}>أنت من أوائل مستخدمي Soug-XPRESS</Text>
+      <Text style={styles.description}>{description}</Text>
     </View>
   );
 };
@@ -25,54 +47,39 @@ const ProfileHeader = () => {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#FFF',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    padding: spacing.lg,
+    backgroundColor: colors.card,
+    borderBottomLeftRadius: radius.medium,
+    borderBottomRightRadius: radius.medium,
+    ...colors.shadows.medium,
   },
   avatarContainer: {
-    position: 'relative',
-    marginBottom: 10,
-  },
-  cameraButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#FFA500', // Orange accent
-    borderRadius: 20,
-    padding: 8,
+    marginBottom: spacing.sm,
   },
   name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    ...typography.heading,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   phoneNumber: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 10,
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   badgeContainer: {
-    backgroundColor: '#007BFF', // Blue primary
-    borderRadius: 15,
-    paddingVertical: 5,
-    paddingHorizontal: 15,
-    marginBottom: 10,
+    backgroundColor: colors.primary,
+    borderRadius: radius.small,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
   },
   badgeText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 14,
+    color: colors.white,
+    ...typography.subtitle,
   },
   description: {
-    fontSize: 14,
-    color: '#888',
+    ...typography.caption,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
 });

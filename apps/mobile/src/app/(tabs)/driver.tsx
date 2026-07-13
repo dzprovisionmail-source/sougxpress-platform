@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator, Switch } from 'react-native';
 import { Stack } from 'expo-router';
 import {
   CircleUserRound, Camera, Bike, BadgeInfo, Phone, Mail, MapPinned, IdCard, FolderClosed,
@@ -9,11 +9,13 @@ import {
 } from 'lucide-react-native';
 
 import ProfileHeader from '../../components/profile/ProfileHeader';
-import ProfileCard from '../../components/profile/ProfileCard';
-import ProfileRow from '../../components/profile/ProfileRow';
-import ProfileButton from '../../components/profile/ProfileButton';
-import AvatarUploader from '../../components/profile/AvatarUploader';
 import DriverStatusCard from '../../components/profile/DriverStatusCard';
+
+import { Button, Card, ListItem } from '../../design/components'; // Use the new design system components
+import { colors } from '../../design/colors';
+import { spacing } from '../../design/spacing';
+import { typography } from '../../design/typography';
+import { iconSizes } from '../../design/icons';
 
 import useDriver from '../../hooks/useDriver';
 import { supabase } from '../../lib/supabase';
@@ -58,8 +60,8 @@ const DriverScreen = () => {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007BFF" />
-        <Text>Chargement du profil du livreur...</Text>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Chargement du profil du livreur...</Text>
       </View>
     );
   }
@@ -67,7 +69,7 @@ const DriverScreen = () => {
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text>Erreur: {error}</Text>
+        <Text style={styles.errorText}>Erreur: {error}</Text>
       </View>
     );
   }
@@ -75,7 +77,7 @@ const DriverScreen = () => {
   if (!driver) {
     return (
       <View style={styles.centered}>
-        <Text>Profil du livreur introuvable.</Text>
+        <Text style={styles.errorText}>Profil du livreur introuvable.</Text>
       </View>
     );
   }
@@ -85,8 +87,8 @@ const DriverScreen = () => {
       <Stack.Screen options={{ title: 'ملفي المهني' }} />
 
       <ProfileHeader
-        avatarUrl={null} // Placeholder for driver avatar
-        onUpload={handleAvatarUpload}
+        avatarUrl={driver.avatar_url || null}
+        onAvatarUpload={handleAvatarUpload}
         name={driver.full_name}
         phoneNumber={driver.phone}
         badgeText="🚲 موصل Soug-XPRESS"
@@ -107,57 +109,63 @@ const DriverScreen = () => {
       />
 
       {/* Personal Information */}
-      <ProfileCard icon={<BadgeInfo color="#007BFF" size={24} />} title="بياناتي">
-        <ProfileRow icon={<CircleUserRound color="#666" size={20} />} label="الاسم" value={driver.full_name} />
-        <ProfileRow icon={<Phone color="#666" size={20} />} label="الهاتف" value={driver.phone} />
-        <ProfileRow icon={<Mail color="#666" size={20} />} label="البريد الإلكتروني" value={driver.email || ''} /> {/* Assuming email exists */}
-        <ProfileRow icon={<MapPinned color="#666" size={20} />} label="المدينة" value={driver.city || ''} /> {/* Assuming city exists */}
-        <ProfileRow icon={<MapPinned color="#666" size={20} />} label="الحي" value={driver.neighborhood || ''} /> {/* Assuming neighborhood exists */}
-        <ProfileButton label="تعديل" onPress={() => { /* Handle edit */ }} />
-      </ProfileCard>
+      <Card>
+        <ListItem icon={<BadgeInfo color={colors.primary} size={iconSizes.default} />} title="بياناتي" />
+        <ListItem icon={<CircleUserRound color={colors.textSecondary} size={iconSizes.small} />} title="الاسم" value={driver.full_name} />
+        <ListItem icon={<Phone color={colors.textSecondary} size={iconSizes.small} />} title="الهاتف" value={driver.phone} />
+        <ListItem icon={<Mail color={colors.textSecondary} size={iconSizes.small} />} title="البريد الإلكتروني" value={driver.email || ''} />
+        <ListItem icon={<MapPinned color={colors.textSecondary} size={iconSizes.small} />} title="المدينة" value={driver.city || ''} />
+        <ListItem icon={<MapPinned color={colors.textSecondary} size={iconSizes.small} />} title="الحي" value={driver.neighborhood || ''} />
+        <Button title="تعديل" onPress={() => { /* Handle edit */ }} variant="outline" />
+      </Card>
 
       {/* Vehicle Information */}
-      <ProfileCard icon={<Bike color="#007BFF" size={24} />} title="مركبتي">
-        <ProfileRow label="نوع المركبة" value={driver.vehicle_type} />
-        <ProfileRow label="العلامة" value={driver.vehicle_make || ''} /> {/* Placeholder */}
-        <ProfileRow label="اللون" value={driver.vehicle_color || ''} /> {/* Placeholder */}
-        <ProfileRow label="رقم التسجيل" value={driver.license_plate || ''} /> {/* Placeholder */}
-        <ProfileButton label="تعديل بيانات المركبة" onPress={() => { /* Handle edit vehicle data */ }} />
-      </ProfileCard>
+      <Card>
+        <ListItem icon={<Bike color={colors.primary} size={iconSizes.default} />} title="مركبتي" />
+        <ListItem title="نوع المركبة" value={driver.vehicle_type} />
+        <ListItem title="العلامة" value={driver.vehicle_make || ''} />
+        <ListItem title="اللون" value={driver.vehicle_color || ''} />
+        <ListItem title="رقم التسجيل" value={driver.license_plate || ''} />
+        <Button title="تعديل بيانات المركبة" onPress={() => { /* Handle edit vehicle data */ }} variant="outline" />
+      </Card>
 
       {/* Documents */}
-      <ProfileCard icon={<FolderClosed color="#007BFF" size={24} />} title="وثائقي">
-        <ProfileRow label="بطاقة التعريف" value="مرفوعة" /> {/* Placeholder */}
-        <ProfileRow label="رخصة السياقة" value="مرفوعة" /> {/* Placeholder */}
-        <ProfileRow label="وثيقة التأمين" value="مرفوعة" /> {/* Placeholder */}
-        <ProfileRow icon={<ShieldCheck color="#28A745" size={20} />} label="حالة التحقق" value="موثق" /> {/* Placeholder */}
-      </ProfileCard>
+      <Card>
+        <ListItem icon={<FolderClosed color={colors.primary} size={iconSizes.default} />} title="وثائقي" />
+        <ListItem title="بطاقة التعريف" value="مرفوعة" />
+        <ListItem title="رخصة السياقة" value="مرفوعة" />
+        <ListItem title="وثيقة التأمين" value="مرفوعة" />
+        <ListItem icon={<ShieldCheck color={colors.success} size={iconSizes.small} />} title="حالة التحقق" value="موثق" />
+      </Card>
 
       {/* Activity */}
-      <ProfileCard icon={<PackageCheck color="#007BFF" size={24} />} title="نشاطي">
-        <ProfileRow icon={<Package color="#666" size={20} />} label="الطلبات المنجزة" value="200" /> {/* Placeholder */}
-        <ProfileRow icon={<Clock3 color="#666" size={20} />} label="ساعات النشاط" value="150 ساعة" /> {/* Placeholder */}
-        <ProfileRow icon={<Star color="#FFA500" size={20} />} label="التقييم" value="4.8" /> {/* Placeholder */}
-      </ProfileCard>
+      <Card>
+        <ListItem icon={<PackageCheck color={colors.primary} size={iconSizes.default} />} title="نشاطي" />
+        <ListItem icon={<Package color={colors.textSecondary} size={iconSizes.small} />} title="الطلبات المنجزة" value="200" />
+        <ListItem icon={<Clock3 color={colors.textSecondary} size={iconSizes.small} />} title="ساعات النشاط" value="150 ساعة" />
+        <ListItem icon={<Star color={colors.accent} size={iconSizes.small} />} title="التقييم" value="4.8" />
+      </Card>
 
       {/* Settlement */}
-      <ProfileCard icon={<WalletCards color="#007BFF" size={24} />} title="التسوية">
-        <ProfileRow icon={<Hash color="#666" size={20} />} label="عداد الطلبات" value="32 / 50" /> {/* Placeholder */}
-        <ProfileRow icon={<WalletCards color="#666" size={20} />} label="الرصيد المستحق" value="1500.00 د.ج" /> {/* Placeholder */}
-        <ProfileRow icon={<PackageCheck color="#666" size={20} />} label="طلبات مكتملة" value="200" /> {/* Placeholder */}
-        <ProfileRow icon={<Bell color="#666" size={20} />} label="إشعار التسوية" value="قيد الانتظار" /> {/* Placeholder */}
-      </ProfileCard>
+      <Card>
+        <ListItem icon={<WalletCards color={colors.primary} size={iconSizes.default} />} title="التسوية" />
+        <ListItem icon={<Hash color={colors.textSecondary} size={iconSizes.small} />} title="عداد الطلبات" value="32 / 50" />
+        <ListItem icon={<WalletCards color={colors.textSecondary} size={iconSizes.small} />} title="الرصيد المستحق" value="1500.00 د.ج" />
+        <ListItem icon={<PackageCheck color={colors.textSecondary} size={iconSizes.small} />} title="طلبات مكتملة" value="200" />
+        <ListItem icon={<Bell color={colors.textSecondary} size={iconSizes.small} />} title="إشعار التسوية" value="قيد الانتظار" />
+      </Card>
 
       {/* Help */}
-      <ProfileCard icon={<LifeBuoy color="#007BFF" size={24} />} title="المساعدة">
-        <ProfileButton label="تواصل مع الإدارة" onPress={() => { /* Contact admin */ }} />
-        <ProfileButton label="الأسئلة الشائعة" onPress={() => { /* Navigate to FAQ */ }} />
-        <ProfileButton label="سياسة الموصل" onPress={() => { /* Navigate to driver policy */ }} />
-      </ProfileCard>
+      <Card>
+        <ListItem icon={<LifeBuoy color={colors.primary} size={iconSizes.default} />} title="المساعدة" />
+        <Button title="تواصل مع الإدارة" onPress={() => { /* Contact admin */ }} variant="ghost" />
+        <Button title="الأسئلة الشائعة" onPress={() => { /* Navigate to FAQ */ }} variant="ghost" />
+        <Button title="سياسة الموصل" onPress={() => { /* Navigate to driver policy */ }} variant="ghost" />
+      </Card>
 
       {/* Logout */}
       <View style={styles.logoutButtonContainer}>
-        <ProfileButton icon={<LogOut color="#FF0000" size={20} />} label="تسجيل الخروج" onPress={handleLogout} isLast />
+        <Button icon={<LogOut color={colors.error} size={iconSizes.default} />} title="تسجيل الخروج" onPress={handleLogout} variant="danger" />
       </View>
     </ScrollView>
   );
@@ -166,16 +174,27 @@ const DriverScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F2',
+    backgroundColor: colors.backgroundLight,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.backgroundLight,
+  },
+  loadingText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+  },
+  errorText: {
+    ...typography.body,
+    color: colors.error,
+    marginTop: spacing.md,
   },
   logoutButtonContainer: {
-    marginHorizontal: 20,
-    marginVertical: 10,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.md,
   },
 });
 

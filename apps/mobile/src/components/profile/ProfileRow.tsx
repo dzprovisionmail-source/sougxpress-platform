@@ -1,6 +1,9 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import ListItem from '../ui/ListItem';
+import { colors } from '../../design/colors';
+import { typography } from '../../design/typography';
 
 interface ProfileRowProps {
   icon: React.ReactNode;
@@ -10,37 +13,18 @@ interface ProfileRowProps {
 
 const ProfileRow: React.FC<ProfileRowProps> = ({ icon, label, value }) => {
   return (
-    <View style={styles.row}>
-      <View style={styles.iconContainer}>{icon}</View>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
-    </View>
+    <ListItem
+      icon={icon}
+      title={label}
+      value={value}
+      showChevron={false} // ProfileRow doesn't typically have a chevron
+      isLast={false} // This will be handled by the parent component if needed
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row-reverse', // RTL
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
-  },
-  iconContainer: {
-    marginRight: 10,
-  },
-  label: {
-    fontSize: 16,
-    color: '#333',
-    flex: 1,
-    textAlign: 'right', // RTL
-  },
-  value: {
-    fontSize: 16,
-    color: '#666',
-    marginLeft: 10,
-    textAlign: 'left', // RTL
-  },
+  // No specific styles needed here as ListItem handles styling
 });
 
 export default ProfileRow;

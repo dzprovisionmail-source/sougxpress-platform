@@ -1,46 +1,37 @@
-import React from "react";
-import { View, StyleSheet, StyleProp, ViewStyle, TouchableOpacity } from "react-native";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
+
+import React from 'react';
+import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
+import { colors } from '../../design/colors';
+import { radius } from '../../design/radius';
+import { spacing } from '../../design/spacing';
+import { shadows } from '../../design/shadows';
 
 interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
-  style?: StyleProp<ViewStyle>;
-  variant?: "elevated" | "outline" | "flat";
-  theme?: "dark" | "light" | "ivory";
+  style?: ViewStyle;
+  variant?: 'elevated' | 'flat'; // Simplified variants
 }
 
-export const Card: React.FC<CardProps> = ({
+const Card: React.FC<CardProps> = ({
   children,
   onPress,
   style,
-  variant = "elevated",
-  theme = DEFAULT_THEME
+  variant = 'elevated',
 }) => {
-  const colors = getThemeColors(theme);
-  
   const Container = onPress ? TouchableOpacity : View;
 
   const getVariantStyles = () => {
     switch (variant) {
-      case "outline":
+      case 'flat':
         return {
-          backgroundColor: colors.bgSurface,
-          borderWidth: 1,
-          borderColor: colors.borderSubtle,
+          backgroundColor: colors.card,
         };
-      case "flat":
-        return {
-          backgroundColor: colors.bgSurface,
-        };
-      case "elevated":
+      case 'elevated':
       default:
         return {
-          backgroundColor: colors.bgSurface,
-          ...TOKENS.shadows.premium,
-          shadowColor: theme === "dark" ? TOKENS.colors.brandPrimary : "#000000",
-          shadowOpacity: theme === "dark" ? 0.08 : 0.08,
+          backgroundColor: colors.card,
+          ...shadows.medium,
         };
     }
   };
@@ -48,7 +39,7 @@ export const Card: React.FC<CardProps> = ({
   return (
     <Container
       onPress={onPress}
-      activeOpacity={0.9}
+      activeOpacity={onPress ? 0.9 : 1}
       style={[
         styles.baseCard,
         getVariantStyles(),
@@ -62,8 +53,12 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   baseCard: {
-    borderRadius: TOKENS.radius.lg,
-    padding: TOKENS.spacing.lg,
-    overflow: "hidden",
+    borderRadius: radius.medium,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.sm,
+    padding: spacing.md,
+    overflow: 'hidden',
   },
 });
+
+export default Card;

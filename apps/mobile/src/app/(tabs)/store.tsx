@@ -1,19 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import {
-  Store as StoreIcon, Image, Images, ShoppingBag, CirclePlus, BadgePercent, Clock3, Phone, MapPinned, Globe,
-  PackageOpen, ChartColumn, Star, Camera, LogOut, SquarePen, BadgeInfo, Wallet, Eye, MessageCircle, Share2
+  Store as StoreIcon, Images, ShoppingBag, CirclePlus, BadgePercent, Clock3, Phone, MapPinned, Globe,
+  PackageOpen, ChartColumn, Star, LogOut, SquarePen, BadgeInfo, MessageCircle, Share2
 } from 'lucide-react-native';
 
 import StoreHeader from '../../components/profile/StoreHeader';
 import ProfileCard from '../../components/profile/ProfileCard';
 import ProfileRow from '../../components/profile/ProfileRow';
-import ProfileButton from '../../components/profile/ProfileButton';
 import StoreImageGallery from '../../components/profile/StoreImageGallery';
 import StoreProductManagement from '../../components/profile/StoreProductManagement';
 import StoreInformationCard from '../../components/profile/StoreInformationCard';
+
+import { Button } from '../../design/components';
+import { colors } from '../../design/colors';
+import { spacing } from '../../design/spacing';
+import { typography } from '../../design/typography';
+import { iconSizes } from '../../design/icons';
 
 import useStore from '../../hooks/useStore';
 import { supabase } from '../../lib/supabase';
@@ -47,7 +52,7 @@ const StoreScreen = () => {
   if (!storeId) {
     return (
       <View style={styles.centered}>
-        <Text>ID du magasin manquant.</Text>
+        <Text style={styles.errorText}>ID du magasin manquant.</Text>
       </View>
     );
   }
@@ -55,8 +60,8 @@ const StoreScreen = () => {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007BFF" />
-        <Text>Chargement du magasin...</Text>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Chargement du magasin...</Text>
       </View>
     );
   }
@@ -64,7 +69,7 @@ const StoreScreen = () => {
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text>Erreur: {error}</Text>
+        <Text style={styles.errorText}>Erreur: {error}</Text>
       </View>
     );
   }
@@ -72,7 +77,7 @@ const StoreScreen = () => {
   if (!store) {
     return (
       <View style={styles.centered}>
-        <Text>Magasin introuvable.</Text>
+        <Text style={styles.errorText}>Magasin introuvable.</Text>
       </View>
     );
   }
@@ -139,15 +144,15 @@ const StoreScreen = () => {
 
       {/* Offers */}
       {isMerchantView && (
-        <ProfileCard icon={<BadgePercent color="#007BFF" size={24} />} title="العروض">
-          <ProfileButton label="إنشاء عرض" onPress={() => console.log('Create Offer')} />
-          <ProfileButton label="تعديل عرض" onPress={() => console.log('Edit Offer')} />
-          <ProfileButton label="حذف عرض" onPress={() => console.log('Delete Offer')} />
+        <ProfileCard icon={<BadgePercent color={colors.primary} size={iconSizes.default} />} title="العروض">
+          <Button title="إنشاء عرض" onPress={() => console.log('Create Offer')} variant="ghost" />
+          <Button title="تعديل عرض" onPress={() => console.log('Edit Offer')} variant="ghost" />
+          <Button title="حذف عرض" onPress={() => console.log('Delete Offer')} variant="ghost" />
         </ProfileCard>
       )}
 
       {/* Working Hours */}
-      <ProfileCard icon={<Clock3 color="#007BFF" size={24} />} title="أوقات العمل">
+      <ProfileCard icon={<Clock3 color={colors.primary} size={iconSizes.default} />} title="أوقات العمل">
         <ProfileRow label="وقت الفتح" value={store.opens_at} />
         <ProfileRow label="وقت الغلق" value={store.closes_at} />
         <ProfileRow label="أيام العمل" value="كل الأيام" /> {/* Placeholder */}
@@ -155,7 +160,7 @@ const StoreScreen = () => {
       </ProfileCard>
 
       {/* Store Activity */}
-      <ProfileCard icon={<ChartColumn color="#007BFF" size={24} />} title="نشاط المتجر">
+      <ProfileCard icon={<ChartColumn color={colors.primary} size={iconSizes.default} />} title="نشاط المتجر">
         <ProfileRow label="عدد الطلبات" value="120" /> {/* Placeholder */}
         <ProfileRow label="عدد المنتجات" value="50" /> {/* Placeholder */}
         <ProfileRow label="عدد التقييمات" value="30" /> {/* Placeholder */}
@@ -163,16 +168,16 @@ const StoreScreen = () => {
       </ProfileCard>
 
       {/* Contact */}
-      <ProfileCard icon={<MessageCircle color="#007BFF" size={24} />} title="التواصل">
-        <ProfileButton icon={<Phone color="#666" size={20} />} label="اتصال" onPress={() => console.log('Call')} />
-        <ProfileButton icon={<Phone color="#666" size={20} />} label="واتساب" onPress={() => console.log('WhatsApp')} />
-        <ProfileButton icon={<Share2 color="#666" size={20} />} label="مشاركة المتجر" onPress={() => console.log('Share Store')} />
+      <ProfileCard icon={<MessageCircle color={colors.primary} size={iconSizes.default} />} title="التواصل">
+        <Button icon={<Phone color={colors.textSecondary} size={iconSizes.small} />} title="اتصال" onPress={() => console.log('Call')} variant="ghost" />
+        <Button icon={<Phone color={colors.textSecondary} size={iconSizes.small} />} title="واتساب" onPress={() => console.log('WhatsApp')} variant="ghost" />
+        <Button icon={<Share2 color={colors.textSecondary} size={iconSizes.small} />} title="مشاركة المتجر" onPress={() => console.log('Share Store')} variant="ghost" />
       </ProfileCard>
 
       {/* Logout */}
       {isMerchantView && (
         <View style={styles.logoutButtonContainer}>
-          <ProfileButton icon={<LogOut color="#FF0000" size={20} />} label="تسجيل الخروج" onPress={handleLogout} isLast />
+          <Button icon={<LogOut color={colors.error} size={iconSizes.default} />} title="تسجيل الخروج" onPress={handleLogout} variant="danger" />
         </View>
       )}
     </ScrollView>
@@ -182,16 +187,27 @@ const StoreScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F2',
+    backgroundColor: colors.backgroundLight,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.backgroundLight,
+  },
+  loadingText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+  },
+  errorText: {
+    ...typography.body,
+    color: colors.error,
+    marginTop: spacing.md,
   },
   logoutButtonContainer: {
-    marginHorizontal: 20,
-    marginVertical: 10,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.md,
   },
 });
 
