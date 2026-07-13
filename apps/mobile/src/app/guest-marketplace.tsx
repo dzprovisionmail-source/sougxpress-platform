@@ -11,17 +11,17 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { 
   Typography, 
   SearchBar, 
-  ProductCard, 
   CategoryItem, 
   SectionHeader, 
   BottomNavigation,
   MarketplaceHeader,
-  Card
+  StoreCard,
 } from "../components/ui";
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "../constants/theme";
@@ -38,7 +38,8 @@ interface HeroSlide {
   title: string;
   description: string;
   buttonLabel: string;
-  store: string;
+  storeId: string;
+  storeName: string;
 }
 
 const HERO_SLIDES: HeroSlide[] = [
@@ -48,7 +49,8 @@ const HERO_SLIDES: HeroSlide[] = [
     title: "عروض الأسبوع",
     description: "خصومات حصرية على الخضروات والفواكه الطازجة",
     buttonLabel: "تسوق الآن",
-    store: "سوبر ماركت الوفاء",
+    storeId: "5",
+    storeName: "سوبر ماركت الوفاء",
   },
   {
     id: "2",
@@ -56,7 +58,8 @@ const HERO_SLIDES: HeroSlide[] = [
     title: "متجر جديد في السوق",
     description: "مخبزة السعادة تفتح أبوابها — خبز طازج يومياً",
     buttonLabel: "اكتشف المتجر",
-    store: "مخبزة السعادة",
+    storeId: "2",
+    storeName: "مخبزة السعادة",
   },
   {
     id: "3",
@@ -64,7 +67,8 @@ const HERO_SLIDES: HeroSlide[] = [
     title: "توصيل مجاني",
     description: "لأول طلب لك — يوصلك لبابك بدون رسوم",
     buttonLabel: "اطلب الآن",
-    store: "سوق إكسبريس",
+    storeId: "1",
+    storeName: "واحة عين صفراء",
   },
 ];
 
@@ -76,19 +80,79 @@ interface StoreItem {
   name: string;
   category: string;
   rating: string;
+  deliveryTime?: string;
+  coverImage?: string;
+  isOpen?: boolean;
+  isFeatured?: boolean;
 }
 
 const NEW_STORES: StoreItem[] = [
-  { id: "1", name: "واحة عين صفراء", category: "مواد غذائية", rating: "4.7" },
-  { id: "2", name: "مخبزة السعادة", category: "مخبوزات", rating: "4.9" },
-  { id: "3", name: "ملحمة النور", category: "لحوم طازجة", rating: "4.8" },
-  { id: "4", name: "بقالة الخير", category: "بقالة", rating: "4.5" },
+  { 
+    id: "1", 
+    name: "واحة عين صفراء", 
+    category: "مواد غذائية", 
+    rating: "4.7",
+    deliveryTime: "25-35 دقيقة",
+    isOpen: true,
+    isFeatured: false,
+  },
+  { 
+    id: "2", 
+    name: "مخبزة السعادة", 
+    category: "مخبوزات", 
+    rating: "4.9",
+    deliveryTime: "15-25 دقيقة",
+    isOpen: true,
+    isFeatured: false,
+  },
+  { 
+    id: "3", 
+    name: "ملحمة النور", 
+    category: "لحوم طازجة", 
+    rating: "4.8",
+    deliveryTime: "30-40 دقيقة",
+    isOpen: true,
+    isFeatured: false,
+  },
+  { 
+    id: "4", 
+    name: "بقالة الخير", 
+    category: "بقالة", 
+    rating: "4.5",
+    deliveryTime: "20-30 دقيقة",
+    isOpen: false,
+    isFeatured: false,
+  },
 ];
 
 const FEATURED_STORES: StoreItem[] = [
-  { id: "5", name: "سوبر ماركت الوفاء", category: "مواد غذائية", rating: "4.8" },
-  { id: "6", name: "حلويات الذوق الرفيع", category: "حلويات", rating: "4.6" },
-  { id: "7", name: "خضروات السهبة", category: "خضروات", rating: "4.7" },
+  { 
+    id: "5", 
+    name: "سوبر ماركت الوفاء", 
+    category: "مواد غذائية", 
+    rating: "4.8",
+    deliveryTime: "20-30 دقيقة",
+    isOpen: true,
+    isFeatured: true,
+  },
+  { 
+    id: "6", 
+    name: "حلويات الذوق الرفيع", 
+    category: "حلويات", 
+    rating: "4.6",
+    deliveryTime: "30-40 دقيقة",
+    isOpen: true,
+    isFeatured: true,
+  },
+  { 
+    id: "7", 
+    name: "خضروات السهبة", 
+    category: "خضروات", 
+    rating: "4.7",
+    deliveryTime: "25-35 دقيقة",
+    isOpen: true,
+    isFeatured: true,
+  },
 ];
 
 const CATEGORIES = [
@@ -105,6 +169,7 @@ export default function GuestMarketplaceScreen() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("home");
   const [activeSlide, setActiveSlide] = useState(0);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
   
   const colors = getThemeColors(theme);
@@ -117,57 +182,50 @@ export default function GuestMarketplaceScreen() {
   };
 
   const renderHeroSlide = ({ item }: { item: HeroSlide }) => (
-    <View style={[styles.heroSlide, { backgroundColor: colors.bgElevated }]}>
-      {/* Image/Video Placeholder */}
-      <View style={[styles.heroImagePlaceholder, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-        <Typography variant="caption" color="disabled" align="center">
-          صورة / فيديو
-        </Typography>
+    <TouchableOpacity 
+      style={[styles.heroSlide, { backgroundColor: colors.bgElevated }]}
+      activeOpacity={0.8}
+      onPress={() => router.push("/store-details")}
+    >
+      {/* Cover Image with Gradient Overlay */}
+      <View style={styles.heroImageContainer}>
+        <Image 
+          source={{ uri: item.image || "https://via.placeholder.com/400x200" }} 
+          style={[styles.heroImage, { backgroundColor: colors.bgSurface }]}
+          resizeMode="cover"
+        />
+        <View 
+          style={[
+            styles.heroOverlay, 
+            { backgroundColor: "rgba(0, 0, 0, 0.4)" }
+          ]} 
+        />
       </View>
 
       {/* Slide Content */}
       <View style={styles.heroTextContent}>
-        <Typography variant="h2" style={styles.heroTitle}>
+        <Typography variant="h2" style={[styles.heroTitle, { color: colors.primary }]}>
           {item.title}
         </Typography>
         <Typography variant="body" color="secondary" numberOfLines={2}>
           {item.description}
         </Typography>
-        <TouchableOpacity style={styles.heroActionBtn}>
-          <Typography variant="button" style={styles.heroActionText}>
+        <TouchableOpacity 
+          style={[styles.heroActionBtn, { backgroundColor: colors.primary }]}
+          activeOpacity={0.7}
+        >
+          <Typography 
+            variant="button" 
+            style={[styles.heroActionText, { color: colors.textOnBrand }]}
+          >
             {item.buttonLabel}
           </Typography>
         </TouchableOpacity>
         <Typography variant="caption" color="disabled" style={styles.heroStoreLabel}>
-          {item.store}
+          {item.storeName}
         </Typography>
       </View>
-    </View>
-  );
-
-  const renderStoreCard = (store: StoreItem, index: number) => (
-    <Card
-      key={store.id}
-      variant="outline"
-      theme={theme}
-      style={styles.storeCard}
-      onPress={() => router.push("/store-details")}
-    >
-      <View style={[styles.storeRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-        <View style={[styles.storeIcon, { backgroundColor: colors.bgSurface }]}>
-          <Typography variant="h2" color="brand">
-            {store.name[0]}
-          </Typography>
-        </View>
-        <View style={styles.storeInfo}>
-          <Typography variant="h3">{store.name}</Typography>
-          <Typography variant="caption" color="secondary">{store.category}</Typography>
-        </View>
-        <View style={[styles.ratingBadge, { backgroundColor: colors.bgSurface }]}>
-          <Typography variant="caption" style={{ color: TOKENS.colors.brandAccent }}>★ {store.rating}</Typography>
-        </View>
-      </View>
-    </Card>
+    </TouchableOpacity>
   );
 
   return (
@@ -209,14 +267,17 @@ export default function GuestMarketplaceScreen() {
           {/* Dots Indicator */}
           <View style={[styles.dotsContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             {HERO_SLIDES.map((_, index) => (
-              <View
+              <TouchableOpacity
                 key={index}
                 style={[
                   styles.dot,
                   {
-                    backgroundColor: activeSlide === index ? TOKENS.colors.brandPrimary : colors.borderSubtle,
+                    backgroundColor: activeSlide === index ? colors.primary : colors.borderSubtle,
                   },
                 ]}
+                onPress={() => {
+                  heroScrollRef.current?.scrollToIndex({ index, animated: true });
+                }}
               />
             ))}
           </View>
@@ -229,63 +290,64 @@ export default function GuestMarketplaceScreen() {
             horizontal 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[
-              styles.horizontalScroll, 
+              styles.categoriesScroll, 
               { flexDirection: isRTL ? "row-reverse" : "row" }
             ]}
           >
             {CATEGORIES.map(cat => (
-              <CategoryItem key={cat.id} name={cat.name} icon={cat.icon} theme={theme} />
+              <CategoryItem 
+                key={cat.id} 
+                name={cat.name} 
+                icon={cat.icon} 
+                theme={theme}
+                isActive={activeCategory === cat.id}
+                onPress={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
+              />
             ))}
           </ScrollView>
-        </View>
-
-        {/* New Stores — محلات جديدة */}
-        <View style={styles.section}>
-          <SectionHeader title="محلات جديدة" onSeeAll={() => {}} theme={theme} />
-          {NEW_STORES.map((store, index) => renderStoreCard(store, index))}
         </View>
 
         {/* Featured Stores — محلات مميزة */}
         <View style={styles.section}>
           <SectionHeader title="محلات مميزة" onSeeAll={() => {}} theme={theme} />
-          {FEATURED_STORES.map((store, index) => renderStoreCard(store, index))}
-        </View>
-
-        {/* Products Section — Below stores (not primary focus) */}
-        <View style={styles.section}>
-          <SectionHeader title="منتجات" onSeeAll={() => {}} theme={theme} />
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[
-              styles.horizontalScroll, 
+              styles.storesScroll, 
               { flexDirection: isRTL ? "row-reverse" : "row" }
             ]}
           >
-            <ProductCard 
-              title="طماطم طازجة" 
-              price="120 دج" 
-              storeName="محل الخير"
-              image=""
-              theme={theme}
-              onPress={() => router.push("/product-details")}
-            />
-            <ProductCard 
-              title="خبز تقليدي" 
-              price="10 دج" 
-              storeName="مخبزة السعادة"
-              image=""
-              theme={theme}
-              onPress={() => router.push("/product-details")}
-            />
-            <ProductCard 
-              title="زيت زيتون" 
-              price="850 دج" 
-              storeName="واحة عين صفراء"
-              image=""
-              theme={theme}
-              onPress={() => router.push("/product-details")}
-            />
+            {FEATURED_STORES.map((store) => (
+              <StoreCard
+                key={store.id}
+                {...store}
+                theme={theme}
+                onPress={() => router.push("/store-details")}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* New Stores — جميع المحلات / محلات جديدة */}
+        <View style={styles.section}>
+          <SectionHeader title="محلات جديدة" onSeeAll={() => {}} theme={theme} />
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.storesScroll, 
+              { flexDirection: isRTL ? "row-reverse" : "row" }
+            ]}
+          >
+            {NEW_STORES.map((store) => (
+              <StoreCard
+                key={store.id}
+                {...store}
+                theme={theme}
+                onPress={() => router.push("/store-details")}
+              />
+            ))}
           </ScrollView>
         </View>
 
@@ -333,9 +395,15 @@ const styles = StyleSheet.create({
   section: {
     marginTop: TOKENS.spacing.md,
   },
-  horizontalScroll: {
+  categoriesScroll: {
     paddingHorizontal: TOKENS.spacing.lg,
     paddingBottom: TOKENS.spacing.sm,
+    gap: TOKENS.spacing.sm,
+  },
+  storesScroll: {
+    paddingHorizontal: TOKENS.spacing.lg,
+    paddingBottom: TOKENS.spacing.sm,
+    gap: TOKENS.spacing.sm,
   },
   heroListContent: {
     paddingHorizontal: TOKENS.spacing.md,
@@ -346,23 +414,34 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginHorizontal: TOKENS.spacing.xs,
   },
-  heroImagePlaceholder: {
+  heroImageContainer: {
     width: "100%",
-    height: 140,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderStyle: "dashed",
+    height: 160,
+    position: "relative",
+  },
+  heroImage: {
+    width: "100%",
+    height: "100%",
+    borderTopLeftRadius: TOKENS.radius.lg,
+    borderTopRightRadius: TOKENS.radius.lg,
+  },
+  heroOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopLeftRadius: TOKENS.radius.lg,
+    borderTopRightRadius: TOKENS.radius.lg,
   },
   heroTextContent: {
     padding: TOKENS.spacing.lg,
     gap: TOKENS.spacing.xs,
   },
   heroTitle: {
-    color: TOKENS.colors.brandPrimary,
+    fontWeight: "700",
   },
   heroActionBtn: {
-    backgroundColor: TOKENS.colors.brandPrimary,
     borderRadius: TOKENS.radius.full,
     paddingVertical: TOKENS.spacing.xs,
     paddingHorizontal: TOKENS.spacing.md,
@@ -370,7 +449,6 @@ const styles = StyleSheet.create({
     marginTop: TOKENS.spacing.xs,
   },
   heroActionText: {
-    color: TOKENS.colors.dark.textOnBrand,
     fontWeight: "600",
   },
   heroStoreLabel: {
@@ -382,36 +460,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: TOKENS.spacing.sm,
     gap: TOKENS.spacing.xs,
+    paddingHorizontal: TOKENS.spacing.lg,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-  },
-  storeCard: {
-    marginHorizontal: TOKENS.spacing.lg,
-    marginBottom: TOKENS.spacing.md,
-    padding: TOKENS.spacing.md,
-  },
-  storeRow: {
-    alignItems: "center",
-    gap: TOKENS.spacing.md,
-  },
-  storeIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  storeInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  ratingBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
   },
   themeToggle: {
     padding: TOKENS.spacing.lg,

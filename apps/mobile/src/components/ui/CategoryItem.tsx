@@ -3,7 +3,8 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   View,
-  ViewStyle
+  ViewStyle,
+  I18nManager
 } from "react-native";
 import { Typography } from "./Typography";
 import { TOKENS } from "../../constants/tokens";
@@ -16,6 +17,7 @@ interface CategoryItemProps {
   onPress?: () => void;
   style?: ViewStyle;
   theme?: ThemeType;
+  isActive?: boolean;
 }
 
 export const CategoryItem: React.FC<CategoryItemProps> = ({
@@ -23,44 +25,63 @@ export const CategoryItem: React.FC<CategoryItemProps> = ({
   icon,
   onPress,
   style,
-  theme = DEFAULT_THEME
+  theme = DEFAULT_THEME,
+  isActive = false
 }) => {
   const colors = getThemeColors(theme);
+  const isRTL = I18nManager.isRTL;
 
   return (
     <TouchableOpacity 
       onPress={onPress} 
-      style={[styles.container, style]}
+      style={[
+        styles.container,
+        {
+          backgroundColor: isActive ? colors.primary : colors.bgSurface,
+          borderColor: isActive ? colors.primary : colors.borderSubtle,
+        },
+        style
+      ]}
       activeOpacity={0.7}
     >
-      <View style={[styles.iconContainer, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-        <Ionicons name={icon} size={28} color={colors.primary} />
+      <View style={[styles.content, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+        <Ionicons 
+          name={icon} 
+          size={18} 
+          color={isActive ? colors.textOnBrand : colors.primary}
+          style={{
+            marginRight: isRTL ? 0 : TOKENS.spacing.sm,
+            marginLeft: isRTL ? TOKENS.spacing.sm : 0,
+          }}
+        />
+        <Typography 
+          variant="caption" 
+          style={{
+            color: isActive ? colors.textOnBrand : colors.textPrimary,
+            fontWeight: "600",
+          }}
+        >
+          {name}
+        </Typography>
       </View>
-      <Typography variant="caption" align="center" style={styles.text}>
-        {name}
-      </Typography>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
-    marginRight: TOKENS.spacing.lg,
-    width: 70,
-  },
-  iconContainer: {
-    width: 60,
-    height: 60,
+    paddingHorizontal: TOKENS.spacing.md,
+    paddingVertical: TOKENS.spacing.sm,
     borderRadius: TOKENS.radius.full,
     borderWidth: 1,
+    marginRight: TOKENS.spacing.md,
+    marginBottom: TOKENS.spacing.md,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  content: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: TOKENS.spacing.xs,
-    ...TOKENS.shadows.premium,
-    shadowOpacity: 0.05,
+    gap: TOKENS.spacing.sm,
   },
-  text: {
-    fontWeight: "500",
-  }
 });

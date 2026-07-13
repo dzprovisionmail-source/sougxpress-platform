@@ -4,6 +4,7 @@ export * from "./Input";
 export * from "./Typography";
 export * from "./SearchBar";
 export * from "./ProductCard";
+export * from "./StoreCard";
 export * from "./CategoryItem";
 export * from "./SectionHeader";
 export * from "./BottomNavigation";
