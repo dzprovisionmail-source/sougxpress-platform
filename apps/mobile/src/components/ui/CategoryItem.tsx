@@ -56,6 +56,7 @@ export const CategoryItem: React.FC<CategoryItemProps> = ({
         />
         <Typography 
           variant="caption" 
+          align="center"
           style={{
             color: isActive ? colors.textOnBrand : colors.textPrimary,
             fontWeight: "600",

@@ -80,6 +80,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
           >
             <Typography 
               variant="caption" 
+              align="center"
               style={{ color: colors.textOnBrand, fontWeight: "600" }}
             >
               {isOpen ? "مفتوح" : "مغلق"}
@@ -96,6 +97,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
             >
               <Typography 
                 variant="caption" 
+                align="center"
                 style={{ color: colors.textOnBrand, fontWeight: "600" }}
               >
                 مميز
@@ -111,6 +113,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         <Typography 
           variant="h3" 
           numberOfLines={1} 
+          align="right"
           style={styles.storeName}
         >
           {name}
@@ -121,6 +124,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
           variant="caption" 
           color="secondary" 
           numberOfLines={1}
+          align="right"
           style={styles.category}
         >
           {category}
@@ -138,6 +142,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
             />
             <Typography 
               variant="caption" 
+              align="right"
               style={{ fontWeight: "600", color: colors.textPrimary }}
             >
               {rating}
@@ -155,6 +160,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
             <Typography 
               variant="caption" 
               color="secondary"
+              align="right"
             >
               {deliveryTime}
             </Typography>

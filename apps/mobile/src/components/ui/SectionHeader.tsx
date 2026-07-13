@@ -24,13 +24,13 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
 
   return (
     <View style={[styles.container, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-      <Typography variant="h2">
+      <Typography variant="h2" align="right">
         {title}
       </Typography>
       
       {onSeeAll && (
         <TouchableOpacity onPress={onSeeAll} style={styles.button}>
-          <Typography variant="caption" color="brand" style={styles.seeAllText}>
+          <Typography variant="caption" color="brand" align="right" style={styles.seeAllText}>
             {"عرض الكل"}
           </Typography>
         </TouchableOpacity>

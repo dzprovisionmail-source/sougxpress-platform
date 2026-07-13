@@ -101,11 +101,11 @@ export default function RoleSelectionScreen() {
                       />
                     </View>
                   )}
-                  <View style={styles.textWrapper}>
-                    <Typography variant="h3" style={styles.intentTitle}>
+                  <View style={[styles.textWrapper, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+                    <Typography variant="h3" align="right" style={styles.intentTitle}>
                       {option.titleAr}
                     </Typography>
-                    <Typography variant="caption" color="secondary">
+                    <Typography variant="caption" color="secondary" align="right">
                       {option.descriptionAr}
                     </Typography>
                   </View>

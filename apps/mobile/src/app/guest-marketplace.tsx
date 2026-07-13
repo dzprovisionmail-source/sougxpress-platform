@@ -187,27 +187,53 @@ export default function GuestMarketplaceScreen() {
       activeOpacity={0.8}
       onPress={() => router.push("/store-details")}
     >
-      {/* Cover Image with Gradient Overlay */}
+      {/* Cover Image with Branded Placeholder */}
       <View style={styles.heroImageContainer}>
-        <Image 
-          source={{ uri: item.image || "https://via.placeholder.com/400x200" }} 
-          style={[styles.heroImage, { backgroundColor: colors.bgSurface }]}
-          resizeMode="cover"
-        />
+        {item.image ? (
+          <Image 
+            source={{ uri: item.image }} 
+            style={[styles.heroImage, { backgroundColor: colors.bgSurface }]}
+            resizeMode="cover"
+          />
+        ) : (
+          <View 
+            style={[
+              styles.heroImage,
+              {
+                backgroundColor: colors.bgElevated,
+                justifyContent: "center",
+                alignItems: "center",
+              }
+            ]}
+          >
+            <Typography variant="caption" color="disabled">
+              صورة
+            </Typography>
+          </View>
+        )}
         <View 
           style={[
             styles.heroOverlay, 
-            { backgroundColor: "rgba(0, 0, 0, 0.4)" }
+            { backgroundColor: "rgba(0, 0, 0, 0.35)" }
           ]} 
         />
       </View>
 
-      {/* Slide Content */}
-      <View style={styles.heroTextContent}>
-        <Typography variant="h2" style={[styles.heroTitle, { color: colors.primary }]}>
+      {/* Slide Content — Right-aligned for Arabic RTL */}
+      <View style={[styles.heroTextContent, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+        <Typography 
+          variant="h2" 
+          align="right"
+          style={[styles.heroTitle, { color: colors.primary }]}
+        >
           {item.title}
         </Typography>
-        <Typography variant="body" color="secondary" numberOfLines={2}>
+        <Typography 
+          variant="body" 
+          color="secondary" 
+          numberOfLines={2}
+          align="right"
+        >
           {item.description}
         </Typography>
         <TouchableOpacity 
@@ -216,12 +242,18 @@ export default function GuestMarketplaceScreen() {
         >
           <Typography 
             variant="button" 
+            align="center"
             style={[styles.heroActionText, { color: colors.textOnBrand }]}
           >
             {item.buttonLabel}
           </Typography>
         </TouchableOpacity>
-        <Typography variant="caption" color="disabled" style={styles.heroStoreLabel}>
+        <Typography 
+          variant="caption" 
+          color="disabled" 
+          align="right"
+          style={styles.heroStoreLabel}
+        >
           {item.storeName}
         </Typography>
       </View>
@@ -365,7 +397,7 @@ export default function GuestMarketplaceScreen() {
                   theme === t && { borderColor: colors.primary, backgroundColor: colors.bgSurface }
                 ]}
               >
-                <Typography variant="caption" color={theme === t ? "brand" : "secondary"}>
+                <Typography variant="caption" color={theme === t ? "brand" : "secondary"} align="center">
                   {t === "dark" ? "داكن" : t === "light" ? "فاتح" : "عاجي"}
                 </Typography>
               </TouchableOpacity>

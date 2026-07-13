@@ -56,18 +56,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       </View>
       
       <View style={styles.content}>
-        <Typography variant="h3" numberOfLines={1} style={styles.title}>
+        <Typography variant="h3" numberOfLines={1} align="right" style={styles.title}>
           {title}
         </Typography>
         
         {storeName && (
-          <Typography variant="caption" color="secondary" numberOfLines={1}>
+          <Typography variant="caption" color="secondary" numberOfLines={1} align="right">
             {storeName}
           </Typography>
         )}
         
         <View style={[styles.footer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          <Typography variant="h2" color="brand">
+          <Typography variant="h2" color="brand" align="right">
             {price}
           </Typography>
           <TouchableOpacity style={styles.addButton} activeOpacity={0.7}>
