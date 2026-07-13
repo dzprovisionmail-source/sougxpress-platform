@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { CircleUserRound, Store, Bike } from 'lucide-react-native';
+import { CircleUserRound, Store, Bike, Home } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -12,6 +12,13 @@ export default function TabLayout() {
       tabBarStyle: { backgroundColor: '#FFF' },
       headerShown: false,
     }}>
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: 'الرئيسية',
+          tabBarIcon: ({ color }) => <Home color={color} size={24} />,
+        }}
+      />
       <Tabs.Screen
         name="profile"
         options={{

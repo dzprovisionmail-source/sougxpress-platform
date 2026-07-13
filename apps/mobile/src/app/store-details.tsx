@@ -1,252 +1,277 @@
-import React, { useState } from "react";
-import { 
-  StyleSheet, 
-  View, 
-  ScrollView, 
-  SafeAreaView, 
-  Image, 
-  TouchableOpacity, 
-  I18nManager,
-  StatusBar
-} from "react-native";
-import { 
-  Typography, 
-  SearchBar, 
-  ProductCard, 
-  SectionHeader, 
-  Badge,
-  Card
-} from "../components/ui";
-import { TOKENS } from "../constants/tokens";
-import { getThemeColors, DEFAULT_THEME, ThemeType } from "../constants/theme";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { ShoppingCart, Star, MapPin, Phone, MessageCircle, Share2 } from 'lucide-react-native';
 
-export default function StoreDetailsScreen() {
+import StoreHeader from '../../components/profile/StoreHeader';
+import { ProductCard, Card, Button } from '../../design/components';
+import { colors } from '../../design/colors';
+import { spacing } from '../../design/spacing';
+import { typography } from '../../design/typography';
+import { iconSizes } from '../../design/icons';
+
+import useStore from '../../hooks/useStore';
+import { useStoreProducts } from '../../hooks/useProducts';
+import useCart from '../../hooks/useCart';
+import { Product } from '../../types/schema-03-core';
+
+const StoreDetailsScreen = () => {
   const router = useRouter();
-  const [theme] = useState<ThemeType>(DEFAULT_THEME);
-  const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("all");
-  
-  const colors = getThemeColors(theme);
-  const isRTL = I18nManager.isRTL;
+  const { id } = useLocalSearchParams();
+  const storeId = typeof id === 'string' ? id : undefined;
 
-  // Mock Data
-  const store = {
-    name: "سوبر ماركت الوفاء",
-    description: "أفضل المنتجات الطازجة والمواد الغذائية في عين صفراء. جودة عالية وتوصيل سريع لباب منزلك.",
-    rating: "4.8",
-    deliveryTime: "25-35 دقيقة",
-    deliveryFee: "150 دج",
-    coverImage: "https://via.placeholder.com/800x400",
-    logo: "https://via.placeholder.com/100",
-    categories: [
-      { id: "all", name: "الكل" },
-      { id: "veg", name: "خضروات" },
-      { id: "fruit", name: "فواكه" },
-      { id: "dairy", name: "ألبان" },
-    ]
+  const { store, loading: storeLoading, error: storeError } = useStore(storeId || '');
+  const { products, loading: productsLoading, error: productsError } = useStoreProducts(storeId || '');
+  const { addToCart, itemCount } = useCart();
+
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const handleAddToCart = (product: Product) => {
+    addToCart(product);
   };
 
-  const products = [
-    { id: "1", title: "طماطم طازجة", price: "120 دج", image: "" },
-    { id: "2", title: "حليب الصومام", price: "95 دج", image: "" },
-    { id: "3", title: "تفاح محلي", price: "250 دج", image: "" },
-    { id: "4", title: "زيت عافية", price: "650 دج", image: "" },
-  ];
+  const handleProductPress = (productId: string) => {
+    router.push(`/product-details?id=${productId}`);
+  };
+
+  const filteredProducts = selectedCategory === 'All'
+    ? products
+    : products.filter(product => product.category === selectedCategory); // Assuming product has a category field
+
+  const productCategories = ['All', ...new Set(products.map(product => product.category))]; // Assuming product has a category field
+
+  if (!storeId) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>ID du magasin manquant.</Text>
+      </View>
+    );
+  }
+
+  if (storeLoading || productsLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Chargement du magasin...</Text>
+      </View>
+    );
+  }
+
+  if (storeError || productsError) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>Erreur: {storeError || productsError}</Text>
+      </View>
+    );
+  }
+
+  if (!store) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>Magasin introuvable.</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <StatusBar barStyle="light-content" />
-      
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Cover & Header Actions */}
-        <View style={styles.headerContainer}>
-          <Image source={{ uri: store.coverImage }} style={styles.coverImage} />
-          <View style={[styles.headerOverlay, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <TouchableOpacity 
-              onPress={() => router.back()} 
-              style={[styles.iconButton, { backgroundColor: "rgba(0,0,0,0.3)" }]}
-            >
-              <Ionicons name={isRTL ? "arrow-forward" : "arrow-back"} size={24} color="white" />
+    <View style={styles.fullContainer}>
+      <Stack.Screen
+        options={{
+          title: store.name,
+          headerRight: () => (
+            <TouchableOpacity onPress={() => router.push('/cart')}>
+              <ShoppingCart color={colors.text} size={iconSizes.header} />
+              {itemCount > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{itemCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
-            <View style={{ flexDirection: isRTL ? "row-reverse" : "row", gap: TOKENS.spacing.sm }}>
-              <TouchableOpacity style={[styles.iconButton, { backgroundColor: "rgba(0,0,0,0.3)" }]}>
-                <Ionicons name="share-social-outline" size={24} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.iconButton, { backgroundColor: "rgba(0,0,0,0.3)" }]}>
-                <Ionicons name="heart-outline" size={24} color="white" />
-              </TouchableOpacity>
-            </View>
+          ),
+        }}
+      />
+      <ScrollView style={styles.container}>
+        <StoreHeader
+          storeName={store.name}
+          category={store.category}
+          rating={4.5} // Placeholder for rating
+          isOpen={store.status === 'active'}
+          storeLogoUrl={null} // Placeholder for logo URL
+          coverImageUrl={null} // Placeholder for cover image URL
+          isMerchantView={false} // This is customer view
+        />
+
+        <Card style={styles.storeInfoCard}>
+          <Text style={styles.storeDescription}>
+            {store.description || 'لا يوجد وصف متاح لهذا المتجر.'}
+          </Text>
+          <View style={styles.contactButtons}>
+            <Button
+              title="اتصل بالمتجر"
+              onPress={() => { /* Handle call */ }}
+              icon={<Phone size={iconSizes.small} color={colors.white} />}
+              style={styles.contactButton}
+            />
+            <Button
+              title="مراسلة واتساب"
+              onPress={() => { /* Handle WhatsApp */ }}
+              icon={<MessageCircle size={iconSizes.small} color={colors.white} />}
+              style={styles.contactButton}
+            />
+            <Button
+              title="مشاركة المتجر"
+              onPress={() => { /* Handle Share */ }}
+              icon={<Share2 size={iconSizes.small} color={colors.white} />}
+              style={styles.contactButton}
+            />
           </View>
-        </View>
+        </Card>
 
-        {/* Store Info */}
-        <View style={styles.storeInfoSection}>
-          <View style={[styles.logoRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <View style={[styles.logoContainer, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-              <Typography variant="h1" color="brand">{store.name[0]}</Typography>
-            </View>
-            <View style={[styles.titleContainer, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-              <Typography variant="h1">{store.name}</Typography>
-              <View style={[styles.statsRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                <Typography variant="caption" style={{ color: colors.accent }}>★ {store.rating}</Typography>
-                <Typography variant="caption" color="disabled"> • </Typography>
-                <Typography variant="caption" color="secondary">{store.deliveryTime}</Typography>
-                <Typography variant="caption" color="disabled"> • </Typography>
-                <Typography variant="caption" color="secondary">{store.deliveryFee}</Typography>
-              </View>
-            </View>
-          </View>
-          
-          <Typography variant="body" color="secondary" style={[styles.description, { textAlign: isRTL ? "right" : "left" }]}>
-            {store.description}
-          </Typography>
-        </View>
-
-        {/* Search inside Store */}
-        <View style={styles.searchSection}>
-          <SearchBar 
-            value={search} 
-            onChangeText={setSearch} 
-            placeholder="ابحث في المتجر..."
-            theme={theme}
-          />
-        </View>
-
-        {/* Category Tabs */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          contentContainerStyle={[styles.categoryTabs, { flexDirection: isRTL ? "row-reverse" : "row" }]}
-        >
-          {store.categories.map(cat => (
-            <TouchableOpacity 
-              key={cat.id} 
-              onPress={() => setActiveCategory(cat.id)}
-              style={[
-                styles.tabButton, 
-                activeCategory === cat.id && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
-              ]}
-            >
-              <Typography 
-                variant="button" 
-                color={activeCategory === cat.id ? "brand" : "secondary"}
+        {/* Product Categories */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>فئات المنتجات</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
+            {productCategories.map((category, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.categoryItem,
+                  selectedCategory === category && styles.selectedCategoryItem,
+                ]}
+                onPress={() => setSelectedCategory(category)}
               >
-                {cat.name}
-              </Typography>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Products Grid */}
-        <View style={styles.productsSection}>
-          <SectionHeader title="المنتجات" theme={theme} />
-          <View style={[styles.productsGrid, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            {products.map(prod => (
-              <ProductCard 
-                key={prod.id} 
-                title={prod.title} 
-                price={prod.price} 
-                image={prod.image}
-                theme={theme}
-                onPress={() => router.push("/product-details")}
-                style={styles.gridProduct}
-              />
+                <Text
+                  style={[
+                    styles.categoryText,
+                    selectedCategory === category && styles.selectedCategoryText,
+                  ]}
+                >
+                  {category}
+                </Text>
+              </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         </View>
 
-        <View style={{ height: 40 }} />
+        {/* Products List */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>المنتجات</Text>
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onPress={handleProductPress}
+                onAddToCart={handleAddToCart}
+              />
+            ))
+          ) : (
+            <Text style={styles.noResultsText}>لا توجد منتجات في هذه الفئة.</Text>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
+  fullContainer: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
+  },
   container: {
     flex: 1,
   },
-  headerContainer: {
-    height: 200,
-    position: "relative",
-  },
-  coverImage: {
-    width: "100%",
-    height: "100%",
-  },
-  headerOverlay: {
-    position: "absolute",
-    top: 50,
-    left: 0,
-    right: 0,
-    paddingHorizontal: TOKENS.spacing.lg,
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  storeInfoSection: {
-    padding: TOKENS.spacing.lg,
-    marginTop: -30,
-    backgroundColor: "transparent",
-  },
-  logoRow: {
-    alignItems: "flex-end",
-    gap: TOKENS.spacing.md,
-  },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: TOKENS.radius.lg,
-    borderWidth: 3,
-    alignItems: "center",
-    justifyContent: "center",
-    ...TOKENS.shadows.premium,
-  },
-  titleContainer: {
+  centered: {
     flex: 1,
-    paddingBottom: TOKENS.spacing.xs,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.backgroundLight,
   },
-  statsRow: {
-    alignItems: "center",
-    gap: 4,
-    marginTop: 2,
+  loadingText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
   },
-  description: {
-    marginTop: TOKENS.spacing.md,
-    lineHeight: 20,
+  errorText: {
+    ...typography.body,
+    color: colors.error,
+    marginTop: spacing.md,
   },
-  searchSection: {
-    paddingHorizontal: TOKENS.spacing.lg,
-    marginBottom: TOKENS.spacing.md,
+  storeInfoCard: {
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.md,
+    padding: spacing.md,
   },
-  categoryTabs: {
-    paddingHorizontal: TOKENS.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-    marginBottom: TOKENS.spacing.md,
+  storeDescription: {
+    ...typography.body,
+    color: colors.text,
+    textAlign: 'right',
+    marginBottom: spacing.md,
   },
-  tabButton: {
-    paddingVertical: TOKENS.spacing.md,
-    marginRight: TOKENS.spacing.lg,
+  contactButtons: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-around',
+    marginTop: spacing.md,
   },
-  productsSection: {
-    paddingBottom: TOKENS.spacing.xl,
+  contactButton: {
+    flex: 1,
+    marginHorizontal: spacing.xs,
   },
-  productsGrid: {
-    flexWrap: "wrap",
-    paddingHorizontal: TOKENS.spacing.lg,
-    justifyContent: "space-between",
+  section: {
+    marginBottom: spacing.huge,
   },
-  gridProduct: {
-    width: "48%",
-    marginRight: 0,
-    marginBottom: TOKENS.spacing.md,
-  }
+  sectionTitle: {
+    ...typography.title,
+    color: colors.text,
+    textAlign: 'right',
+    marginBottom: spacing.md,
+    marginHorizontal: spacing.lg,
+  },
+  categoriesContainer: {
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row-reverse',
+  },
+  categoryItem: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.small,
+    backgroundColor: colors.card,
+    marginRight: spacing.sm,
+    ...colors.shadows.small,
+  },
+  selectedCategoryItem: {
+    backgroundColor: colors.primary,
+  },
+  categoryText: {
+    ...typography.subtitle,
+    color: colors.text,
+  },
+  selectedCategoryText: {
+    color: colors.white,
+  },
+  noResultsText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.lg,
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: colors.accent,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cartBadgeText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
 });
+
+export default StoreDetailsScreen;

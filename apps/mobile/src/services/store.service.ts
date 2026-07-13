@@ -16,6 +16,47 @@ export const getStore = async (storeId: string): Promise<Store | null> => {
   return data as Store;
 };
 
+export const getAllStores = async (): Promise<Store[]> => {
+  const { data, error } = await supabase
+    .from("stores")
+    .select("*")
+    .eq("status", "active");
+
+  if (error) {
+    console.error("Error fetching all stores:", error);
+    return [];
+  }
+  return data as Store[];
+};
+
+export const getStoresByCategory = async (category: string): Promise<Store[]> => {
+  const { data, error } = await supabase
+    .from("stores")
+    .select("*")
+    .eq("status", "active")
+    .eq("category", category);
+
+  if (error) {
+    console.error("Error fetching stores by category:", error);
+    return [];
+  }
+  return data as Store[];
+};
+
+export const searchStores = async (query: string): Promise<Store[]> => {
+  const { data, error } = await supabase
+    .from("stores")
+    .select("*")
+    .eq("status", "active")
+    .ilike("name", `%${query}%`);
+
+  if (error) {
+    console.error("Error searching stores:", error);
+    return [];
+  }
+  return data as Store[];
+};
+
 export const updateStore = async (storeId: string, updates: Partial<Store>): Promise<Store | null> => {
   const { data, error } = await supabase
     .from("stores")
