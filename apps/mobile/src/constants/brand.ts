@@ -57,6 +57,32 @@ export const LOGO_ICON = require("../../assets/brand/logo-icon.png");
  */
 export const LOGO_COMPAT = require("../../assets/images/logo.png");
 
+// ─── Role Illustration Icons ──────────────────────────────────────────────────────
+
+/**
+ * Shopping/Customer role icon — used in role selection screen.
+ * Illustrates the customer shopping experience.
+ */
+export const ICON_SHOPPING = require("../../assets/brand/icons/icon-shopping.png");
+
+/**
+ * Store/Merchant role icon — used in role selection screen.
+ * Illustrates the merchant store owner experience.
+ */
+export const ICON_STORE = require("../../assets/brand/icons/icon-store.png");
+
+/**
+ * Delivery/Driver role icon — used in role selection screen.
+ * Illustrates the delivery driver experience.
+ */
+export const ICON_DELIVERY = require("../../assets/brand/icons/icon-delivery.png");
+
+/**
+ * Admin role icon — reserved for future admin panel.
+ * Currently unused in mobile app.
+ */
+export const ICON_ADMIN = require("../../assets/brand/icons/icon-admin.png");
+
 // ─── Brand Usage Rules ────────────────────────────────────────────────────────────
 
 /**

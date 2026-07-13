@@ -3,26 +3,27 @@ import { Link } from "expo-router";
 import { Image } from "react-native";
 import { View, ScrollView, StyleSheet, SafeAreaView, I18nManager } from "react-native";
 import { Typography, Card } from "../components/ui";
-import { BRAND_NAME_AR, LOGO_ICON } from "../constants/brand";
+import { BRAND_NAME_AR, LOGO_ICON, ICON_SHOPPING, ICON_STORE, ICON_DELIVERY } from "../constants/brand";
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
 
 /**
- * Role Selection Gateway — Brand Logo Integration
+ * Role Selection Gateway — Brand Icon Integration
  *
  * This is the role-selection screen accessed from the entry screen via
  * the "الدخول إلى السوق" button. It presents the 4 role options:
- * - أريد التسوق
- * - أريد بيع منتجاتي
- * - أريد العمل كموصل
- * - استكشف السوق أولاً
+ * - أريد التسوق (customer)
+ * - أريد بيع منتجاتي (merchant)
+ * - أريد العمل كموصل (driver)
+ * - استكشف السوق أولاً (guest)
  *
+ * Uses official brand role illustration icons in the role cards.
  * Uses the official logo icon in the header.
  */
 
 interface IntentOption {
   id: string;
-  emoji: string;
+  icon?: any;
   titleAr: string;
   descriptionAr: string;
   route: string;
@@ -31,28 +32,28 @@ interface IntentOption {
 const INTENT_OPTIONS: IntentOption[] = [
   {
     id: "customer",
-    emoji: "🛍️",
+    icon: ICON_SHOPPING,
     titleAr: "أريد التسوق",
     descriptionAr: "اكتشف المتاجر المحلية واطلب ما تحتاجه.",
     route: "/customer-auth",
   },
   {
     id: "merchant",
-    emoji: "🏪",
+    icon: ICON_STORE,
     titleAr: "أريد بيع منتجاتي",
     descriptionAr: "أنشئ متجرك وابدأ البيع بعد اعتماد حسابك.",
     route: "/merchant-auth",
   },
   {
     id: "driver",
-    emoji: "🛵",
+    icon: ICON_DELIVERY,
     titleAr: "أريد العمل كموصل",
     descriptionAr: "انضم إلى فريق التوصيل بعد الموافقة.",
     route: "/driver-auth",
   },
   {
     id: "guest",
-    emoji: "👀",
+    icon: ICON_SHOPPING,
     titleAr: "استكشف السوق أولًا",
     descriptionAr: "تصفح المتاجر والمنتجات دون إنشاء حساب.",
     route: "/guest-marketplace",
@@ -91,9 +92,15 @@ export default function RoleSelectionScreen() {
             <Link key={option.id} href={option.route} asChild>
               <Card variant="elevated" style={styles.intentCard}>
                 <View style={[styles.cardContent, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                  <View style={styles.emojiWrapper}>
-                    <Typography style={styles.emoji}>{option.emoji}</Typography>
-                  </View>
+                  {option.icon && (
+                    <View style={styles.iconWrapper}>
+                      <Image
+                        source={option.icon}
+                        style={styles.roleIcon}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  )}
                   <View style={styles.textWrapper}>
                     <Typography variant="h3" style={styles.intentTitle}>
                       {option.titleAr}
@@ -156,16 +163,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: TOKENS.spacing.lg,
   },
-  emojiWrapper: {
-    width: 60,
-    height: 60,
+  iconWrapper: {
+    width: 64,
+    height: 64,
     borderRadius: TOKENS.radius.md,
     backgroundColor: "rgba(255, 138, 0, 0.05)",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
-  emoji: {
-    fontSize: 32,
+  roleIcon: {
+    width: "100%",
+    height: "100%",
   },
   textWrapper: {
     flex: 1,
