@@ -7,7 +7,7 @@ import {
   I18nManager,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { BRAND_NAME_AR, LOGO_ICON } from "../../constants/brand";
+import { BRAND_NAME_AR, LOGO_WORDMARK } from "../../constants/brand";
 import { TOKENS } from "../../constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
 import { Typography } from "./Typography";
@@ -28,16 +28,13 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
 
   return (
     <View style={[styles.container, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-      {/* Official logo icon + brand wordmark */}
-      <View style={[styles.logoContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+      {/* Wordmark logo for marketplace header */}
+      <View style={styles.logoContainer}>
         <Image
-          source={LOGO_ICON}
-          style={styles.logoIcon}
+          source={LOGO_WORDMARK}
+          style={styles.wordmarkLogo}
           resizeMode="contain"
         />
-        <Typography variant="h1" align="right" style={styles.logoText}>
-          {BRAND_NAME_AR}
-        </Typography>
       </View>
 
       {/* Actions: notification + profile */}
@@ -62,7 +59,7 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
 };
 
 const HEADER_HEIGHT = 60;
-const LOGO_ICON_SIZE = 36;
+const WORDMARK_HEIGHT = 40;
 const ACTION_SIZE = 44;
 
 const styles = StyleSheet.create({
@@ -72,23 +69,21 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: TOKENS.spacing.lg,
     paddingTop: TOKENS.spacing.sm,
+    backgroundColor: "transparent",
   },
   logoContainer: {
+    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
   },
-  logoIcon: {
-    width: LOGO_ICON_SIZE,
-    height: LOGO_ICON_SIZE,
-    marginHorizontal: TOKENS.spacing.xs,
-  },
-  logoText: {
-    fontSize: TOKENS.typography.sizes.xl,
-    fontWeight: "800",
-    letterSpacing: -0.5,
-    color: TOKENS.colors.brandPrimary,
+  wordmarkLogo: {
+    height: WORDMARK_HEIGHT,
+    maxWidth: 200,
   },
   actions: {
     alignItems: "center",
+    flexShrink: 0,
+    gap: TOKENS.spacing.xs,
   },
   iconButton: {
     width: ACTION_SIZE,
@@ -99,11 +94,12 @@ const styles = StyleSheet.create({
     marginHorizontal: TOKENS.spacing.xs,
     ...TOKENS.shadows.premium,
     shadowOpacity: 0.05,
+    flexShrink: 0,
   },
   badge: {
     position: "absolute",
-    top: 10,
-    right: 10,
+    top: 8,
+    right: 8,
     width: 10,
     height: 10,
     borderRadius: 5,

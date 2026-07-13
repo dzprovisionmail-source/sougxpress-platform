@@ -52,6 +52,14 @@ export const LOGO_DARK = require("../../assets/brand/logo-horizontal-dark.png");
 export const LOGO_ICON = require("../../assets/brand/logo-icon.png");
 
 /**
+ * Horizontal wordmark logo — suitable for marketplace/store headers.
+ * Clean, readable wordmark with brand colors (orange + blue).
+ * Designed for light/white backgrounds.
+ * Use in MarketplaceHeader and store headers where horizontal space is available.
+ */
+export const LOGO_WORDMARK = require("../../assets/brand/logo-wordmark.png");
+
+/**
  * Compatibility path — same as LOGO_DARK, stored in the default images directory
  * for apps that import from assets/images/.
  */
