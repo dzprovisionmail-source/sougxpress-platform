@@ -1,19 +1,23 @@
 import React from "react";
 import { Link } from "expo-router";
+import { Image } from "react-native";
 import { View, ScrollView, StyleSheet, SafeAreaView, I18nManager } from "react-native";
 import { Typography, Card } from "../components/ui";
+import { BRAND_NAME_AR, LOGO_ICON } from "../constants/brand";
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
 
 /**
- * Role Selection Gateway — Sprint 2 UI Refinement
- * 
+ * Role Selection Gateway — Brand Logo Integration
+ *
  * This is the role-selection screen accessed from the entry screen via
  * the "الدخول إلى السوق" button. It presents the 4 role options:
  * - أريد التسوق
  * - أريد بيع منتجاتي
  * - أريد العمل كموصل
  * - استكشف السوق أولاً
+ *
+ * Uses the official logo icon in the header.
  */
 
 interface IntentOption {
@@ -66,10 +70,15 @@ export default function RoleSelectionScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {/* Header with official logo */}
         <View style={styles.header}>
+          <Image
+            source={LOGO_ICON}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
           <Typography variant="h1" align="center" style={styles.headerTitle}>
-            مرحباً بك في سوق إكسبريس
+            مرحباً بك في {BRAND_NAME_AR}
           </Typography>
           <Typography variant="body" color="secondary" align="center">
             اختر ما تريد فعله
@@ -102,7 +111,7 @@ export default function RoleSelectionScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <Typography variant="caption" color="disabled" align="center">
-            سوق إكسبريس — منصة التجارة المحلية الأولى في عين صفراء
+            {BRAND_NAME_AR} — منصة التجارة المحلية الأولى في عين صفراء
           </Typography>
         </View>
       </ScrollView>
@@ -126,6 +135,11 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: TOKENS.spacing["3xl"],
     alignItems: "center",
+  },
+  headerLogo: {
+    width: 64,
+    height: 64,
+    marginBottom: TOKENS.spacing.md,
   },
   headerTitle: {
     color: TOKENS.colors.brandPrimary,

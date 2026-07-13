@@ -1,21 +1,23 @@
 import React from "react";
 import { Link } from "expo-router";
+import { Image } from "react-native";
 import { View, ScrollView, StyleSheet, SafeAreaView, I18nManager, TouchableOpacity } from "react-native";
-import { Typography, Card, Button } from "../components/ui";
+import { Typography } from "../components/ui";
+import { BRAND_NAME_AR, BRAND_SLOGAN, BRAND_CITY_LABEL, LOGO_DARK } from "../constants/brand";
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
 
 /**
- * SougXPRESS Entry Screen — UI Refinement Sprint
- * 
+ * Soug-XPRESS Entry Screen — Brand Logo Integration
+ *
  * First visible screen when opening the app:
- * - Large SougXPRESS brand mark
+ * - Official Soug-XPRESS logo (mascot + wordmark)
  * - Slogan: "سوقك يوصلك لبابك"
- * - Subtitle: "سوق عين الصفراء"
+ * - Location label: "سوق عين الصفراء"
  * - Primary action button: "الدخول إلى السوق"
  * - Button opens the existing role-selection flow (intent gateway)
- * 
- * Uses only orange/black brand direction. No cyan.
+ *
+ * Uses the official logo asset. Logo is dark-bg only.
  */
 
 export default function EntryScreen() {
@@ -29,37 +31,24 @@ export default function EntryScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Brand Logo Area */}
+        {/* Official Logo */}
         <View style={styles.logoArea}>
-          {/* Logo mark: orange cart circle with X */}
-          <View style={styles.logoMark}>
-            <View style={styles.logoCircle}>
-              <View style={styles.logoInner}>
-                <Typography variant="display" style={styles.logoX}>X</Typography>
-              </View>
-            </View>
-          </View>
-
-          {/* Brand wordmark */}
-          <View style={[styles.wordmarkRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <Typography variant="display" style={styles.sougText}>
-              سوق
-            </Typography>
-            <Typography variant="display" style={styles.xpressText}>
-              إكسبريس
-            </Typography>
-          </View>
-
-          {/* Slogan */}
-          <Typography variant="h1" style={styles.slogan} align="center">
-            سوقك يوصلك لبابك
-          </Typography>
-
-          {/* Subtitle */}
-          <Typography variant="body" color="secondary" align="center">
-            سوق عين الصفراء
-          </Typography>
+          <Image
+            source={LOGO_DARK}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
+
+        {/* Slogan */}
+        <Typography variant="h1" style={styles.slogan} align="center">
+          {BRAND_SLOGAN}
+        </Typography>
+
+        {/* City Label */}
+        <Typography variant="body" color="secondary" align="center" style={styles.cityLabel}>
+          {BRAND_CITY_LABEL}
+        </Typography>
 
         {/* Role Selection Gateway */}
         <View style={styles.gatewayContainer}>
@@ -75,7 +64,7 @@ export default function EntryScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <Typography variant="caption" color="disabled" align="center">
-            سوق إكسبريس — منصة التجارة المحلية الأولى في عين صفراء
+            {BRAND_NAME_AR} — منصة التجارة المحلية الأولى في عين صفراء
           </Typography>
         </View>
       </ScrollView>
@@ -99,51 +88,22 @@ const styles = StyleSheet.create({
   },
   logoArea: {
     alignItems: "center",
-    marginBottom: TOKENS.spacing["3xl"],
+    marginBottom: TOKENS.spacing["2xl"],
   },
-  logoMark: {
-    marginBottom: TOKENS.spacing.lg,
-  },
-  logoCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: TOKENS.colors.brandPrimary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoInner: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#000000",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoX: {
-    color: TOKENS.colors.brandPrimary,
-    fontWeight: "900",
-  },
-  wordmarkRow: {
-    alignItems: "center",
-    gap: TOKENS.spacing.sm,
-    marginBottom: TOKENS.spacing.md,
-  },
-  sougText: {
-    color: TOKENS.colors.brandPrimary,
-    fontWeight: "900",
-  },
-  xpressText: {
-    color: TOKENS.colors.brandPrimary,
-    fontWeight: "900",
+  logoImage: {
+    width: 280,
+    height: 220,
   },
   slogan: {
     color: TOKENS.colors.brandAccent,
-    marginBottom: TOKENS.spacing.xs,
+    marginBottom: TOKENS.spacing.sm,
+  },
+  cityLabel: {
+    marginBottom: TOKENS.spacing["2xl"],
   },
   gatewayContainer: {
     width: "100%",
-    marginTop: TOKENS.spacing["2xl"],
+    marginTop: TOKENS.spacing.md,
     marginBottom: TOKENS.spacing.xl,
   },
   enterButton: {

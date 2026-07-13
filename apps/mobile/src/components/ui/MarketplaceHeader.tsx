@@ -1,11 +1,13 @@
 import React from "react";
 import { 
   View, 
+  Image,
   StyleSheet, 
   TouchableOpacity, 
   I18nManager,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { BRAND_NAME_AR, LOGO_ICON } from "../../constants/brand";
 import { TOKENS } from "../../constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
 import { Typography } from "./Typography";
@@ -26,15 +28,19 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
 
   return (
     <View style={[styles.container, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+      {/* Official logo icon + brand wordmark */}
       <View style={[styles.logoContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-        <View style={[styles.logoCircle, { backgroundColor: TOKENS.colors.brandPrimary }]}>
-          <Ionicons name="cart" size={20} color={TOKENS.colors.dark.textOnBrand} />
-        </View>
+        <Image
+          source={LOGO_ICON}
+          style={styles.logoIcon}
+          resizeMode="contain"
+        />
         <Typography variant="h1" align="right" style={styles.logoText}>
-          سوق إكسبريس
+          {BRAND_NAME_AR}
         </Typography>
       </View>
 
+      {/* Actions: notification + profile */}
       <View style={[styles.actions, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
         <TouchableOpacity 
           onPress={onNotificationPress} 
@@ -56,7 +62,7 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
 };
 
 const HEADER_HEIGHT = 60;
-const LOGO_SIZE = 36;
+const LOGO_ICON_SIZE = 36;
 const ACTION_SIZE = 44;
 
 const styles = StyleSheet.create({
@@ -70,12 +76,9 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
   },
-  logoCircle: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-    borderRadius: LOGO_SIZE / 2,
-    alignItems: "center",
-    justifyContent: "center",
+  logoIcon: {
+    width: LOGO_ICON_SIZE,
+    height: LOGO_ICON_SIZE,
     marginHorizontal: TOKENS.spacing.xs,
   },
   logoText: {
