@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { CircleUserRound, Store } from 'lucide-react-native';
+import { CircleUserRound, Store, Bike } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -24,6 +24,13 @@ export default function TabLayout() {
         options={{
           title: 'متجري',
           tabBarIcon: ({ color }) => <Store color={color} size={24} />,
+        }}
+      />
+      <Tabs.Screen
+        name="driver"
+        options={{
+          title: 'ملفي المهني',
+          tabBarIcon: ({ color }) => <Bike color={color} size={24} />,
         }}
       />
     </Tabs>
