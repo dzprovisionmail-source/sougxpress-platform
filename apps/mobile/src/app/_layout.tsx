@@ -12,6 +12,7 @@ export default function RootLayout() {
       <Stack.Screen name="guest-marketplace" />
       <Stack.Screen name="store-details" />
       <Stack.Screen name="product-details" />
+      <Stack.Screen name="(tabs)" />
     </Stack>
   );
 }
