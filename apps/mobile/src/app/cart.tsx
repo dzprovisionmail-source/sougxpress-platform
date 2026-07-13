@@ -16,8 +16,7 @@ const CartScreen = () => {
   const { cartItems, loading, removeFromCart, updateQuantity, subtotal, deliveryFee, total, clearCart } = useCart();
 
   const handleContinue = () => {
-    Alert.alert('Continuer', 'La fonctionnalité de paiement sera implémentée dans une phase ultérieure.');
-    // router.push('/checkout'); // Future implementation
+    router.push('/checkout');
   };
 
   if (loading) {
