@@ -2,10 +2,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { typography } from '../../design/typography';
-import { iconSizes } from '../../design/icons';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { typography } from '@/design/typography';
+import { iconSizes } from '@/design/icons';
 
 interface ListItemProps {
   icon?: React.ReactNode;

@@ -5,14 +5,14 @@ import {
   Receipt, User, MapPin, ShoppingCart, MessageSquare, 
   Wallet, Clock, CheckCircle2, XCircle, PlayCircle, PackageCheck 
 } from 'lucide-react-native';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { radius } from '../../design/radius';
-import { typography } from '../../design/typography';
-import { shadows } from '../../design/shadows';
-import { iconSizes } from '../../design/icons';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { radius } from '@/design/radius';
+import { typography } from '@/design/typography';
+import { shadows } from '@/design/shadows';
+import { iconSizes } from '@/design/icons';
 import { Order, OrderStatus } from '../../types/schema-03-core';
-import { Card, Button } from '../../design/components';
+import { Card, Button } from '@/design/components';
 import OrderStatusBadge from './OrderStatusBadge';
 import PreparationTimer from './PreparationTimer';
 

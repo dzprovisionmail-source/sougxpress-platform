@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera } from 'lucide-react-native';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '@/lib/supabase';
 import Avatar from '../ui/Avatar';
-import { colors } from '../../design/colors';
-import { radius } from '../../design/radius';
-import { spacing } from '../../design/spacing';
+import { colors } from '@/design/colors';
+import { radius } from '@/design/radius';
+import { spacing } from '@/design/spacing';
 
 interface AvatarUploaderProps {
   avatarUrl: string | null;

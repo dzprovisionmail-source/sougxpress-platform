@@ -2,9 +2,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Card from '../ui/Card';
-import { typography } from '../../design/typography';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
+import { typography } from '@/design/typography';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
 
 interface ProfileCardProps {
   icon: React.ReactNode;

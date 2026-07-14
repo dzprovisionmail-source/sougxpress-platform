@@ -2,11 +2,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Star, MapPin } from 'lucide-react-native';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { radius } from '../../design/radius';
-import { typography } from '../../design/typography';
-import { shadows } from '../../design/shadows';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { radius } from '@/design/radius';
+import { typography } from '@/design/typography';
+import { shadows } from '@/design/shadows';
 import { Store } from '../../types/schema-03-core';
 
 interface StoreCardProps {

@@ -2,13 +2,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MapPin, ChevronLeft } from 'lucide-react-native';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { radius } from '../../design/radius';
-import { typography } from '../../design/typography';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { radius } from '@/design/radius';
+import { typography } from '@/design/typography';
 import { CustomerAddress } from '../../types/schema-03-core';
-import { Card } from '../../design/components';
-import { iconSizes } from '../../design/icons';
+import { Card } from '@/design/components';
+import { iconSizes } from '@/design/icons';
 
 interface AddressCardProps {
   address: CustomerAddress | null;

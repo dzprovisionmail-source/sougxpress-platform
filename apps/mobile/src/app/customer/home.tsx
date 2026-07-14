@@ -22,10 +22,10 @@ import {
   SectionHeader, 
   MarketplaceHeader,
   StoreCard,
-} from "../../components/ui";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
-import { supabase } from "../../lib/supabase";
+} from "@/components/ui";
+import { TOKENS } from "@/constants/tokens";
+import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
+import { supabase } from "@/lib/supabase";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 

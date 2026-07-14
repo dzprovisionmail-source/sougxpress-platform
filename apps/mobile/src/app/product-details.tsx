@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Touchable
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ShoppingCart, Minus, Plus } from 'lucide-react-native';
 
-import { Button, Card } from '../../design/components';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { typography } from '../../design/typography';
-import { iconSizes } from '../../design/icons';
+import { Button, Card } from '@/design/components';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { typography } from '@/design/typography';
+import { iconSizes } from '@/design/icons';
 
-import { useProductDetails } from '../../hooks/useProducts';
-import useCart from '../../hooks/useCart';
+import { useProductDetails } from '@/hooks/useProducts';
+import useCart from '@/hooks/useCart';
 
 const ProductDetailsScreen = () => {
   const router = useRouter();

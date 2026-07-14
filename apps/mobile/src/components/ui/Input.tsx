@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { TextInput, StyleSheet, View, Text, TextInputProps, I18nManager } from 'react-native';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { radius } from '../../design/radius';
-import { typography } from '../../design/typography';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { radius } from '@/design/radius';
+import { typography } from '@/design/typography';
 
 interface InputProps extends TextInputProps {
   label?: string;

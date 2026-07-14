@@ -13,11 +13,11 @@ import { useRouter } from "expo-router";
 import {
   Typography,
   Card,
-} from "../../components/ui";
+} from "@/components/ui";
 import { Bell, ChevronRight, ChevronLeft, Circle } from "lucide-react-native";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
-import { supabase } from "../../lib/supabase";
+import { TOKENS } from "@/constants/tokens";
+import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { supabase } from "@/lib/supabase";
 import { I18nManager } from "react-native";
 
 export default function CustomerNotificationsScreen() {

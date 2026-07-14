@@ -7,22 +7,22 @@ import {
   PackageOpen, ChartColumn, Star, LogOut, SquarePen, BadgeInfo, MessageCircle, Share2
 } from 'lucide-react-native';
 
-import StoreHeader from '../../components/profile/StoreHeader';
-import ProfileCard from '../../components/profile/ProfileCard';
-import ProfileRow from '../../components/profile/ProfileRow';
-import StoreImageGallery from '../../components/profile/StoreImageGallery';
-import StoreProductManagement from '../../components/profile/StoreProductManagement';
-import StoreInformationCard from '../../components/profile/StoreInformationCard';
+import StoreHeader from '@/components/profile/StoreHeader';
+import ProfileCard from '@/components/profile/ProfileCard';
+import ProfileRow from '@/components/profile/ProfileRow';
+import StoreImageGallery from '@/components/profile/StoreImageGallery';
+import StoreProductManagement from '@/components/profile/StoreProductManagement';
+import StoreInformationCard from '@/components/profile/StoreInformationCard';
 
-import { Button } from '../../design/components';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { typography } from '../../design/typography';
-import { iconSizes } from '../../design/icons';
+import { Button } from '@/design/components';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { typography } from '@/design/typography';
+import { iconSizes } from '@/design/icons';
 
-import useStore from '../../hooks/useStore';
-import { supabase } from '../../lib/supabase';
-import { Store } from '../../types/schema-03-core';
+import useStore from '@/hooks/useStore';
+import { supabase } from '@/lib/supabase';
+import { Store } from '@/types/schema-03-core';
 
 const StoreScreen = () => {
   const { id } = useLocalSearchParams(); // Get store ID from URL params

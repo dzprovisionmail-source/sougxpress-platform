@@ -8,7 +8,7 @@ import {
   I18nManager 
 } from "react-native";
 import { Typography } from "./Typography";
-import { Card } from "./Card";
+import Card from "./Card";
 import { TOKENS } from "../../constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
 import { Ionicons } from "@expo/vector-icons";
@@ -47,7 +47,6 @@ export const StoreCard: React.FC<StoreCardProps> = ({
     <Card 
       onPress={onPress} 
       style={[styles.container, style]}
-      theme={theme}
     >
       {/* Cover Image Container */}
       <View style={styles.imageContainer}>

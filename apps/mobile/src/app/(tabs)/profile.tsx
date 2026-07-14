@@ -8,18 +8,18 @@ import {
   Bell, LifeBuoy, Shield, ShieldCheck, LogOut, CircleUserRound
 } from 'lucide-react-native';
 
-import ProfileHeader from '../../components/profile/ProfileHeader';
-import ProfileCard from '../../components/profile/ProfileCard';
-import ProfileRow from '../../components/profile/ProfileRow';
-import { Button } from '../../design/components'; // Use the new Button component
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import ProfileCard from '@/components/profile/ProfileCard';
+import ProfileRow from '@/components/profile/ProfileRow';
+import { Button } from '@/design/components'; // Use the new Button component
 
-import useProfile from '../../hooks/useProfile';
-import { supabase } from '../../lib/supabase';
+import useProfile from '@/hooks/useProfile';
+import { supabase } from '@/lib/supabase';
 
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { typography } from '../../design/typography';
-import { iconSizes } from '../../design/icons';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { typography } from '@/design/typography';
+import { iconSizes } from '@/design/icons';
 
 const ProfileScreen = () => {
   const { profile, loading, error, updateProfile } = useProfile();

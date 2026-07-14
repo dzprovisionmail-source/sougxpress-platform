@@ -48,7 +48,7 @@ const useCheckout = () => {
 
     const checkoutData: CheckoutData = {
       customer_id: currentUserId,
-      store_id,
+      store_id: storeId,
       zone_id: zoneId,
       delivery_address_id: selectedAddress.id,
       subtotal_minor: subtotal,

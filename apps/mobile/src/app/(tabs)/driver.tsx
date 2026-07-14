@@ -8,18 +8,18 @@ import {
   Star, Bell, LifeBuoy, SquarePen, LogOut
 } from 'lucide-react-native';
 
-import ProfileHeader from '../../components/profile/ProfileHeader';
-import DriverStatusCard from '../../components/profile/DriverStatusCard';
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import DriverStatusCard from '@/components/profile/DriverStatusCard';
 
-import { Button, Card, ListItem } from '../../design/components'; // Use the new design system components
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { typography } from '../../design/typography';
-import { iconSizes } from '../../design/icons';
+import { Button, Card, ListItem } from '@/design/components'; // Use the new design system components
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { typography } from '@/design/typography';
+import { iconSizes } from '@/design/icons';
 
-import useDriver from '../../hooks/useDriver';
-import { supabase } from '../../lib/supabase';
-import { Driver } from '../../types/schema-03-core';
+import useDriver from '@/hooks/useDriver';
+import { supabase } from '@/lib/supabase';
+import { Driver } from '@/types/schema-03-core';
 
 const DriverScreen = () => {
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);

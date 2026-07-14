@@ -2,8 +2,8 @@
 import React from 'react';
 import { View, Image, StyleSheet, ViewStyle } from 'react-native';
 import { CircleUserRound } from 'lucide-react-native';
-import { colors } from '../../design/colors';
-import { radius } from '../../design/radius';
+import { colors } from '@/design/colors';
+import { radius } from '@/design/radius';
 
 interface AvatarProps {
   uri: string | null;

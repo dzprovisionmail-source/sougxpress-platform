@@ -3,13 +3,13 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { Stack, useRouter } from 'expo-router';
 import { ShoppingCart, XCircle } from 'lucide-react-native';
 
-import { Button, Card, CartItem } from '../../design/components';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { typography } from '../../design/typography';
-import { iconSizes } from '../../design/icons';
+import { Button, Card, CartItem } from '@/design/components';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { typography } from '@/design/typography';
+import { iconSizes } from '@/design/icons';
 
-import useCart from '../../hooks/useCart';
+import useCart from '@/hooks/useCart';
 
 const CartScreen = () => {
   const router = useRouter();

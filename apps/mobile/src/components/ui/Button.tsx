@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { radius } from '../../design/radius';
-import { typography } from '../../design/typography';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { radius } from '@/design/radius';
+import { typography } from '@/design/typography';
 
 interface ButtonProps {
   title?: string;
@@ -107,7 +107,7 @@ const Button: React.FC<ButtonProps> = ({
               styles.buttonTextBase,
               getButtonTextStyles(),
               textStyle,
-              icon && styles.buttonTextWithIcon,
+              icon ? styles.buttonTextWithIcon : null,
             ]}>
               {title}
             </Text>

@@ -1,15 +1,15 @@
 
 import React from 'react';
-import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
-import { colors } from '../../design/colors';
-import { radius } from '../../design/radius';
-import { spacing } from '../../design/spacing';
-import { shadows } from '../../design/shadows';
+import { View, StyleSheet, ViewStyle, TouchableOpacity, StyleProp } from 'react-native';
+import { colors } from '@/design/colors';
+import { radius } from '@/design/radius';
+import { spacing } from '@/design/spacing';
+import { shadows } from '@/design/shadows';
 
 interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   variant?: 'elevated' | 'flat'; // Simplified variants
 }
 

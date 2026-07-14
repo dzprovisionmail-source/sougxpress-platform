@@ -3,10 +3,10 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Camera } from 'lucide-react-native';
 import AvatarUploader from './AvatarUploader';
-import { colors } from '../../design/colors';
-import { typography } from '../../design/typography';
-import { spacing } from '../../design/spacing';
-import { radius } from '../../design/radius';
+import { colors } from '@/design/colors';
+import { typography } from '@/design/typography';
+import { spacing } from '@/design/spacing';
+import { radius } from '@/design/radius';
 
 interface ProfileHeaderProps {
   avatarUrl?: string | null;

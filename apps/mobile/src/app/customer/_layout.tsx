@@ -1,8 +1,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Home, User, ShoppingCart, Heart, ClipboardList, MapPin, Bell, Settings } from 'lucide-react-native';
-import { TOKENS } from '../../constants/tokens';
-import { getThemeColors, DEFAULT_THEME } from '../../constants/theme';
+import { TOKENS } from '@/constants/tokens';
+import { getThemeColors, DEFAULT_THEME } from '@/constants/theme';
 import { I18nManager } from 'react-native';
 
 export default function CustomerLayout() {

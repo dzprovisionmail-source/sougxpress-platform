@@ -1,13 +1,14 @@
+import { TextStyle } from 'react-native';
 
-export const typography = {
+export const typography: Record<string, TextStyle> = {
   display: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: '700',
     lineHeight: 40,
   },
   heading: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     lineHeight: 32,
   },
   title: {
@@ -22,12 +23,12 @@ export const typography = {
   },
   body: {
     fontSize: 16,
-    fontWeight: 'normal',
+    fontWeight: '400',
     lineHeight: 24,
   },
   caption: {
     fontSize: 12,
-    fontWeight: 'normal',
+    fontWeight: '400',
     lineHeight: 16,
   },
   button: {

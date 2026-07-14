@@ -15,11 +15,11 @@ import {
   Button,
   Card,
   QuantitySelector,
-} from "../../components/ui";
+} from "@/components/ui";
 import { Trash2, ShoppingBag, ChevronRight, ChevronLeft } from "lucide-react-native";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
-import { getCart, removeFromCart, updateCartItemQuantity, clearCart, CartItem } from "../../services/cart.service";
+import { TOKENS } from "@/constants/tokens";
+import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { getCart, removeFromCart, updateCartItemQuantity, clearCart, CartItem } from "@/services/cart.service";
 import { I18nManager } from "react-native";
 
 export default function CustomerCartScreen() {

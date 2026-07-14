@@ -2,12 +2,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Trash2, Plus, Minus } from 'lucide-react-native';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { radius } from '../../design/radius';
-import { typography } from '../../design/typography';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { radius } from '@/design/radius';
+import { typography } from '@/design/typography';
 import { CartItem as CartItemType } from '../../services/cart.service';
-import { IconButton } from '../../design/components';
+import { IconButton } from '@/design/components';
 
 interface CartItemProps {
   item: CartItemType;

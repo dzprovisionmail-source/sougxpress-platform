@@ -53,7 +53,7 @@ const StoreHeader: React.FC<StoreHeaderProps> = ({
           <View style={styles.ratingContainer}>
             <Star size={16} color="#FFA500" fill="#FFA500" />
             <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-            <Text style={styles.statusText(isOpen)}>{isOpen ? 'مفتوح' : 'مغلق'}</Text>
+            <Text style={styles.statusText as any}>{isOpen ? 'مفتوح' : 'مغلق'}</Text>
           </View>
         </View>
       </View>

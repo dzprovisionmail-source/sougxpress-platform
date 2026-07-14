@@ -3,17 +3,17 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ShoppingCart, Star, MapPin, Phone, MessageCircle, Share2 } from 'lucide-react-native';
 
-import StoreHeader from '../../components/profile/StoreHeader';
-import { ProductCard, Card, Button } from '../../design/components';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { typography } from '../../design/typography';
-import { iconSizes } from '../../design/icons';
+import StoreHeader from '@/components/profile/StoreHeader';
+import { ProductCard, Card, Button } from '@/design/components';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { typography } from '@/design/typography';
+import { iconSizes } from '@/design/icons';
 
-import useStore from '../../hooks/useStore';
-import { useStoreProducts } from '../../hooks/useProducts';
-import useCart from '../../hooks/useCart';
-import { Product } from '../../types/schema-03-core';
+import useStore from '@/hooks/useStore';
+import { useStoreProducts } from '@/hooks/useProducts';
+import useCart from '@/hooks/useCart';
+import { Product } from '@/types/schema-03-core';
 
 const StoreDetailsScreen = () => {
   const router = useRouter();

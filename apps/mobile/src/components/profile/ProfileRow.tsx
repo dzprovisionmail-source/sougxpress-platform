@@ -2,8 +2,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import ListItem from '../ui/ListItem';
-import { colors } from '../../design/colors';
-import { typography } from '../../design/typography';
+import { colors } from '@/design/colors';
+import { typography } from '@/design/typography';
 
 interface ProfileRowProps {
   icon: React.ReactNode;

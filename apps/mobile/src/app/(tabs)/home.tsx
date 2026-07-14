@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { Stack, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star } from 'lucide-react-native';
 
-import { Input, Card, Header, StoreCard } from '../../design/components';
-import { colors } from '../../design/colors';
-import { spacing } from '../../design/spacing';
-import { typography } from '../../design/typography';
-import { iconSizes } from '../../design/icons';
+import { Input, Card, Header, StoreCard } from '@/design/components';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { typography } from '@/design/typography';
+import { iconSizes } from '@/design/icons';
 
-import { useStores, useSearch } from '../../hooks/useStores';
-import useCart from '../../hooks/useCart';
+import { useStores, useSearch } from '@/hooks/useStores';
+import useCart from '@/hooks/useCart';
 
 const HomeScreen = () => {
   const router = useRouter();
