@@ -2,7 +2,16 @@
 import { supabase } from "../lib/supabase";
 import { Store } from "../types/schema-03-core";
 
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
 export const getStore = async (storeId: string): Promise<Store | null> => {
+  if (!storeId || !isValidUUID(storeId)) {
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("stores")
     .select("*", { count: "exact" })
@@ -58,6 +67,10 @@ export const searchStores = async (query: string): Promise<Store[]> => {
 };
 
 export const updateStore = async (storeId: string, updates: Partial<Store>): Promise<Store | null> => {
+  if (!storeId || !isValidUUID(storeId)) {
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("stores")
     .update(updates)
@@ -73,6 +86,10 @@ export const updateStore = async (storeId: string, updates: Partial<Store>): Pro
 };
 
 export const getStoreGalleryImages = async (storeId: string): Promise<string[]> => {
+  if (!storeId || !isValidUUID(storeId)) {
+    return [];
+  }
+
   const { data, error } = await supabase.storage.from("store_images").list(`store_gallery/${storeId}`, { sortBy: { column: "name", order: "asc" } });
 
   if (error) {

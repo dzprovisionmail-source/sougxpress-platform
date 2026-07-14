@@ -37,10 +37,7 @@ const StoreScreen = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUserId(user.id);
-        // In a real app, you'd check if the user is the owner of this storeId
-        // For now, we'll assume if a storeId is present, and it matches a merchant's ID, it's a merchant view.
-        // This is a simplification; proper authorization would be needed.
-        if (storeId && user.id === storeId) { // Simplified check: assuming storeId is merchantId for now
+        if (storeId && user.id === storeId) {
           setIsMerchantView(true);
         }
       }
@@ -53,7 +50,7 @@ const StoreScreen = () => {
   if (!storeId) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>ID du magasin manquant.</Text>
+        <Text style={styles.errorText}>معرّف المتجر غير متوفر</Text>
       </View>
     );
   }
@@ -67,18 +64,10 @@ const StoreScreen = () => {
     );
   }
 
-  if (error) {
+  if (error || !store) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Erreur: {error}</Text>
-      </View>
-    );
-  }
-
-  if (!store) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Magasin introuvable.</Text>
+        <Text style={styles.errorText}>معرّف المتجر غير متوفر</Text>
       </View>
     );
   }
@@ -90,10 +79,6 @@ const StoreScreen = () => {
     } else {
       // Navigate to login or home screen
     }
-  };
-
-  const handleUpdateStoreInfo = (updates: Partial<Store>) => {
-    updateStore(updates);
   };
 
   return (

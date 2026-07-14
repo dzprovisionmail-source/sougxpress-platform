@@ -45,7 +45,7 @@ const StoreDetailsScreen = () => {
   if (!storeId) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>ID du magasin manquant.</Text>
+        <Text style={styles.errorText}>معرّف المتجر غير متوفر</Text>
       </View>
     );
   }
@@ -62,7 +62,7 @@ const StoreDetailsScreen = () => {
   if (storeError || productsError) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Erreur: {storeError || productsError}</Text>
+        <Text style={styles.errorText}>معرّف المتجر غير متوفر</Text>
       </View>
     );
   }
@@ -70,7 +70,7 @@ const StoreDetailsScreen = () => {
   if (!store) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Magasin introuvable.</Text>
+        <Text style={styles.errorText}>معرّف المتجر غير متوفر</Text>
       </View>
     );
   }
