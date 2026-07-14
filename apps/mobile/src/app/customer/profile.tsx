@@ -14,6 +14,7 @@ import {
   Card,
   Avatar,
   ListItem,
+  Badge,
 } from "@/components/ui";
 import {
   User,
@@ -25,6 +26,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Star,
 } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
@@ -37,6 +39,7 @@ export default function CustomerProfileScreen() {
   const isRTL = I18nManager.isRTL;
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [address, setAddress] = useState<any>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -51,14 +54,26 @@ export default function CustomerProfileScreen() {
         return;
       }
 
-      const { data, error } = await supabase
+      // Fetch customer profile
+      const { data: customerData, error: customerError } = await supabase
         .from("customers")
-        .select("*")
+        .select("*, zones(name)")
         .eq("id", user.id)
         .single();
 
-      if (error) throw error;
-      setProfile(data);
+      if (customerError) throw customerError;
+      setProfile(customerData);
+
+      // Fetch default address
+      const { data: addressData } = await supabase
+        .from("customer_addresses")
+        .select("*")
+        .eq("customer_id", user.id)
+        .eq("is_default", true)
+        .maybeSingle();
+      
+      setAddress(addressData);
+
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
@@ -141,15 +156,29 @@ export default function CustomerProfileScreen() {
               backgroundColor={colors.bgElevated}
             />
             <View style={[styles.profileText, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-              <Typography variant="h2">
-                {profile?.first_name} {profile?.last_name}
-              </Typography>
+              <View style={[styles.nameRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <Typography variant="h2">
+                  {profile?.first_name} {profile?.last_name}
+                </Typography>
+                {profile?.is_golden && (
+                  <Badge variant="warning" style={styles.goldenBadge}>
+                    <Star size={10} color={colors.textOnBrand} fill={colors.textOnBrand} /> ذهبي
+                  </Badge>
+                )}
+              </View>
               <Typography variant="body" color="secondary">
                 {profile?.phone_number}
               </Typography>
               <Typography variant="caption" color="secondary">
                 {profile?.email}
               </Typography>
+              
+              <View style={[styles.locationRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <MapPin size={14} color={colors.textSecondary} />
+                <Typography variant="caption" color="secondary">
+                  {profile?.zones?.name || "عين صفراء"} {address ? `• ${address.neighborhood || address.address_text}` : ""}
+                </Typography>
+              </View>
             </View>
           </View>
         </Card>
@@ -231,6 +260,22 @@ const styles = StyleSheet.create({
   profileText: {
     flex: 1,
     gap: 2,
+  },
+  nameRow: {
+    alignItems: "center",
+    gap: TOKENS.spacing.xs,
+  },
+  goldenBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  locationRow: {
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
   },
   menuContainer: {
     gap: TOKENS.spacing.sm,

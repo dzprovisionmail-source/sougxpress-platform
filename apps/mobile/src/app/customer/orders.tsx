@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -91,7 +92,7 @@ export default function CustomerOrdersScreen() {
         <View style={[styles.priceInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
           <Typography variant="caption" color="secondary">إجمالي الطلب</Typography>
           <Typography variant="h3" color="primary">
-            {(item.order_total_minor / 100).toFixed(2)} د.ج
+            {(item.total_minor / 100).toFixed(2)} د.ج
           </Typography>
         </View>
         <TouchableOpacity 

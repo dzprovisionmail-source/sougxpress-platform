@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -6,6 +6,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -15,33 +17,83 @@ import {
 import { Heart, ShoppingBag, Star } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { supabase } from "@/lib/supabase";
 import { I18nManager } from "react-native";
 
 export default function CustomerFavoritesScreen() {
   const router = useRouter();
   const colors = getThemeColors(DEFAULT_THEME);
   const isRTL = I18nManager.isRTL;
-  
-  // Note: Since there is no favorites table in the current Supabase schema,
-  // we use static data for the UI demonstration as requested.
-  const [favorites, setFavorites] = useState([
-    {
-      id: "1",
-      name: "خبز طازج",
-      price: 15.00,
-      store: "مخبزة السعادة",
-      rating: 4.9,
-      image: null,
-    },
-    {
-      id: "2",
-      name: "حليب بقري",
-      price: 90.00,
-      store: "واحة عين صفراء",
-      rating: 4.7,
-      image: null,
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [favorites, setFavorites] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+  const fetchFavorites = async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Note: We check if the table exists first to avoid crash if it's missing
+      const { data, error } = await supabase
+        .from("customer_favorites")
+        .select(`
+          *,
+          products (
+            *,
+            stores (name)
+          )
+        `)
+        .eq("customer_id", user.id);
+
+      if (error) {
+        if (error.code === "PGRST116" || error.message.includes("does not exist")) {
+          console.warn("customer_favorites table missing, showing empty state");
+          setFavorites([]);
+        } else {
+          throw error;
+        }
+      } else {
+        setFavorites(data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  ]);
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFavorites();
+  };
+
+  const handleRemoveFavorite = async (favoriteId: string) => {
+    try {
+      const { error } = await supabase
+        .from("customer_favorites")
+        .delete()
+        .eq("id", favoriteId);
+
+      if (error) throw error;
+      setFavorites(favorites.filter(f => f.id !== favoriteId));
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+    }
+  };
+
+  if (loading && !refreshing) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
@@ -49,7 +101,12 @@ export default function CustomerFavoritesScreen() {
         <Typography variant="h1" align="right" style={styles.headerTitle}>المفضلة</Typography>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
+      >
         {favorites.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Heart color={colors.textDisabled} size={64} />
@@ -59,34 +116,53 @@ export default function CustomerFavoritesScreen() {
           </View>
         ) : (
           <View style={styles.grid}>
-            {favorites.map((item) => (
-              <Card key={item.id} style={styles.favoriteCard}>
-                <TouchableOpacity style={styles.heartBtn}>
-                  <Heart size={20} color={colors.error} fill={colors.error} />
-                </TouchableOpacity>
-                
-                <View style={[styles.imagePlaceholder, { backgroundColor: colors.bgElevated }]}>
-                  <ShoppingBag color={colors.textDisabled} size={32} />
-                </View>
-                
-                <View style={[styles.cardInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-                  <Typography variant="h3" numberOfLines={1}>{item.name}</Typography>
-                  <Typography variant="caption" color="secondary">{item.store}</Typography>
+            {favorites.map((item) => {
+              const product = item.products;
+              if (!product) return null;
+              
+              return (
+                <Card key={item.id} style={styles.favoriteCard}>
+                  <TouchableOpacity 
+                    style={styles.heartBtn}
+                    onPress={() => handleRemoveFavorite(item.id)}
+                  >
+                    <Heart size={20} color={colors.error} fill={colors.error} />
+                  </TouchableOpacity>
                   
-                  <View style={[styles.ratingRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                    <Star size={12} color="#FFD700" fill="#FFD700" />
-                    <Typography variant="caption" style={{ marginLeft: 4 }}>{item.rating}</Typography>
-                  </View>
-                  
-                  <View style={[styles.priceRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                    <Typography variant="h3" color="primary">{item.price.toFixed(2)} د.ج</Typography>
-                    <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]}>
-                      <ShoppingBag size={16} color={colors.textOnBrand} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Card>
-            ))}
+                  <TouchableOpacity 
+                    onPress={() => router.push({ pathname: "/product-details", params: { id: product.id } })}
+                  >
+                    <View style={[styles.imagePlaceholder, { backgroundColor: colors.bgElevated }]}>
+                      {product.image_url ? (
+                        <Image source={{ uri: product.image_url }} style={styles.productImage} />
+                      ) : (
+                        <ShoppingBag color={colors.textDisabled} size={32} />
+                      )}
+                    </View>
+                    
+                    <View style={[styles.cardInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+                      <Typography variant="h3" numberOfLines={1}>{product.name}</Typography>
+                      <Typography variant="caption" color="secondary">{product.stores?.name || "متجر"}</Typography>
+                      
+                      <View style={[styles.ratingRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                        <Star size={12} color="#FFD700" fill="#FFD700" />
+                        <Typography variant="caption" style={{ marginLeft: 4 }}>{product.rating || "0.0"}</Typography>
+                      </View>
+                      
+                      <View style={[styles.priceRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                        <Typography variant="h3" color="primary">{(product.price_minor / 100).toFixed(2)} د.ج</Typography>
+                        <TouchableOpacity 
+                          style={[styles.addBtn, { backgroundColor: colors.primary }]}
+                          onPress={() => { /* Add to cart logic */ }}
+                        >
+                          <ShoppingBag size={16} color={colors.textOnBrand} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </Card>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -97,6 +173,11 @@ export default function CustomerFavoritesScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
     padding: TOKENS.spacing.lg,
@@ -137,6 +218,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: TOKENS.spacing.sm,
+    overflow: "hidden",
+  },
+  productImage: {
+    width: "100%",
+    height: "100%",
   },
   cardInfo: {
     gap: 2,

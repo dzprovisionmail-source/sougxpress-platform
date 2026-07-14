@@ -193,8 +193,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     if (status === "active") {
       if (role === "customer") {
         router.replace("/customer/home");
+      } else if (role === "merchant") {
+        router.replace("/(tabs)/store");
+      } else if (role === "driver") {
+        router.replace("/(tabs)/driver");
       }
-      // Future: add merchant/driver dashboard routes here
     }
   };
 

@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform, SafeAreaView, I18nManager } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { ShoppingBag, MessageSquareText } from 'lucide-react-native';
+import { ShoppingBag, MessageSquareText, CheckCircle2 } from 'lucide-react-native';
 
-import { Button, Card, ListItem } from '../design/components';
-import AddressCard from '../components/checkout/AddressCard';
-import OrderSummary from '../components/checkout/OrderSummary';
-import PaymentMethod from '../components/checkout/PaymentMethod';
+import { Typography, Button, Card, ListItem } from '@/components/ui';
+import AddressCard from '@/components/checkout/AddressCard';
+import OrderSummary from '@/components/checkout/OrderSummary';
+import PaymentMethod from '@/components/checkout/PaymentMethod';
 
-import { colors } from '../design/colors';
-import { spacing } from '../design/spacing';
-import { typography } from '../design/typography';
-import { iconSizes } from '../design/icons';
-import { radius } from '../design/radius';
+import { TOKENS } from '@/constants/tokens';
+import { getThemeColors, DEFAULT_THEME } from '@/constants/theme';
 
-import useCheckout from '../hooks/useCheckout';
+import useCheckout from '@/hooks/useCheckout';
 
 const CheckoutScreen = () => {
   const router = useRouter();
+  const colors = getThemeColors(DEFAULT_THEME);
+  const isRTL = I18nManager.isRTL;
+  
   const {
     loading,
     error,
@@ -47,223 +47,205 @@ const CheckoutScreen = () => {
 
   if (orderSuccess) {
     return (
-      <View style={styles.successContainer}>
+      <SafeAreaView style={[styles.successContainer, { backgroundColor: colors.bgBase }]}>
         <Stack.Screen options={{ title: 'تم الطلب', headerLeft: () => null }} />
         <View style={styles.successContent}>
-          <Text style={styles.successIcon}>✅</Text>
-          <Text style={styles.successTitle}>تم إرسال طلبك بنجاح</Text>
-          <Text style={styles.successSubtitle}>جار انتظار موافقة التاجر</Text>
+          <CheckCircle2 size={80} color={colors.success} />
+          <Typography variant="h1" align="center" style={styles.successTitle}>تم إرسال طلبك بنجاح</Typography>
+          <Typography variant="body" color="secondary" align="center" style={styles.successSubtitle}>
+            جار انتظار موافقة التاجر. يمكنك متابعة حالة طلبك من قائمة طلباتي.
+          </Typography>
           
           <Button
             title="عرض الطلب"
-            onPress={() => router.push(`/order-details?id=${createdOrderId}`)}
-            variant="primary"
+            onPress={() => router.push({ pathname: "/customer/orders" })}
             style={styles.successButton}
           />
           <Button
             title="العودة للرئيسية"
-            onPress={() => router.push('/home')}
+            onPress={() => router.push('/customer/home')}
             variant="outline"
             style={styles.successButton}
           />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.fullContainer}>
-        <Stack.Screen options={{ title: 'إتمام الطلب' }} />
-        
-        <ScrollView style={styles.container}>
-          {/* Address Section */}
-          <AddressCard
-            address={selectedAddress}
-            onEdit={() => { /* Navigate to address selection/creation */ }}
-          />
-
-          {/* Store Info (Assuming all items from same store) */}
-          {cartItems.length > 0 && (
-            <Card style={styles.sectionCard}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>🏪 اسم المتجر</Text>
-                <Text style={styles.storeName}>{cartItems[0].product.store_id}</Text>
-              </View>
-            </Card>
-          )}
-
-          {/* Cart Items Summary */}
-          <Card style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>🛒 المنتجات</Text>
-            {cartItems.map((item, index) => (
-              <View key={item.product.id} style={styles.itemRow}>
-                <Text style={styles.itemTotal}>{`${((item.product.price_minor * item.quantity) / 100).toFixed(2)} د.ج`}</Text>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{item.product.name}</Text>
-                  <Text style={styles.itemQuantity}>{`📦 الكمية: ${item.quantity}`}</Text>
-                </View>
-              </View>
-            ))}
-          </Card>
-
-          {/* Order Notes */}
-          <Card style={styles.sectionCard}>
-            <View style={styles.notesHeader}>
-              <MessageSquareText size={iconSizes.small} color={colors.primary} />
-              <Text style={styles.sectionTitle}>ملاحظات الطلب</Text>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+      <Stack.Screen options={{ title: 'إتمام الطلب' }} />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.fullContainer}>
+          <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+            <View style={styles.header}>
+              <Typography variant="h1" align="right" style={styles.headerTitle}>إتمام الطلب</Typography>
             </View>
-            <TextInput
-              style={styles.notesInput}
-              placeholder="مثال: بدون بصل، اتصل قبل الوصول..."
-              placeholderTextColor={colors.textSecondary}
-              multiline
-              numberOfLines={3}
-              value={notes}
-              onChangeText={setNotes}
-              textAlign="right"
+
+            {/* Address Section */}
+            <AddressCard
+              address={selectedAddress}
+              onEdit={() => { router.push("/customer/addresses") }}
             />
-          </Card>
 
-          {/* Payment Method */}
-          <PaymentMethod />
+            {/* Store Info */}
+            {cartItems.length > 0 && (
+              <Card style={styles.sectionCard}>
+                <View style={[styles.sectionHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                  <Typography variant="h3">🏪 المتجر</Typography>
+                  <Typography variant="body" color="primary" style={{ fontWeight: 'bold' }}>
+                    {cartItems[0].product.stores?.name || "متجر محلي"}
+                  </Typography>
+                </View>
+              </Card>
+            )}
 
-          {/* Order Summary */}
-          <OrderSummary
-            subtotal={subtotal}
-            deliveryFee={deliveryFee}
-            total={total}
-          />
+            {/* Cart Items Summary */}
+            <Card style={styles.sectionCard}>
+              <Typography variant="h3" align="right" style={styles.sectionTitle}>🛒 المنتجات</Typography>
+              {cartItems.map((item) => (
+                <View key={item.product.id} style={[styles.itemRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                  <View style={[styles.itemInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+                    <Typography variant="body">{item.product.name}</Typography>
+                    <Typography variant="caption" color="secondary">{`الكمية: ${item.quantity}`}</Typography>
+                  </View>
+                  <Typography variant="body" style={{ fontWeight: 'bold' }}>
+                    {`${((item.product.price_minor * item.quantity) / 100).toFixed(2)} د.ج`}
+                  </Typography>
+                </View>
+              ))}
+            </Card>
 
-          <View style={{ height: spacing.huge }} />
-        </ScrollView>
+            {/* Order Notes */}
+            <Card style={styles.sectionCard}>
+              <View style={[styles.notesHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <MessageSquareText size={18} color={colors.primary} />
+                <Typography variant="h3">ملاحظات الطلب</Typography>
+              </View>
+              <TextInput
+                style={[styles.notesInput, { backgroundColor: colors.bgBase, color: colors.textPrimary }]}
+                placeholder="مثال: بدون بصل، اتصل قبل الوصول..."
+                placeholderTextColor={colors.textDisabled}
+                multiline
+                numberOfLines={3}
+                value={notes}
+                onChangeText={setNotes}
+                textAlign={isRTL ? "right" : "left"}
+              />
+            </Card>
 
-        <View style={styles.bottomAction}>
-          <Button
-            title="✅ تأكيد الطلب"
-            onPress={onConfirm}
-            variant="primary"
-            loading={loading}
-            style={styles.confirmButton}
-          />
+            {/* Payment Method */}
+            <PaymentMethod />
+
+            {/* Order Summary */}
+            <OrderSummary
+              subtotal={subtotal}
+              deliveryFee={deliveryFee}
+              total={total}
+            />
+
+            <View style={{ height: 40 }} />
+          </ScrollView>
+
+          <View style={[styles.bottomAction, { backgroundColor: colors.bgSurface }]}>
+            <Button
+              title="تأكيد الطلب"
+              onPress={onConfirm}
+              loading={loading}
+              style={styles.confirmButton}
+            />
+          </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   fullContainer: {
     flex: 1,
-    backgroundColor: colors.backgroundLight,
   },
   container: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  header: {
+    padding: TOKENS.spacing.lg,
+    paddingTop: TOKENS.spacing.md,
+  },
+  headerTitle: {
+    color: TOKENS.colors.brandPrimary,
+  },
   sectionCard: {
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.sm,
-    padding: spacing.md,
+    marginHorizontal: TOKENS.spacing.lg,
+    marginVertical: TOKENS.spacing.xs,
+    padding: TOKENS.spacing.md,
   },
   sectionHeader: {
-    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   sectionTitle: {
-    ...typography.subtitle,
-    color: colors.text,
-    textAlign: 'right',
-    marginBottom: spacing.sm,
-  },
-  storeName: {
-    ...typography.body,
-    color: colors.primary,
-    fontWeight: 'bold',
+    marginBottom: TOKENS.spacing.sm,
   },
   itemRow: {
-    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
+    paddingVertical: TOKENS.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   itemInfo: {
     flex: 1,
-    alignItems: 'flex-end',
-  },
-  itemName: {
-    ...typography.body,
-    color: colors.text,
-  },
-  itemQuantity: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  itemTotal: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: 'bold',
   },
   notesHeader: {
-    flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    gap: TOKENS.spacing.sm,
+    marginBottom: TOKENS.spacing.sm,
   },
   notesInput: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: radius.small,
-    padding: spacing.md,
+    borderRadius: TOKENS.radius.md,
+    padding: TOKENS.spacing.md,
     height: 80,
     textAlignVertical: 'top',
-    color: colors.text,
-    ...typography.body,
+    fontSize: 14,
   },
   bottomAction: {
-    padding: spacing.lg,
-    backgroundColor: colors.card,
+    padding: TOKENS.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.divider,
-    ...colors.shadows.small,
+    borderTopColor: 'rgba(0,0,0,0.05)',
   },
   confirmButton: {
     width: '100%',
   },
   successContainer: {
     flex: 1,
-    backgroundColor: colors.backgroundLight,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.huge,
+    padding: TOKENS.spacing.xl,
   },
   successContent: {
     alignItems: 'center',
     width: '100%',
   },
-  successIcon: {
-    fontSize: 80,
-    marginBottom: spacing.lg,
-  },
   successTitle: {
-    ...typography.heading,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
+    marginTop: TOKENS.spacing.lg,
+    marginBottom: TOKENS.spacing.sm,
   },
   successSubtitle: {
-    ...typography.subtitle,
-    color: colors.textSecondary,
-    marginBottom: spacing.huge,
-    textAlign: 'center',
+    marginBottom: TOKENS.spacing["3xl"],
   },
   successButton: {
     width: '100%',
-    marginBottom: spacing.md,
+    marginBottom: TOKENS.spacing.md,
   },
 });
 
