@@ -1,0 +1,201 @@
+import React, { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+} from "react-native";
+import { useRouter } from "expo-router";
+import {
+  Typography,
+  Card,
+  Badge,
+} from "../../components/ui";
+import { ClipboardList, ChevronRight, ChevronLeft } from "lucide-react-native";
+import { TOKENS } from "../../constants/tokens";
+import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
+import { supabase } from "../../lib/supabase";
+import { I18nManager } from "react-native";
+
+export default function CustomerOrdersScreen() {
+  const router = useRouter();
+  const colors = getThemeColors(DEFAULT_THEME);
+  const isRTL = I18nManager.isRTL;
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          stores (name)
+        `)
+        .eq("customer_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchOrders();
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending": return <Badge variant="warning">قيد الانتظار</Badge>;
+      case "confirmed": return <Badge variant="info">مؤكد</Badge>;
+      case "preparing": return <Badge variant="info">قيد التحضير</Badge>;
+      case "ready_for_pickup": return <Badge variant="info">جاهز للاستلام</Badge>;
+      case "out_for_delivery": return <Badge variant="info">في الطريق</Badge>;
+      case "delivered": return <Badge variant="success">تم التوصيل</Badge>;
+      case "cancelled": return <Badge variant="error">ملغي</Badge>;
+      default: return <Badge variant="default">{status}</Badge>;
+    }
+  };
+
+  const renderOrderItem = ({ item }: { item: any }) => (
+    <Card style={styles.orderCard}>
+      <View style={[styles.orderHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+        <View style={[styles.storeInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+          <Typography variant="h3">{item.stores?.name || "متجر"}</Typography>
+          <Typography variant="caption" color="secondary">
+            {new Date(item.created_at).toLocaleDateString("ar-DZ")}
+          </Typography>
+        </View>
+        {getStatusBadge(item.status)}
+      </View>
+
+      <View style={[styles.orderFooter, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+        <View style={[styles.priceInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+          <Typography variant="caption" color="secondary">إجمالي الطلب</Typography>
+          <Typography variant="h3" color="primary">
+            {(item.order_total_minor / 100).toFixed(2)} د.ج
+          </Typography>
+        </View>
+        <TouchableOpacity 
+          style={[styles.detailsBtn, { backgroundColor: colors.bgElevated }]}
+          onPress={() => { /* Navigate to order details */ }}
+        >
+          <Typography variant="caption" style={{ fontWeight: "600" }}>التفاصيل</Typography>
+          {isRTL ? <ChevronLeft size={16} color={colors.textPrimary} /> : <ChevronRight size={16} color={colors.textPrimary} />}
+        </TouchableOpacity>
+      </View>
+    </Card>
+  );
+
+  if (loading && !refreshing) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+      <View style={styles.header}>
+        <Typography variant="h1" align="right" style={styles.headerTitle}>طلباتي</Typography>
+      </View>
+
+      <FlatList
+        data={orders}
+        renderItem={renderOrderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <ClipboardList color={colors.textDisabled} size={64} />
+            <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
+              ليس لديك أي طلبات بعد
+            </Typography>
+          </View>
+        }
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  header: {
+    padding: TOKENS.spacing.lg,
+    paddingTop: TOKENS.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+  },
+  headerTitle: {
+    color: TOKENS.colors.brandPrimary,
+  },
+  listContent: {
+    padding: TOKENS.spacing.lg,
+    gap: TOKENS.spacing.md,
+    flexGrow: 1,
+  },
+  orderCard: {
+    padding: TOKENS.spacing.md,
+  },
+  orderHeader: {
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: TOKENS.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+    paddingBottom: TOKENS.spacing.sm,
+  },
+  storeInfo: {
+    flex: 1,
+  },
+  orderFooter: {
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  priceInfo: {
+    flex: 1,
+  },
+  detailsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: TOKENS.radius.full,
+    gap: 4,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 100,
+  },
+});

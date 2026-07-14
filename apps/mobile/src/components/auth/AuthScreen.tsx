@@ -192,7 +192,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
     if (status === "active") {
       if (role === "customer") {
-        router.replace("/guest-marketplace");
+        router.replace("/customer/home");
       }
       // Future: add merchant/driver dashboard routes here
     }
