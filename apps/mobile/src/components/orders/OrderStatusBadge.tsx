@@ -5,7 +5,7 @@ import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { radius } from '@/design/radius';
 import { typography } from '@/design/typography';
-import { OrderStatus } from '../../types/schema-03-core';
+import { OrderStatus } from '@/types/schema-03-core';
 
 interface OrderStatusBadgeProps {
   status: OrderStatus;

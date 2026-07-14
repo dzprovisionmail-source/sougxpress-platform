@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ShoppingCart, Star, MapPin, Phone, MessageCircle, Share2 } from 'lucide-react-native';
+import { ShoppingCart, Phone, MessageCircle, Share2 } from 'lucide-react-native';
 
 import StoreHeader from '@/components/profile/StoreHeader';
-import { ProductCard, Card, Button } from '@/design/components';
+import { ProductCard, Card, Button } from '@/components/ui';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
+import { radius } from '@/design/radius';
+import { shadows } from '@/design/shadows';
 
 import useStore from '@/hooks/useStore';
 import { useStoreProducts } from '@/hooks/useProducts';
@@ -36,9 +38,9 @@ const StoreDetailsScreen = () => {
 
   const filteredProducts = selectedCategory === 'All'
     ? products
-    : products.filter(product => product.category === selectedCategory); // Assuming product has a category field
+    : products.filter(product => (product as any).category === selectedCategory);
 
-  const productCategories = ['All', ...new Set(products.map(product => product.category))]; // Assuming product has a category field
+  const productCategories = ['All', ...new Set(products.map(product => (product as any).category || 'Other'))];
 
   if (!storeId) {
     return (
@@ -94,11 +96,11 @@ const StoreDetailsScreen = () => {
         <StoreHeader
           storeName={store.name}
           category={store.category}
-          rating={4.5} // Placeholder for rating
+          rating={4.5}
           isOpen={store.status === 'active'}
-          storeLogoUrl={null} // Placeholder for logo URL
-          coverImageUrl={null} // Placeholder for cover image URL
-          isMerchantView={false} // This is customer view
+          storeLogoUrl={null}
+          coverImageUrl={null}
+          isMerchantView={false}
         />
 
         <Card style={styles.storeInfoCard}>
@@ -109,19 +111,19 @@ const StoreDetailsScreen = () => {
             <Button
               title="اتصل بالمتجر"
               onPress={() => { /* Handle call */ }}
-              icon={<Phone size={iconSizes.small} color={colors.white} />}
+              icon={<Phone size={iconSizes.small} color="#FFFFFF" />}
               style={styles.contactButton}
             />
             <Button
               title="مراسلة واتساب"
               onPress={() => { /* Handle WhatsApp */ }}
-              icon={<MessageCircle size={iconSizes.small} color={colors.white} />}
+              icon={<MessageCircle size={iconSizes.small} color="#FFFFFF" />}
               style={styles.contactButton}
             />
             <Button
               title="مشاركة المتجر"
               onPress={() => { /* Handle Share */ }}
-              icon={<Share2 size={iconSizes.small} color={colors.white} />}
+              icon={<Share2 size={iconSizes.small} color="#FFFFFF" />}
               style={styles.contactButton}
             />
           </View>
@@ -160,9 +162,11 @@ const StoreDetailsScreen = () => {
             filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
-                product={product}
-                onPress={handleProductPress}
-                onAddToCart={handleAddToCart}
+                title={product.name}
+                price={`${(product.price_minor / 100).toFixed(2)} د.ج`}
+                image={product.image_url || ''}
+                storeName={store.name}
+                onPress={() => handleProductPress(product.id)}
               />
             ))
           ) : (
@@ -238,7 +242,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.small,
     backgroundColor: colors.card,
     marginRight: spacing.sm,
-    ...colors.shadows.small,
+    ...shadows.small,
   },
   selectedCategoryItem: {
     backgroundColor: colors.primary,
@@ -248,7 +252,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   selectedCategoryText: {
-    color: colors.white,
+    color: "#FFFFFF",
   },
   noResultsText: {
     ...typography.body,
@@ -268,7 +272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cartBadgeText: {
-    color: colors.white,
+    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: 'bold',
   },

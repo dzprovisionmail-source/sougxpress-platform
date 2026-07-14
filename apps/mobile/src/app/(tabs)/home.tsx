@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { Stack, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star } from 'lucide-react-native';
 
-import { Input, Card, Header, StoreCard } from '@/design/components';
+import { Input, StoreCard } from '@/components/ui';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
+import { radius } from '@/design/radius';
+import { shadows } from '@/design/shadows';
 
 import { useStores, useSearch } from '@/hooks/useStores';
 import useCart from '@/hooks/useCart';
@@ -87,7 +89,14 @@ const HomeScreen = () => {
                 <Text style={styles.sectionTitle}>نتائج البحث</Text>
                 {displayedStores.length > 0 ? (
                   displayedStores.map((store) => (
-                    <StoreCard key={store.id} store={store} onPress={handleStorePress} />
+                    <StoreCard 
+                      key={store.id} 
+                      id={store.id}
+                      name={store.name}
+                      category={store.category}
+                      rating="4.5"
+                      onPress={() => handleStorePress(store.id)} 
+                    />
                   ))
                 ) : (
                   <Text style={styles.noResultsText}>لا توجد نتائج للبحث.</Text>
@@ -112,7 +121,14 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>المتاجر المميزة</Text>
                   {displayedStores.slice(0, 3).map((store) => (
-                    <StoreCard key={store.id} store={store} onPress={handleStorePress} />
+                    <StoreCard 
+                      key={store.id} 
+                      id={store.id}
+                      name={store.name}
+                      category={store.category}
+                      rating="4.5"
+                      onPress={() => handleStorePress(store.id)} 
+                    />
                   ))}
                 </View>
 
@@ -120,7 +136,14 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>متاجر جديدة</Text>
                   {displayedStores.slice(3, 6).map((store) => (
-                    <StoreCard key={store.id} store={store} onPress={handleStorePress} />
+                    <StoreCard 
+                      key={store.id} 
+                      id={store.id}
+                      name={store.name}
+                      category={store.category}
+                      rating="4.5"
+                      onPress={() => handleStorePress(store.id)} 
+                    />
                   ))}
                 </View>
 
@@ -128,7 +151,14 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>متاجر قريبة</Text>
                   {displayedStores.slice(6, 9).map((store) => (
-                    <StoreCard key={store.id} store={store} onPress={handleStorePress} />
+                    <StoreCard 
+                      key={store.id} 
+                      id={store.id}
+                      name={store.name}
+                      category={store.category}
+                      rating="4.5"
+                      onPress={() => handleStorePress(store.id)} 
+                    />
                   ))}
                 </View>
 
@@ -136,7 +166,14 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>عروض خاصة</Text>
                   {displayedStores.slice(9, 12).map((store) => (
-                    <StoreCard key={store.id} store={store} onPress={handleStorePress} />
+                    <StoreCard 
+                      key={store.id} 
+                      id={store.id}
+                      name={store.name}
+                      category={store.category}
+                      rating="4.5"
+                      onPress={() => handleStorePress(store.id)} 
+                    />
                   ))}
                 </View>
               </>
@@ -178,7 +215,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: radius.medium,
     borderBottomRightRadius: radius.medium,
     marginBottom: spacing.md,
-    ...colors.shadows.small,
+    ...shadows.small,
   },
   section: {
     marginBottom: spacing.huge,
@@ -201,7 +238,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     backgroundColor: colors.card,
     borderRadius: radius.small,
-    ...colors.shadows.small,
+    ...shadows.small,
   },
   categoryText: {
     ...typography.caption,

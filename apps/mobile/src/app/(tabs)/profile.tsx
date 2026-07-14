@@ -11,7 +11,7 @@ import {
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileCard from '@/components/profile/ProfileCard';
 import ProfileRow from '@/components/profile/ProfileRow';
-import { Button } from '@/design/components'; // Use the new Button component
+import { Button } from '@/components/ui'; // Use the new Button component
 
 import useProfile from '@/hooks/useProfile';
 import { supabase } from '@/lib/supabase';

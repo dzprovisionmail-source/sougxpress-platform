@@ -6,8 +6,8 @@ import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { radius } from '@/design/radius';
 import { typography } from '@/design/typography';
-import { CustomerAddress } from '../../types/schema-03-core';
-import { Card } from '@/design/components';
+import { CustomerAddress } from '@/types/schema-03-core';
+import { Card } from '@/components/ui';
 import { iconSizes } from '@/design/icons';
 
 interface AddressCardProps {

@@ -25,6 +25,11 @@ export interface Customer {
   id: string;
   full_name: string;
   phone: string;
+  email?: string;
+  avatar_url?: string;
+  city?: string;
+  neighborhood?: string;
+  address?: string;
   zone_id: string;
   status: CustomerStatus;
   created_at: string;
@@ -67,6 +72,7 @@ export interface Store {
   zone_id: string;
   name: string;
   category: string;
+  description?: string;
   status: StoreStatus;
   opens_at: string;
   closes_at: string;
@@ -84,10 +90,14 @@ export interface Product {
   name: string;
   description: string | null;
   price_minor: number;
+  image_url?: string;
   stock_quantity: number | null;
   status: ProductStatus;
   created_at: string;
   updated_at: string;
+  stores?: {
+    name: string;
+  };
 }
 
 export interface ProductImage {
@@ -157,6 +167,13 @@ export interface Driver {
   id: string;
   full_name: string;
   phone: string;
+  email?: string;
+  avatar_url?: string;
+  city?: string;
+  neighborhood?: string;
+  vehicle_make?: string;
+  vehicle_color?: string;
+  license_plate?: string;
   zone_id: string;
   vehicle_type: string;
   status: DriverStatus;

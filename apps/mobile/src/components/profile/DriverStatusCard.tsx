@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { View, Text, StyleSheet, Switch } from 'react-native';
-import { Bike, CircleDot, Hash, PackageCheck, WalletCards } from 'lucide-react-native';
+import { Bike } from 'lucide-react-native';
 import ProfileCard from './ProfileCard';
 import ProfileRow from './ProfileRow';
 
@@ -32,7 +31,9 @@ const DriverStatusCard: React.FC<DriverStatusCardProps> = ({
     <ProfileCard icon={<Bike color="#007BFF" size={24} />} title={`مرحباً ${driverName}`}>
       <View style={styles.statusToggleContainer}>
         <Text style={styles.statusLabel}>الحالة:</Text>
-        <Text style={styles.statusText(isOnline)}>{isOnline ? '🟢 متصل' : '🔴 غير متصل'}</Text>
+        <Text style={[styles.statusTextBase, { color: isOnline ? '#28A745' : '#DC3545' }]}>
+          {isOnline ? '🟢 متصل' : '🔴 غير متصل'}
+        </Text>
         <Switch
           onValueChange={onToggleOnlineStatus}
           value={isOnline}
@@ -57,7 +58,7 @@ const DriverStatusCard: React.FC<DriverStatusCardProps> = ({
 
 const styles = StyleSheet.create({
   statusToggleContainer: {
-    flexDirection: 'row-reverse', // RTL
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 10,
@@ -69,13 +70,12 @@ const styles = StyleSheet.create({
     color: '#333',
     marginRight: 10,
   },
-  statusText: (isOnline: boolean) => ({
+  statusTextBase: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: isOnline ? '#28A745' : '#DC3545',
     flex: 1,
     textAlign: 'right',
-  }),
+  },
   settlementExample: {
     fontSize: 14,
     color: '#666',

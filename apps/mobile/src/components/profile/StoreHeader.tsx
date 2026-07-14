@@ -1,8 +1,7 @@
-
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { Camera, Star } from 'lucide-react-native';
-import AvatarUploader from './AvatarUploader'; // Reusing AvatarUploader for logo
+import AvatarUploader from './AvatarUploader';
 
 interface StoreHeaderProps {
   storeName: string;
@@ -11,9 +10,9 @@ interface StoreHeaderProps {
   isOpen: boolean;
   storeLogoUrl?: string | null;
   coverImageUrl?: string | null;
-  onLogoUpload: (url: string) => void;
-  onCoverUpload: (url: string) => void;
-  isMerchantView: boolean; // To show/hide edit buttons
+  onLogoUpload?: (url: string) => void;
+  onCoverUpload?: (url: string) => void;
+  isMerchantView: boolean;
 }
 
 const StoreHeader: React.FC<StoreHeaderProps> = ({
@@ -23,15 +22,15 @@ const StoreHeader: React.FC<StoreHeaderProps> = ({
   isOpen,
   storeLogoUrl,
   coverImageUrl,
-  onLogoUpload,
-  onCoverUpload,
+  onLogoUpload = () => {},
+  onCoverUpload = () => {},
   isMerchantView,
 }) => {
   return (
     <View style={styles.container}>
       <View style={styles.coverImageContainer}>
         {coverImageUrl ? (
-          <Image source={{ uri: coverImageUrl }} style={styles.coverImage} />
+          <Image source={{ uri: coverImageUrl }} style={styles.coverImage as ImageStyle} />
         ) : (
           <View style={styles.coverImagePlaceholder} />
         )}
@@ -53,7 +52,9 @@ const StoreHeader: React.FC<StoreHeaderProps> = ({
           <View style={styles.ratingContainer}>
             <Star size={16} color="#FFA500" fill="#FFA500" />
             <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-            <Text style={styles.statusText as any}>{isOpen ? 'مفتوح' : 'مغلق'}</Text>
+            <Text style={[styles.statusTextBase, { color: isOpen ? '#28A745' : '#DC3545' }]}>
+              {isOpen ? 'مفتوح' : 'مغلق'}
+            </Text>
           </View>
         </View>
       </View>
@@ -100,9 +101,9 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   logoAndInfoContainer: {
-    flexDirection: 'row-reverse', // RTL
+    flexDirection: 'row-reverse',
     alignItems: 'flex-end',
-    marginTop: -50, // Overlap with cover image
+    marginTop: -50,
     paddingHorizontal: 20,
   },
   logoContainer: {
@@ -114,11 +115,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 15, // Adjust for RTL
+    marginLeft: 15,
   },
   infoContainer: {
     flex: 1,
-    alignItems: 'flex-end', // RTL
+    alignItems: 'flex-end',
     marginBottom: 10,
   },
   storeName: {
@@ -133,20 +134,19 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   ratingContainer: {
-    flexDirection: 'row-reverse', // RTL
+    flexDirection: 'row-reverse',
     alignItems: 'center',
   },
   ratingText: {
     fontSize: 16,
     color: '#FFA500',
-    marginRight: 5, // Adjust for RTL
+    marginRight: 5,
   },
-  statusText: (isOpen: boolean) => ({
+  statusTextBase: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: isOpen ? '#28A745' : '#DC3545', // Green for open, Red for closed
-    marginRight: 10, // Adjust for RTL
-  }),
+    marginRight: 10,
+  },
 });
 
 export default StoreHeader;

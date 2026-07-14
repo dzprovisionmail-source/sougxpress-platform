@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Banknote } from 'lucide-react-native';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
-import { Card } from '@/design/components';
+import { Card } from '@/components/ui';
 import { iconSizes } from '@/design/icons';
+import { radius } from '@/design/radius';
 
 const PaymentMethod = () => {
   return (

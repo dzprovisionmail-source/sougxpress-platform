@@ -65,14 +65,14 @@ export default function CustomerOrdersScreen() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending": return <Badge variant="warning">قيد الانتظار</Badge>;
-      case "confirmed": return <Badge variant="info">مؤكد</Badge>;
-      case "preparing": return <Badge variant="info">قيد التحضير</Badge>;
-      case "ready_for_pickup": return <Badge variant="info">جاهز للاستلام</Badge>;
-      case "out_for_delivery": return <Badge variant="info">في الطريق</Badge>;
-      case "delivered": return <Badge variant="success">تم التوصيل</Badge>;
-      case "cancelled": return <Badge variant="error">ملغي</Badge>;
-      default: return <Badge variant="default">{status}</Badge>;
+      case "pending": return <Badge variant="warning" label="قيد الانتظار" />;
+      case "confirmed": return <Badge variant="info" label="مؤكد" />;
+      case "preparing": return <Badge variant="info" label="قيد التحضير" />;
+      case "ready_for_pickup": return <Badge variant="info" label="جاهز للاستلام" />;
+      case "out_for_delivery": return <Badge variant="info" label="في الطريق" />;
+      case "delivered": return <Badge variant="success" label="تم التوصيل" />;
+      case "cancelled": return <Badge variant="error" label="ملغي" />;
+      default: return <Badge variant="default" label={status} />;
     }
   };
 

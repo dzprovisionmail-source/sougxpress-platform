@@ -1,13 +1,13 @@
-
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { Trash2, Plus, Minus } from 'lucide-react-native';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { radius } from '@/design/radius';
 import { typography } from '@/design/typography';
+import { iconSizes } from '@/design/icons';
 import { CartItem as CartItemType } from '../../services/cart.service';
-import { IconButton } from '@/design/components';
+import IconButton from '@/components/ui/IconButton';
 
 interface CartItemProps {
   item: CartItemType;
@@ -15,8 +15,8 @@ interface CartItemProps {
   onUpdateQuantity: (productId: string, quantity: number) => void;
 }
 
-const CartItem: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity }) => {
-  const productImage = item.product.image_url || 'https://via.placeholder.com/80'; // Assuming product has an image_url
+export const CartItem: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity }) => {
+  const productImage = (item.product as any).image_url || 'https://via.placeholder.com/80';
 
   return (
     <View style={styles.card}>
@@ -30,7 +30,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, onRemove, onUpdateQuantity })
           <IconButton icon={<Minus size={iconSizes.small} color={colors.primary} />} onPress={() => onUpdateQuantity(item.product.id, item.quantity - 1)} disabled={item.quantity <= 1} />
         </View>
       </View>
-      <IconButton icon={<Trash2 size={iconSizes.default} color={colors.error} />} onPress={() => onRemove(item.product.id)} style={styles.removeButton} />
+      <IconButton icon={<Trash2 size={iconSizes.default} color={colors.error} />} onPress={() => onRemove(item.product.id)} />
     </View>
   );
 };
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginVertical: spacing.sm,
     padding: spacing.md,
-    flexDirection: 'row-reverse', // RTL
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -50,27 +50,27 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: radius.small,
-    marginLeft: spacing.md, // Adjust for RTL
+    marginLeft: spacing.md,
   },
   infoContainer: {
     flex: 1,
     marginRight: spacing.md,
-    alignItems: 'flex-end', // RTL
+    alignItems: 'flex-end',
   },
   productName: {
     ...typography.title,
     color: colors.text,
     marginBottom: spacing.xs,
-    textAlign: 'right', // RTL
+    textAlign: 'right',
   },
   productPrice: {
     ...typography.subtitle,
     color: colors.primary,
     marginBottom: spacing.sm,
-    textAlign: 'right', // RTL
+    textAlign: 'right',
   },
   quantityContainer: {
-    flexDirection: 'row-reverse', // RTL
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
@@ -78,9 +78,6 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text,
     marginHorizontal: spacing.sm,
-  },
-  removeButton: {
-    // Specific styles for remove button if needed
   },
 });
 

@@ -14,7 +14,7 @@ import StoreImageGallery from '@/components/profile/StoreImageGallery';
 import StoreProductManagement from '@/components/profile/StoreProductManagement';
 import StoreInformationCard from '@/components/profile/StoreInformationCard';
 
-import { Button } from '@/design/components';
+import { Button } from '@/components/ui';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
@@ -25,6 +25,7 @@ import { supabase } from '@/lib/supabase';
 import { Store } from '@/types/schema-03-core';
 
 const StoreScreen = () => {
+  const router = useRouter();
   const { id } = useLocalSearchParams(); // Get store ID from URL params
   const storeId = typeof id === 'string' ? id : undefined;
 

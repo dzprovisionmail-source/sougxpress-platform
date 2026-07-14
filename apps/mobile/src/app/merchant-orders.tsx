@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, FlatList } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { Bell, RefreshCcw, Filter } from 'lucide-react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, FlatList } from 'react-native';
+import { Stack } from 'expo-router';
+import { RefreshCcw } from 'lucide-react-native';
 
-import { Header } from '../design/components';
-import MerchantOrderCard from '../components/orders/MerchantOrderCard';
-import { colors } from '../design/colors';
-import { spacing } from '../design/spacing';
-import { typography } from '../design/typography';
-import { iconSizes } from '../design/icons';
+import MerchantOrderCard from '@/components/orders/MerchantOrderCard';
+import { colors } from '@/design/colors';
+import { spacing } from '@/design/spacing';
+import { typography } from '@/design/typography';
+import { iconSizes } from '@/design/icons';
+import { shadows } from '@/design/shadows';
 
-import useMerchantOrders from '../hooks/useMerchantOrders';
-import { supabase } from '../lib/supabase';
-import { OrderStatus } from '../types/schema-03-core';
+import useMerchantOrders from '@/hooks/useMerchantOrders';
+import { supabase } from '@/lib/supabase';
+import { OrderStatus } from '@/types/schema-03-core';
 
 const MerchantOrdersScreen = () => {
   const [merchantId, setMerchantId] = useState<string | null>(null);
@@ -26,7 +26,7 @@ const MerchantOrdersScreen = () => {
     getMerchant();
   }, []);
 
-  const { orders, loading, error, updateStatus, refreshOrders } = useMerchantOrders(merchantId || '');
+  const { orders, loading, updateStatus, refreshOrders } = useMerchantOrders(merchantId || '');
 
   const filteredOrders = orders.filter(order => {
     if (activeTab === 'new') return order.status === 'pending';
@@ -38,7 +38,6 @@ const MerchantOrdersScreen = () => {
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     const success = await updateStatus(orderId, newStatus);
     if (success) {
-      // Notification placeholder
       console.log(`Notification sent for status: ${newStatus}`);
     }
   };
@@ -138,7 +137,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     backgroundColor: colors.card,
     padding: spacing.sm,
-    ...colors.shadows.small,
+    ...shadows.small,
   },
   tab: {
     flex: 1,

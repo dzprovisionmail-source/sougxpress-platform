@@ -11,7 +11,7 @@ import {
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import DriverStatusCard from '@/components/profile/DriverStatusCard';
 
-import { Button, Card, ListItem } from '@/design/components'; // Use the new design system components
+import { Button, Card, ListItem } from '@/components/ui'; // Use the new design system components
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';

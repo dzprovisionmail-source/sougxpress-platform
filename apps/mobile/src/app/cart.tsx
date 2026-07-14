@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { Stack, useRouter } from 'expo-router';
 import { ShoppingCart, XCircle } from 'lucide-react-native';
 
-import { Button, Card, CartItem } from '@/design/components';
+import { Button, Card } from '@/components/ui';
+import { CartItem } from '@/components/cart/CartItem';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
+import { shadows } from '@/design/shadows';
 
 import useCart from '@/hooks/useCart';
 
@@ -43,7 +45,7 @@ const CartScreen = () => {
       <ScrollView style={styles.container}>
         {cartItems.length === 0 ? (
           <View style={styles.centered}>
-            <ShoppingCart size={iconSizes.huge} color={colors.textSecondary} style={styles.emptyCartIcon} />
+            <ShoppingCart size={48} color={colors.textSecondary} style={styles.emptyCartIcon} />
             <Text style={styles.emptyCartText}>سلة التسوق فارغة.</Text>
             <Button title="ابدأ التسوق" onPress={() => router.push('/home')} variant="primary" style={styles.emptyCartButton} />
           </View>
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderTopWidth: 1,
     borderTopColor: colors.divider,
-    ...colors.shadows.small,
+    ...shadows.small,
   },
   continueButton: {
     width: '100%',

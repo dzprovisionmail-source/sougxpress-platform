@@ -13,11 +13,9 @@ import {
   Typography,
   Card,
   Avatar,
-  ListItem,
   Badge,
 } from "@/components/ui";
 import {
-  User,
   MapPin,
   Heart,
   ClipboardList,
@@ -152,8 +150,8 @@ export default function CustomerProfileScreen() {
           <View style={[styles.profileInfo, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <Avatar
               size={70}
-              name={`${profile?.first_name} ${profile?.last_name}`}
-              backgroundColor={colors.bgElevated}
+              uri={profile?.avatar_url || null}
+              style={{ backgroundColor: colors.bgElevated }}
             />
             <View style={[styles.profileText, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
               <View style={[styles.nameRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>

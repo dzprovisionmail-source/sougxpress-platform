@@ -1,0 +1,11 @@
+src/app/(tabs)/store.tsx(167,28): error TS2304: Cannot find name 'router'.
+src/app/customer/profile.tsx(155,15): error TS2322: Type '{ size: number; name: string; backgroundColor: string; }' is not assignable to type 'IntrinsicAttributes & AvatarProps'.
+  Property 'name' does not exist on type 'IntrinsicAttributes & AvatarProps'.
+src/app/customer/settings.tsx(111,44): error TS2339: Property 'white' does not exist on type '{ bgBase: string; bgSurface: string; bgElevated: string; borderSubtle: string; textPrimary: string; textSecondary: string; textDisabled: string; textOnBrand: string; primary: string; secondary: string; ... 4 more ...; info: string; }'.
+src/app/store-details.tsx(166,17): error TS2322: Type '(productId: string) => void' is not assignable to type '() => void'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0.
+src/components/auth/AuthScreen.tsx(365,95): error TS2322: Type '{ title: string; onPress: () => Promise<void>; loading: boolean; style: { marginTop: number; }; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'loading' does not exist on type 'IntrinsicAttributes & ButtonProps'. Did you mean 'isLoading'?
+src/components/profile/DriverStatusCard.tsx(35,29): error TS2349: This expression is not callable.
+  No constituent of type 'TextStyle | ViewStyle | ImageStyle' is callable.
+src/components/profile/DriverStatusCard.tsx(72,15): error TS2322: Type '(isOnline: boolean) => { fontSize: number; fontWeight: string; color: string; flex: number; textAlign: string; }' is not assignable to type 'TextStyle | ViewStyle | ImageStyle'.

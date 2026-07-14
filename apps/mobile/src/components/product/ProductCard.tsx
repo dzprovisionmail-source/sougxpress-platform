@@ -7,8 +7,8 @@ import { spacing } from '@/design/spacing';
 import { radius } from '@/design/radius';
 import { typography } from '@/design/typography';
 import { shadows } from '@/design/shadows';
-import { Product } from '../../types/schema-03-core';
-import { Button } from '@/design/components';
+import { Product } from '@/types/schema-03-core';
+import { Button } from '@/components/ui';
 
 interface ProductCardProps {
   product: Product;

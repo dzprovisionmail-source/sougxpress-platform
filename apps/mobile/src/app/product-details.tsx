@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Touchable
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ShoppingCart, Minus, Plus } from 'lucide-react-native';
 
-import { Button, Card } from '@/design/components';
+import { Button, Card } from '@/components/ui';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
+import { radius } from '@/design/radius';
 
 import { useProductDetails } from '@/hooks/useProducts';
 import useCart from '@/hooks/useCart';

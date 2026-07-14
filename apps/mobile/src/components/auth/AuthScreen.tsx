@@ -362,7 +362,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             <Input label="البريد الإلكتروني" placeholder="example@mail.com" value={email} onChangeText={setEmail} keyboardType="email-address" />
             <Input label="كلمة المرور" placeholder="********" value={password} onChangeText={setPassword} secureTextEntry />
 
-            <Button title={isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"} onPress={handleAuth} loading={loading} style={styles.submitBtn} />
+            <Button title={isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"} onPress={handleAuth} isLoading={loading} style={styles.submitBtn} />
             <Button title={isLogin ? "ليس لديك حساب؟ سجل الآن" : "لديك حساب بالفعل؟ سجل دخولك"} variant="ghost" onPress={() => setIsLogin(!isLogin)} />
           </View>
 
@@ -388,5 +388,5 @@ const styles = StyleSheet.create({
   backBtn: { marginTop: TOKENS.spacing.xl },
   statusContainer: { flex: 1, justifyContent: "center", padding: TOKENS.spacing.xl, gap: TOKENS.spacing.lg },
   statusTitle: { color: TOKENS.colors.brandPrimary },
-  statusMessage: { marginBottom: TOKENS.spacing.xl },
+  statusMessage: { marginBottom: TOKENS.spacing.lg },
 });

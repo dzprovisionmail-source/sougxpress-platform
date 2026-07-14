@@ -123,7 +123,7 @@ export default function CustomerAddressesScreen() {
                 <View style={[styles.addressInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
                   <View style={[styles.titleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                     <Typography variant="h3">{address.address_line1}</Typography>
-                    {address.is_default && <Badge variant="success">افتراضي</Badge>}
+                    {address.is_default && <Badge variant="success" label="افتراضي" />}
                   </View>
                   <Typography variant="body" color="secondary">{address.city}, {address.country}</Typography>
                 </View>

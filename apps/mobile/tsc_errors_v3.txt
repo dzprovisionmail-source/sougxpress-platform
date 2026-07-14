@@ -1,0 +1,55 @@
+src/app/(tabs)/driver.tsx(50,39): error TS2353: Object literal may only specify known properties, and 'avatar_url' does not exist in type 'Partial<Driver>'.
+src/app/(tabs)/driver.tsx(90,27): error TS2339: Property 'avatar_url' does not exist on type 'Driver'.
+src/app/(tabs)/driver.tsx(116,127): error TS2339: Property 'email' does not exist on type 'Driver'.
+src/app/(tabs)/driver.tsx(117,122): error TS2339: Property 'city' does not exist on type 'Driver'.
+src/app/(tabs)/driver.tsx(118,119): error TS2339: Property 'neighborhood' does not exist on type 'Driver'.
+src/app/(tabs)/driver.tsx(126,49): error TS2339: Property 'vehicle_make' does not exist on type 'Driver'.
+src/app/(tabs)/driver.tsx(127,47): error TS2339: Property 'vehicle_color' does not exist on type 'Driver'.
+src/app/(tabs)/driver.tsx(128,53): error TS2339: Property 'license_plate' does not exist on type 'Driver'.
+src/app/(tabs)/home.tsx(178,29): error TS2304: Cannot find name 'radius'.
+src/app/(tabs)/home.tsx(179,30): error TS2304: Cannot find name 'radius'.
+src/app/(tabs)/home.tsx(181,15): error TS2339: Property 'shadows' does not exist on type '{ primary: string; primaryDark: string; accent: string; success: string; warning: string; error: string; backgroundLight: string; backgroundDark: string; card: string; text: string; textSecondary: string; divider: string; white: string; black: string; }'.
+src/app/(tabs)/home.tsx(203,19): error TS2304: Cannot find name 'radius'.
+src/app/(tabs)/home.tsx(204,15): error TS2339: Property 'shadows' does not exist on type '{ primary: string; primaryDark: string; accent: string; success: string; warning: string; error: string; backgroundLight: string; backgroundDark: string; card: string; text: string; textSecondary: string; divider: string; white: string; black: string; }'.
+src/app/(tabs)/profile.tsx(38,41): error TS2353: Object literal may only specify known properties, and 'avatar_url' does not exist in type 'Partial<Customer>'.
+src/app/(tabs)/profile.tsx(64,29): error TS2339: Property 'avatar_url' does not exist on type 'Customer'.
+src/app/(tabs)/profile.tsx(75,131): error TS2339: Property 'email' does not exist on type 'Customer'.
+src/app/(tabs)/profile.tsx(76,126): error TS2339: Property 'city' does not exist on type 'Customer'.
+src/app/(tabs)/profile.tsx(77,123): error TS2339: Property 'neighborhood' does not exist on type 'Customer'.
+src/app/(tabs)/profile.tsx(78,122): error TS2339: Property 'address' does not exist on type 'Customer'.
+src/app/(tabs)/store.tsx(167,28): error TS2304: Cannot find name 'router'.
+src/app/customer/cart.tsx(115,31): error TS2339: Property 'image_url' does not exist on type 'Product'.
+src/app/customer/cart.tsx(116,54): error TS2339: Property 'image_url' does not exist on type 'Product'.
+src/app/customer/profile.tsx(155,15): error TS2322: Type '{ size: number; name: string; backgroundColor: string; }' is not assignable to type 'IntrinsicAttributes & AvatarProps'.
+  Property 'name' does not exist on type 'IntrinsicAttributes & AvatarProps'.
+src/app/customer/settings.tsx(111,44): error TS2339: Property 'white' does not exist on type '{ bgBase: string; bgSurface: string; bgElevated: string; borderSubtle: string; textPrimary: string; textSecondary: string; textDisabled: string; textOnBrand: string; primary: string; secondary: string; ... 4 more ...; info: string; }'.
+src/app/merchant-orders.tsx(141,15): error TS2339: Property 'shadows' does not exist on type '{ primary: string; primaryDark: string; accent: string; success: string; warning: string; error: string; backgroundLight: string; backgroundDark: string; card: string; text: string; textSecondary: string; divider: string; white: string; black: string; }'.
+src/app/store-details.tsx(96,10): error TS2739: Type '{ storeName: string; category: string; rating: number; isOpen: boolean; storeLogoUrl: null; coverImageUrl: null; isMerchantView: false; }' is missing the following properties from type 'StoreHeaderProps': onLogoUpload, onCoverUpload
+src/app/store-details.tsx(108,20): error TS2339: Property 'description' does not exist on type 'Store'.
+src/components/auth/AuthScreen.tsx(365,95): error TS2322: Type '{ title: string; onPress: () => Promise<void>; loading: boolean; style: { marginTop: number; }; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'loading' does not exist on type 'IntrinsicAttributes & ButtonProps'. Did you mean 'isLoading'?
+src/components/checkout/PaymentMethod.tsx(43,19): error TS2304: Cannot find name 'radius'.
+src/components/orders/MerchantOrderCard.tsx(102,15): error TS2322: Type '"success"' is not assignable to type '"primary" | "secondary" | "danger" | "outline" | "ghost"'.
+src/components/orders/PreparationTimer.tsx(47,19): error TS2304: Cannot find name 'radius'.
+src/components/profile/DriverStatusCard.tsx(35,29): error TS2349: This expression is not callable.
+  No constituent of type 'TextStyle | ViewStyle | ImageStyle' is callable.
+src/components/profile/DriverStatusCard.tsx(72,15): error TS2322: Type '(isOnline: boolean) => { fontSize: number; fontWeight: string; color: string; flex: number; textAlign: string; }' is not assignable to type 'TextStyle | ViewStyle | ImageStyle'.
+src/components/profile/ProfileHeader.tsx(54,15): error TS2339: Property 'shadows' does not exist on type '{ primary: string; primaryDark: string; accent: string; success: string; warning: string; error: string; backgroundLight: string; backgroundDark: string; card: string; text: string; textSecondary: string; divider: string; white: string; black: string; }'.
+src/components/profile/StoreHeader.tsx(34,50): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: ImageProps): Image', gave the following error.
+    Type 'TextStyle | ViewStyle | ImageStyle' is not assignable to type 'StyleProp<ImageStyle>'.
+      Type 'TextStyle' is not assignable to type 'StyleProp<ImageStyle>'.
+        Type 'TextStyle' is not assignable to type 'ImageStyle'.
+          Types of property 'overflow' are incompatible.
+            Type '"visible" | "hidden" | "scroll"' is not assignable to type '"visible" | "hidden"'.
+              Type '"scroll"' is not assignable to type '"visible" | "hidden"'.
+  Overload 2 of 2, '(props: ImageProps, context: any): Image', gave the following error.
+    Type 'TextStyle | ViewStyle | ImageStyle' is not assignable to type 'StyleProp<ImageStyle>'.
+      Type 'TextStyle' is not assignable to type 'StyleProp<ImageStyle>'.
+        Type 'TextStyle' is not assignable to type 'ImageStyle'.
+          Types of property 'overflow' are incompatible.
+            Type '"visible" | "hidden" | "scroll"' is not assignable to type '"visible" | "hidden"'.
+              Type '"scroll"' is not assignable to type '"visible" | "hidden"'.
+src/components/profile/StoreHeader.tsx(144,15): error TS2322: Type '(isOpen: boolean) => { fontSize: number; fontWeight: string; color: string; marginRight: number; }' is not assignable to type 'TextStyle | ViewStyle | ImageStyle'.
+src/components/ui/index.ts(6,10): error TS2305: Module '"./ProductCard"' has no exported member 'default'.
+src/components/ui/index.ts(7,10): error TS2305: Module '"./StoreCard"' has no exported member 'default'.

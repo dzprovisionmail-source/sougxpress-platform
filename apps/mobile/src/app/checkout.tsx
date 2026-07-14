@@ -97,7 +97,7 @@ const CheckoutScreen = () => {
                 <View style={[styles.sectionHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                   <Typography variant="h3">🏪 المتجر</Typography>
                   <Typography variant="body" color="primary" style={{ fontWeight: 'bold' }}>
-                    {cartItems[0].product.stores?.name || "متجر محلي"}
+                    {(cartItems[0].product as any).stores?.name || "متجر محلي"}
                   </Typography>
                 </View>
               </Card>
@@ -154,7 +154,7 @@ const CheckoutScreen = () => {
             <Button
               title="تأكيد الطلب"
               onPress={onConfirm}
-              loading={loading}
+              isLoading={loading}
               style={styles.confirmButton}
             />
           </View>

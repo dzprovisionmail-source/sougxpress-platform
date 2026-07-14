@@ -1,12 +1,11 @@
-
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { Camera } from 'lucide-react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import AvatarUploader from './AvatarUploader';
 import { colors } from '@/design/colors';
 import { typography } from '@/design/typography';
 import { spacing } from '@/design/spacing';
 import { radius } from '@/design/radius';
+import { shadows } from '@/design/shadows';
 
 interface ProfileHeaderProps {
   avatarUrl?: string | null;
@@ -31,7 +30,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         {onAvatarUpload ? (
           <AvatarUploader avatarUrl={avatarUrl} onUpload={onAvatarUpload} size={80} />
         ) : (
-          <AvatarUploader avatarUrl={avatarUrl} onUpload={() => {}} size={80} /> // Non-editable view
+          <AvatarUploader avatarUrl={avatarUrl} onUpload={() => {}} size={80} />
         )}
       </View>
       <Text style={styles.name}>{name}</Text>
@@ -51,7 +50,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderBottomLeftRadius: radius.medium,
     borderBottomRightRadius: radius.medium,
-    ...colors.shadows.medium,
+    ...shadows.medium,
   },
   avatarContainer: {
     marginBottom: spacing.sm,

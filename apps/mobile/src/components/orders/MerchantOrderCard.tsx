@@ -1,23 +1,21 @@
-
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { 
-  Receipt, User, MapPin, ShoppingCart, MessageSquare, 
-  Wallet, Clock, CheckCircle2, XCircle, PlayCircle, PackageCheck 
+  User, MapPin, ShoppingCart, MessageSquare, 
+  PlayCircle, PackageCheck 
 } from 'lucide-react-native';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { radius } from '@/design/radius';
 import { typography } from '@/design/typography';
-import { shadows } from '@/design/shadows';
 import { iconSizes } from '@/design/icons';
-import { Order, OrderStatus } from '../../types/schema-03-core';
-import { Card, Button } from '@/design/components';
+import { OrderStatus } from '@/types/schema-03-core';
+import { Card, Button } from '@/components/ui';
 import OrderStatusBadge from './OrderStatusBadge';
 import PreparationTimer from './PreparationTimer';
 
 interface MerchantOrderCardProps {
-  order: any; // Using any because of joined data (customer, address)
+  order: any;
   onUpdateStatus: (orderId: string, newStatus: OrderStatus) => void;
 }
 
@@ -28,7 +26,6 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
 
   return (
     <Card style={styles.card}>
-      {/* Header: Order ID & Status */}
       <View style={styles.header}>
         <OrderStatusBadge status={order.status} />
         <View style={styles.orderIdContainer}>
@@ -39,7 +36,6 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
 
       <View style={styles.divider} />
 
-      {/* Customer & Location */}
       <View style={styles.infoRow}>
         <User size={iconSizes.small} color={colors.textSecondary} />
         <Text style={styles.infoText}>{order.customer?.full_name || 'زبون'}</Text>
@@ -51,7 +47,6 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
 
       <View style={styles.divider} />
 
-      {/* Order Content Placeholder (Items should be fetched separately or joined) */}
       <View style={styles.infoRow}>
         <ShoppingCart size={iconSizes.small} color={colors.textSecondary} />
         <Text style={styles.infoText}>قيمة الطلب: {(order.total_minor / 100).toFixed(2)} د.ج</Text>
@@ -64,7 +59,6 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
         </View>
       )}
 
-      {/* Actions based on status */}
       <View style={styles.actionsContainer}>
         {isNew && (
           <>
@@ -99,7 +93,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
             <Button 
               title="📦 جاهز للاستلام" 
               onPress={() => onUpdateStatus(order.id, 'ready_for_pickup')} 
-              variant="success" 
+              variant="primary" 
               icon={<PackageCheck size={iconSizes.small} color={colors.white} />}
               style={styles.preparingButton}
             />

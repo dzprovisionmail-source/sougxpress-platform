@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { CustomerAddress, Store } from '../types/schema-03-core';
-import { processCheckout, CheckoutData } from '../services/checkout.service';
+import { supabase } from '@/lib/supabase';
+import { CustomerAddress } from '@/types/schema-03-core';
+import { processCheckout, CheckoutData } from '@/services/checkout.service';
 import useCart from './useCart';
 
 const useCheckout = () => {
@@ -36,7 +35,7 @@ const useCheckout = () => {
 
   const handleConfirmOrder = async (): Promise<{ success: boolean; orderId?: string }> => {
     if (!currentUserId || !selectedAddress || cartItems.length === 0) {
-      setError("Veuillez sélectionner une adresse et vous assurer que votre panier n'est pas vide.");
+      setError("يرجى اختيار العنوان والتأكد من أن سلتك ليست فارغة.");
       return { success: false };
     }
 
@@ -66,7 +65,7 @@ const useCheckout = () => {
       setLoading(false);
       return { success: true, orderId: result.orderId };
     } else {
-      setError(result.error || "Échec de la création de la commande.");
+      setError(result.error || "فشل في إنشاء الطلب.");
       setLoading(false);
       return { success: false };
     }

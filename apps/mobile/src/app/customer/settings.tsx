@@ -12,7 +12,7 @@ import {
   Typography,
   Card,
 } from "@/components/ui";
-import { Settings, ChevronRight, ChevronLeft, Moon, Bell, Shield, Globe, HelpCircle } from "lucide-react-native";
+import { Moon, Bell, Shield, Globe, HelpCircle, ChevronRight, ChevronLeft } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { I18nManager } from "react-native";
@@ -108,7 +108,7 @@ export default function CustomerSettingsScreen() {
                         value={item.value as boolean}
                         onValueChange={item.onValueChange}
                         trackColor={{ false: colors.borderSubtle, true: colors.primary }}
-                        thumbColor={colors.white}
+                        thumbColor="#FFFFFF"
                       />
                     ) : (
                       <View style={[styles.linkValue, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
