@@ -27,6 +27,7 @@ export default function CustomerAddressesScreen() {
   const isRTL = I18nManager.isRTL;
   const [loading, setLoading] = useState(true);
   const [addresses, setAddresses] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAddresses();
@@ -35,19 +36,21 @@ export default function CustomerAddressesScreen() {
   const fetchAddresses = async () => {
     try {
       setLoading(true);
+      setError(null);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from("customer_addresses")
         .select("*")
         .eq("customer_id", user.id)
         .order("is_default", { ascending: false });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setAddresses(data || []);
-    } catch (error) {
-      console.error("Error fetching addresses:", error);
+    } catch (err) {
+      console.error("Error fetching addresses:", err);
+      setError("حدث خطأ أثناء تحميل العناوين");
     } finally {
       setLoading(false);
     }
@@ -64,13 +67,14 @@ export default function CustomerAddressesScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              const { error } = await supabase
+              const { error: deleteError } = await supabase
                 .from("customer_addresses")
                 .delete()
                 .eq("id", id);
-              if (error) throw error;
+              if (deleteError) throw deleteError;
               fetchAddresses();
-            } catch (error) {
+            } catch (err) {
+              console.error("Error deleting address:", err);
               Alert.alert("خطأ", "تعذر حذف العنوان");
             }
           },
@@ -80,7 +84,7 @@ export default function CustomerAddressesScreen() {
   };
 
   const getAddressIcon = (line1: string) => {
-    const text = line1.toLowerCase();
+    const text = (line1 || "").toLowerCase();
     if (text.includes("منزل") || text.includes("home")) return <Home size={20} color={colors.primary} />;
     if (text.includes("عمل") || text.includes("work") || text.includes("office")) return <Briefcase size={20} color={colors.primary} />;
     return <MapIcon size={20} color={colors.primary} />;
@@ -105,11 +109,18 @@ export default function CustomerAddressesScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {addresses.length === 0 ? (
+        {error ? (
+          <View style={styles.emptyContainer}>
+            <Typography variant="body" color="error">{error}</Typography>
+            <TouchableOpacity onPress={fetchAddresses} style={{ marginTop: 16 }}>
+              <Typography variant="caption" color="primary">إعادة المحاولة</Typography>
+            </TouchableOpacity>
+          </View>
+        ) : addresses.length === 0 ? (
           <View style={styles.emptyContainer}>
             <MapPin color={colors.textDisabled} size={64} />
             <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
-              ليس لديك أي عناوين مسجلة
+              لا توجد عناوين محفوظة
             </Typography>
           </View>
         ) : (
@@ -122,10 +133,10 @@ export default function CustomerAddressesScreen() {
                 
                 <View style={[styles.addressInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
                   <View style={[styles.titleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                    <Typography variant="h3">{address.address_line1}</Typography>
+                    <Typography variant="h3" style={{ color: colors.textPrimary }}>{address.address_line1}</Typography>
                     {address.is_default && <Badge variant="success" label="افتراضي" />}
                   </View>
-                  <Typography variant="body" color="secondary">{address.city}, {address.country}</Typography>
+                  <Typography variant="body" color="secondary" style={{ color: colors.textSecondary }}>{address.city}, {address.country}</Typography>
                 </View>
 
                 <TouchableOpacity onPress={() => handleDeleteAddress(address.id)}>
@@ -176,6 +187,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: TOKENS.spacing.lg,
+    paddingBottom: 100, // Bottom padding for tabs
     gap: TOKENS.spacing.md,
     flexGrow: 1,
   },

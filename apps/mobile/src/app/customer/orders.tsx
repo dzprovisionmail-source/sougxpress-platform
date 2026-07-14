@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
-  ScrollView,
   SafeAreaView,
   ActivityIndicator,
   FlatList,
@@ -28,6 +27,7 @@ export default function CustomerOrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -36,10 +36,11 @@ export default function CustomerOrdersScreen() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
+      setError(null);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from("orders")
         .select(`
           *,
@@ -48,10 +49,11 @@ export default function CustomerOrdersScreen() {
         .eq("customer_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setOrders(data || []);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      setError("حدث خطأ أثناء تحميل الطلبات");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -120,23 +122,32 @@ export default function CustomerOrdersScreen() {
         <Typography variant="h1" align="right" style={styles.headerTitle}>طلباتي</Typography>
       </View>
 
-      <FlatList
-        data={orders}
-        renderItem={renderOrderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <ClipboardList color={colors.textDisabled} size={64} />
-            <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
-              ليس لديك أي طلبات بعد
-            </Typography>
-          </View>
-        }
-      />
+      {error ? (
+        <View style={styles.emptyContainer}>
+          <Typography variant="body" color="error">{error}</Typography>
+          <TouchableOpacity onPress={fetchOrders} style={{ marginTop: 16 }}>
+            <Typography variant="caption" color="primary">إعادة المحاولة</Typography>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          renderItem={renderOrderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <ClipboardList color={colors.textDisabled} size={64} />
+              <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
+                لا توجد طلبات حالياً
+              </Typography>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -161,6 +172,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: TOKENS.spacing.lg,
+    paddingBottom: 100, // Bottom padding for tabs
     gap: TOKENS.spacing.md,
     flexGrow: 1,
   },

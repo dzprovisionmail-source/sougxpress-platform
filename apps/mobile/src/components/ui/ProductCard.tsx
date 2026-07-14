@@ -41,32 +41,49 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       style={[styles.container, style]}
     >
       <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: image || "https://via.placeholder.com/150" }} 
-          style={[styles.image, { backgroundColor: colors.bgSurface }]}
-          resizeMode="cover"
-        />
+        {image ? (
+          <Image 
+            source={{ uri: image }} 
+            style={[styles.image, { backgroundColor: colors.bgSurface }]}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.image, styles.placeholderContainer, { backgroundColor: colors.bgElevated }]}>
+            <Ionicons name="cube-outline" size={32} color={colors.textDisabled} />
+          </View>
+        )}
         <TouchableOpacity 
-          style={[styles.favoriteButton, { backgroundColor: colors.bgBase }]}
+          style={[styles.favoriteButton, { backgroundColor: "rgba(255,255,255,0.9)" }]}
           activeOpacity={0.7}
         >
-          <Ionicons name="heart-outline" size={20} color={colors.primary} />
+          <Ionicons name="heart-outline" size={18} color={colors.primary} />
         </TouchableOpacity>
       </View>
       
       <View style={styles.content}>
-        <Typography variant="h3" numberOfLines={1} align="right" style={styles.title}>
+        <Typography 
+          variant="h3" 
+          numberOfLines={1} 
+          align="right" 
+          style={[styles.title, { color: colors.textPrimary }]}
+        >
           {title}
         </Typography>
         
         {storeName && (
-          <Typography variant="caption" color="secondary" numberOfLines={1} align="right">
+          <Typography 
+            variant="caption" 
+            color="secondary" 
+            numberOfLines={1} 
+            align="right"
+            style={{ color: colors.textSecondary }}
+          >
             {storeName}
           </Typography>
         )}
         
         <View style={[styles.footer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          <Typography variant="h2" color="brand" align="right">
+          <Typography variant="h3" color="primary" align="right" style={{ fontWeight: "700" }}>
             {price}
           </Typography>
           <TouchableOpacity style={styles.addButton} activeOpacity={0.7}>
@@ -80,7 +97,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
 const CARD_WIDTH = 160;
 const IMAGE_HEIGHT = 120;
-const ICON_BUTTON_SIZE = 44;
+const ICON_BUTTON_SIZE = 40;
 
 const styles = StyleSheet.create({
   container: {
@@ -88,6 +105,7 @@ const styles = StyleSheet.create({
     padding: 0,
     marginRight: TOKENS.spacing.md,
     marginBottom: TOKENS.spacing.sm,
+    overflow: "hidden",
   },
   imageContainer: {
     width: "100%",
@@ -97,36 +115,41 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
-    borderTopLeftRadius: TOKENS.radius.lg,
-    borderTopRightRadius: TOKENS.radius.lg,
+  },
+  placeholderContainer: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   favoriteButton: {
     position: "absolute",
-    top: TOKENS.spacing.sm,
-    right: TOKENS.spacing.sm,
-    borderRadius: TOKENS.radius.full,
-    padding: TOKENS.spacing.xs,
-    width: 32,
-    height: 32,
+    top: 8,
+    right: 8,
+    borderRadius: 12,
+    width: 28,
+    height: 28,
     alignItems: "center",
     justifyContent: "center",
-    ...TOKENS.shadows.premium,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   content: {
-    padding: TOKENS.spacing.md,
+    padding: TOKENS.spacing.sm,
   },
   title: {
-    marginBottom: TOKENS.spacing.xs,
+    marginBottom: 2,
+    fontWeight: "600",
   },
   footer: {
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: TOKENS.spacing.sm,
+    marginTop: 4,
   },
   addButton: {
-    minWidth: ICON_BUTTON_SIZE,
-    minHeight: ICON_BUTTON_SIZE,
+    width: ICON_BUTTON_SIZE,
+    height: ICON_BUTTON_SIZE,
     alignItems: "center",
     justifyContent: "center",
   }

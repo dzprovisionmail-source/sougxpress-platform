@@ -27,6 +27,7 @@ export default function CustomerFavoritesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [favorites, setFavorites] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFavorites();
@@ -35,11 +36,11 @@ export default function CustomerFavoritesScreen() {
   const fetchFavorites = async () => {
     try {
       setLoading(true);
+      setError(null);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Note: We check if the table exists first to avoid crash if it's missing
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from("customer_favorites")
         .select(`
           *,
@@ -50,18 +51,18 @@ export default function CustomerFavoritesScreen() {
         `)
         .eq("customer_id", user.id);
 
-      if (error) {
-        if (error.code === "PGRST116" || error.message.includes("does not exist")) {
-          console.warn("customer_favorites table missing, showing empty state");
+      if (fetchError) {
+        if (fetchError.code === "PGRST116" || fetchError.message.includes("does not exist")) {
           setFavorites([]);
         } else {
-          throw error;
+          throw fetchError;
         }
       } else {
         setFavorites(data || []);
       }
-    } catch (error) {
-      console.error("Error fetching favorites:", error);
+    } catch (err) {
+      console.error("Error fetching favorites:", err);
+      setError("حدث خطأ أثناء تحميل المفضلة");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -75,15 +76,15 @@ export default function CustomerFavoritesScreen() {
 
   const handleRemoveFavorite = async (favoriteId: string) => {
     try {
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from("customer_favorites")
         .delete()
         .eq("id", favoriteId);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
       setFavorites(favorites.filter(f => f.id !== favoriteId));
-    } catch (error) {
-      console.error("Error removing favorite:", error);
+    } catch (err) {
+      console.error("Error removing favorite:", err);
     }
   };
 
@@ -107,11 +108,18 @@ export default function CustomerFavoritesScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
         }
       >
-        {favorites.length === 0 ? (
+        {error ? (
+          <View style={styles.emptyContainer}>
+            <Typography variant="body" color="error">{error}</Typography>
+            <TouchableOpacity onPress={fetchFavorites} style={{ marginTop: 16 }}>
+              <Typography variant="caption" color="primary">إعادة المحاولة</Typography>
+            </TouchableOpacity>
+          </View>
+        ) : favorites.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Heart color={colors.textDisabled} size={64} />
             <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
-              ليس لديك أي منتجات مفضلة بعد
+              لا توجد عناصر في المفضلة
             </Typography>
           </View>
         ) : (
@@ -141,7 +149,7 @@ export default function CustomerFavoritesScreen() {
                     </View>
                     
                     <View style={[styles.cardInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-                      <Typography variant="h3" numberOfLines={1}>{product.name}</Typography>
+                      <Typography variant="h3" numberOfLines={1} style={{ color: colors.textPrimary }}>{product.name}</Typography>
                       <Typography variant="caption" color="secondary">{product.stores?.name || "متجر"}</Typography>
                       
                       <View style={[styles.ratingRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
@@ -190,6 +198,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: TOKENS.spacing.lg,
+    paddingBottom: 100, // Bottom padding for tabs
     flexGrow: 1,
   },
   grid: {

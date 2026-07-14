@@ -85,6 +85,7 @@ export default function CustomerHomeScreen() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [stores, setStores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
   
   const colors = getThemeColors(theme);
@@ -97,16 +98,18 @@ export default function CustomerHomeScreen() {
   const fetchStores = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      setError(null);
+      const { data, error: fetchError } = await supabase
         .from("stores")
         .select("*")
-        .eq("is_open", true)
+        .eq("status", "active")
         .limit(10);
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setStores(data || []);
-    } catch (error) {
-      console.error("Error fetching stores:", error);
+    } catch (err) {
+      console.error("Error fetching stores:", err);
+      setError("حدث خطأ أثناء تحميل المتاجر");
     } finally {
       setLoading(false);
     }
@@ -278,6 +281,14 @@ export default function CustomerHomeScreen() {
           <SectionHeader title="محلات مميزة" onSeeAll={() => {}} theme={theme} />
           {loading ? (
             <ActivityIndicator size="small" color={colors.primary} style={{ margin: 20 }} />
+          ) : error ? (
+            <View style={styles.emptyContainer}>
+              <Typography variant="caption" color="error">{error}</Typography>
+            </View>
+          ) : stores.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Typography variant="body" color="secondary">لا توجد متاجر متاحة حالياً</Typography>
+            </View>
           ) : (
             <ScrollView 
               horizontal 
@@ -294,7 +305,7 @@ export default function CustomerHomeScreen() {
                   name={store.name}
                   category={store.category}
                   rating={store.rating?.toString() || "0.0"}
-                  isOpen={store.is_open}
+                  isOpen={store.status === 'active'}
                   theme={theme}
                   onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
                 />
@@ -314,7 +325,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: TOKENS.spacing.xl,
+    paddingBottom: 100, // Bottom padding for tabs
   },
   section: {
     marginTop: TOKENS.spacing.md,
@@ -390,5 +401,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  emptyContainer: {
+    padding: TOKENS.spacing.xl,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

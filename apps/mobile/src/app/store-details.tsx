@@ -59,15 +59,7 @@ const StoreDetailsScreen = () => {
     );
   }
 
-  if (storeError || productsError) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>معرّف المتجر غير متوفر</Text>
-      </View>
-    );
-  }
-
-  if (!store) {
+  if (storeError || productsError || !store) {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>معرّف المتجر غير متوفر</Text>
@@ -92,7 +84,7 @@ const StoreDetailsScreen = () => {
           ),
         }}
       />
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
         <StoreHeader
           storeName={store.name}
           category={store.category}
@@ -104,7 +96,7 @@ const StoreDetailsScreen = () => {
         />
 
         <Card style={styles.storeInfoCard}>
-          <Text style={styles.storeDescription}>
+          <Text style={[styles.storeDescription, { color: colors.text }]}>
             {store.description || 'لا يوجد وصف متاح لهذا المتجر.'}
           </Text>
           <View style={styles.contactButtons}>
@@ -131,7 +123,7 @@ const StoreDetailsScreen = () => {
 
         {/* Product Categories */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>فئات المنتجات</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>فئات المنتجات</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
             {productCategories.map((category, index) => (
               <TouchableOpacity
@@ -146,6 +138,7 @@ const StoreDetailsScreen = () => {
                   style={[
                     styles.categoryText,
                     selectedCategory === category && styles.selectedCategoryText,
+                    { color: selectedCategory === category ? "#FFFFFF" : colors.text }
                   ]}
                 >
                   {category}
@@ -157,21 +150,23 @@ const StoreDetailsScreen = () => {
 
         {/* Products List */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>المنتجات</Text>
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                title={product.name}
-                price={`${(product.price_minor / 100).toFixed(2)} د.ج`}
-                image={product.image_url || ''}
-                storeName={store.name}
-                onPress={() => handleProductPress(product.id)}
-              />
-            ))
-          ) : (
-            <Text style={styles.noResultsText}>لا توجد منتجات في هذه الفئة.</Text>
-          )}
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>المنتجات</Text>
+          <View style={styles.productsGrid}>
+            {filteredProducts.length > 0 ? (
+              filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  title={product.name}
+                  price={`${(product.price_minor / 100).toFixed(2)} د.ج`}
+                  image={product.image_url || ''}
+                  storeName={store.name}
+                  onPress={() => handleProductPress(product.id)}
+                />
+              ))
+            ) : (
+              <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>لا توجد منتجات حالياً</Text>
+            )}
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -209,7 +204,6 @@ const styles = StyleSheet.create({
   },
   storeDescription: {
     ...typography.body,
-    color: colors.text,
     textAlign: 'right',
     marginBottom: spacing.md,
   },
@@ -227,7 +221,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.title,
-    color: colors.text,
     textAlign: 'right',
     marginBottom: spacing.md,
     marginHorizontal: spacing.lg,
@@ -249,15 +242,20 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     ...typography.subtitle,
-    color: colors.text,
   },
   selectedCategoryText: {
     color: "#FFFFFF",
   },
+  productsGrid: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
   noResultsText: {
     ...typography.body,
-    color: colors.textSecondary,
     textAlign: 'center',
+    width: '100%',
     marginTop: spacing.lg,
   },
   cartBadge: {

@@ -4,7 +4,6 @@ import {
   View, 
   StyleSheet, 
   Image, 
-  TouchableOpacity, 
   I18nManager 
 } from "react-native";
 import { Typography } from "./Typography";
@@ -28,7 +27,6 @@ interface StoreCardProps {
 }
 
 export const StoreCard: React.FC<StoreCardProps> = ({
-  id,
   name,
   category,
   rating,
@@ -48,45 +46,38 @@ export const StoreCard: React.FC<StoreCardProps> = ({
       onPress={onPress} 
       style={[styles.container, style]}
     >
-      {/* Cover Image Container */}
       <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: coverImage || "https://via.placeholder.com/300x200" }} 
-          style={[styles.image, { backgroundColor: colors.bgSurface }]}
-          resizeMode="cover"
-        />
+        {coverImage ? (
+          <Image 
+            source={{ uri: coverImage }} 
+            style={[styles.image, { backgroundColor: colors.bgSurface }]}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.image, styles.placeholderContainer, { backgroundColor: colors.bgElevated }]}>
+            <Ionicons name="business-outline" size={48} color={colors.textDisabled} />
+            <Typography variant="caption" color="disabled" style={{ marginTop: 8 }}>{name}</Typography>
+          </View>
+        )}
         
-        {/* Gradient Overlay */}
-        <View 
-          style={[
-            styles.overlay, 
-            { backgroundColor: "rgba(0, 0, 0, 0.3)" }
-          ]} 
-        />
-        
-        {/* Badges Container */}
         <View style={[styles.badgesContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          {/* Open/Closed Badge */}
           <View 
             style={[
               styles.badge,
               { 
                 backgroundColor: isOpen ? colors.success : colors.error,
-                marginRight: isRTL ? 0 : TOKENS.spacing.sm,
-                marginLeft: isRTL ? TOKENS.spacing.sm : 0,
               }
             ]}
           >
             <Typography 
               variant="caption" 
               align="center"
-              style={{ color: colors.textOnBrand, fontWeight: "600" }}
+              style={{ color: colors.textOnBrand, fontWeight: "700" }}
             >
               {isOpen ? "مفتوح" : "مغلق"}
             </Typography>
           </View>
           
-          {/* Featured Badge */}
           {isFeatured && (
             <View 
               style={[
@@ -97,7 +88,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
               <Typography 
                 variant="caption" 
                 align="center"
-                style={{ color: colors.textOnBrand, fontWeight: "600" }}
+                style={{ color: colors.textOnBrand, fontWeight: "700" }}
               >
                 مميز
               </Typography>
@@ -106,32 +97,27 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         </View>
       </View>
       
-      {/* Content Container */}
       <View style={styles.content}>
-        {/* Store Name */}
         <Typography 
           variant="h3" 
           numberOfLines={1} 
           align="right"
-          style={styles.storeName}
+          style={[styles.storeName, { color: colors.textPrimary }]}
         >
           {name}
         </Typography>
         
-        {/* Category */}
         <Typography 
           variant="caption" 
           color="secondary" 
           numberOfLines={1}
           align="right"
-          style={styles.category}
+          style={[styles.category, { color: colors.textSecondary }]}
         >
           {category}
         </Typography>
         
-        {/* Footer Row: Rating + Delivery Time */}
         <View style={[styles.footer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          {/* Rating */}
           <View style={[styles.ratingContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <Ionicons 
               name="star" 
@@ -142,13 +128,12 @@ export const StoreCard: React.FC<StoreCardProps> = ({
             <Typography 
               variant="caption" 
               align="right"
-              style={{ fontWeight: "600", color: colors.textPrimary }}
+              style={{ fontWeight: "700", color: colors.textPrimary }}
             >
               {rating}
             </Typography>
           </View>
           
-          {/* Delivery Time */}
           <View style={[styles.deliveryContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <Ionicons 
               name="time-outline" 
@@ -160,6 +145,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
               variant="caption" 
               color="secondary"
               align="right"
+              style={{ color: colors.textSecondary }}
             >
               {deliveryTime}
             </Typography>
@@ -189,24 +175,16 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
-    borderTopLeftRadius: TOKENS.radius.lg,
-    borderTopRightRadius: TOKENS.radius.lg,
   },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderTopLeftRadius: TOKENS.radius.lg,
-    borderTopRightRadius: TOKENS.radius.lg,
+  placeholderContainer: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   badgesContainer: {
     position: "absolute",
-    top: TOKENS.spacing.md,
-    right: TOKENS.spacing.md,
-    left: "auto",
-    gap: TOKENS.spacing.sm,
+    top: TOKENS.spacing.sm,
+    right: TOKENS.spacing.sm,
+    gap: TOKENS.spacing.xs,
   },
   badge: {
     paddingHorizontal: TOKENS.spacing.sm,
@@ -217,16 +195,16 @@ const styles = StyleSheet.create({
     padding: TOKENS.spacing.md,
   },
   storeName: {
-    marginBottom: TOKENS.spacing.xs,
+    marginBottom: 2,
+    fontWeight: "700",
   },
   category: {
-    marginBottom: TOKENS.spacing.sm,
+    marginBottom: 8,
   },
   footer: {
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: TOKENS.spacing.sm,
-    gap: TOKENS.spacing.md,
+    marginTop: 4,
   },
   ratingContainer: {
     alignItems: "center",
