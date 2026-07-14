@@ -59,7 +59,7 @@ const StoreScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Chargement du magasin...</Text>
+        <Text style={styles.loadingText}>جارٍ تحميل المتجر...</Text>
       </View>
     );
   }
@@ -75,7 +75,7 @@ const StoreScreen = () => {
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      Alert.alert('Erreur de déconnexion', error.message);
+      Alert.alert('خطأ في تسجيل الخروج', error.message);
     } else {
       // Navigate to login or home screen
     }

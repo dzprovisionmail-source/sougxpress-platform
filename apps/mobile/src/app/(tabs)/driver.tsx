@@ -39,7 +39,7 @@ const DriverScreen = () => {
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      Alert.alert('Erreur de déconnexion', error.message);
+      Alert.alert('خطأ في تسجيل الخروج', error.message);
     } else {
       // Navigate to login or home screen
     }
@@ -61,7 +61,7 @@ const DriverScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Chargement du profil du livreur...</Text>
+        <Text style={styles.loadingText}>جارٍ تحميل ملف المُوصِّل...</Text>
       </View>
     );
   }
@@ -77,7 +77,7 @@ const DriverScreen = () => {
   if (!driver) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Profil du livreur introuvable.</Text>
+        <Text style={styles.errorText}>ملف المُوصِّل غير موجود.</Text>
       </View>
     );
   }
