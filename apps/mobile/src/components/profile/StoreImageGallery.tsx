@@ -4,6 +4,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, FlatList, ActivityIndi
 import * as ImagePicker from 'expo-image-picker';
 import { Images, Camera, CirclePlus } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface StoreImageGalleryProps {
   storeId: string;
@@ -20,6 +21,7 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
   onImageUpload,
   onImageDelete,
 }) => {
+  const { colors, tokens } = useAppTheme();
   const [uploading, setUploading] = useState(false);
 
   const pickImage = async () => {
@@ -100,26 +102,50 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
 
   const renderItem = ({ item }: { item: string }) => (
     <View style={styles.imageWrapper}>
-      <Image source={{ uri: item }} style={styles.galleryImage} />
+      <Image source={{ uri: item }} style={[styles.galleryImage, { borderRadius: tokens.radius.sm }]} />
       {isMerchantView && (
-        <TouchableOpacity onPress={() => handleDeleteImage(item)} style={styles.deleteButton}>
-          <Text style={styles.deleteButtonText}>X</Text>
+        <TouchableOpacity
+          onPress={() => handleDeleteImage(item)}
+          style={[styles.deleteButton, { backgroundColor: colors.error }]}
+        >
+          <Text style={{ color: colors.textOnBrand, fontSize: 12, fontWeight: 'bold' }}>X</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Images color="#007BFF" size={24} />
-        <Text style={styles.title}>معرض الصور</Text>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, borderRadius: tokens.radius.lg },
+      ]}
+    >
+      <View style={[styles.header, { marginBottom: tokens.spacing.sm }]}>
+        <Images color={colors.primary} size={24} />
+        <Text
+          style={{
+            fontFamily: tokens.typography.families.arabic,
+            fontSize: tokens.typography.sizes.md,
+            fontWeight: '700',
+            color: colors.textPrimary,
+            flex: 1,
+            textAlign: 'right',
+            marginRight: tokens.spacing.sm,
+          }}
+        >
+          معرض الصور
+        </Text>
         {isMerchantView && (
-          <TouchableOpacity onPress={pickImage} style={styles.addButton} disabled={uploading}>
+          <TouchableOpacity
+            onPress={pickImage}
+            style={[styles.addButton, { backgroundColor: colors.primary, borderRadius: tokens.radius.full }]}
+            disabled={uploading}
+          >
             {uploading ? (
-              <ActivityIndicator size="small" color="#FFF" />
+              <ActivityIndicator size="small" color={colors.textOnBrand} />
             ) : (
-              <CirclePlus size={20} color="#FFF" />
+              <CirclePlus size={20} color={colors.textOnBrand} />
             )}
           </TouchableOpacity>
         )}
@@ -130,10 +156,20 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
         keyExtractor={(item) => item}
         horizontal
         showsHorizontalScrollIndicator={false}
+        inverted
         style={styles.galleryList}
       />
       {images.length === 0 && !uploading && (
-        <Text style={styles.noImagesText}>لا توجد صور في المعرض.</Text>
+        <Text
+          style={{
+            textAlign: 'center',
+            color: colors.textSecondary,
+            fontFamily: tokens.typography.families.arabic,
+            marginTop: tokens.spacing.sm,
+          }}
+        >
+          لا توجد صور في المعرض.
+        </Text>
       )}
     </View>
   );
@@ -143,32 +179,15 @@ const styles = StyleSheet.create({
   container: {
     marginVertical: 10,
     marginHorizontal: 20,
-    backgroundColor: '#FFF',
-    borderRadius: 15,
     padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
   },
   header: {
     flexDirection: 'row-reverse', // RTL
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    flex: 1,
-    textAlign: 'right',
-    marginRight: 10,
   },
   addButton: {
-    backgroundColor: '#007BFF',
-    borderRadius: 20,
     padding: 8,
   },
   galleryList: {
@@ -181,28 +200,16 @@ const styles = StyleSheet.create({
   galleryImage: {
     width: 100,
     height: 100,
-    borderRadius: 10,
   },
   deleteButton: {
     position: 'absolute',
     top: 5,
     left: 5,
-    backgroundColor: 'rgba(255,0,0,0.7)',
     borderRadius: 15,
     width: 20,
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  noImagesText: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 10,
   },
 });
 

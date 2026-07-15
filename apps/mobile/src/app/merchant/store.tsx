@@ -6,6 +6,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import { getStoreByMerchantId } from "@/services/store.service";
 import useStore from "@/hooks/useStore";
+import { useMerchantProducts } from "@/hooks/useProducts";
 import { Store } from "@/types/schema-03-core";
 import StoreImageGallery from "@/components/profile/StoreImageGallery";
 import StoreProductManagement from "@/components/profile/StoreProductManagement";
@@ -33,6 +34,14 @@ export default function MerchantStoreScreen() {
   }, [userId]);
 
   const { store, galleryImages, loading, handleImageUpload, handleImageDelete } = useStore(storeId || "");
+  const {
+    products,
+    loading: productsLoading,
+    addProduct,
+    editProduct,
+    removeProduct,
+    setVisibility,
+  } = useMerchantProducts(storeId || "");
 
   if (resolving || (storeId && loading)) {
     return (
@@ -90,10 +99,12 @@ export default function MerchantStoreScreen() {
         <SectionCard>
           <StoreProductManagement
             isMerchantView
-            onManageProducts={() => {}}
-            onAddProduct={() => {}}
-            onEditProduct={() => {}}
-            onDeleteProduct={() => {}}
+            products={products}
+            loading={productsLoading}
+            onAddProduct={addProduct}
+            onEditProduct={editProduct}
+            onDeleteProduct={removeProduct}
+            onToggleVisibility={setVisibility}
           />
         </SectionCard>
       </ScrollView>

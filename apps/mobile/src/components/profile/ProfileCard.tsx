@@ -2,9 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Card from '../ui/Card';
-import { typography } from '@/design/typography';
-import { colors } from '@/design/colors';
-import { spacing } from '@/design/spacing';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface ProfileCardProps {
   icon: React.ReactNode;
@@ -13,37 +11,36 @@ interface ProfileCardProps {
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ icon, title, children }) => {
+  const { colors, tokens } = useAppTheme();
+
   return (
-    <Card style={styles.card}>
-      <View style={styles.cardHeader}>
+    <Card style={[styles.card, { padding: tokens.spacing.md }]}>
+      <View style={[styles.cardHeader, { marginBottom: tokens.spacing.sm }]}>
         {icon}
-        <Text style={styles.cardTitle}>{title}</Text>
+        <Text
+          style={{
+            fontFamily: tokens.typography.families.arabic,
+            fontSize: tokens.typography.sizes.md,
+            fontWeight: '700',
+            color: colors.textPrimary,
+            marginRight: tokens.spacing.sm,
+          }}
+        >
+          {title}
+        </Text>
       </View>
-      <View style={styles.cardContent}>
-        {children}
-      </View>
+      <View style={styles.cardContent}>{children}</View>
     </Card>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    // Overrides or additional styles for ProfileCard specific layout
-    padding: spacing.md,
-  },
+  card: {},
   cardHeader: {
-    flexDirection: 'row-reverse', // RTL
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    marginBottom: spacing.sm,
   },
-  cardTitle: {
-    ...typography.title,
-    color: colors.text,
-    marginRight: spacing.sm, // Adjust for RTL
-  },
-  cardContent: {
-    // Styles for content inside the card
-  },
+  cardContent: {},
 });
 
 export default ProfileCard;

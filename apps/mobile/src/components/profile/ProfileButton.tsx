@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface ProfileButtonProps {
   icon?: React.ReactNode;
@@ -10,11 +11,36 @@ interface ProfileButtonProps {
 }
 
 const ProfileButton: React.FC<ProfileButtonProps> = ({ icon, label, onPress, isLast }) => {
+  const { colors, tokens } = useAppTheme();
+
   return (
-    <TouchableOpacity style={[styles.button, isLast && styles.lastButton]} onPress={onPress}>
+    <TouchableOpacity
+      style={[
+        styles.button,
+        {
+          backgroundColor: isLast ? colors.error : colors.bgBase,
+          borderColor: colors.borderSubtle,
+          borderRadius: tokens.radius.sm,
+          paddingVertical: tokens.spacing.md,
+          paddingHorizontal: tokens.spacing.lg,
+          marginVertical: tokens.spacing.xs,
+        },
+      ]}
+      onPress={onPress}
+    >
       <View style={styles.buttonContent}>
-        {icon && <View style={styles.iconContainer}>{icon}</View>}
-        <Text style={[styles.label, isLast && styles.lastButtonLabel]}>{label}</Text>
+        {icon && <View style={{ marginLeft: tokens.spacing.sm }}>{icon}</View>}
+        <Text
+          style={{
+            fontFamily: tokens.typography.families.arabic,
+            fontSize: tokens.typography.sizes.base,
+            textAlign: 'right',
+            flex: 1,
+            color: isLast ? colors.textOnBrand : colors.textPrimary,
+          }}
+        >
+          {label}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -22,34 +48,15 @@ const ProfileButton: React.FC<ProfileButtonProps> = ({ icon, label, onPress, isL
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    backgroundColor: '#F8F8F8',
-    borderRadius: 10,
-    marginVertical: 5,
-    flexDirection: 'row-reverse', // RTL
+    borderWidth: 1,
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  lastButton: {
-    backgroundColor: '#FFEEEE', // Light red for logout
-  },
   buttonContent: {
-    flexDirection: 'row-reverse', // RTL
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     flex: 1,
-  },
-  iconContainer: {
-    marginLeft: 10, // Adjust for RTL
-  },
-  label: {
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'right', // RTL
-    flex: 1,
-  },
-  lastButtonLabel: {
-    color: '#FF0000', // Red for logout
   },
 });
 
