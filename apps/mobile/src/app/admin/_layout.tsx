@@ -73,21 +73,29 @@ export default function AdminLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="setup" />
+      <Stack.Screen name="dashboard" />
       <Stack.Screen name="stores" />
       <Stack.Screen name="merchants" />
       <Stack.Screen name="drivers" />
       <Stack.Screen name="customers" />
       <Stack.Screen name="orders" />
       <Stack.Screen name="products" />
+      <Stack.Screen name="categories" />
       <Stack.Screen name="zones" />
+      <Stack.Screen name="finances" />
+      <Stack.Screen name="subscriptions" />
+      <Stack.Screen name="promotions" />
+      <Stack.Screen name="notifications" />
+      <Stack.Screen name="reports" />
+      <Stack.Screen name="disputes" />
+      <Stack.Screen name="settings" />
+      <Stack.Screen name="logs" />
+      <Stack.Screen name="profile" />
+      {/* Legacy screens preserved */}
+      <Stack.Screen name="setup" />
       <Stack.Screen name="finance" />
       <Stack.Screen name="content" />
-      <Stack.Screen name="notifications" />
-      <Stack.Screen name="disputes" />
-      <Stack.Screen name="reports" />
       <Stack.Screen name="audit-logs" />
-      <Stack.Screen name="settings" />
     </Stack>
   );
 }
