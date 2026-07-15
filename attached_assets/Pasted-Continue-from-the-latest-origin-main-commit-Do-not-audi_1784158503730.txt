@@ -1,0 +1,212 @@
+Continue from the latest origin/main commit.
+
+Do not audit the repository.
+Do not modify Admin, Store Details, Customer Home, Merchant workspace, or Driver workspace.
+Do not create migrations.
+Do not change Supabase schema.
+Do not create another zones source.
+
+MISSION:
+Replace the current grid of all Ain Sefra neighborhoods on registration screens with one reusable searchable dropdown/select component.
+
+ACTIVE APP:
+apps/mobile
+
+TARGET FLOWS:
+- Customer registration
+- Merchant registration
+- Driver registration
+
+==================================================
+1. REUSABLE ZONE SELECTOR
+==================================================
+
+Create one reusable component for Ain Sefra zones, under the existing components structure.
+
+Suggested name:
+AinSefraZoneSelect.tsx
+
+Requirements:
+- Arabic RTL
+- right-aligned text
+- one closed field by default
+- label: "الحي"
+- placeholder: "اختر الحي"
+- opens a modal or bottom sheet
+- searchable list
+- vertical scroll
+- selected-zone checkmark
+- close/cancel action
+- confirm selection
+- support Dark / Light / Ivory themes
+- use existing ThemeContext and design system
+- no hardcoded random colors
+- no duplicate zone arrays
+- use the existing official Ain Sefra zones source already in the project
+
+Do not render all zones as buttons inside the registration page.
+
+==================================================
+2. CUSTOMER REGISTRATION
+==================================================
+
+Update the customer registration form to use the reusable zone selector.
+
+Required order:
+- الاسم الكامل
+- رقم الهاتف
+- الحي
+- العنوان التفصيلي
+- البريد الإلكتروني
+- كلمة المرور
+
+The selected zone must preserve the existing zone ID/value expected by the current registration logic.
+
+Do not change auth or Supabase business logic.
+
+==================================================
+3. MERCHANT REGISTRATION
+==================================================
+
+Update the merchant registration form to use the same zone selector.
+
+Required fields/order:
+- الاسم الكامل
+- رقم الهاتف
+- حي المتجر
+- عنوان المتجر
+- existing merchant/store fields
+- البريد الإلكتروني
+- كلمة المرور
+
+Use label:
+"حي المتجر"
+
+Do not create the store differently and do not change approval logic.
+
+==================================================
+4. DRIVER REGISTRATION
+==================================================
+
+Update the driver registration form to use the same zone selector.
+
+Required fields/order:
+- الاسم الكامل
+- رقم الهاتف
+- منطقة العمل الأساسية
+- نوع المركبة
+- رقم المركبة
+- البريد الإلكتروني
+- كلمة المرور
+
+Use label:
+"منطقة العمل الأساسية"
+
+Preserve the existing driver role and approval flow.
+
+==================================================
+5. UX REQUIREMENTS
+==================================================
+
+- remove the large neighborhood button grid from all three registration screens
+- registration page must become significantly shorter
+- keyboard must not cover active inputs
+- use KeyboardAvoidingView or the existing safe approach
+- maintain vertical scrolling
+- selected zone must remain visible after closing the selector
+- validation message in Arabic when no zone is selected
+- no horizontal clipping
+- no fields partially outside the screen
+- keep Arabic RTL layout correct
+- all labels aligned right
+- no white text on light/ivory backgrounds
+
+==================================================
+6. DO NOT
+==================================================
+
+Do not:
+- change the list of 28 neighborhoods
+- rename neighborhoods
+- duplicate zones in another file
+- modify database tables
+- modify RLS
+- modify Admin pages
+- modify store navigation
+- add new packages unless absolutely necessary
+- use pnpm
+- create fake data
+- change authentication logic
+
+==================================================
+7. VALIDATION
+==================================================
+
+Run from apps/mobile:
+
+npm install
+npx tsc --noEmit
+npx expo-doctor
+
+Also run:
+
+git diff --check
+git status
+
+Requirements:
+- TypeScript: 0 errors
+- no unrelated files changed
+- no duplicated zones list
+- customer, merchant, and driver registration all use the same component
+
+==================================================
+8. COMMIT AND PUSH
+==================================================
+
+Commit message:
+
+fix(auth): replace neighborhood grid with reusable zone selector
+
+Push to:
+origin/main
+
+Verify:
+- local HEAD = origin/main
+- working tree clean
+- latest commit exists on GitHub
+
+==================================================
+RETURN ONLY
+==================================================
+
+Zone selector:
+...
+
+Registration screens updated:
+- Customer: ✓
+- Merchant: ✓
+- Driver: ✓
+
+Files changed:
+...
+
+Validation:
+- npm install: ✓
+- TypeScript: ✓
+- expo-doctor: ✓
+- git diff check: ✓
+
+Commit:
+<hash>
+
+Push:
+✓ origin/main
+
+Git synchronization:
+✓ local HEAD = origin/main
+✓ working tree clean
+✓ GitHub contains latest commit
+
+No analysis.
+No recommendations.
+No future roadmap.
