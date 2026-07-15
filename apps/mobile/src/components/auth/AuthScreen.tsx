@@ -194,9 +194,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       if (role === "customer") {
         router.replace("/customer/home");
       } else if (role === "merchant") {
-        router.replace("/(tabs)/store");
+        router.replace("/merchant/dashboard");
       } else if (role === "driver") {
-        router.replace("/(tabs)/driver");
+        router.replace("/driver/dashboard");
       }
     }
   };

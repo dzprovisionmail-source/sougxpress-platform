@@ -25,6 +25,24 @@ export const getStore = async (storeId: string): Promise<Store | null> => {
   return data as Store;
 };
 
+export const getStoreByMerchantId = async (merchantId: string): Promise<Store | null> => {
+  if (!merchantId || !isValidUUID(merchantId)) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("stores")
+    .select("*")
+    .eq("merchant_id", merchantId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching store by merchant:", error);
+    return null;
+  }
+  return data as Store | null;
+};
+
 export const getAllStores = async (): Promise<Store[]> => {
   const { data, error } = await supabase
     .from("stores")
