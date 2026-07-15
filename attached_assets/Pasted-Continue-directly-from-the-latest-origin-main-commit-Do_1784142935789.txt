@@ -1,0 +1,370 @@
+Continue directly from the latest origin/main commit.
+
+Do not audit the repository.
+Do not produce an architecture report.
+Do not redesign Customer, Merchant, or Driver workspaces.
+This session must end with working Admin code, validation, commit, push, and GitHub synchronization.
+
+PROJECT:
+Soug-XPRESS — Arabic RTL local marketplace for Ain Sefra.
+
+ACTIVE APP:
+apps/mobile
+
+DESIGN SOURCE:
+Use the existing official design system only:
+- apps/mobile/src/design/
+- existing ThemeContext
+- existing brand assets under apps/mobile/assets/brand/
+
+Do not create another design system.
+
+==================================================
+ADMIN ACCESS RULE
+==================================================
+
+The Admin role must never appear in public registration or role selection.
+
+Access must work as follows:
+
+1. The authenticated user's role source of truth is:
+   public.profiles.role
+
+2. Allowed roles:
+   - admin
+   - founder
+
+3. After authentication:
+   - admin/founder → /admin
+   - customer → existing customer workspace
+   - merchant → existing merchant workspace
+   - driver → existing driver workspace
+
+4. Any non-admin user opening /admin must be redirected safely to their own workspace.
+
+5. Any unauthenticated user opening /admin must be redirected to the existing login/auth flow.
+
+6. Do not use user_metadata.role.
+
+7. Do not add:
+   - hidden long-press access
+   - public Admin button
+   - Admin option in role selection
+   - service_role key in the mobile app
+
+==================================================
+MISSION
+==================================================
+
+Create the professional Admin workspace structure and first operational shell.
+
+Create:
+
+apps/mobile/src/app/admin/
+  _layout.tsx
+  index.tsx
+  setup.tsx
+  stores.tsx
+  merchants.tsx
+  drivers.tsx
+  customers.tsx
+  orders.tsx
+  products.tsx
+  zones.tsx
+  finance.tsx
+  content.tsx
+  notifications.tsx
+  disputes.tsx
+  reports.tsx
+  audit-logs.tsx
+  settings.tsx
+
+Also create reusable Admin components under:
+
+apps/mobile/src/components/admin/
+
+And Admin navigation/configuration under an appropriate existing structure without duplicating design constants.
+
+==================================================
+1. ADMIN LAYOUT
+==================================================
+
+Build a protected Admin layout with:
+
+- Arabic RTL
+- safe area support
+- responsive mobile layout
+- official Soug-XPRESS wordmark/logo
+- page title
+- notification icon
+- account/profile action
+- drawer, menu, or clean mobile navigation suitable for many modules
+- theme support: Dark / Light / Ivory
+- no white text on Light or Ivory backgrounds
+- orange primary actions
+- blue secondary accents
+
+The layout must verify the active profile role before rendering Admin content.
+
+Include:
+- loading state
+- unauthorized state
+- profile missing state
+- safe redirect
+
+==================================================
+2. ADMIN DASHBOARD
+==================================================
+
+Create /admin/index.tsx as the platform control center.
+
+Display cards for existing/available data when safely supported:
+
+- عدد الزبائن
+- عدد التجار
+- عدد الموصلين
+- عدد المتاجر
+- طلبات اليوم
+- طلبات قيد الانتظار
+- طلبات قيد التوصيل
+- طلبات مكتملة
+- حسابات تنتظر الموافقة
+- تنبيهات مهمة
+
+Quick actions:
+
+- إضافة متجر
+- إضافة تاجر
+- إضافة موصل
+- إضافة زبون
+- إدارة الطلبات
+- إدارة المحتوى
+- إرسال إشعار
+- إعدادات المنصة
+
+Do not invent fake production statistics.
+If a data query is not already supported, show a clean Arabic empty/unavailable state instead of hardcoded numbers.
+
+==================================================
+3. SETUP AND OPERATIONS CENTER
+==================================================
+
+Create /admin/setup.tsx as:
+
+مركز التهيئة والتشغيل
+
+It must contain four clear creation cards:
+
+- إنشاء متجر
+- إنشاء حساب تاجر
+- إنشاء حساب موصل
+- إنشاء حساب زبون
+
+For this session:
+
+- build the complete UI structure and navigation
+- prepare form sections and validation structure
+- reuse the existing Ain Sefra zones source
+- do not create insecure users directly from the mobile client
+- do not use service_role
+- do not create new database migrations
+
+If secure account creation is not already available through an existing backend function, clearly disable the final create action with an Arabic message:
+"يتطلب إنشاء الحساب الإداري خدمة آمنة من الخادم"
+
+Do not simulate successful account creation.
+
+==================================================
+4. ADMIN MODULE PAGES
+==================================================
+
+Create consistent initial pages for:
+
+- المتاجر
+- التجار
+- الموصلون
+- الزبائن
+- الطلبات
+- المنتجات
+- المناطق
+- المالية والتسويات
+- السلايدر والمحتوى
+- الإشعارات
+- الشكاوى والنزاعات
+- التقارير
+- سجل العمليات
+- إعدادات المنصة
+
+Each page must include:
+
+- Arabic title
+- search field where relevant
+- filter action where relevant
+- add action only when appropriate
+- loading state
+- empty state
+- error state
+- consistent list/card structure
+- no invented database writes
+- navigation back to Admin dashboard
+
+Use existing Supabase services only when they already exist and are safe.
+
+==================================================
+5. ADMIN SETTINGS STRUCTURE
+==================================================
+
+Create a structured settings page with sections:
+
+- الإعدادات العامة
+- الهوية البصرية
+- إعدادات التوصيل
+- إعدادات الطلبات
+- إعدادات الدفع والتسوية
+- إعدادات المناطق
+- إعدادات الإشعارات
+- إعدادات التشغيل والصيانة
+- الأمان والصلاحيات
+- إعدادات التطبيق
+
+For now:
+- create the navigation and UI structure
+- read existing constants where available
+- do not create database columns
+- do not save unsupported settings as fake local values
+
+==================================================
+6. DESIGN CONSISTENCY
+==================================================
+
+Use only the existing design system in:
+
+apps/mobile/src/design/
+
+Use its:
+- colors
+- theme
+- typography
+- spacing
+- radius
+- shadows
+- icons
+- animations
+- components
+
+Requirements:
+
+- Arabic RTL first
+- text aligned right
+- icon/text rows RTL-correct
+- consistent cards and buttons
+- consistent page padding
+- consistent headers
+- Light/Dark/Ivory readability
+- official logo assets only
+- no temporary logo
+- no cyan primary color
+- no hardcoded random colors
+
+==================================================
+7. DO NOT
+==================================================
+
+Do not:
+
+- audit the full repository
+- change Supabase schema
+- create migrations
+- change RLS
+- expose secrets
+- add service_role to Expo
+- change Customer/Merchant/Driver business logic
+- remove existing working routes
+- add Admin to public registration
+- create fake production records
+- implement insecure user creation
+- use pnpm
+- disable TypeScript strict mode
+- create duplicate theme systems
+
+==================================================
+8. VALIDATION
+==================================================
+
+Run from apps/mobile:
+
+npm install
+npx tsc --noEmit
+npx expo-doctor
+
+Also run:
+
+git diff --check
+git status
+
+Requirements:
+
+- TypeScript: 0 errors
+- expo-doctor: all checks pass
+- no unrelated files changed
+- no secrets committed
+
+==================================================
+9. COMMIT AND PUSH
+==================================================
+
+If validation passes:
+
+Commit message:
+
+feat(admin): add protected platform management workspace
+
+Push to:
+
+origin/main
+
+Then verify:
+
+- local HEAD == origin/main
+- working tree clean
+- latest commit exists on GitHub
+
+==================================================
+RETURN ONLY
+==================================================
+
+Admin routes created:
+...
+
+Admin access guard:
+...
+
+Admin dashboard completed:
+...
+
+Setup center completed:
+...
+
+Files changed:
+...
+
+Validation:
+- npm install: ✓
+- TypeScript: ✓
+- expo-doctor: ✓
+- git diff check: ✓
+
+Commit:
+<hash>
+
+Push:
+✓ origin/main
+
+Git synchronization:
+✓ local HEAD = origin/main
+✓ working tree clean
+✓ GitHub contains latest commit
+
+No analysis.
+No recommendations.
+No future roadmap.
