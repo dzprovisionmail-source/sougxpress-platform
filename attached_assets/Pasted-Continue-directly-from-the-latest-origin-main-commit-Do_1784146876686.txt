@@ -1,0 +1,343 @@
+Continue directly from the latest origin/main commit.
+
+Do not audit the repository.
+Do not create more placeholder Admin pages.
+Do not modify Customer, Merchant, or Driver workspaces.
+Do not change the existing database schema unless a secure server-side function is absolutely required.
+Do not expose service_role or any private key in the Expo mobile app.
+
+Project:
+https://github.com/dzprovisionmail-source/sougxpress-platform
+
+Active app:
+apps/mobile
+
+Admin workspace:
+apps/mobile/src/app/admin/
+
+Mission:
+Make the Admin Setup and Operations Center functional.
+
+Work only on:
+- admin/setup.tsx
+- admin/stores.tsx
+- admin/merchants.tsx
+- admin/drivers.tsx
+- admin/customers.tsx
+- required Admin components/hooks/services
+- secure server-side account provisioning if needed
+
+==================================================
+1. ADMIN SETUP CENTER
+==================================================
+
+Complete:
+
+apps/mobile/src/app/admin/setup.tsx
+
+It must provide four real workflows:
+
+- إنشاء متجر
+- إنشاء حساب تاجر
+- إنشاء حساب موصل
+- إنشاء حساب زبون
+
+Use Arabic RTL and the existing ThemeContext/design system.
+
+Do not simulate successful creation.
+
+==================================================
+2. CREATE STORE
+==================================================
+
+Connect real store creation using the existing Supabase schema and services.
+
+Required fields:
+
+- اسم المتجر
+- التصنيف
+- الحي
+- العنوان
+- رقم الهاتف
+- الوصف
+- الشعار إن توفر
+- صورة الغلاف إن توفرت
+- أوقات العمل
+- حالة المتجر
+- متجر جديد
+- متجر مميز
+- يظهر في الصفحة الرئيسية
+- التاجر المرتبط
+
+Allow:
+
+- linking to an existing merchant
+- creating the store without a merchant temporarily when the schema allows it safely
+
+Use the existing Ain Sefra zones source only.
+
+Validate required fields and prevent invalid UUID values.
+
+After creation:
+
+- refresh Admin store lists
+- show a real Arabic success message
+- navigate to the created store or store list
+- record an audit log using the existing audit mechanism if available
+
+==================================================
+3. SECURE ACCOUNT CREATION
+==================================================
+
+The mobile client must never use service_role.
+
+For creating Merchant, Driver, and Customer Auth accounts:
+
+- first inspect whether an existing secure Supabase Edge Function or RPC already exists
+- reuse it if available
+- otherwise create one secure Supabase Edge Function dedicated to Admin account provisioning
+
+The secure function must:
+
+- require an authenticated caller
+- verify public.profiles.role is admin or founder
+- create the Supabase Auth user server-side
+- create or update public.profiles
+- create the matching merchant, driver, or customer record
+- reject duplicate email or phone
+- accept a temporary password
+- support status selection
+- return a safe result without leaking secrets
+- write an audit log
+- never expose service_role to the mobile bundle
+
+Do not create users directly with the publishable key.
+
+==================================================
+4. CREATE MERCHANT
+==================================================
+
+Required fields:
+
+- الاسم الكامل
+- الهاتف
+- البريد الإلكتروني
+- كلمة مرور مؤقتة
+- الحي
+- العنوان
+- الحالة
+- المتجر المرتبط اختياريًا
+- تفعيل مباشر أو قيد المراجعة
+
+After creation:
+
+- show generated login information clearly
+- provide a copy action
+- refresh merchant lists
+- verify role = merchant in public.profiles
+
+==================================================
+5. CREATE DRIVER
+==================================================
+
+Required fields:
+
+- الاسم الكامل
+- الهاتف
+- البريد الإلكتروني
+- كلمة مرور مؤقتة
+- الحي
+- نوع المركبة
+- رقم المركبة
+- حالة الحساب
+- السماح بالعمل
+- عداد التوصيلات الابتدائي = 0
+
+Business rules:
+
+- delivery fee = 150 DZD
+- driver share = 80%
+- platform share = 20%
+- settlement cycle = 50 deliveries
+
+Do not duplicate these values if existing constants already define them.
+
+After creation:
+
+- refresh driver lists
+- verify role = driver
+- show Arabic success state
+
+==================================================
+6. CREATE CUSTOMER
+==================================================
+
+Required fields:
+
+- الاسم الكامل
+- الهاتف
+- البريد الإلكتروني
+- كلمة مرور مؤقتة
+- الحي
+- العنوان
+- حالة الحساب
+- العضو الذهبي only when explicitly selected
+
+Prevent duplicate email and phone.
+
+After creation:
+
+- refresh customer lists
+- verify role = customer
+- show Arabic success state
+
+==================================================
+7. ADMIN LIST MANAGEMENT
+==================================================
+
+Connect the existing Admin pages to real data:
+
+- stores.tsx
+- merchants.tsx
+- drivers.tsx
+- customers.tsx
+
+Each page must support:
+
+- loading
+- error
+- empty state
+- search
+- status filter
+- refresh
+- open details
+- activate
+- suspend
+- reactivate
+
+Do not implement permanent deletion in this session.
+
+Do not invent fake records.
+
+==================================================
+8. SECURITY
+==================================================
+
+Required:
+
+- Admin/founder access only
+- role source: public.profiles.role
+- no user_metadata.role
+- no service_role in Expo
+- no secret in committed files
+- validate all input server-side
+- prevent duplicate email and phone
+- audit every create and status-change action
+- never return private Supabase keys
+- use existing RLS and secure server-side function boundaries
+
+==================================================
+9. DESIGN
+==================================================
+
+Use only:
+
+- apps/mobile/src/design/
+- existing ThemeContext
+- existing brand assets
+
+Requirements:
+
+- Arabic RTL
+- right-aligned labels
+- consistent inputs
+- step-based forms or clear sections
+- Dark / Light / Ivory support
+- orange primary actions
+- blue secondary accents
+- no hardcoded random colors
+- no white text on Light or Ivory backgrounds
+
+==================================================
+10. VALIDATION
+==================================================
+
+Run:
+
+cd apps/mobile
+npm install
+npx tsc --noEmit
+npx expo-doctor
+
+Also run:
+
+git diff --check
+git status
+git grep -n "service_role" apps/mobile || true
+git grep -n "SUPABASE_SERVICE" apps/mobile || true
+
+Requirements:
+
+- TypeScript: 0 errors
+- expo-doctor: all checks pass
+- no secret in mobile code
+- no unrelated files changed
+
+==================================================
+11. COMMIT AND PUSH
+==================================================
+
+If validation passes:
+
+Commit message:
+
+feat(admin): enable secure platform setup and account provisioning
+
+Push to:
+
+origin/main
+
+Then verify:
+
+- local HEAD = origin/main
+- working tree clean
+- latest commit exists on GitHub
+
+==================================================
+RETURN ONLY
+==================================================
+
+Admin setup workflows:
+...
+
+Secure provisioning:
+...
+
+Admin lists connected:
+...
+
+Files changed:
+...
+
+Validation:
+- npm install: ✓
+- TypeScript: ✓
+- expo-doctor: ✓
+- git diff check: ✓
+- secret scan: ✓
+
+Commit:
+<hash>
+
+Push:
+✓ origin/main
+
+Git synchronization:
+✓ local HEAD = origin/main
+✓ working tree clean
+✓ GitHub contains latest commit
+
+No audit.
+No architecture report.
+No recommendations.
+No future roadmap.
