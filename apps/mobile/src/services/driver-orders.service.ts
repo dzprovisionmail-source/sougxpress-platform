@@ -6,10 +6,13 @@ import { Order, OrderStatus } from "../types/schema-03-core";
  * Orders currently assigned to this driver (accepted through delivered),
  * mirroring the read pattern used by merchant-orders.service.ts.
  */
+const ORDER_SELECT_WITH_LOCATIONS =
+  "*, store:stores(name, zone:zones(city)), address:customer_addresses(address_text, latitude, longitude)";
+
 export const getDriverOrders = async (driverId: string): Promise<Order[]> => {
   const { data, error } = await supabase
     .from("orders")
-    .select("*, store:stores(name), address:customer_addresses(address_text)")
+    .select(ORDER_SELECT_WITH_LOCATIONS)
     .eq("driver_id", driverId)
     .order("created_at", { ascending: false });
 
@@ -29,7 +32,7 @@ export const getAvailableOrders = async (zoneId: string): Promise<Order[]> => {
 
   const { data, error } = await supabase
     .from("orders")
-    .select("*, store:stores(name), address:customer_addresses(address_text)")
+    .select(ORDER_SELECT_WITH_LOCATIONS)
     .eq("zone_id", zoneId)
     .eq("status", "ready_for_pickup")
     .is("driver_id", null)

@@ -1,6 +1,6 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { LayoutGrid, Bike, CircleUserRound } from "lucide-react-native";
+import { LayoutGrid, Bike, CircleUserRound, Wallet } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
 export default function DriverLayout() {
@@ -31,12 +31,20 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
+        name="earnings"
+        options={{
+          title: "الأرباح",
+          tabBarIcon: ({ color, size }) => <Wallet color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "حسابي",
           tabBarIcon: ({ color, size }) => <CircleUserRound color={color} size={size} />,
         }}
       />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }

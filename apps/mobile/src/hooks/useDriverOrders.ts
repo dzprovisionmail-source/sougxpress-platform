@@ -9,9 +9,18 @@ import {
   subscribeToDriverOrders,
 } from "../services/driver-orders.service";
 
+/**
+ * Order enriched with the joined store/zone/address fields selected by
+ * driver-orders.service.ts (used to render delivery cards and maps links).
+ */
+export type DriverOrder = Order & {
+  store?: { name: string; zone?: { city: string } };
+  address?: { address_text: string; latitude: number; longitude: number };
+};
+
 const useDriverOrders = (driverId: string, zoneId?: string) => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [availableOrders, setAvailableOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<DriverOrder[]>([]);
+  const [availableOrders, setAvailableOrders] = useState<DriverOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -1,27 +1,51 @@
-import React, { useState } from "react";
-import { ScrollView, Alert } from "react-native";
+import React, { useMemo, useState } from "react";
+import { ScrollView, Alert, Switch, View } from "react-native";
 import { useRouter } from "expo-router";
-import { BadgeInfo, Bike, FolderClosed, Star, LogOut, Palette } from "lucide-react-native";
+import { BadgeInfo, Bike, FolderClosed, LogOut, Palette, TrendingUp } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import useDriver from "@/hooks/useDriver";
+import useDriverOrders from "@/hooks/useDriverOrders";
 import { supabase } from "@/lib/supabase";
+import { computeEarningsSplit, formatCurrency } from "@/constants/earnings";
 import {
   WorkspaceScreen,
   SectionCard,
   SectionTitle,
   WorkspaceRow,
+  WorkspaceText,
   WorkspaceButton,
   ThemeSwitcher,
   LoadingState,
 } from "@/features/workspace/ui";
 
+const AVAILABILITY_LABEL: Record<string, string> = {
+  online: "متصل",
+  offline: "غير متصل",
+  on_delivery: "في توصيلة",
+};
+
 export default function DriverProfileScreen() {
   const router = useRouter();
   const { colors, tokens } = useAppTheme();
   const { userId } = useCurrentUserId();
-  const { driver, loading } = useDriver(userId || "");
+  const { driver, loading, updateDriver } = useDriver(userId || "");
+  const { orders } = useDriverOrders(userId || "", driver?.zone_id);
+
+  const stats = useMemo(() => {
+    const delivered = orders.filter((o) => o.status === "delivered");
+    const cancelled = orders.filter((o) => o.status === "cancelled");
+    const totalHandled = delivered.length + cancelled.length;
+    const completionRate = totalHandled > 0 ? Math.round((delivered.length / totalHandled) * 100) : 100;
+    const totalEarnings = computeEarningsSplit(delivered.length).driverShareMinor;
+    return { totalDeliveries: delivered.length, completionRate, totalEarnings };
+  }, [orders]);
+
+  const isOnline = driver?.availability === "online";
+  const handleToggleAvailability = async (value: boolean) => {
+    await updateDriver({ availability: value ? "online" : "offline" });
+  };
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -65,13 +89,39 @@ export default function DriverProfileScreen() {
 
         <SectionCard>
           <SectionTitle icon={<FolderClosed color={colors.primary} size={tokens.spacing.lg} />}>
-            حالة التحقق
+            حالة التحقق والتوفر
           </SectionTitle>
           <WorkspaceRow
             label="حالة الحساب"
             value={driver?.status === "active" ? "موثق ✅" : driver?.status || ""}
-            isLast
           />
+          <View
+            style={{
+              flexDirection: "row-reverse",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: tokens.spacing.sm,
+            }}
+          >
+            <WorkspaceText color="secondary" variant="caption">
+              حالة التوفر: {AVAILABILITY_LABEL[driver?.availability || "offline"]}
+            </WorkspaceText>
+            <Switch
+              value={isOnline}
+              onValueChange={handleToggleAvailability}
+              trackColor={{ false: colors.borderSubtle, true: colors.primary }}
+              thumbColor={colors.textOnBrand}
+            />
+          </View>
+        </SectionCard>
+
+        <SectionCard>
+          <SectionTitle icon={<TrendingUp color={colors.primary} size={tokens.spacing.lg} />}>
+            إحصائيات الأداء
+          </SectionTitle>
+          <WorkspaceRow label="إجمالي التوصيلات المكتملة" value={String(stats.totalDeliveries)} />
+          <WorkspaceRow label="نسبة إتمام التوصيلات" value={`${stats.completionRate}%`} />
+          <WorkspaceRow label="إجمالي الأرباح" value={formatCurrency(stats.totalEarnings)} isLast />
         </SectionCard>
 
         <SectionCard>
