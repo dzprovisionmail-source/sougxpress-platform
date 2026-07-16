@@ -51,12 +51,14 @@ export type Database = {
         Row: {
           address_line1: string
           address_line2: string | null
+          address_text: string | null
           city: string
           country: string
           created_at: string
           customer_id: string
           id: string
           is_default: boolean
+          label: string | null
           latitude: number | null
           longitude: number | null
           postal_code: string | null
@@ -67,12 +69,14 @@ export type Database = {
         Insert: {
           address_line1: string
           address_line2?: string | null
+          address_text?: string | null
           city: string
           country: string
           created_at?: string
           customer_id: string
           id?: string
           is_default?: boolean
+          label?: string | null
           latitude?: number | null
           longitude?: number | null
           postal_code?: string | null
@@ -83,12 +87,14 @@ export type Database = {
         Update: {
           address_line1?: string
           address_line2?: string | null
+          address_text?: string | null
           city?: string
           country?: string
           created_at?: string
           customer_id?: string
           id?: string
           is_default?: boolean
+          label?: string | null
           latitude?: number | null
           longitude?: number | null
           postal_code?: string | null
@@ -115,33 +121,42 @@ export type Database = {
       }
       customers: {
         Row: {
+          address: string | null
           created_at: string
           email: string
           first_name: string
+          full_name: string | null
           id: string
           last_name: string
+          phone: string | null
           phone_number: string
           status: string
           updated_at: string
           zone_id: string | null
         }
         Insert: {
+          address?: string | null
           created_at?: string
           email: string
           first_name: string
+          full_name?: string | null
           id: string
           last_name: string
+          phone?: string | null
           phone_number: string
           status?: string
           updated_at?: string
           zone_id?: string | null
         }
         Update: {
+          address?: string | null
           created_at?: string
           email?: string
           first_name?: string
+          full_name?: string | null
           id?: string
           last_name?: string
+          phone?: string | null
           phone_number?: string
           status?: string
           updated_at?: string
@@ -363,13 +378,17 @@ export type Database = {
       }
       drivers: {
         Row: {
+          address: string | null
+          availability: string
           created_at: string
           email: string
           first_name: string
+          full_name: string | null
           id: string
           is_available: boolean
           last_name: string
           license_plate: string | null
+          phone: string | null
           phone_number: string
           rating: number | null
           review_count: number | null
@@ -379,13 +398,17 @@ export type Database = {
           zone_id: string | null
         }
         Insert: {
+          address?: string | null
+          availability?: string
           created_at?: string
           email: string
           first_name: string
+          full_name?: string | null
           id: string
           is_available?: boolean
           last_name: string
           license_plate?: string | null
+          phone?: string | null
           phone_number: string
           rating?: number | null
           review_count?: number | null
@@ -395,13 +418,17 @@ export type Database = {
           zone_id?: string | null
         }
         Update: {
+          address?: string | null
+          availability?: string
           created_at?: string
           email?: string
           first_name?: string
+          full_name?: string | null
           id?: string
           is_available?: boolean
           last_name?: string
           license_plate?: string | null
+          phone?: string | null
           phone_number?: string
           rating?: number | null
           review_count?: number | null
@@ -494,40 +521,55 @@ export type Database = {
       }
       merchants: {
         Row: {
+          address: string | null
           business_name: string
+          commission_rate: number | null
           contact_email: string
           contact_phone: string
           created_at: string
           description: string | null
+          email: string | null
           id: string
           is_active: boolean
           logo_url: string | null
+          owner_full_name: string | null
+          phone: string | null
           status: string
           updated_at: string
           zone_id: string | null
         }
         Insert: {
+          address?: string | null
           business_name: string
+          commission_rate?: number | null
           contact_email: string
           contact_phone: string
           created_at?: string
           description?: string | null
+          email?: string | null
           id: string
           is_active?: boolean
           logo_url?: string | null
+          owner_full_name?: string | null
+          phone?: string | null
           status?: string
           updated_at?: string
           zone_id?: string | null
         }
         Update: {
+          address?: string | null
           business_name?: string
+          commission_rate?: number | null
           contact_email?: string
           contact_phone?: string
           created_at?: string
           description?: string | null
+          email?: string | null
           id?: string
           is_active?: boolean
           logo_url?: string | null
+          owner_full_name?: string | null
+          phone?: string | null
           status?: string
           updated_at?: string
           zone_id?: string | null
@@ -934,19 +976,28 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string | null
+          full_name: string | null
           id: string
+          phone: string | null
           role: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          email?: string | null
+          full_name?: string | null
           id: string
+          phone?: string | null
           role?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          email?: string | null
+          full_name?: string | null
           id?: string
+          phone?: string | null
           role?: string
           updated_at?: string
         }
@@ -1054,6 +1105,7 @@ export type Database = {
           address_line2: string | null
           category: string
           city: string
+          closes_at: string | null
           country: string
           created_at: string
           email: string | null
@@ -1064,6 +1116,7 @@ export type Database = {
           merchant_id: string
           name: string
           opening_hours: Json | null
+          opens_at: string | null
           phone_number: string | null
           postal_code: string | null
           rating: number | null
@@ -1078,6 +1131,7 @@ export type Database = {
           address_line2?: string | null
           category: string
           city: string
+          closes_at?: string | null
           country: string
           created_at?: string
           email?: string | null
@@ -1088,6 +1142,7 @@ export type Database = {
           merchant_id: string
           name: string
           opening_hours?: Json | null
+          opens_at?: string | null
           phone_number?: string | null
           postal_code?: string | null
           rating?: number | null
@@ -1102,6 +1157,7 @@ export type Database = {
           address_line2?: string | null
           category?: string
           city?: string
+          closes_at?: string | null
           country?: string
           created_at?: string
           email?: string | null
@@ -1112,6 +1168,7 @@ export type Database = {
           merchant_id?: string
           name?: string
           opening_hours?: Json | null
+          opens_at?: string | null
           phone_number?: string | null
           postal_code?: string | null
           rating?: number | null
@@ -1326,6 +1383,11 @@ export type Database = {
         }
         Returns: undefined
       }
+      driver_set_availability: {
+        Args: { p_availability: string }
+        Returns: undefined
+      }
+      find_available_driver: { Args: { p_zone_id: string }; Returns: string }
       get_delivery_status: { Args: { delivery_id: string }; Returns: string }
       get_order_status: { Args: { order_id: string }; Returns: string }
       get_platform_financial_setting: {
