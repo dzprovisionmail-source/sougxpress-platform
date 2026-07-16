@@ -5,7 +5,7 @@ export default function CustomerAuthPage() {
   return (
     <AuthScreen 
       role="customer"
-      titleAr="تسجيل دخول العميل"
+      titleAr="إنشاء حساب العميل"
       subtitleAr="اكتشف المتاجر المحلية واطلب ما تحتاجه"
     />
   );

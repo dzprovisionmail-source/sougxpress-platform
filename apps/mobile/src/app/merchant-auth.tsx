@@ -5,7 +5,7 @@ export default function MerchantAuthPage() {
   return (
     <AuthScreen 
       role="merchant"
-      titleAr="تسجيل دخول التاجر"
+      titleAr="إنشاء حساب التاجر"
       subtitleAr="أنشئ متجرك وابدأ البيع بعد اعتماد حسابك"
     />
   );

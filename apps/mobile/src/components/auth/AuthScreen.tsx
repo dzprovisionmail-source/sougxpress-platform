@@ -33,6 +33,21 @@ interface AuthScreenProps {
 const isUUID = (s: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
+/** Map a Supabase/PostgREST error to a clear Arabic message for the user */
+const toArabicProvisioningError = (err: unknown): string => {
+  const msg: string = (err as any)?.message ?? (err as any)?.details ?? "";
+  if (msg.includes("duplicate") || msg.includes("unique") || msg.includes("already exists")) {
+    return "الحساب موجود مسبقاً. يرجى تسجيل الدخول بدلاً من ذلك.";
+  }
+  if (msg.includes("null value") || msg.includes("not-null") || msg.includes("violates not-null")) {
+    return "بيانات ناقصة. يرجى ملء جميع الحقول والمحاولة مجدداً.";
+  }
+  if (msg.includes("column") || msg.includes("relation") || msg.includes("violates")) {
+    return "حدث خطأ في إعداد الحساب. يرجى التواصل مع الدعم.";
+  }
+  return "فشل إعداد بيانات الحساب. يرجى المحاولة لاحقاً.";
+};
+
 /** Zone label per role */
 const zoneLabelFor = (role: Role): string => {
   if (role === "merchant") return "حي المتجر";
@@ -214,10 +229,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               owner_full_name: fullName || "تاجر",
               business_name: businessName.trim() || fullName || "متجر",
               phone: phoneNumber || "",
-              email: userEmail,
               zone_id: resolvedZoneId,
-              address: address.trim() || null,
-              status: "pending",
+              status: "pending_review",
             });
           if (mInsertError) throw mInsertError;
           status = "pending";
@@ -242,10 +255,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               email: userEmail,
               zone_id: resolvedZoneId,
               vehicle_type: vehicleType.trim() || null,
-              vehicle_number: vehicleNumber.trim() || null,
-              status: "pending",
-              is_available: false,
-              delivered_count: 0,
+              license_plate: vehicleNumber.trim() || null,
+              availability: "offline",
+              status: "pending_review",
             });
           if (dInsertError) throw dInsertError;
           status = "pending";
@@ -253,11 +265,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           status = driver.status;
         }
       }
-    } catch {
-      Alert.alert(
-        "خطأ في التجهيز",
-        "فشل إعداد بيانات الحساب. يرجى التواصل مع الدعم."
-      );
+    } catch (provisionErr) {
+      console.error("[AuthScreen] provisioning error:", provisionErr);
+      Alert.alert("خطأ في التجهيز", toArabicProvisioningError(provisionErr));
       return;
     }
 
@@ -339,7 +349,34 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         }
       }
     } catch (error: any) {
-      Alert.alert("خطأ", error.message || "حدث خطأ ما");
+      const errMsg: string = error?.message ?? "";
+      // If Auth user already exists from a previously failed provisioning attempt,
+      // sign in silently and let handleProvisioningAndGating complete the DB record.
+      if (
+        !isLogin &&
+        (errMsg.includes("User already registered") ||
+          errMsg.includes("already registered") ||
+          errMsg.includes("already been registered"))
+      ) {
+        try {
+          const { data: recoverData, error: recoverErr } =
+            await supabase.auth.signInWithPassword({ email, password });
+          if (recoverErr) throw recoverErr;
+          await handleProvisioningAndGating(
+            recoverData.user.id,
+            recoverData.user.email ?? ""
+          );
+        } catch (recoverError: any) {
+          console.error("[AuthScreen] retry recovery error:", recoverError);
+          Alert.alert(
+            "خطأ",
+            recoverError?.message || "فشل استكمال التسجيل. يرجى المحاولة لاحقاً."
+          );
+        }
+        return;
+      }
+      console.error("[AuthScreen] auth error:", error);
+      Alert.alert("خطأ", errMsg || "حدث خطأ ما");
     } finally {
       setLoading(false);
     }

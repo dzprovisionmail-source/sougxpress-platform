@@ -5,7 +5,7 @@ export default function DriverAuthPage() {
   return (
     <AuthScreen 
       role="driver"
-      titleAr="تسجيل دخول الموصل"
+      titleAr="إنشاء حساب الموصل"
       subtitleAr="انضم إلى فريق التوصيل بعد الموافقة"
     />
   );
