@@ -116,12 +116,12 @@ WHERE phone IS NULL AND phone_number IS NOT NULL;
 -- meaning the column was just created this migration run.
 -- On a re-run, drivers may have mixed values (some online, some offline
 -- via driver_set_availability()), so we must not overwrite live values.
-DO $ BEGIN
+DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM public.drivers WHERE availability <> 'offline') THEN
         UPDATE public.drivers
         SET availability = CASE WHEN is_available IS TRUE THEN 'online' ELSE 'offline' END;
     END IF;
-END $;
+END $$;
 
 -- Availability constraint (idempotent)
 DO $$ BEGIN
