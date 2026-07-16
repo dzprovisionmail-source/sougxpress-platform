@@ -111,10 +111,17 @@ UPDATE public.drivers
 SET phone = phone_number
 WHERE phone IS NULL AND phone_number IS NOT NULL;
 
--- Backfill availability from is_available boolean
-UPDATE public.drivers
-SET availability = CASE WHEN is_available IS TRUE THEN 'online' ELSE 'offline' END
-WHERE availability = 'offline';
+-- Backfill availability from is_available boolean.
+-- Guard: only run if ALL rows currently have the DEFAULT value 'offline',
+-- meaning the column was just created this migration run.
+-- On a re-run, drivers may have mixed values (some online, some offline
+-- via driver_set_availability()), so we must not overwrite live values.
+DO $ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM public.drivers WHERE availability <> 'offline') THEN
+        UPDATE public.drivers
+        SET availability = CASE WHEN is_available IS TRUE THEN 'online' ELSE 'offline' END;
+    END IF;
+END $;
 
 -- Availability constraint (idempotent)
 DO $$ BEGIN
@@ -246,6 +253,26 @@ CREATE POLICY rls_insert_drivers ON public.drivers
         END
     );
 
+-- MERCHANTS UPDATE: include pending_review in the admin-allowed status set.
+-- Inherited from migration 019/020 as ('pending','active','suspended','rejected');
+-- admins need 'pending_review' to approve freshly registered merchants.
+DROP POLICY IF EXISTS rls_update_merchants ON public.merchants;
+
+CREATE POLICY rls_update_merchants ON public.merchants
+    FOR UPDATE USING (
+        id = auth.uid()
+        OR public.get_user_role(auth.uid()) IN ('admin', 'founder')
+    )
+    WITH CHECK (
+        CASE
+            WHEN public.get_user_role(auth.uid()) IN ('admin', 'founder')
+            THEN status IN ('pending', 'pending_review', 'active', 'suspended', 'rejected')
+            ELSE status = (
+                SELECT m2.status FROM public.merchants m2 WHERE m2.id = id LIMIT 1
+            )
+        END
+    );
+
 -- DRIVERS UPDATE: admin/founder control status; drivers keep own status immutable
 -- but can update availability and other profile fields
 DROP POLICY IF EXISTS rls_update_drivers ON public.drivers;
@@ -289,14 +316,14 @@ BEGIN
           d.zone_id = p_zone_id
           OR d.zone_id IS NULL
       )
-      AND d.id NOT IN (                    -- Rule: not currently on a delivery
-          SELECT COALESCE(da.driver_id, gen_random_uuid())  -- avoid NULL IN issue
+      AND NOT EXISTS (                     -- Rule: not currently on a delivery
+          SELECT 1
           FROM public.delivery_assignments da
-          WHERE da.status IN (
-              'pending', 'accepted', 'arrived_at_store',
-              'picked_up', 'out_for_delivery'
-          )
-            AND da.driver_id IS NOT NULL
+          WHERE da.driver_id = d.id
+            AND da.status IN (
+                'pending', 'accepted', 'arrived_at_store',
+                'picked_up', 'out_for_delivery'
+            )
       )
     ORDER BY RANDOM()
     LIMIT 1;
