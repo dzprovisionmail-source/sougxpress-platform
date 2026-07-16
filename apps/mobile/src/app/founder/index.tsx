@@ -1,5 +1,4 @@
-import { FlatList, I18nManager, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useRouter } from "expo-router";
+import { FlatList, I18nManager, StyleSheet, Text, View } from "react-native";
 
 import { FOUNDER_MODULE_CARDS, type FounderModuleCard } from "@/features/founder-os/dashboard/moduleCards";
 
@@ -9,20 +8,10 @@ import { FOUNDER_MODULE_CARDS, type FounderModuleCard } from "@/features/founder
  * src/types (docs/v2/03 / 03b / 03c). No CRUD, no Supabase connection.
  */
 export default function FounderDashboardScreen() {
-  const router = useRouter();
   return (
     <View style={styles.container}>
       <Text style={styles.title}>نظام تشغيل المؤسس</Text>
       <Text style={styles.subtitle}>عين الصفراء — الحسابات التجريبية فقط</Text>
-
-      {/* Quick actions */}
-      <TouchableOpacity
-        style={styles.actionBtn}
-        onPress={() => router.push("/founder/money-requests")}
-      >
-        <Text style={styles.actionText}>💰 الطلبات المالية</Text>
-      </TouchableOpacity>
-
       <FlatList
         data={FOUNDER_MODULE_CARDS}
         keyExtractor={(item) => item.key}
@@ -63,22 +52,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "right",
     marginBottom: 16,
-  },
-  actionBtn: {
-    backgroundColor: "#111827",
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#FF8A0033",
-    alignItems: "flex-end",
-  },
-  actionText: {
-    color: "#FF8A00",
-    fontSize: 15,
-    fontWeight: "600",
-    textAlign: "right",
   },
   list: {
     gap: 12,

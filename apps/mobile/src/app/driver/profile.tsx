@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, Alert, Switch, View } from "react-native";
 import { useRouter } from "expo-router";
-import { BadgeInfo, Bike, FolderClosed, LogOut, Palette, TrendingUp, Wallet } from "lucide-react-native";
+import { BadgeInfo, Bike, FolderClosed, LogOut, Palette, TrendingUp } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
@@ -129,15 +129,6 @@ export default function DriverProfileScreen() {
             مظهر التطبيق
           </SectionTitle>
           <ThemeSwitcher />
-        </SectionCard>
-
-        <SectionCard>
-          <WorkspaceButton
-            title="طلب مالي"
-            variant="outline"
-            icon={<Wallet color={colors.primary} size={18} />}
-            onPress={() => router.push("/driver/money-request")}
-          />
         </SectionCard>
 
         <SectionCard>

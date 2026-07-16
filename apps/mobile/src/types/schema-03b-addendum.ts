@@ -3,21 +3,6 @@
  * (Founder Operating System & Platform Settings).
  */
 
-// --- Money Requests -------------------------------------------------------
-
-export type MoneyRequestStatus = "pending" | "approved" | "rejected";
-
-export interface MoneyRequest {
-  id: string;
-  user_id: string;
-  amount: number;
-  reason: string;
-  status: MoneyRequestStatus;
-  created_at: string;
-  reviewed_by: string | null;
-  reviewed_at: string | null;
-}
-
 export interface PlatformFinancialSetting {
   id: string;
   key: string;

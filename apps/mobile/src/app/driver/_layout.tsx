@@ -45,7 +45,6 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen name="notifications" options={{ href: null }} />
-      <Tabs.Screen name="money-request" options={{ href: null }} />
     </Tabs>
   );
 }

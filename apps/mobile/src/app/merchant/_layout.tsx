@@ -44,7 +44,6 @@ export default function MerchantLayout() {
           tabBarIcon: ({ color, size }) => <CircleUserRound color={color} size={size} />,
         }}
       />
-      <Tabs.Screen name="money-request" options={{ href: null }} />
     </Tabs>
   );
 }
