@@ -83,8 +83,11 @@ export default function CustomerAddressesScreen() {
     );
   };
 
-  const getAddressIcon = (line1: string) => {
-    const text = (line1 || "").toLowerCase();
+  const getAddressText = (address: any): string =>
+    address?.address_text || address?.address_line1 || '';
+
+  const getAddressIcon = (address: any) => {
+    const text = (getAddressText(address) || address?.label || "").toLowerCase();
     if (text.includes("منزل") || text.includes("home")) return <Home size={20} color={colors.primary} />;
     if (text.includes("عمل") || text.includes("work") || text.includes("office")) return <Briefcase size={20} color={colors.primary} />;
     return <MapIcon size={20} color={colors.primary} />;
@@ -128,15 +131,20 @@ export default function CustomerAddressesScreen() {
             <Card key={address.id} style={styles.addressCard}>
               <View style={[styles.addressRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                 <View style={[styles.iconWrapper, { backgroundColor: colors.bgElevated }]}>
-                  {getAddressIcon(address.address_line1)}
+                  {getAddressIcon(address)}
                 </View>
                 
                 <View style={[styles.addressInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
                   <View style={[styles.titleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                    <Typography variant="h3" style={{ color: colors.textPrimary }}>{address.address_line1}</Typography>
+                    <Typography variant="h3" style={{ color: colors.textPrimary }}>
+                      {address.label || getAddressText(address)}
+                    </Typography>
                     {address.is_default && <Badge variant="success" label="افتراضي" />}
                   </View>
-                  <Typography variant="body" color="secondary" style={{ color: colors.textSecondary }}>{address.city}, {address.country}</Typography>
+                  <Typography variant="body" color="secondary" style={{ color: colors.textSecondary }}>
+                    {getAddressText(address)}
+                    {(address.city || address.country) ? ` • ${[address.city, address.country].filter(Boolean).join(', ')}` : ''}
+                  </Typography>
                 </View>
 
                 <TouchableOpacity onPress={() => handleDeleteAddress(address.id)}>

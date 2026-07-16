@@ -156,7 +156,7 @@ export default function CustomerProfileScreen() {
             <View style={[styles.profileText, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
               <View style={[styles.nameRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                 <Typography variant="h2">
-                  {profile?.first_name} {profile?.last_name}
+                  {profile?.full_name || [profile?.first_name, profile?.last_name].filter(Boolean).join(' ')}
                 </Typography>
                 {profile?.is_golden && (
                   <Badge variant="warning" style={styles.goldenBadge}>
@@ -165,7 +165,7 @@ export default function CustomerProfileScreen() {
                 )}
               </View>
               <Typography variant="body" color="secondary">
-                {profile?.phone_number}
+                {profile?.phone || profile?.phone_number}
               </Typography>
               <Typography variant="caption" color="secondary">
                 {profile?.email}
