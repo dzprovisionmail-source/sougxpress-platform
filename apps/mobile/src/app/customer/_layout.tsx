@@ -84,6 +84,13 @@ export default function CustomerLayout() {
           title: 'الإعدادات',
         }}
       />
+      <Tabs.Screen
+        name="money-request"
+        options={{
+          href: null,
+          title: 'طلب مالي',
+        }}
+      />
     </Tabs>
   );
 }

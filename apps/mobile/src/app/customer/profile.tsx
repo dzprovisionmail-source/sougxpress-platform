@@ -25,6 +25,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Star,
+  Wallet,
 } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
@@ -123,6 +124,12 @@ export default function CustomerProfileScreen() {
       title: "عناويني",
       icon: <MapPin color={colors.primary} size={22} />,
       route: "/customer/addresses",
+    },
+    {
+      id: "money-request",
+      title: "طلب مالي",
+      icon: <Wallet color={colors.primary} size={22} />,
+      route: "/customer/money-request",
     },
     {
       id: "notifications",

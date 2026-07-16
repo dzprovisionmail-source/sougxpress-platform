@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { BadgeInfo, Phone, MapPinned, ShieldCheck, LogOut, Palette } from "lucide-react-native";
+import { BadgeInfo, Phone, MapPinned, ShieldCheck, LogOut, Palette, Wallet } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
@@ -72,6 +72,15 @@ export default function MerchantProfileScreen() {
             مظهر التطبيق
           </SectionTitle>
           <ThemeSwitcher />
+        </SectionCard>
+
+        <SectionCard>
+          <WorkspaceButton
+            title="طلب مالي"
+            variant="outline"
+            icon={<Wallet color={colors.primary} size={18} />}
+            onPress={() => router.push("/merchant/money-request")}
+          />
         </SectionCard>
 
         <SectionCard>
