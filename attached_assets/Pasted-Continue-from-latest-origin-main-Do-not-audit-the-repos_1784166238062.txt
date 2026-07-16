@@ -1,0 +1,70 @@
+Continue from latest origin/main.
+
+Do not audit the repository.
+Do not redesign registration.
+Do not modify the zone selector.
+Do not add migrations unless the existing schema proves one is strictly required.
+
+Mission:
+Fix the real registration provisioning error shown to users:
+"فشل إعداد بيانات الحساب. يرجى التواصل مع الدعم."
+
+Trace the registration flow for:
+- customer
+- merchant
+- driver
+
+Inspect only:
+- apps/mobile/src/components/auth/AuthScreen.tsx
+- existing auth/profile provisioning services and hooks
+- the existing Supabase Edge Function or RPC used after sign-up
+- current database column names and generated Supabase types
+
+Requirements:
+1. Find the exact failing Supabase request.
+2. Log a safe developer error in console without exposing secrets.
+3. Map server errors to clear Arabic user messages.
+4. Ensure the selected zone ID is sent correctly.
+5. Ensure role-specific records use the actual existing column names.
+6. Customer registration must create/update:
+   - profiles role=customer
+   - matching customer record
+7. Merchant registration must create/update:
+   - profiles role=merchant
+   - matching merchant record
+   - preserve pending approval workflow
+8. Driver registration must create/update:
+   - profiles role=driver
+   - matching driver record
+   - preserve pending approval workflow
+9. Make retries idempotent so an Auth user created during a failed attempt does not permanently block registration.
+10. Never expose service_role in the Expo app.
+11. Do not simulate success.
+
+Also correct registration headings only:
+- "تسجيل دخول العميل" → "إنشاء حساب العميل"
+- "تسجيل دخول التاجر" → "إنشاء حساب التاجر"
+- "تسجيل دخول الموصل" → "إنشاء حساب الموصل"
+
+Run:
+cd apps/mobile
+npm install
+npx tsc --noEmit
+npx expo-doctor
+git diff --check
+
+Commit:
+fix(auth): repair role profile provisioning after registration
+
+Push to origin/main and verify:
+- local HEAD = origin/main
+- working tree clean
+- GitHub contains latest commit
+
+Return only:
+- root cause
+- provisioning fix
+- files changed
+- validation
+- commit hash
+- push confirmation
