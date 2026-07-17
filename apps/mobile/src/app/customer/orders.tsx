@@ -2,19 +2,15 @@ import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
-  SafeAreaView,
   ActivityIndicator,
   FlatList,
   RefreshControl,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import {
-  Typography,
-  Card,
-  Badge,
-} from "@/components/ui";
-import { ClipboardList, ChevronRight, ChevronLeft } from "lucide-react-native";
+import { Typography, Card, Badge } from "@/components/ui";
+import { ClipboardList } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
@@ -43,8 +39,11 @@ export default function CustomerOrdersScreen() {
       const { data, error: fetchError } = await supabase
         .from("orders")
         .select(`
-          *,
-          stores (name)
+          id,
+          status,
+          order_total_minor,
+          created_at,
+          stores ( name )
         `)
         .eq("customer_id", user.id)
         .order("created_at", { ascending: false });
@@ -67,14 +66,17 @@ export default function CustomerOrdersScreen() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending": return <Badge variant="warning" label="قيد الانتظار" />;
-      case "confirmed": return <Badge variant="info" label="مؤكد" />;
-      case "preparing": return <Badge variant="info" label="قيد التحضير" />;
-      case "ready_for_pickup": return <Badge variant="info" label="جاهز للاستلام" />;
-      case "out_for_delivery": return <Badge variant="info" label="في الطريق" />;
-      case "delivered": return <Badge variant="success" label="تم التوصيل" />;
-      case "cancelled": return <Badge variant="error" label="ملغي" />;
-      default: return <Badge variant="default" label={status} />;
+      case "pending":           return <Badge variant="warning" label="قيد الانتظار" />;
+      case "confirmed":
+      case "accepted":          return <Badge variant="info"    label="مؤكد" />;
+      case "preparing":         return <Badge variant="info"    label="قيد التحضير" />;
+      case "ready_for_pickup":  return <Badge variant="info"    label="جاهز للاستلام" />;
+      case "out_for_delivery":
+      case "picked_up":         return <Badge variant="info"    label="في الطريق" />;
+      case "delivered":         return <Badge variant="success" label="تم التوصيل" />;
+      case "cancelled":
+      case "rejected":          return <Badge variant="error"   label="ملغي" />;
+      default:                  return <Badge variant="default" label={status} />;
     }
   };
 
@@ -94,15 +96,14 @@ export default function CustomerOrdersScreen() {
         <View style={[styles.priceInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
           <Typography variant="caption" color="secondary">إجمالي الطلب</Typography>
           <Typography variant="h3" color="primary">
-            {(item.total_minor / 100).toFixed(2)} د.ج
+            {((item.order_total_minor ?? 0) / 100).toFixed(2)} د.ج
           </Typography>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.detailsBtn, { backgroundColor: colors.bgElevated }]}
           onPress={() => { /* Navigate to order details */ }}
         >
           <Typography variant="caption" style={{ fontWeight: "600" }}>التفاصيل</Typography>
-          {isRTL ? <ChevronLeft size={16} color={colors.textPrimary} /> : <ChevronRight size={16} color={colors.textPrimary} />}
         </TouchableOpacity>
       </View>
     </Card>
@@ -117,7 +118,7 @@ export default function CustomerOrdersScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
       <View style={styles.header}>
         <Typography variant="h1" align="right" style={styles.headerTitle}>طلباتي</Typography>
       </View>
@@ -153,32 +154,21 @@ export default function CustomerOrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  safeArea: { flex: 1 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     padding: TOKENS.spacing.lg,
     paddingTop: TOKENS.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.05)",
   },
-  headerTitle: {
-    color: TOKENS.colors.brandPrimary,
-  },
+  headerTitle: { color: TOKENS.colors.brandPrimary },
   listContent: {
     padding: TOKENS.spacing.lg,
-    paddingBottom: 100, // Bottom padding for tabs
     gap: TOKENS.spacing.md,
     flexGrow: 1,
   },
-  orderCard: {
-    padding: TOKENS.spacing.md,
-  },
+  orderCard: { padding: TOKENS.spacing.md },
   orderHeader: {
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -187,23 +177,13 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(0,0,0,0.05)",
     paddingBottom: TOKENS.spacing.sm,
   },
-  storeInfo: {
-    flex: 1,
-  },
-  orderFooter: {
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  priceInfo: {
-    flex: 1,
-  },
+  storeInfo: { flex: 1 },
+  orderFooter: { justifyContent: "space-between", alignItems: "center" },
+  priceInfo: { flex: 1 },
   detailsBtn: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: TOKENS.radius.full,
-    gap: 4,
   },
   emptyContainer: {
     flex: 1,

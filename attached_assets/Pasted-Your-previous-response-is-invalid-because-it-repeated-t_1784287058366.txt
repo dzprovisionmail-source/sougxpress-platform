@@ -1,0 +1,53 @@
+Your previous response is invalid because it repeated the old customer-flow report and ignored the real Android failures already provided.
+
+Do not re-audit customer auth.
+Do not test web only.
+Do not return "no changes required".
+
+Fix these confirmed production issues now:
+
+1. notifications.tsx fails with code 42501:
+   permission denied for auth.users
+   Remove all direct or indirect queries/joins to auth.users.
+   Use public.notifications and public.profiles only.
+   Never grant authenticated access to auth.users.
+
+2. orders.tsx fails with code 42P17:
+   infinite recursion detected in policy for relation orders.
+   Inspect current live RLS policies and replace the recursive policies with non-recursive ownership checks for orders, order_items, and order_status_history.
+
+3. favorites screen fails.
+   Capture the full live Supabase error, align the screen with the actual favorites schema and policies, and provide a correct Arabic empty state.
+
+4. customer profile is missing real name, phone, zone, and primary address.
+   Load them from the authenticated customer's actual public tables and session email.
+
+5. customer bottom tab bar overlaps Android system navigation.
+   Fix it using react-native-safe-area-context bottom inset.
+   Do not use deprecated SafeAreaView.
+
+6. settings rows have missing/unclear Arabic labels.
+   Restore complete Arabic labels while preserving the black/orange identity.
+
+Create exactly one migration for all required RLS/database fixes.
+Apply it to Supabase Staging using the existing authenticated workflow.
+Test on Android customer routes, not only web.
+
+Required routes:
+- /customer/profile
+- /customer/addresses
+- /customer/notifications
+- /customer/orders
+- /customer/favorites
+- /customer/settings
+
+Do not stop until no red Expo error screen appears on those routes.
+
+Return only:
+- exact root cause per issue
+- files changed
+- migration filename
+- live database verification
+- Android route test results
+- TypeScript/expo-doctor
+- commit hash and push confirmation

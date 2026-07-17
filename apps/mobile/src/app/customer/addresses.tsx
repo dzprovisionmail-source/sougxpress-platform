@@ -3,19 +3,17 @@ import {
   StyleSheet,
   View,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Typography, Button, Card, Badge } from "@/components/ui";
 import {
-  Typography,
-  Button,
-  Card,
-  Badge,
-} from "@/components/ui";
-import { MapPin, Plus, Trash2, Home, Briefcase, Map as MapIcon, ChevronRight, ChevronLeft } from "lucide-react-native";
+  MapPin, Plus, Trash2, Home, Briefcase,
+  Map as MapIcon, ChevronRight, ChevronLeft,
+} from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
@@ -42,7 +40,7 @@ export default function CustomerAddressesScreen() {
 
       const { data, error: fetchError } = await supabase
         .from("customer_addresses")
-        .select("*")
+        .select("id, label, address_line1, address_line2, address_text, city, country, is_default, zone_id")
         .eq("customer_id", user.id)
         .order("is_default", { ascending: false });
 
@@ -83,13 +81,15 @@ export default function CustomerAddressesScreen() {
     );
   };
 
-  const getAddressText = (address: any): string =>
-    address?.address_text || address?.address_line1 || '';
+  const getAddressText = (addr: any) =>
+    addr?.address_text || addr?.address_line1 || "";
 
-  const getAddressIcon = (address: any) => {
-    const text = (getAddressText(address) || address?.label || "").toLowerCase();
-    if (text.includes("منزل") || text.includes("home")) return <Home size={20} color={colors.primary} />;
-    if (text.includes("عمل") || text.includes("work") || text.includes("office")) return <Briefcase size={20} color={colors.primary} />;
+  const getAddressIcon = (addr: any) => {
+    const text = (getAddressText(addr) || addr?.label || "").toLowerCase();
+    if (text.includes("منزل") || text.includes("home"))
+      return <Home size={20} color={colors.primary} />;
+    if (text.includes("عمل") || text.includes("work") || text.includes("office"))
+      return <Briefcase size={20} color={colors.primary} />;
     return <MapIcon size={20} color={colors.primary} />;
   };
 
@@ -102,10 +102,12 @@ export default function CustomerAddressesScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
       <View style={[styles.header, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          {isRTL ? <ChevronRight size={24} color={colors.textPrimary} /> : <ChevronLeft size={24} color={colors.textPrimary} />}
+          {isRTL
+            ? <ChevronRight size={24} color={colors.textPrimary} />
+            : <ChevronLeft  size={24} color={colors.textPrimary} />}
         </TouchableOpacity>
         <Typography variant="h1" style={styles.headerTitle}>عناويني</Typography>
         <View style={{ width: 24 }} />
@@ -114,7 +116,10 @@ export default function CustomerAddressesScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {error ? (
           <View style={styles.emptyContainer}>
-            <Typography variant="body" color="error">{error}</Typography>
+            <MapPin color={colors.textDisabled} size={64} />
+            <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
+              تعذّر تحميل العناوين
+            </Typography>
             <TouchableOpacity onPress={fetchAddresses} style={{ marginTop: 16 }}>
               <Typography variant="caption" color="primary">إعادة المحاولة</Typography>
             </TouchableOpacity>
@@ -125,6 +130,9 @@ export default function CustomerAddressesScreen() {
             <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
               لا توجد عناوين محفوظة
             </Typography>
+            <Typography variant="body" color="disabled" style={{ marginTop: 8, textAlign: "center" }}>
+              أضف عنوانك لتسهيل توصيل طلباتك
+            </Typography>
           </View>
         ) : (
           addresses.map((address) => (
@@ -133,17 +141,19 @@ export default function CustomerAddressesScreen() {
                 <View style={[styles.iconWrapper, { backgroundColor: colors.bgElevated }]}>
                   {getAddressIcon(address)}
                 </View>
-                
+
                 <View style={[styles.addressInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
                   <View style={[styles.titleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                    <Typography variant="h3" style={{ color: colors.textPrimary }}>
+                    <Typography variant="h3">
                       {address.label || getAddressText(address)}
                     </Typography>
                     {address.is_default && <Badge variant="success" label="افتراضي" />}
                   </View>
-                  <Typography variant="body" color="secondary" style={{ color: colors.textSecondary }}>
+                  <Typography variant="body" color="secondary">
                     {getAddressText(address)}
-                    {(address.city || address.country) ? ` • ${[address.city, address.country].filter(Boolean).join(', ')}` : ''}
+                    {(address.city || address.country)
+                      ? ` • ${[address.city, address.country].filter(Boolean).join(", ")}`
+                      : ""}
                   </Typography>
                 </View>
 
@@ -169,14 +179,8 @@ export default function CustomerAddressesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  safeArea: { flex: 1 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     padding: TOKENS.spacing.lg,
     paddingTop: TOKENS.spacing.md,
@@ -185,27 +189,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.05)",
   },
-  headerTitle: {
-    color: TOKENS.colors.brandPrimary,
-    flex: 1,
-    textAlign: "center",
-  },
-  backBtn: {
-    padding: 4,
-  },
+  headerTitle: { color: TOKENS.colors.brandPrimary, flex: 1, textAlign: "center" },
+  backBtn: { padding: 4 },
   scrollContent: {
     padding: TOKENS.spacing.lg,
-    paddingBottom: 100, // Bottom padding for tabs
     gap: TOKENS.spacing.md,
     flexGrow: 1,
   },
-  addressCard: {
-    padding: TOKENS.spacing.md,
-  },
-  addressRow: {
-    alignItems: "center",
-    gap: TOKENS.spacing.md,
-  },
+  addressCard: { padding: TOKENS.spacing.md },
+  addressRow: { alignItems: "center", gap: TOKENS.spacing.md },
   iconWrapper: {
     width: 44,
     height: 44,
@@ -213,21 +205,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  addressInfo: {
-    flex: 1,
-  },
-  titleRow: {
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 2,
-  },
-  footer: {
-    padding: TOKENS.spacing.lg,
-    paddingBottom: TOKENS.spacing.xl,
-  },
-  addBtn: {
-    width: "100%",
-  },
+  addressInfo: { flex: 1 },
+  titleRow: { alignItems: "center", gap: 8, marginBottom: 2 },
+  footer: { padding: TOKENS.spacing.lg, paddingBottom: TOKENS.spacing.xl },
+  addBtn: { width: "100%" },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",

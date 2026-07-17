@@ -3,18 +3,13 @@ import {
   StyleSheet,
   View,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import {
-  Typography,
-  Card,
-  Avatar,
-  Badge,
-} from "@/components/ui";
+import { Typography, Card, Avatar, Badge } from "@/components/ui";
 import {
   MapPin,
   Heart,
@@ -38,6 +33,7 @@ export default function CustomerProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [address, setAddress] = useState<any>(null);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -52,26 +48,28 @@ export default function CustomerProfileScreen() {
         return;
       }
 
-      // Fetch customer profile
+      // Always have the auth email as a fallback
+      setSessionEmail(user.email ?? null);
+
+      // Load customer row with zone name
       const { data: customerData, error: customerError } = await supabase
         .from("customers")
-        .select("*, zones(name)")
+        .select("id, full_name, first_name, last_name, phone, phone_number, email, avatar_url, zone_id, status, zones(name)")
         .eq("id", user.id)
         .single();
 
       if (customerError) throw customerError;
       setProfile(customerData);
 
-      // Fetch default address
+      // Load default address
       const { data: addressData } = await supabase
         .from("customer_addresses")
-        .select("*")
+        .select("id, label, address_line1, address_text, city, is_default")
         .eq("customer_id", user.id)
         .eq("is_default", true)
         .maybeSingle();
-      
-      setAddress(addressData);
 
+      setAddress(addressData);
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
@@ -104,6 +102,18 @@ export default function CustomerProfileScreen() {
       </View>
     );
   }
+
+  const displayName =
+    profile?.full_name ||
+    [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
+    "العميل";
+
+  const displayPhone = profile?.phone || profile?.phone_number || "";
+  const displayEmail = profile?.email || sessionEmail || "";
+  const displayZone  = profile?.zones?.name || "";
+  const displayAddress = address
+    ? address.label || address.address_text || address.address_line1 || ""
+    : "";
 
   const menuItems = [
     {
@@ -139,7 +149,7 @@ export default function CustomerProfileScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Typography variant="h1" align="right" style={styles.headerTitle}>حسابي</Typography>
@@ -155,28 +165,30 @@ export default function CustomerProfileScreen() {
             />
             <View style={[styles.profileText, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
               <View style={[styles.nameRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                <Typography variant="h2">
-                  {profile?.full_name || [profile?.first_name, profile?.last_name].filter(Boolean).join(' ')}
-                </Typography>
+                <Typography variant="h2">{displayName}</Typography>
                 {profile?.is_golden && (
                   <Badge variant="warning" style={styles.goldenBadge}>
                     <Star size={10} color={colors.textOnBrand} fill={colors.textOnBrand} /> ذهبي
                   </Badge>
                 )}
               </View>
-              <Typography variant="body" color="secondary">
-                {profile?.phone || profile?.phone_number}
-              </Typography>
-              <Typography variant="caption" color="secondary">
-                {profile?.email}
-              </Typography>
-              
-              <View style={[styles.locationRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                <MapPin size={14} color={colors.textSecondary} />
-                <Typography variant="caption" color="secondary">
-                  {profile?.zones?.name || "عين صفراء"} {address ? `• ${address.neighborhood || address.address_text}` : ""}
-                </Typography>
-              </View>
+
+              {displayPhone ? (
+                <Typography variant="body" color="secondary">{displayPhone}</Typography>
+              ) : null}
+
+              {displayEmail ? (
+                <Typography variant="caption" color="secondary">{displayEmail}</Typography>
+              ) : null}
+
+              {(displayZone || displayAddress) ? (
+                <View style={[styles.locationRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                  <MapPin size={14} color={colors.textSecondary} />
+                  <Typography variant="caption" color="secondary">
+                    {[displayZone, displayAddress].filter(Boolean).join(" • ")}
+                  </Typography>
+                </View>
+              ) : null}
             </View>
           </View>
         </Card>
@@ -191,14 +203,10 @@ export default function CustomerProfileScreen() {
             >
               <View style={[styles.menuItemContent, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                 <View style={styles.menuIconWrapper}>{item.icon}</View>
-                <Typography variant="body" style={styles.menuTitle}>
-                  {item.title}
-                </Typography>
-                {isRTL ? (
-                  <ChevronLeft color={colors.textDisabled} size={20} />
-                ) : (
-                  <ChevronRight color={colors.textDisabled} size={20} />
-                )}
+                <Typography variant="body" style={styles.menuTitle}>{item.title}</Typography>
+                {isRTL
+                  ? <ChevronLeft color={colors.textDisabled} size={20} />
+                  : <ChevronRight color={colors.textDisabled} size={20} />}
               </View>
             </TouchableOpacity>
           ))}
@@ -229,65 +237,25 @@ export default function CustomerProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  content: {
-    padding: TOKENS.spacing.lg,
-  },
-  header: {
-    marginBottom: TOKENS.spacing.xl,
-    paddingTop: TOKENS.spacing.md,
-  },
-  headerTitle: {
-    color: TOKENS.colors.brandPrimary,
-  },
-  profileCard: {
-    padding: TOKENS.spacing.lg,
-    marginBottom: TOKENS.spacing.xl,
-  },
-  profileInfo: {
-    alignItems: "center",
-    gap: TOKENS.spacing.lg,
-  },
-  profileText: {
-    flex: 1,
-    gap: 2,
-  },
-  nameRow: {
-    alignItems: "center",
-    gap: TOKENS.spacing.xs,
-  },
-  goldenBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  locationRow: {
-    alignItems: "center",
-    gap: 4,
-    marginTop: 4,
-  },
-  menuContainer: {
-    gap: TOKENS.spacing.sm,
-  },
+  safeArea: { flex: 1 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  content: { padding: TOKENS.spacing.lg },
+  header: { marginBottom: TOKENS.spacing.xl, paddingTop: TOKENS.spacing.md },
+  headerTitle: { color: TOKENS.colors.brandPrimary },
+  profileCard: { padding: TOKENS.spacing.lg, marginBottom: TOKENS.spacing.xl },
+  profileInfo: { alignItems: "center", gap: TOKENS.spacing.lg },
+  profileText: { flex: 1, gap: 2 },
+  nameRow: { alignItems: "center", gap: TOKENS.spacing.xs },
+  goldenBadge: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 6, paddingVertical: 2 },
+  locationRow: { alignItems: "center", gap: 4, marginTop: 4 },
+  menuContainer: { gap: TOKENS.spacing.sm },
   menuItem: {
     padding: TOKENS.spacing.md,
     borderRadius: TOKENS.radius.md,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.05)",
   },
-  menuItemContent: {
-    alignItems: "center",
-    gap: TOKENS.spacing.md,
-  },
+  menuItemContent: { alignItems: "center", gap: TOKENS.spacing.md },
   menuIconWrapper: {
     width: 40,
     height: 40,
@@ -296,16 +264,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  menuTitle: {
-    flex: 1,
-    fontWeight: "600",
-  },
-  logoutBtn: {
-    marginTop: TOKENS.spacing.lg,
-    borderColor: "rgba(255, 0, 0, 0.1)",
-  },
-  footer: {
-    marginTop: TOKENS.spacing["3xl"],
-    paddingBottom: TOKENS.spacing.xl,
-  },
+  menuTitle: { flex: 1, fontWeight: "600" },
+  logoutBtn: { marginTop: TOKENS.spacing.lg, borderColor: "rgba(255, 0, 0, 0.1)" },
+  footer: { marginTop: TOKENS.spacing["3xl"], paddingBottom: TOKENS.spacing.xl },
 });

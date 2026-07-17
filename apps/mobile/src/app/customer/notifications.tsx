@@ -2,18 +2,14 @@ import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
-  ScrollView,
-  SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
   FlatList,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import {
-  Typography,
-  Card,
-} from "@/components/ui";
+import { Typography, Card } from "@/components/ui";
 import { Bell, ChevronRight, ChevronLeft, Circle } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
@@ -40,7 +36,7 @@ export default function CustomerNotificationsScreen() {
 
       const { data, error } = await supabase
         .from("notifications")
-        .select("*")
+        .select("id, title, body, is_read, read_at, created_at, type, notification_type")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -56,13 +52,16 @@ export default function CustomerNotificationsScreen() {
 
   const markAsRead = async (id: string) => {
     try {
+      const now = new Date().toISOString();
       const { error } = await supabase
         .from("notifications")
-        .update({ read_at: new Date().toISOString() })
+        .update({ is_read: true, read_at: now })
         .eq("id", id);
-      
+
       if (error) throw error;
-      setNotifications(notifications.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
+      setNotifications(prev =>
+        prev.map(n => n.id === id ? { ...n, is_read: true, read_at: now } : n)
+      );
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -73,31 +72,37 @@ export default function CustomerNotificationsScreen() {
     fetchNotifications();
   };
 
-  const renderNotificationItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
-      onPress={() => markAsRead(item.id)}
-      activeOpacity={0.7}
-    >
-      <Card style={[styles.notificationCard, !item.read_at && { backgroundColor: "rgba(255, 138, 0, 0.05)", borderColor: colors.primary }]}>
-        <View style={[styles.notificationRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          <View style={[styles.iconWrapper, { backgroundColor: colors.bgElevated }]}>
-            <Bell size={20} color={!item.read_at ? colors.primary : colors.textDisabled} />
-          </View>
-          
-          <View style={[styles.notificationInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-            <View style={[styles.titleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-              <Typography variant="h3" style={!item.read_at ? { fontWeight: "700" } : {}}>{item.title || "تنبيه جديد"}</Typography>
-              {!item.read_at && <Circle size={8} color={colors.primary} fill={colors.primary} />}
+  const renderNotificationItem = ({ item }: { item: any }) => {
+    const unread = !item.is_read;
+    return (
+      <TouchableOpacity onPress={() => markAsRead(item.id)} activeOpacity={0.7}>
+        <Card style={[
+          styles.notificationCard,
+          unread && { backgroundColor: "rgba(255, 138, 0, 0.05)", borderColor: colors.primary },
+        ]}>
+          <View style={[styles.notificationRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            <View style={[styles.iconWrapper, { backgroundColor: colors.bgElevated }]}>
+              <Bell size={20} color={unread ? colors.primary : colors.textDisabled} />
             </View>
-            <Typography variant="body" color="secondary" numberOfLines={2}>{item.body}</Typography>
-            <Typography variant="caption" color="disabled" style={{ marginTop: 4 }}>
-              {new Date(item.created_at).toLocaleTimeString("ar-DZ", { hour: '2-digit', minute: '2-digit' })} - {new Date(item.created_at).toLocaleDateString("ar-DZ")}
-            </Typography>
+            <View style={[styles.notificationInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+              <View style={[styles.titleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <Typography variant="h3" style={unread ? { fontWeight: "700" } : {}}>
+                  {item.title || "تنبيه جديد"}
+                </Typography>
+                {unread && <Circle size={8} color={colors.primary} fill={colors.primary} />}
+              </View>
+              <Typography variant="body" color="secondary" numberOfLines={2}>{item.body}</Typography>
+              <Typography variant="caption" color="disabled" style={{ marginTop: 4 }}>
+                {new Date(item.created_at).toLocaleTimeString("ar-DZ", { hour: "2-digit", minute: "2-digit" })}
+                {" — "}
+                {new Date(item.created_at).toLocaleDateString("ar-DZ")}
+              </Typography>
+            </View>
           </View>
-        </View>
-      </Card>
-    </TouchableOpacity>
-  );
+        </Card>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading && !refreshing) {
     return (
@@ -108,10 +113,12 @@ export default function CustomerNotificationsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
       <View style={[styles.header, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          {isRTL ? <ChevronRight size={24} color={colors.textPrimary} /> : <ChevronLeft size={24} color={colors.textPrimary} />}
+          {isRTL
+            ? <ChevronRight size={24} color={colors.textPrimary} />
+            : <ChevronLeft  size={24} color={colors.textPrimary} />}
         </TouchableOpacity>
         <Typography variant="h1" style={styles.headerTitle}>التنبيهات</Typography>
         <View style={{ width: 24 }} />
@@ -139,14 +146,8 @@ export default function CustomerNotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  safeArea: { flex: 1 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     padding: TOKENS.spacing.lg,
     paddingTop: TOKENS.spacing.md,
@@ -160,21 +161,14 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
   },
-  backBtn: {
-    padding: 4,
-  },
+  backBtn: { padding: 4 },
   listContent: {
     padding: TOKENS.spacing.lg,
     gap: TOKENS.spacing.md,
     flexGrow: 1,
   },
-  notificationCard: {
-    padding: TOKENS.spacing.md,
-  },
-  notificationRow: {
-    alignItems: "flex-start",
-    gap: TOKENS.spacing.md,
-  },
+  notificationCard: { padding: TOKENS.spacing.md },
+  notificationRow: { alignItems: "flex-start", gap: TOKENS.spacing.md },
   iconWrapper: {
     width: 44,
     height: 44,
@@ -182,9 +176,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  notificationInfo: {
-    flex: 1,
-  },
+  notificationInfo: { flex: 1 },
   titleRow: {
     alignItems: "center",
     gap: 8,

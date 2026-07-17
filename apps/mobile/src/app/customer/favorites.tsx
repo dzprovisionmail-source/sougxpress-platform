@@ -3,17 +3,14 @@ import {
   StyleSheet,
   View,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
   Image,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import {
-  Typography,
-  Card,
-} from "@/components/ui";
+import { Typography, Card } from "@/components/ui";
 import { Heart, ShoppingBag, Star } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
@@ -43,24 +40,22 @@ export default function CustomerFavoritesScreen() {
       const { data, error: fetchError } = await supabase
         .from("customer_favorites")
         .select(`
-          *,
+          id,
+          created_at,
           products (
-            *,
-            stores (name)
+            id,
+            name,
+            price_minor,
+            image_url,
+            is_available,
+            stores ( name )
           )
         `)
         .eq("customer_id", user.id);
 
-      if (fetchError) {
-        if (fetchError.code === "PGRST116" || fetchError.message.includes("does not exist")) {
-          setFavorites([]);
-        } else {
-          throw fetchError;
-        }
-      } else {
-        setFavorites(data || []);
-      }
-    } catch (err) {
+      if (fetchError) throw fetchError;
+      setFavorites(data || []);
+    } catch (err: any) {
       console.error("Error fetching favorites:", err);
       setError("حدث خطأ أثناء تحميل المفضلة");
     } finally {
@@ -82,7 +77,7 @@ export default function CustomerFavoritesScreen() {
         .eq("id", favoriteId);
 
       if (deleteError) throw deleteError;
-      setFavorites(favorites.filter(f => f.id !== favoriteId));
+      setFavorites(prev => prev.filter(f => f.id !== favoriteId));
     } catch (err) {
       console.error("Error removing favorite:", err);
     }
@@ -97,12 +92,12 @@ export default function CustomerFavoritesScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
       <View style={styles.header}>
         <Typography variant="h1" align="right" style={styles.headerTitle}>المفضلة</Typography>
       </View>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
@@ -110,7 +105,13 @@ export default function CustomerFavoritesScreen() {
       >
         {error ? (
           <View style={styles.emptyContainer}>
-            <Typography variant="body" color="error">{error}</Typography>
+            <Heart color={colors.textDisabled} size={64} />
+            <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
+              تعذّر تحميل المفضلة
+            </Typography>
+            <Typography variant="body" color="error" style={{ marginTop: 8, textAlign: "center" }}>
+              {error}
+            </Typography>
             <TouchableOpacity onPress={fetchFavorites} style={{ marginTop: 16 }}>
               <Typography variant="caption" color="primary">إعادة المحاولة</Typography>
             </TouchableOpacity>
@@ -119,7 +120,10 @@ export default function CustomerFavoritesScreen() {
           <View style={styles.emptyContainer}>
             <Heart color={colors.textDisabled} size={64} />
             <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
-              لا توجد عناصر في المفضلة
+              قائمة المفضلة فارغة
+            </Typography>
+            <Typography variant="body" color="disabled" style={{ marginTop: 8, textAlign: "center" }}>
+              أضف منتجاتك المفضلة لتجدها هنا
             </Typography>
           </View>
         ) : (
@@ -127,18 +131,20 @@ export default function CustomerFavoritesScreen() {
             {favorites.map((item) => {
               const product = item.products;
               if (!product) return null;
-              
+
               return (
                 <Card key={item.id} style={styles.favoriteCard}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.heartBtn}
                     onPress={() => handleRemoveFavorite(item.id)}
                   >
                     <Heart size={20} color={colors.error} fill={colors.error} />
                   </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    onPress={() => router.push({ pathname: "/product-details", params: { id: product.id } })}
+
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push({ pathname: "/product-details", params: { id: product.id } })
+                    }
                   >
                     <View style={[styles.imagePlaceholder, { backgroundColor: colors.bgElevated }]}>
                       {product.image_url ? (
@@ -147,24 +153,19 @@ export default function CustomerFavoritesScreen() {
                         <ShoppingBag color={colors.textDisabled} size={32} />
                       )}
                     </View>
-                    
+
                     <View style={[styles.cardInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-                      <Typography variant="h3" numberOfLines={1} style={{ color: colors.textPrimary }}>{product.name}</Typography>
-                      <Typography variant="caption" color="secondary">{product.stores?.name || "متجر"}</Typography>
-                      
-                      <View style={[styles.ratingRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                        <Star size={12} color="#FFD700" fill="#FFD700" />
-                        <Typography variant="caption" style={{ marginLeft: 4 }}>{product.rating || "0.0"}</Typography>
-                      </View>
-                      
+                      <Typography variant="h3" numberOfLines={1}>{product.name}</Typography>
+                      <Typography variant="caption" color="secondary">
+                        {product.stores?.name || "متجر"}
+                      </Typography>
                       <View style={[styles.priceRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                        <Typography variant="h3" color="primary">{(product.price_minor / 100).toFixed(2)} د.ج</Typography>
-                        <TouchableOpacity 
-                          style={[styles.addBtn, { backgroundColor: colors.primary }]}
-                          onPress={() => { /* Add to cart logic */ }}
-                        >
+                        <Typography variant="h3" color="primary">
+                          {((product.price_minor ?? 0) / 100).toFixed(2)} د.ج
+                        </Typography>
+                        <View style={[styles.addBtn, { backgroundColor: colors.primary }]}>
                           <ShoppingBag size={16} color={colors.textOnBrand} />
-                        </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -179,26 +180,17 @@ export default function CustomerFavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  safeArea: { flex: 1 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     padding: TOKENS.spacing.lg,
     paddingTop: TOKENS.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.05)",
   },
-  headerTitle: {
-    color: TOKENS.colors.brandPrimary,
-  },
+  headerTitle: { color: TOKENS.colors.brandPrimary },
   scrollContent: {
     padding: TOKENS.spacing.lg,
-    paddingBottom: 100, // Bottom padding for tabs
     flexGrow: 1,
   },
   grid: {
@@ -216,7 +208,7 @@ const styles = StyleSheet.create({
     top: 8,
     right: 8,
     zIndex: 1,
-    backgroundColor: "rgba(255,255,255,0.8)",
+    backgroundColor: "rgba(255,255,255,0.85)",
     padding: 4,
     borderRadius: 12,
   },
@@ -229,18 +221,8 @@ const styles = StyleSheet.create({
     marginBottom: TOKENS.spacing.sm,
     overflow: "hidden",
   },
-  productImage: {
-    width: "100%",
-    height: "100%",
-  },
-  cardInfo: {
-    gap: 2,
-  },
-  ratingRow: {
-    alignItems: "center",
-    gap: 4,
-    marginTop: 2,
-  },
+  productImage: { width: "100%", height: "100%" },
+  cardInfo: { gap: 2 },
   priceRow: {
     justifyContent: "space-between",
     alignItems: "center",
