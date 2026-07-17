@@ -118,7 +118,7 @@ export default function CustomerOrdersScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
       <View style={styles.header}>
         <Typography variant="h1" align="right" style={styles.headerTitle}>طلباتي</Typography>
       </View>

@@ -149,7 +149,7 @@ export default function CustomerProfileScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Typography variant="h1" align="right" style={styles.headerTitle}>حسابي</Typography>
