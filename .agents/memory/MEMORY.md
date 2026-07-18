@@ -1,2 +1,3 @@
 - [Supabase env key naming](supabase-env-key.md) — secret is EXPO_PUBLIC_SUPABASE_ANON_KEY; code used PUBLISHABLE_KEY; fixed with fallback in supabase.ts
 - [Schema drift reconciliation](schema-drift-024.md) — full list of column/constraint/RLS drift fixed by migration 024; key: anon key cannot apply DDL
+- [Founder Core architecture](founder-core.md) — auth reuses useAdminProfile; admin_audit_logs inserts via SECURITY DEFINER RPC only; commission column is commission_earned_minor
