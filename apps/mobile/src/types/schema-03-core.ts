@@ -60,6 +60,11 @@ export interface Merchant {
   zone_id: string;
   status: MerchantStatus;
   commission_rate: number | null;
+  email?: string;
+  address?: string;
+  logo_url?: string;
+  description?: string;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -76,6 +81,12 @@ export interface Store {
   status: StoreStatus;
   opens_at: string;
   closes_at: string;
+  is_open?: boolean;
+  phone_number?: string;
+  address_line1?: string;
+  city?: string;
+  logo_url?: string;
+  cover_url?: string;
   created_at: string;
   updated_at: string;
 }

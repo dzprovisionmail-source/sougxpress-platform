@@ -1,21 +1,36 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { LayoutGrid, Package, Store as StoreIcon, CircleUserRound } from "lucide-react-native";
+import {
+  LayoutGrid,
+  Package,
+  Store as StoreIcon,
+  Bell,
+  CircleUserRound,
+  Wallet,
+} from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
 export default function MerchantLayout() {
   const { colors, tokens } = useAppTheme();
 
+  const tabBarStyle = {
+    backgroundColor: colors.bgElevated,
+    borderTopColor: colors.borderSubtle,
+  };
+
+  const screenOptions = {
+    headerShown: false,
+    tabBarActiveTintColor: colors.primary,
+    tabBarInactiveTintColor: colors.textSecondary,
+    tabBarStyle,
+    tabBarLabelStyle: {
+      fontFamily: tokens.typography.families.arabic,
+      fontSize: 11,
+    },
+  };
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: { backgroundColor: colors.bgElevated, borderTopColor: colors.borderSubtle },
-        tabBarLabelStyle: { fontFamily: tokens.typography.families.arabic, fontSize: 12 },
-      }}
-    >
+    <Tabs screenOptions={screenOptions}>
       <Tabs.Screen
         name="dashboard"
         options={{
@@ -35,6 +50,20 @@ export default function MerchantLayout() {
         options={{
           title: "متجري",
           tabBarIcon: ({ color, size }) => <StoreIcon color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "الإشعارات",
+          tabBarIcon: ({ color, size }) => <Bell color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="earnings"
+        options={{
+          title: "الأرباح",
+          tabBarIcon: ({ color, size }) => <Wallet color={color} size={size} />,
         }}
       />
       <Tabs.Screen

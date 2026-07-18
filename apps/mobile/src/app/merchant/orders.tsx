@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, FlatList, TouchableOpacity } from "react-native";
+import { View, FlatList, TouchableOpacity, RefreshControl } from "react-native";
 import { RefreshCcw } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -14,28 +14,41 @@ import {
   EmptyState,
 } from "@/features/workspace/ui";
 
-type TabKey = "new" | "active" | "completed";
+type TabKey = "new" | "preparing" | "ready" | "completed" | "cancelled";
+
+const TAB_STATUSES: Record<TabKey, OrderStatus[]> = {
+  new: ["pending"],
+  preparing: ["accepted", "preparing"],
+  ready: ["ready_for_pickup"],
+  completed: ["picked_up", "delivered"],
+  cancelled: ["cancelled", "disputed"],
+};
 
 export default function MerchantOrdersScreen() {
   const { colors, tokens } = useAppTheme();
   const { userId } = useCurrentUserId();
   const [activeTab, setActiveTab] = useState<TabKey>("new");
-  const { orders, loading, updateStatus, refreshOrders } = useMerchantOrders(userId || "");
+  const { orders, loading, updateStatus, refreshOrders } = useMerchantOrders(
+    userId ?? ""
+  );
 
-  const filteredOrders = orders.filter((order) => {
-    if (activeTab === "new") return order.status === "pending";
-    if (activeTab === "active") return ["accepted", "preparing", "ready_for_pickup"].includes(order.status);
-    return ["picked_up", "delivered", "cancelled", "disputed"].includes(order.status);
-  });
+  const filteredOrders = orders.filter((order) =>
+    TAB_STATUSES[activeTab].includes(order.status)
+  );
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     await updateStatus(orderId, newStatus);
   };
 
-  const tabs: { key: TabKey; label: string; badge?: number }[] = [
-    { key: "new", label: "الجديدة", badge: orders.filter((o) => o.status === "pending").length },
-    { key: "active", label: "الحالية" },
-    { key: "completed", label: "السابقة" },
+  const tabs: { key: TabKey; label: string }[] = [
+    {
+      key: "new",
+      label: `الجديدة${orders.filter((o) => o.status === "pending").length > 0 ? ` (${orders.filter((o) => o.status === "pending").length})` : ""}`,
+    },
+    { key: "preparing", label: "التحضير" },
+    { key: "ready", label: "الجاهزة" },
+    { key: "completed", label: "المكتملة" },
+    { key: "cancelled", label: "الملغية" },
   ];
 
   if (loading && orders.length === 0) {
@@ -48,51 +61,62 @@ export default function MerchantOrdersScreen() {
 
   return (
     <WorkspaceScreen>
+      {/* Tab bar */}
       <View
         style={{
-          flexDirection: "row-reverse",
           backgroundColor: colors.bgElevated,
           borderBottomColor: colors.borderSubtle,
           borderBottomWidth: 1,
-          padding: tokens.spacing.sm,
         }}
       >
-        {tabs.map((tab) => {
-          const active = tab.key === activeTab;
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              onPress={() => setActiveTab(tab.key)}
-              style={{
-                flex: 1,
-                paddingVertical: tokens.spacing.md,
-                alignItems: "center",
-                borderBottomWidth: 2,
-                borderBottomColor: active ? colors.primary : "transparent",
-              }}
-            >
-              <View style={{ flexDirection: "row-reverse", alignItems: "center" }}>
-                {!!tab.badge && (
-                  <View
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: colors.error,
-                      marginLeft: tokens.spacing.xs,
-                    }}
-                  />
-                )}
-                <WorkspaceText variant="caption" color={active ? "brand" : "secondary"}>
+        <View
+          style={{
+            flexDirection: "row-reverse",
+            padding: tokens.spacing.xs,
+          }}
+        >
+          {tabs.map((tab) => {
+            const active = tab.key === activeTab;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                onPress={() => setActiveTab(tab.key)}
+                style={{
+                  flex: 1,
+                  paddingVertical: tokens.spacing.sm,
+                  alignItems: "center",
+                  borderBottomWidth: 2,
+                  borderBottomColor: active
+                    ? colors.primary
+                    : "transparent",
+                }}
+              >
+                <WorkspaceText
+                  variant="caption"
+                  color={active ? "brand" : "secondary"}
+                  style={{
+                    fontWeight: active ? "700" : "400",
+                    fontSize: 12,
+                  }}
+                >
                   {tab.label}
                 </WorkspaceText>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-        <TouchableOpacity onPress={refreshOrders} style={{ padding: tokens.spacing.sm, justifyContent: "center" }}>
-          <RefreshCcw size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Refresh button */}
+          <TouchableOpacity
+            onPress={refreshOrders}
+            style={{
+              padding: tokens.spacing.sm,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <RefreshCcw size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {filteredOrders.length === 0 ? (
@@ -101,7 +125,12 @@ export default function MerchantOrdersScreen() {
         <FlatList
           data={filteredOrders}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <MerchantOrderCard order={item} onUpdateStatus={handleStatusUpdate} />}
+          renderItem={({ item }) => (
+            <MerchantOrderCard
+              order={item}
+              onUpdateStatus={handleStatusUpdate}
+            />
+          )}
           contentContainerStyle={{ paddingVertical: tokens.spacing.md }}
           refreshing={loading}
           onRefresh={refreshOrders}
