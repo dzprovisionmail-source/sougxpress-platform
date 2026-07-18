@@ -1,0 +1,28 @@
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { ClipboardList } from "lucide-react-native";
+import { AdminPageShell } from "@/components/admin";
+import { useAppTheme } from "@/contexts/ThemeContext";
+
+export default function FounderOrdersScreen() {
+  const { colors } = useAppTheme();
+  return (
+    <AdminPageShell title="الطلبات" showBack>
+      <View style={styles.center}>
+        <ClipboardList size={56} color={colors.textDisabled} />
+        <Text style={[styles.title, { color: colors.textSecondary }]}>
+          قيد البناء
+        </Text>
+        <Text style={[styles.sub, { color: colors.textDisabled }]}>
+          إدارة الطلبات ستكون متاحة في المرحلة القادمة
+        </Text>
+      </View>
+    </AdminPageShell>
+  );
+}
+
+const styles = StyleSheet.create({
+  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },
+  title: { fontSize: 20, fontWeight: "700", textAlign: "center" },
+  sub: { fontSize: 14, textAlign: "center", lineHeight: 22 },
+});

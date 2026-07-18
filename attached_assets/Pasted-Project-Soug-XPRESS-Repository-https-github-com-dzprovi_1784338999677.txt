@@ -1,0 +1,146 @@
+Project: Soug-XPRESS
+Repository: https://github.com/dzprovisionmail-source/sougxpress-platform
+
+Soug-XPRESS is an Arabic-first local marketplace for Ain Sefra, Algeria.
+The Founder/Admin is the highest-privilege platform operator and will manually create customers, merchants, drivers, and stores to prepare the marketplace before launch.
+
+Stack:
+- Expo SDK 54
+- React Native
+- Expo Router
+- TypeScript
+- Supabase
+- GitHub
+
+Continue from the latest origin/main.
+Read the latest commits, migrations, current admin routes, auth guards, profiles schema, and existing RLS policies before editing.
+The project is already connected to live Supabase.
+Do not recreate setup.
+Do not touch Customer, Merchant, or Driver business screens except where required for Founder authorization.
+Do not add mock data.
+Do not build later admin phases yet.
+
+This session has ONE goal only:
+
+Build Founder Core — Phase 1.
+
+Implement:
+
+1. Founder/Admin authorization
+- Treat roles `founder` and `admin` as privileged.
+- Protect every Founder/Admin route.
+- Redirect unauthorized users safely.
+- Prevent access through direct URLs.
+- Use `profiles.role` as the source of truth.
+- Do not rely on user metadata.
+
+2. Founder navigation shell
+Create a clean Arabic RTL Founder area with:
+- الرئيسية
+- المستخدمون
+- المتاجر
+- الطلبات
+- الموصلون
+- المالية
+- المحتوى
+- الإعدادات
+- سجل العمليات
+
+Only the Founder home and audit log need to be functional in this phase.
+The remaining sections may show clear Arabic “قيد البناء” empty states, but routes and navigation must exist.
+
+3. Founder dashboard
+Load real live Supabase statistics:
+- total customers
+- total merchants
+- total drivers
+- total admins
+- total stores
+- active stores
+- pending merchants
+- pending drivers
+- active orders
+- completed orders
+- cancelled orders
+- suspended accounts
+- total completed deliveries
+- total platform amount owed by drivers
+
+Use the actual current schema.
+If a field or table differs, adapt to the live schema instead of inventing data.
+
+4. Founder quick actions
+Add visible actions for:
+- إضافة زبون
+- إضافة تاجر
+- إضافة موصل
+- إضافة متجر
+
+In this phase, these buttons should navigate to dedicated placeholder routes for Phase 2 and Phase 3.
+Do not implement account creation yet.
+
+5. Admin audit log foundation
+- Inspect whether `admin_audit_logs` already exists.
+- If missing, create one migration.
+- Minimum fields:
+  - id
+  - admin_user_id
+  - action
+  - entity_type
+  - entity_id
+  - details jsonb
+  - created_at
+- Add safe RLS:
+  - founder/admin can read
+  - authenticated non-admin users cannot read
+  - inserts must happen only through a secure RPC or server-side path
+- Never expose a service-role key in the mobile app.
+- Log Founder/Admin access to the Founder dashboard if a secure existing mechanism supports it.
+- Do not use unsafe direct client inserts if RLS cannot enforce them safely.
+
+6. Founder account safety
+- Founder must not be deletable or demotable from the mobile UI.
+- Admin users must not be able to promote themselves to founder.
+- Do not create public founder registration.
+- Preserve existing authentication flows.
+
+7. UI requirements
+- Arabic only.
+- Full RTL.
+- Android-safe layout.
+- SafeAreaView handled correctly.
+- Clear icons.
+- Loading, empty, and error states.
+- Pull-to-refresh on dashboard and audit log.
+- No French or English labels in the UI.
+- Keep the existing design system; do not create a third theme system.
+
+8. Validation
+Run:
+- pnpm exec tsc --noEmit
+- pnpm exec expo-doctor
+
+Verify:
+- founder can access the Founder area
+- admin can access the Admin area
+- customer, merchant, and driver cannot access it
+- direct route access is blocked
+- dashboard statistics load from Supabase
+- audit log screen loads safely
+- no existing customer flows are broken
+
+Do not claim real-device Android testing unless it was actually performed.
+
+Commit:
+feat(founder): build founder core dashboard and authorization
+
+Push to origin/main.
+
+Return only:
+- implemented features
+- authorization approach
+- database migration name, if created
+- files changed
+- validation results
+- commit hash
+- real blockers requiring owner input
