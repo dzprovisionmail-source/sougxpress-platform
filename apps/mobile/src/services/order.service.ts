@@ -69,3 +69,23 @@ export const getOrderItemsByOrderId = async (orderId: string): Promise<OrderItem
   }
   return data as OrderItem[];
 };
+
+export const validateMerchantOrderOwnership = async (orderId: string, merchantId: string): Promise<boolean> => {
+  const { data: stores } = await supabase
+    .from("stores")
+    .select("id")
+    .eq("merchant_id", merchantId);
+
+  if (!stores || stores.length === 0) return false;
+
+  const storeIds = stores.map(s => s.id);
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("store_id")
+    .eq("id", orderId)
+    .in("store_id", storeIds)
+    .maybeSingle();
+
+  if (error || !order) return false;
+  return true;
+};

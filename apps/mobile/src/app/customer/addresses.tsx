@@ -42,6 +42,7 @@ interface AddressFormData {
   address_line1: string;
   city: string;
   country: string;
+  zone_id: string;
 }
 
 const DEFAULT_FORM: AddressFormData = {
@@ -49,6 +50,7 @@ const DEFAULT_FORM: AddressFormData = {
   address_line1: "",
   city: "عين صفراء",
   country: "الجزائر",
+  zone_id: "",
 };
 
 // ─── Address Form Modal ───────────────────────────────────────────────────────
@@ -165,6 +167,20 @@ function AddressFormModal({
                   placeholderTextColor={colors.textDisabled}
                 />
               </View>
+
+              {/* Zone */}
+              <View style={styles.fieldGroup}>
+                <Typography variant="caption" color="secondary" style={styles.fieldLabel}>
+                  الحي *
+                </Typography>
+                <TextInput
+                  style={inputStyle}
+                  value={form.zone_id}
+                  onChangeText={(v) => setForm((f) => ({ ...f, zone_id: v }))}
+                  placeholder="مثال: Ain Sefra"
+                  placeholderTextColor={colors.textDisabled}
+                />
+              </View>
             </ScrollView>
 
             {/* Save button */}
@@ -254,6 +270,7 @@ export default function CustomerAddressesScreen() {
       address_line1: address.address_line1 || address.address_text || "",
       city: address.city || "عين صفراء",
       country: address.country || "الجزائر",
+      zone_id: address.zone_id || "",
     });
     setModalVisible(true);
   };
@@ -271,6 +288,7 @@ export default function CustomerAddressesScreen() {
         address_text: addressLine,  // keep in sync for older query paths
         city: form.city.trim() || "عين صفراء",
         country: form.country.trim() || "الجزائر",
+        zone_id: form.zone_id.trim() || null,
       };
 
       if (editingId) {

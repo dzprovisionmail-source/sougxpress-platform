@@ -79,6 +79,17 @@ export const updateDeliveryStatus = async (
   driverId: string
 ): Promise<boolean> => {
   try {
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select("driver_id")
+      .eq("id", orderId)
+      .single();
+
+    if (fetchError || !order || order.driver_id !== driverId) {
+      console.error("Driver ownership validation failed for order:", orderId);
+      return false;
+    }
+
     const updates: Record<string, unknown> = { status: newStatus, updated_at: new Date().toISOString() };
     if (newStatus === "delivered") {
       updates.delivered_at = new Date().toISOString();
@@ -87,7 +98,8 @@ export const updateDeliveryStatus = async (
     const { error: orderError } = await supabase
       .from("orders")
       .update(updates)
-      .eq("id", orderId);
+      .eq("id", orderId)
+      .eq("driver_id", driverId);
 
     if (orderError) throw orderError;
 
