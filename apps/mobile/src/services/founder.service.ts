@@ -61,6 +61,16 @@ export interface ControlCenterStats {
   activeDeliveries: number | null;
 }
 
+export interface AdminAuditLogEntry {
+  id:             string;
+  admin_user_id:  string;
+  action:         string;
+  entity_type:    string;
+  entity_id:      string | null;
+  details:        Record<string, unknown> | null;
+  created_at:     string;
+}
+
 export interface ActivityFeedEntry {
   id: string;
   action: string;
