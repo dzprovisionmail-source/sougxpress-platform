@@ -236,6 +236,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               business_name: businessName.trim() || fullName || "متجر",
               phone: phoneNumber || "",
               zone_id: resolvedZoneId,
+              address: address.trim() || null,
               status: "pending_review",
             });
           if (mInsertError) throw mInsertError;
