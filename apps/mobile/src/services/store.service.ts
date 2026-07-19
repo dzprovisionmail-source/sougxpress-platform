@@ -107,9 +107,10 @@ export const createStore = async (
   merchantId: string,
   data: {
     name: string;
-    category?: string;
-    address_line1?: string;
+    category: string;
+    address_line1: string;
     city?: string;
+    country?: string;
     latitude?: number;
     longitude?: number;
   }
@@ -121,12 +122,14 @@ export const createStore = async (
     .insert({
       merchant_id: merchantId,
       name: data.name,
-      category: data.category || null,
-      address_line1: data.address_line1 || null,
+      category: data.category,
+      address_line1: data.address_line1,
       city: data.city || "عين الصفراء",
+      country: data.country || "Algeria",
       latitude: data.latitude ?? null,
       longitude: data.longitude ?? null,
-      status: "pending_review",
+      // RLS requires status = 'pending' for merchant self-insert
+      status: "pending",
       is_open: false,
     })
     .select()

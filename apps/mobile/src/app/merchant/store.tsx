@@ -163,14 +163,23 @@ export default function MerchantStoreScreen() {
       Alert.alert("خطأ", "اسم المتجر مطلوب");
       return;
     }
+    if (!createForm.category.trim()) {
+      Alert.alert("خطأ", "فئة المتجر مطلوبة");
+      return;
+    }
+    if (!createForm.address_line1.trim()) {
+      Alert.alert("خطأ", "عنوان المتجر مطلوب");
+      return;
+    }
     setCreating(true);
     const lat = parseFloat(createForm.latitude);
     const lng = parseFloat(createForm.longitude);
     const created = await createStore(userId, {
       name: createForm.name.trim(),
-      category: createForm.category.trim() || undefined,
-      address_line1: createForm.address_line1.trim() || undefined,
+      category: createForm.category.trim(),
+      address_line1: createForm.address_line1.trim(),
       city: createForm.city.trim() || "عين الصفراء",
+      country: "Algeria",
       latitude: !isNaN(lat) ? lat : undefined,
       longitude: !isNaN(lng) ? lng : undefined,
     });
@@ -300,8 +309,8 @@ export default function MerchantStoreScreen() {
               {(
                 [
                   { key: "name", label: "اسم المتجر *", placeholder: "مثال: متجر العائلة" },
-                  { key: "category", label: "الفئة", placeholder: "مثال: بقالة، مطعم..." },
-                  { key: "address_line1", label: "عنوان المتجر", placeholder: "الشارع أو الحي" },
+                  { key: "category", label: "الفئة *", placeholder: "مثال: بقالة، مطعم..." },
+                  { key: "address_line1", label: "عنوان المتجر *", placeholder: "الشارع أو الحي" },
                   { key: "city", label: "المدينة", placeholder: "عين الصفراء" },
                   { key: "latitude", label: "خط العرض (اختياري)", placeholder: "مثال: 32.7490", keyboardType: "decimal-pad" },
                   { key: "longitude", label: "خط الطول (اختياري)", placeholder: "مثال: -0.5860", keyboardType: "decimal-pad" },
