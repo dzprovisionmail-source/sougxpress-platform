@@ -8,14 +8,16 @@ import {
   RefreshControl,
   Alert,
 } from "react-native";
+  import { I18nManager } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Typography, Card } from "@/components/ui";
 import { Bell, ChevronRight, ChevronLeft, Circle, X, CheckCheck } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
+import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
-import { I18nManager } from "react-native";
+
 
 interface CustomerNotification {
   id: string;
@@ -38,6 +40,7 @@ const NOTIFICATION_TYPES: Record<string, string> = {
 export default function CustomerNotificationsScreen() {
   const router = useRouter();
   const colors = getThemeColors(DEFAULT_THEME);
+  const { userId } = useCurrentUserId();
   const isRTL = I18nManager.isRTL;
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,13 +50,13 @@ export default function CustomerNotificationsScreen() {
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // userId is provided by useCurrentUserId
+      if (!userId) return;
 
       let query = supabase
         .from("notifications")
         .select("id, title, body, is_read, read_at, created_at, type, notification_type")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
       if (filter === "unread") {
@@ -85,6 +88,7 @@ export default function CustomerNotificationsScreen() {
           event: "*",
           schema: "public",
           table: "notifications",
+          filter: `user_id=eq.${userId}`,
         },
         () => {
           fetchNotifications();
@@ -95,7 +99,7 @@ export default function CustomerNotificationsScreen() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchNotifications]);
+  }, [fetchNotifications, userId]);
 
   const markAsRead = async (id: string) => {
     try {

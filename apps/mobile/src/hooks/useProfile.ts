@@ -30,7 +30,7 @@ const useProfile = () => {
 
     const channel = supabase
       .channel('public:customers')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'customers' }, payload => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'customers', filter: 'id=eq.' + profile?.id }, payload => {
         if (payload.new.id === profile?.id) {
           setProfile(payload.new as Customer);
         }

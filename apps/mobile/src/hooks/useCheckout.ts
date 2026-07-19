@@ -12,6 +12,7 @@ const useCheckout = () => {
   const [selectedAddress, setSelectedAddress] = useState<CustomerAddress | null>(null);
   const [notes, setNotes] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [customerZoneId, setCustomerZoneId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -28,6 +29,16 @@ const useCheckout = () => {
           const defaultAddress = addressData.find(a => a.is_default) || addressData[0];
           setSelectedAddress(defaultAddress || null);
         }
+
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('zone_id')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (customer) {
+          setCustomerZoneId(customer.zone_id);
+        }
       }
     };
     fetchUserData();
@@ -42,8 +53,14 @@ const useCheckout = () => {
     setLoading(true);
     setError(null);
 
-    const storeId = cartItems[0].product.store_id; // Assuming all items are from the same store
-    const zoneId = selectedAddress.zone_id;
+    const storeId = cartItems[0].product.store_id;
+    const zoneId = selectedAddress.zone_id || customerZoneId;
+
+    if (!zoneId) {
+      setError("يرجى تحديد المنطقة من عنوانك.");
+      setLoading(false);
+      return { success: false };
+    }
 
     const checkoutData: CheckoutData = {
       customer_id: currentUserId,
@@ -52,7 +69,7 @@ const useCheckout = () => {
       delivery_address_id: selectedAddress.id,
       subtotal_minor: subtotal,
       delivery_fee_minor: deliveryFee,
-      platform_commission_minor: Math.round(subtotal * 0.1), // Placeholder: 10% commission
+      platform_commission_minor: Math.round(subtotal * 0.1),
       total_minor: total,
       notes,
       cartItems,
