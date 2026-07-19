@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
-import { 
-  StyleSheet, 
-  View, 
-  ScrollView, 
-  SafeAreaView, 
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  SafeAreaView,
   StatusBar,
   I18nManager,
   TouchableOpacity,
@@ -13,13 +13,16 @@ import {
   NativeScrollEvent,
   Image,
   ActivityIndicator,
+  TextInput,
+  Alert,
+  RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { 
-  Typography, 
-  SearchBar, 
-  CategoryItem, 
-  SectionHeader, 
+import {
+  Typography,
+  SearchBar,
+  CategoryItem,
+  SectionHeader,
   MarketplaceHeader,
   StoreCard,
 } from "@/components/ui";
@@ -37,6 +40,14 @@ interface HeroSlide {
   buttonLabel: string;
   storeId: string;
   storeName: string;
+}
+
+interface StoreRow {
+  id: string;
+  name: string;
+  category: string;
+  rating?: string;
+  status: string;
 }
 
 const HERO_SLIDES: HeroSlide[] = [
@@ -70,11 +81,12 @@ const HERO_SLIDES: HeroSlide[] = [
 ];
 
 const CATEGORIES = [
-  { id: "1", name: "خضروات", icon: "leaf-outline" as const },
-  { id: "2", name: "فواكه", icon: "nutrition-outline" as const },
-  { id: "3", name: "لحوم", icon: "restaurant-outline" as const },
-  { id: "4", name: "مخبوزات", icon: "pizza-outline" as const },
-  { id: "5", name: "ألبان", icon: "water-outline" as const },
+  { id: "all", name: "الكل", icon: "apps-outline" as const },
+  { id: "خضروات", name: "خضروات", icon: "leaf-outline" as const },
+  { id: "فواكه", name: "فواكه", icon: "nutrition-outline" as const },
+  { id: "لحوم", name: "لحوم", icon: "restaurant-outline" as const },
+  { id: "مخبوزات", name: "مخبوزات", icon: "pizza-outline" as const },
+  { id: "ألبان", name: "ألبان", icon: "water-outline" as const },
 ];
 
 export default function CustomerHomeScreen() {
@@ -82,12 +94,13 @@ export default function CustomerHomeScreen() {
   const [theme, setTheme] = useState<ThemeType>(DEFAULT_THEME);
   const [search, setSearch] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [stores, setStores] = useState<any[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [stores, setStores] = useState<StoreRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
-  
+
   const colors = getThemeColors(theme);
   const isRTL = I18nManager.isRTL;
 
@@ -95,25 +108,51 @@ export default function CustomerHomeScreen() {
     fetchStores();
   }, []);
 
-  const fetchStores = async () => {
+  const fetchStores = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const { data, error: fetchError } = await supabase
         .from("stores")
-        .select("*")
+        .select("id, name, category, rating, status")
         .eq("status", "active")
-        .limit(10);
+        .order("created_at", { ascending: false })
+        .limit(20);
 
       if (fetchError) throw fetchError;
-      setStores(data || []);
+      setStores((data as StoreRow[]) || []);
     } catch (err) {
       console.error("Error fetching stores:", err);
       setError("حدث خطأ أثناء تحميل المتاجر");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchStores();
+  }, [fetchStores]);
+
+  const filteredStores = useMemo(() => {
+    let result = stores;
+
+    if (activeCategory !== "all") {
+      result = result.filter((store) => store.category === activeCategory);
+    }
+
+    if (search.trim().length > 0) {
+      const q = search.trim().toLowerCase();
+      result = result.filter(
+        (store) =>
+          store.name.toLowerCase().includes(q) ||
+          (store.category && store.category.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [stores, activeCategory, search]);
 
   const handleHeroScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -122,27 +161,27 @@ export default function CustomerHomeScreen() {
   };
 
   const renderHeroSlide = ({ item }: { item: HeroSlide }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[styles.heroSlide, { backgroundColor: colors.bgElevated }]}
       activeOpacity={0.8}
       onPress={() => router.push({ pathname: "/store-details", params: { id: item.storeId } })}
     >
       <View style={styles.heroImageContainer}>
         {item.image ? (
-          <Image 
-            source={{ uri: item.image }} 
+          <Image
+            source={{ uri: item.image }}
             style={[styles.heroImage, { backgroundColor: colors.bgSurface }]}
             resizeMode="cover"
           />
         ) : (
-          <View 
+          <View
             style={[
               styles.heroImage,
               {
                 backgroundColor: colors.bgElevated,
                 justifyContent: "center",
                 alignItems: "center",
-              }
+              },
             ]}
           >
             <Typography variant="caption" color="disabled">
@@ -150,45 +189,45 @@ export default function CustomerHomeScreen() {
             </Typography>
           </View>
         )}
-        <View 
+        <View
           style={[
-            styles.heroOverlay, 
-            { backgroundColor: "rgba(0, 0, 0, 0.35)" }
-          ]} 
+            styles.heroOverlay,
+            { backgroundColor: "rgba(0, 0, 0, 0.35)" },
+          ]}
         />
       </View>
 
       <View style={[styles.heroTextContent, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-        <Typography 
-          variant="h2" 
+        <Typography
+          variant="h2"
           align="right"
           style={[styles.heroTitle, { color: colors.primary }]}
         >
           {item.title}
         </Typography>
-        <Typography 
-          variant="body" 
-          color="secondary" 
+        <Typography
+          variant="body"
+          color="secondary"
           numberOfLines={2}
           align="right"
         >
           {item.description}
         </Typography>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.heroActionBtn, { backgroundColor: colors.primary }]}
           activeOpacity={0.7}
         >
-          <Typography 
-            variant="button" 
+          <Typography
+            variant="button"
             align="center"
             style={[styles.heroActionText, { color: colors.textOnBrand }]}
           >
             {item.buttonLabel}
           </Typography>
         </TouchableOpacity>
-        <Typography 
-          variant="caption" 
-          color="disabled" 
+        <Typography
+          variant="caption"
+          color="disabled"
           align="right"
           style={styles.heroStoreLabel}
         >
@@ -198,25 +237,76 @@ export default function CustomerHomeScreen() {
     </TouchableOpacity>
   );
 
+  const renderStoreItem = useCallback(
+    (store: StoreRow) => (
+      <StoreCard
+        key={store.id}
+        id={store.id}
+        name={store.name}
+        category={store.category}
+        rating={store.rating?.toString() || "0.0"}
+        isOpen={store.status === "active"}
+        theme={theme}
+        onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
+      />
+    ),
+    [router, theme]
+  );
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
       <StatusBar barStyle={theme === "dark" ? "light-content" : "dark-content"} />
-      
+
       <MarketplaceHeader theme={theme} />
 
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+        }
       >
         {/* Search Section */}
         <View style={styles.section}>
-          <SearchBar 
-            value={search} 
-            onChangeText={setSearch} 
-            onFilterPress={() => {}}
-            onVoicePress={() => {}}
-            theme={theme}
-          />
+          <View
+            style={[
+              {
+                flexDirection: isRTL ? "row-reverse" : "row",
+                alignItems: "center",
+                marginHorizontal: TOKENS.spacing.lg,
+                borderRadius: TOKENS.radius.full,
+                borderWidth: 1,
+                paddingHorizontal: TOKENS.spacing.md,
+                height: 48,
+                backgroundColor: colors.bgSurface,
+                borderColor: colors.borderSubtle,
+              },
+            ]}
+          >
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="بحث عن متاجر أو منتجات..."
+              placeholderTextColor={colors.textDisabled}
+              style={[
+                {
+                  flex: 1,
+                  fontSize: 15,
+                  paddingVertical: 0,
+                  color: colors.textPrimary,
+                  fontFamily: TOKENS.typography?.families?.arabic || undefined,
+                  textAlign: isRTL ? "right" : "left",
+                },
+              ]}
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Typography variant="caption" color="secondary">
+                  ✕
+                </Typography>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Hero Slider */}
@@ -255,22 +345,22 @@ export default function CustomerHomeScreen() {
         {/* Categories */}
         <View style={styles.section}>
           <SectionHeader title="التصنيفات" onSeeAll={() => {}} theme={theme} />
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[
-              styles.categoriesScroll, 
-              { flexDirection: isRTL ? "row-reverse" : "row" }
+              styles.categoriesScroll,
+              { flexDirection: isRTL ? "row-reverse" : "row" },
             ]}
           >
-            {CATEGORIES.map(cat => (
-              <CategoryItem 
-                key={cat.id} 
-                name={cat.name} 
-                icon={cat.icon} 
+            {CATEGORIES.map((cat) => (
+              <CategoryItem
+                key={cat.id}
+                name={cat.name}
+                icon={cat.icon}
                 theme={theme}
                 isActive={activeCategory === cat.id}
-                onPress={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
+                onPress={() => setActiveCategory(cat.id)}
               />
             ))}
           </ScrollView>
@@ -278,38 +368,46 @@ export default function CustomerHomeScreen() {
 
         {/* Featured Stores */}
         <View style={styles.section}>
-          <SectionHeader title="محلات مميزة" onSeeAll={() => {}} theme={theme} />
+          <SectionHeader
+            title={search.trim() ? "نتائج البحث" : "محلات مميزة"}
+            onSeeAll={() => {}}
+            theme={theme}
+          />
           {loading ? (
-            <ActivityIndicator size="small" color={colors.primary} style={{ margin: 20 }} />
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Typography variant="caption" color="secondary" style={{ marginTop: 8 }}>
+                جاري تحميل المتاجر...
+              </Typography>
+            </View>
           ) : error ? (
             <View style={styles.emptyContainer}>
-              <Typography variant="caption" color="error">{error}</Typography>
+              <Typography variant="body" color="error">{error}</Typography>
+              <TouchableOpacity onPress={fetchStores} style={{ marginTop: 12 }}>
+                <Typography variant="caption" color="primary">إعادة المحاولة</Typography>
+              </TouchableOpacity>
             </View>
-          ) : stores.length === 0 ? (
+          ) : filteredStores.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Typography variant="body" color="secondary">لا توجد متاجر متاحة حالياً</Typography>
+              <Typography variant="body" color="secondary">
+                {search.trim() ? "لا توجد نتائج مطابقة للبحث" : "لا توجد متاجر متاحة حالياً"}
+              </Typography>
+              {search.trim().length > 0 && (
+                <TouchableOpacity onPress={() => setSearch("")} style={{ marginTop: 8 }}>
+                  <Typography variant="caption" color="primary">مسح البحث</Typography>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
-            <ScrollView 
-              horizontal 
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={[
-                styles.storesScroll, 
-                { flexDirection: isRTL ? "row-reverse" : "row" }
+                styles.storesScroll,
+                { flexDirection: isRTL ? "row-reverse" : "row" },
               ]}
             >
-              {stores.map((store) => (
-                <StoreCard
-                  key={store.id}
-                  id={store.id}
-                  name={store.name}
-                  category={store.category}
-                  rating={store.rating?.toString() || "0.0"}
-                  isOpen={store.status === 'active'}
-                  theme={theme}
-                  onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
-                />
-              ))}
+              {filteredStores.map(renderStoreItem)}
             </ScrollView>
           )}
         </View>
@@ -403,6 +501,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   emptyContainer: {
+    padding: TOKENS.spacing.xl,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContainer: {
     padding: TOKENS.spacing.xl,
     justifyContent: "center",
     alignItems: "center",

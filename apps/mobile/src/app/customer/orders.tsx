@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -6,15 +6,27 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
+  Alert,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Typography, Card, Badge } from "@/components/ui";
-import { ClipboardList } from "lucide-react-native";
+import { ClipboardList, Phone, MessageCircle, MapPin } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
 import { I18nManager } from "react-native";
+
+interface OrderItem {
+  id: string;
+  status: string;
+  order_total_minor: number;
+  created_at: string;
+  stores?: { name: string };
+  delivery_address_id?: string;
+  notes?: string;
+}
 
 export default function CustomerOrdersScreen() {
   const router = useRouter();
@@ -22,14 +34,10 @@ export default function CustomerOrdersScreen() {
   const isRTL = I18nManager.isRTL;
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -43,13 +51,15 @@ export default function CustomerOrdersScreen() {
           status,
           order_total_minor,
           created_at,
-          stores ( name )
+          stores ( name ),
+          delivery_address_id,
+          notes
         `)
         .eq("customer_id", user.id)
         .order("created_at", { ascending: false });
 
       if (fetchError) throw fetchError;
-      setOrders(data || []);
+      setOrders((data as any[]) || []);
     } catch (err) {
       console.error("Error fetching orders:", err);
       setError("حدث خطأ أثناء تحميل الطلبات");
@@ -57,30 +67,77 @@ export default function CustomerOrdersScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
-  const onRefresh = () => {
+  useEffect(() => {
+    fetchOrders();
+
+    const channel = supabase
+      .channel("customer_orders")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        () => {
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchOrders]);
+
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchOrders();
-  };
+  }, [fetchOrders]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending":           return <Badge variant="warning" label="قيد الانتظار" />;
+      case "pending":
+        return <Badge variant="warning" label="قيد الانتظار" />;
       case "confirmed":
-      case "accepted":          return <Badge variant="info"    label="مؤكد" />;
-      case "preparing":         return <Badge variant="info"    label="قيد التحضير" />;
-      case "ready_for_pickup":  return <Badge variant="info"    label="جاهز للاستلام" />;
+      case "accepted":
+        return <Badge variant="info" label="مؤكد" />;
+      case "preparing":
+        return <Badge variant="info" label="قيد التحضير" />;
+      case "ready_for_pickup":
+        return <Badge variant="info" label="جاهز للاستلام" />;
       case "out_for_delivery":
-      case "picked_up":         return <Badge variant="info"    label="في الطريق" />;
-      case "delivered":         return <Badge variant="success" label="تم التوصيل" />;
+      case "picked_up":
+        return <Badge variant="info" label="في الطريق" />;
+      case "delivered":
+        return <Badge variant="success" label="تم التوصيل" />;
       case "cancelled":
-      case "rejected":          return <Badge variant="error"   label="ملغي" />;
-      default:                  return <Badge variant="default" label={status} />;
+      case "rejected":
+        return <Badge variant="error" label="ملغي" />;
+      default:
+        return <Badge variant="default" label={status} />;
     }
   };
 
-  const renderOrderItem = ({ item }: { item: any }) => (
+  const handleDetailsPress = (item: OrderItem) => {
+    Alert.alert(
+      `تفاصيل الطلب #${item.id.slice(0, 8)}`,
+      `المتجر: ${item.stores?.name || "—"}\nالحالة: ${item.status}\nالإجمالي: ${((item.order_total_minor ?? 0) / 100).toFixed(2)} د.ج\nالتاريخ: ${new Date(item.created_at).toLocaleString("ar-DZ")}${item.notes ? `\nملاحظات: ${item.notes}` : ""}`,
+      [
+        { text: "إغلاق", style: "cancel" },
+        {
+          text: "اتصال بالتوصيل",
+          onPress: () => {
+            Alert.alert("قريباً", "ميزة الاتصال بالتوصيل ستكون متاحة قريباً.");
+          },
+        },
+      ]
+    );
+  };
+
+  const renderOrderItem = ({ item }: { item: OrderItem }) => (
     <Card style={styles.orderCard}>
       <View style={[styles.orderHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
         <View style={[styles.storeInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
@@ -101,7 +158,7 @@ export default function CustomerOrdersScreen() {
         </View>
         <TouchableOpacity
           style={[styles.detailsBtn, { backgroundColor: colors.bgElevated }]}
-          onPress={() => { /* Navigate to order details */ }}
+          onPress={() => handleDetailsPress(item)}
         >
           <Typography variant="caption" style={{ fontWeight: "600" }}>التفاصيل</Typography>
         </TouchableOpacity>

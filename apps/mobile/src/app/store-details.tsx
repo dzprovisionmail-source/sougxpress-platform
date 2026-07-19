@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Linking, Alert, I18nManager, Share } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ShoppingCart, Phone, MessageCircle, Share2 } from 'lucide-react-native';
 
@@ -36,6 +36,40 @@ const StoreDetailsScreen = () => {
     router.push(`/product-details?id=${productId}`);
   };
 
+  const handleCall = () => {
+    if (store?.phone_number) {
+      Linking.openURL(`tel:${store.phone_number}`).catch(() => {
+        Alert.alert("خطأ", "تعذر فتح تطبيق الهاتف.");
+      });
+    } else {
+      Alert.alert("معلومات", "رقم الهاتف غير متوفر حالياً.");
+    }
+  };
+
+  const handleWhatsApp = () => {
+    const phone = store?.phone_number || "";
+    if (!phone) {
+      Alert.alert("معلومات", "رقم الهاتف غير متوفر حالياً.");
+      return;
+    }
+    const cleanPhone = phone.replace(/[^0-9]/g, "");
+    Linking.openURL(`whatsapp://send?phone=+213${cleanPhone.startsWith("0") ? cleanPhone.substring(1) : cleanPhone}`).catch(() => {
+      Alert.alert("خطأ", "تعذر فتح واتساب.");
+    });
+  };
+
+  const handleShare = async () => {
+    if (!store) return;
+    try {
+      await Share.share({
+        message: `تفقد متجر ${store.name} على سوق إكسبريس!`,
+        url: `https://sougxpress.dz/store/${store.id}`,
+      });
+    } catch {
+      // share cancelled
+    }
+  };
+
   const filteredProducts = selectedCategory === 'All'
     ? products
     : products.filter(product => (product as any).category === selectedCategory);
@@ -54,7 +88,7 @@ const StoreDetailsScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Chargement du magasin...</Text>
+        <Text style={styles.loadingText}>جاري تحميل المتجر...</Text>
       </View>
     );
   }
@@ -62,7 +96,10 @@ const StoreDetailsScreen = () => {
   if (storeError || productsError || !store) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>معرّف المتجر غير متوفر</Text>
+        <Text style={styles.errorText}>تعذّر تحميل المتجر</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 12 }}>
+          <Text style={styles.retryText}>العودة</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -102,19 +139,19 @@ const StoreDetailsScreen = () => {
           <View style={styles.contactButtons}>
             <Button
               title="اتصل بالمتجر"
-              onPress={() => { /* Handle call */ }}
+              onPress={handleCall}
               icon={<Phone size={iconSizes.small} color="#FFFFFF" />}
               style={styles.contactButton}
             />
             <Button
               title="مراسلة واتساب"
-              onPress={() => { /* Handle WhatsApp */ }}
+              onPress={handleWhatsApp}
               icon={<MessageCircle size={iconSizes.small} color="#FFFFFF" />}
               style={styles.contactButton}
             />
             <Button
               title="مشاركة المتجر"
-              onPress={() => { /* Handle Share */ }}
+              onPress={handleShare}
               icon={<Share2 size={iconSizes.small} color="#FFFFFF" />}
               style={styles.contactButton}
             />
@@ -141,7 +178,7 @@ const StoreDetailsScreen = () => {
                     { color: selectedCategory === category ? "#FFFFFF" : colors.text }
                   ]}
                 >
-                  {category}
+                  {category === 'All' ? 'الكل' : category}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -196,6 +233,12 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.error,
     marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  retryText: {
+    ...typography.caption,
+    color: colors.primary,
+    marginTop: spacing.sm,
   },
   storeInfoCard: {
     marginHorizontal: spacing.lg,

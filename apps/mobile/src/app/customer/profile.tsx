@@ -6,6 +6,11 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -20,7 +25,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Star,
+  Camera,
+  X,
+  User,
 } from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
@@ -34,6 +43,10 @@ export default function CustomerProfileScreen() {
   const [profile, setProfile] = useState<any>(null);
   const [address, setAddress] = useState<any>(null);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({ full_name: "", phone: "", email: "" });
+  const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -48,10 +61,8 @@ export default function CustomerProfileScreen() {
         return;
       }
 
-      // Always have the auth email as a fallback
       setSessionEmail(user.email ?? null);
 
-      // Load customer row with zone name
       const { data: customerData, error: customerError } = await supabase
         .from("customers")
         .select("id, full_name, first_name, last_name, phone, phone_number, email, avatar_url, zone_id, status, zones(name)")
@@ -61,7 +72,6 @@ export default function CustomerProfileScreen() {
       if (customerError) throw customerError;
       setProfile(customerData);
 
-      // Load default address
       const { data: addressData } = await supabase
         .from("customer_addresses")
         .select("id, label, address_line1, address_text, city, is_default")
@@ -93,6 +103,71 @@ export default function CustomerProfileScreen() {
         },
       ]
     );
+  };
+
+  const openEditModal = () => {
+    if (!profile) return;
+    setEditForm({
+      full_name: profile.full_name || "",
+      phone: profile.phone || profile.phone_number || "",
+      email: profile.email || sessionEmail || "",
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!profile) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("customers")
+        .update({
+          full_name: editForm.full_name.trim(),
+          phone: editForm.phone.trim(),
+          email: editForm.email.trim(),
+        })
+        .eq("id", profile.id);
+
+      if (error) throw error;
+      setProfile((prev: any) => ({ ...prev, ...editForm }));
+      setShowEditModal(false);
+    } catch (err) {
+      Alert.alert("خطأ", "تعذّر حفظ التعديلات. حاول مرة أخرى.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("إذن مطلوب", "يجب السماح بالوصول إلى المعرض لرفع الصورة.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (result.canceled) return;
+    setUploadingAvatar(true);
+    const uri = result.assets[0].uri;
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const filePath = `customer_avatars/${profile.id}.${uri.split(".").pop() ?? "jpg"}`;
+      const { error } = await supabase.storage.from("avatars").upload(filePath, blob, { contentType: blob.type, upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const { error: updateError } = await supabase.from("customers").update({ avatar_url: data.publicUrl }).eq("id", profile.id);
+      if (updateError) throw updateError;
+      setProfile((prev: any) => ({ ...prev, avatar_url: data.publicUrl }));
+    } catch (err: any) {
+      Alert.alert("خطأ", err.message || "تعذر رفع الصورة.");
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   if (loading) {
@@ -158,11 +233,42 @@ export default function CustomerProfileScreen() {
         {/* Profile Card */}
         <Card style={styles.profileCard}>
           <View style={[styles.profileInfo, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <Avatar
-              size={70}
-              uri={profile?.avatar_url || null}
-              style={{ backgroundColor: colors.bgElevated }}
-            />
+            <TouchableOpacity onPress={handleAvatarUpload} disabled={uploadingAvatar}>
+              <View
+                style={{
+                  width: 70,
+                  height: 70,
+                  borderRadius: 35,
+                  backgroundColor: colors.bgElevated,
+                  borderWidth: 2,
+                  borderColor: colors.borderSubtle,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  overflow: "hidden",
+                }}
+              >
+                {profile?.avatar_url ? (
+                  <Image source={{ uri: profile.avatar_url }} style={{ width: 70, height: 70, borderRadius: 35 }} />
+                ) : (
+                  <User size={32} color={colors.textSecondary} />
+                )}
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    backgroundColor: "rgba(0,0,0,0.45)",
+                    paddingVertical: 2,
+                    flexDirection: isRTL ? "row-reverse" : "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Camera size={12} color="#FFF" />
+                </View>
+              </View>
+            </TouchableOpacity>
             <View style={[styles.profileText, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
               <View style={[styles.nameRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                 <Typography variant="h2">{displayName}</Typography>
@@ -191,6 +297,23 @@ export default function CustomerProfileScreen() {
               ) : null}
             </View>
           </View>
+          <TouchableOpacity
+            onPress={openEditModal}
+            style={{
+              alignSelf: isRTL ? "flex-start" : "flex-end",
+              flexDirection: isRTL ? "row-reverse" : "row",
+              alignItems: "center",
+              backgroundColor: colors.primary + "18",
+              borderRadius: TOKENS.radius.sm,
+              paddingHorizontal: TOKENS.spacing.sm,
+              paddingVertical: 4,
+              marginTop: TOKENS.spacing.sm,
+            }}
+          >
+            <Typography color="brand" style={{ fontSize: TOKENS.typography?.sizes?.sm || 13, marginRight: 4, fontWeight: "600" }}>
+              تعديل الملف
+            </Typography>
+          </TouchableOpacity>
         </Card>
 
         {/* Menu Items */}
@@ -232,6 +355,93 @@ export default function CustomerProfileScreen() {
           </Typography>
         </View>
       </ScrollView>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface }]}>
+              <View style={[styles.modalHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <Typography variant="h2" style={{ color: colors.textPrimary }}>
+                  تعديل الملف الشخصي
+                </Typography>
+                <TouchableOpacity onPress={() => setShowEditModal(false)} style={styles.closeBtn}>
+                  <X size={22} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView contentContainerStyle={styles.modalBody} keyboardShouldPersistTaps="handled">
+                <View style={styles.fieldGroup}>
+                  <Typography variant="caption" color="secondary" style={styles.fieldLabel}>
+                    الاسم الكامل
+                  </Typography>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary, textAlign: isRTL ? "right" : "left" }]}
+                    value={editForm.full_name}
+                    onChangeText={(v) => setEditForm((f) => ({ ...f, full_name: v }))}
+                    placeholder="الاسم الكامل"
+                    placeholderTextColor={colors.textDisabled}
+                  />
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Typography variant="caption" color="secondary" style={styles.fieldLabel}>
+                    رقم الهاتف
+                  </Typography>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary, textAlign: isRTL ? "right" : "left" }]}
+                    value={editForm.phone}
+                    onChangeText={(v) => setEditForm((f) => ({ ...f, phone: v }))}
+                    placeholder="06XXXXXXXX"
+                    placeholderTextColor={colors.textDisabled}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Typography variant="caption" color="secondary" style={styles.fieldLabel}>
+                    البريد الإلكتروني
+                  </Typography>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary, textAlign: isRTL ? "right" : "left" }]}
+                    value={editForm.email}
+                    onChangeText={(v) => setEditForm((f) => ({ ...f, email: v }))}
+                    placeholder="example@email.com"
+                    placeholderTextColor={colors.textDisabled}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+              </ScrollView>
+
+              <TouchableOpacity
+                style={[
+                  styles.saveBtn,
+                  { backgroundColor: saving ? colors.textDisabled : colors.primary },
+                ]}
+                onPress={handleSaveEdit}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Typography variant="body" style={{ color: "#fff", fontWeight: "700" }}>
+                    حفظ التعديلات
+                  </Typography>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -267,4 +477,39 @@ const styles = StyleSheet.create({
   menuTitle: { flex: 1, fontWeight: "600" },
   logoutBtn: { marginTop: TOKENS.spacing.lg, borderColor: "rgba(255, 0, 0, 0.1)" },
   footer: { marginTop: TOKENS.spacing["3xl"], paddingBottom: TOKENS.spacing.xl },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "85%",
+  },
+  modalHeader: {
+    padding: TOKENS.spacing.lg,
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.07)",
+  },
+  closeBtn: { padding: 4 },
+  modalBody: { padding: TOKENS.spacing.lg, gap: TOKENS.spacing.md },
+  fieldGroup: { gap: 6 },
+  fieldLabel: { fontWeight: "600" },
+  input: {
+    borderWidth: 1,
+    borderRadius: TOKENS.radius.sm,
+    padding: TOKENS.spacing.md,
+    fontSize: 15,
+    minHeight: 44,
+  },
+  saveBtn: {
+    margin: TOKENS.spacing.lg,
+    marginTop: TOKENS.spacing.sm,
+    paddingVertical: TOKENS.spacing.md,
+    borderRadius: TOKENS.radius.md,
+    alignItems: "center",
+  },
 });

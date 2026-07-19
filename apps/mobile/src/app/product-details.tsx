@@ -27,14 +27,14 @@ const ProductDetailsScreen = () => {
   const handleAddToCart = () => {
     if (product) {
       addToCart(product, quantity);
-      Alert.alert('Produit ajouté', `${quantity} ${product.name} ajouté(s) au panier.`);
+      Alert.alert('تمت الإضافة', `تمت إضافة ${quantity} × ${product.name} إلى السلة.`);
     }
   };
 
   if (!productId) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>ID du produit manquant.</Text>
+        <Text style={styles.errorText}>معرّف المنتج غير متوفر</Text>
       </View>
     );
   }
@@ -43,7 +43,7 @@ const ProductDetailsScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Chargement du produit...</Text>
+        <Text style={styles.loadingText}>جاري تحميل المنتج...</Text>
       </View>
     );
   }
@@ -51,7 +51,10 @@ const ProductDetailsScreen = () => {
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Erreur: {error}</Text>
+        <Text style={styles.errorText}>خطأ: {error}</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: spacing.md }}>
+          <Text style={styles.retryText}>العودة</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -59,7 +62,10 @@ const ProductDetailsScreen = () => {
   if (!product) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Produit introuvable.</Text>
+        <Text style={styles.errorText}>المنتج غير متوفر</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: spacing.md }}>
+          <Text style={styles.retryText}>العودة</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -140,6 +146,12 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.error,
     marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  retryText: {
+    ...typography.caption,
+    color: colors.primary,
+    marginTop: spacing.sm,
   },
   productImage: {
     width: '100%',
