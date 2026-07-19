@@ -67,13 +67,30 @@ export default function DriverProfileScreen() {
   return (
     <WorkspaceScreen>
       <ScrollView contentContainerStyle={{ paddingTop: tokens.spacing.xl, paddingBottom: tokens.spacing["3xl"] }}>
+        {/* ── Profile header ──────────────────────────────────── */}
+        <SectionCard>
+          <View style={{ alignItems: "center", paddingVertical: tokens.spacing.sm }}>
+            <WorkspaceText
+              variant="title"
+              style={{ fontSize: tokens.typography.sizes.xl, fontWeight: "700", textAlign: "center" }}
+            >
+              {driver?.full_name || "—"}
+            </WorkspaceText>
+            <WorkspaceText
+              color="secondary"
+              style={{ fontSize: tokens.typography.sizes.sm, marginTop: 4, textAlign: "center" }}
+            >
+              {driver?.phone || ""}
+            </WorkspaceText>
+          </View>
+        </SectionCard>
+
         <SectionCard>
           <SectionTitle icon={<BadgeInfo color={colors.primary} size={tokens.spacing.lg} />}>
             بياناتي
           </SectionTitle>
           <WorkspaceRow label="الاسم" value={driver?.full_name || ""} />
           <WorkspaceRow label="الهاتف" value={driver?.phone || ""} />
-          <WorkspaceRow label="البريد الإلكتروني" value={driver?.email || ""} />
           <WorkspaceRow label="المدينة" value={driver?.city || ""} isLast />
         </SectionCard>
 

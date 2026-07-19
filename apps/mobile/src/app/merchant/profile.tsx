@@ -146,6 +146,24 @@ export default function MerchantProfileScreen() {
           paddingBottom: tokens.spacing["3xl"],
         }}
       >
+        {/* ── Store name header ────────────────────────────────── */}
+        <SectionCard>
+          <View style={{ alignItems: "center", paddingVertical: tokens.spacing.sm }}>
+            <WorkspaceText
+              variant="title"
+              style={{ fontSize: tokens.typography.sizes.xl, fontWeight: "700", textAlign: "center" }}
+            >
+              {merchant?.business_name || "—"}
+            </WorkspaceText>
+            <WorkspaceText
+              color="secondary"
+              style={{ fontSize: tokens.typography.sizes.sm, marginTop: 4, textAlign: "center" }}
+            >
+              {merchant?.owner_full_name || ""}
+            </WorkspaceText>
+          </View>
+        </SectionCard>
+
         {/* Business info */}
         <SectionCard>
           <View

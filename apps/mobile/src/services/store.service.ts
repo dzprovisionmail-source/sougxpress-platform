@@ -103,6 +103,42 @@ export const updateStore = async (storeId: string, updates: Partial<Store>): Pro
   return data as Store;
 };
 
+export const createStore = async (
+  merchantId: string,
+  data: {
+    name: string;
+    category?: string;
+    address_line1?: string;
+    city?: string;
+    latitude?: number;
+    longitude?: number;
+  }
+): Promise<Store | null> => {
+  if (!merchantId || !isValidUUID(merchantId)) return null;
+
+  const { data: created, error } = await supabase
+    .from("stores")
+    .insert({
+      merchant_id: merchantId,
+      name: data.name,
+      category: data.category || null,
+      address_line1: data.address_line1 || null,
+      city: data.city || "عين الصفراء",
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
+      status: "pending_review",
+      is_open: false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating store:", error);
+    return null;
+  }
+  return created as Store;
+};
+
 export const getStoreGalleryImages = async (storeId: string): Promise<string[]> => {
   if (!storeId || !isValidUUID(storeId)) {
     return [];

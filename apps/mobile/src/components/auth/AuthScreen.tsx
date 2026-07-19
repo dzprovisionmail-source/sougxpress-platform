@@ -10,7 +10,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Typography, Input, Button, AinSefraZoneSelect } from "../ui";
+import { Typography, Input, Button, AinSefraZoneSelect, SimpleSelect } from "../ui";
+import type { SelectOption } from "../ui";
 import { TOKENS } from "../../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
 import { supabase } from "../../lib/supabase";
@@ -51,9 +52,14 @@ const toArabicProvisioningError = (err: unknown): string => {
 /** Zone label per role */
 const zoneLabelFor = (role: Role): string => {
   if (role === "merchant") return "حي المتجر";
-  if (role === "driver") return "منطقة العمل الأساسية";
   return "الحي";
 };
+
+const VEHICLE_TYPES: { value: string; label: string }[] = [
+  { value: "motorcycle", label: "دراجة نارية" },
+  { value: "car", label: "سيارة" },
+  { value: "lcv", label: "مركبة تجارية خفيفة" },
+];
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({
   role,
@@ -311,7 +317,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           setLoading(false);
           return;
         }
-        if (!selectedZoneId) {
+        if (role !== "driver" && !selectedZoneId) {
           setZoneError("يرجى اختيار الحي");
           setLoading(false);
           return;
@@ -497,17 +503,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   keyboardType="phone-pad"
                 />
 
-                {/* 3. الحي / حي المتجر / منطقة العمل الأساسية */}
-                <AinSefraZoneSelect
-                  zones={zones}
-                  value={selectedZoneId}
-                  onChange={(id) => {
-                    setSelectedZoneId(id);
-                    setZoneError("");
-                  }}
-                  label={zoneLabelFor(role)}
-                  error={zoneError}
-                />
+                {/* 3. الحي (customer + merchant only) */}
+                {role !== "driver" && (
+                  <AinSefraZoneSelect
+                    zones={zones}
+                    value={selectedZoneId}
+                    onChange={(id) => {
+                      setSelectedZoneId(id);
+                      setZoneError("");
+                    }}
+                    label={zoneLabelFor(role)}
+                    error={zoneError}
+                  />
+                )}
 
                 {/* 4a. Customer — العنوان التفصيلي */}
                 {role === "customer" && (
@@ -537,17 +545,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   </>
                 )}
 
-                {/* 4c. Driver — نوع المركبة + رقم المركبة */}
+                {/* 4c. Driver — نوع المركبة (dropdown) + رقم تسجيل المركبة */}
                 {role === "driver" && (
                   <>
-                    <Input
+                    <SimpleSelect
                       label="نوع المركبة"
-                      placeholder="دراجة نارية، سيارة..."
+                      placeholder="اختر نوع المركبة"
+                      options={VEHICLE_TYPES}
                       value={vehicleType}
-                      onChangeText={setVehicleType}
+                      onChange={setVehicleType}
                     />
                     <Input
-                      label="رقم المركبة"
+                      label="رقم تسجيل المركبة"
                       placeholder="000-000-00"
                       value={vehicleNumber}
                       onChangeText={setVehicleNumber}

@@ -87,6 +87,8 @@ export interface Store {
   city?: string;
   logo_url?: string;
   cover_url?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at: string;
   updated_at: string;
 }

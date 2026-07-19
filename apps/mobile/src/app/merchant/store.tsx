@@ -9,6 +9,8 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Image,
 } from "react-native";
 import {
   Store as StoreIcon,
@@ -18,16 +20,19 @@ import {
   Pencil,
   X,
   Tag,
+  ImagePlus,
 } from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
-import { getStoreByMerchantId, updateStore } from "@/services/store.service";
+import { getStoreByMerchantId, updateStore, createStore } from "@/services/store.service";
 import useStore from "@/hooks/useStore";
 import { useMerchantProducts } from "@/hooks/useProducts";
 import { Store } from "@/types/schema-03-core";
 import StoreImageGallery from "@/components/profile/StoreImageGallery";
 import StoreProductManagement from "@/components/profile/StoreProductManagement";
+import { supabase } from "@/lib/supabase";
 import {
   WorkspaceScreen,
   SectionCard,
@@ -36,7 +41,6 @@ import {
   WorkspaceText,
   WorkspaceButton,
   LoadingState,
-  EmptyState,
 } from "@/features/workspace/ui";
 
 /* ─── Store edit form ─────────────────────────────────────────── */
@@ -64,6 +68,48 @@ function buildForm(s: Store): StoreFormValues {
   };
 }
 
+/* ─── Create store form values ────────────────────────────────── */
+interface CreateFormValues {
+  name: string;
+  category: string;
+  address_line1: string;
+  city: string;
+  latitude: string;
+  longitude: string;
+}
+
+const EMPTY_CREATE_FORM: CreateFormValues = {
+  name: "",
+  category: "",
+  address_line1: "",
+  city: "عين الصفراء",
+  latitude: "",
+  longitude: "",
+};
+
+/* ─── Image uploader helper ───────────────────────────────────── */
+async function uploadStoreAsset(
+  storeId: string,
+  path: "logos" | "covers",
+  uri: string
+): Promise<string | null> {
+  try {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const ext = uri.split(".").pop() ?? "jpg";
+    const filePath = `${path}/${storeId}.${ext}`;
+    const { error } = await supabase.storage
+      .from("store_images")
+      .upload(filePath, blob, { contentType: blob.type, upsert: true });
+    if (error) throw error;
+    const { data } = supabase.storage.from("store_images").getPublicUrl(filePath);
+    return data.publicUrl;
+  } catch (err: any) {
+    console.error(`[store] upload ${path} error:`, err);
+    return null;
+  }
+}
+
 /* ─── Screen ──────────────────────────────────────────────────── */
 export default function MerchantStoreScreen() {
   const { colors, tokens } = useAppTheme();
@@ -76,10 +122,24 @@ export default function MerchantStoreScreen() {
   const [saving, setSaving] = useState(false);
   const [togglingOpen, setTogglingOpen] = useState(false);
 
+  // Create store state
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createForm, setCreateForm] = useState<CreateFormValues>(EMPTY_CREATE_FORM);
+  const [creating, setCreating] = useState(false);
+
+  // Logo / cover upload state
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
   useEffect(() => {
     if (!userId) return;
     getStoreByMerchantId(userId).then((s) => {
-      setStoreId(s?.id ?? "");
+      if (s?.id) {
+        setStoreId(s.id);
+      } else {
+        // No store yet — auto-open the create form
+        setShowCreateForm(true);
+      }
       setResolving(false);
     });
   }, [userId]);
@@ -96,13 +156,39 @@ export default function MerchantStoreScreen() {
     setVisibility,
   } = useMerchantProducts(storeId);
 
+  /* ── Create store ──────────────────────────────────────────── */
+  const handleCreateStore = async () => {
+    if (!userId) return;
+    if (!createForm.name.trim()) {
+      Alert.alert("خطأ", "اسم المتجر مطلوب");
+      return;
+    }
+    setCreating(true);
+    const lat = parseFloat(createForm.latitude);
+    const lng = parseFloat(createForm.longitude);
+    const created = await createStore(userId, {
+      name: createForm.name.trim(),
+      category: createForm.category.trim() || undefined,
+      address_line1: createForm.address_line1.trim() || undefined,
+      city: createForm.city.trim() || "عين الصفراء",
+      latitude: !isNaN(lat) ? lat : undefined,
+      longitude: !isNaN(lng) ? lng : undefined,
+    });
+    setCreating(false);
+    if (created) {
+      setStoreId(created.id);
+      setShowCreateForm(false);
+    } else {
+      Alert.alert("خطأ", "تعذر إنشاء المتجر. يرجى المحاولة لاحقاً.");
+    }
+  };
+
   /* ── Open/Close toggle ─────────────────────────────────────── */
   const handleToggleOpen = async (value: boolean) => {
     if (!store) return;
     setTogglingOpen(true);
     const updated = await updateStore(store.id, { is_open: value });
     if (updated) {
-      // useStore listens to realtime; also force a local state update
       await updateStoreHook({ is_open: value });
     }
     setTogglingOpen(false);
@@ -141,8 +227,37 @@ export default function MerchantStoreScreen() {
     }
   };
 
-  /* ── Loading / empty guards ────────────────────────────────── */
-  if (resolving || (storeId && loading && !store)) {
+  /* ── Logo / Cover upload ───────────────────────────────────── */
+  const pickAndUpload = async (asset: "logos" | "covers") => {
+    if (!store) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("إذن مطلوب", "يجب السماح بالوصول إلى المعرض لرفع الصورة.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: asset === "logos" ? [1, 1] : [16, 9],
+      quality: 0.85,
+    });
+    if (result.canceled) return;
+    const uri = result.assets[0].uri;
+    if (asset === "logos") setUploadingLogo(true);
+    else setUploadingCover(true);
+    const url = await uploadStoreAsset(store.id, asset, uri);
+    if (asset === "logos") setUploadingLogo(false);
+    else setUploadingCover(false);
+    if (url) {
+      const field = asset === "logos" ? { logo_url: url } : { cover_url: url };
+      await updateStoreHook(field as Partial<Store>);
+    } else {
+      Alert.alert("خطأ", "تعذر رفع الصورة. حاول مرة أخرى.");
+    }
+  };
+
+  /* ── Loading guard ─────────────────────────────────────────── */
+  if (resolving) {
     return (
       <WorkspaceScreen>
         <LoadingState message="جاري تحميل المتجر..." />
@@ -150,13 +265,106 @@ export default function MerchantStoreScreen() {
     );
   }
 
-  if (!storeId || !store) {
+  /* ── No store → Create Store form ─────────────────────────── */
+  if (showCreateForm || (!storeId && !resolving)) {
     return (
       <WorkspaceScreen>
-        <EmptyState message="لم يتم إنشاء متجرك بعد. تواصل مع فريق الدعم." />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <ScrollView
+            contentContainerStyle={{
+              paddingTop: tokens.spacing.xl,
+              paddingBottom: tokens.spacing["3xl"],
+            }}
+          >
+            <SectionCard>
+              <WorkspaceText
+                variant="title"
+                style={{ textAlign: "right", marginBottom: tokens.spacing.md }}
+              >
+                إنشاء متجرك
+              </WorkspaceText>
+              <WorkspaceText
+                color="secondary"
+                style={{
+                  textAlign: "right",
+                  fontSize: tokens.typography.sizes.sm,
+                  marginBottom: tokens.spacing.lg,
+                }}
+              >
+                أدخل بيانات متجرك الأساسية. سيتم مراجعة طلبك من قِبل الإدارة قبل التفعيل.
+              </WorkspaceText>
+
+              {(
+                [
+                  { key: "name", label: "اسم المتجر *", placeholder: "مثال: متجر العائلة" },
+                  { key: "category", label: "الفئة", placeholder: "مثال: بقالة، مطعم..." },
+                  { key: "address_line1", label: "عنوان المتجر", placeholder: "الشارع أو الحي" },
+                  { key: "city", label: "المدينة", placeholder: "عين الصفراء" },
+                  { key: "latitude", label: "خط العرض (اختياري)", placeholder: "مثال: 32.7490", keyboardType: "decimal-pad" },
+                  { key: "longitude", label: "خط الطول (اختياري)", placeholder: "مثال: -0.5860", keyboardType: "decimal-pad" },
+                ] as Array<{
+                  key: keyof CreateFormValues;
+                  label: string;
+                  placeholder: string;
+                  keyboardType?: "default" | "decimal-pad";
+                }>
+              ).map((field) => (
+                <View key={field.key} style={{ marginBottom: tokens.spacing.md }}>
+                  <WorkspaceText
+                    color="secondary"
+                    style={{ fontSize: tokens.typography.sizes.sm, marginBottom: 4 }}
+                  >
+                    {field.label}
+                  </WorkspaceText>
+                  <TextInput
+                    value={createForm[field.key]}
+                    onChangeText={(text) =>
+                      setCreateForm((prev) => ({ ...prev, [field.key]: text }))
+                    }
+                    style={{
+                      borderWidth: 1,
+                      borderColor: colors.borderSubtle,
+                      borderRadius: tokens.radius.sm,
+                      paddingHorizontal: tokens.spacing.md,
+                      paddingVertical: tokens.spacing.sm,
+                      color: colors.textPrimary,
+                      fontFamily: tokens.typography.families.arabic,
+                      fontSize: tokens.typography.sizes.base,
+                      textAlign: "right",
+                    }}
+                    placeholder={field.placeholder}
+                    placeholderTextColor={colors.textDisabled}
+                    keyboardType={field.keyboardType ?? "default"}
+                  />
+                </View>
+              ))}
+
+              <WorkspaceButton
+                title={creating ? "جاري الإنشاء..." : "إنشاء المتجر"}
+                onPress={handleCreateStore}
+                isLoading={creating}
+                style={{ marginTop: tokens.spacing.sm }}
+              />
+            </SectionCard>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </WorkspaceScreen>
     );
   }
+
+  /* ── Store loading ─────────────────────────────────────────── */
+  if (storeId && loading && !store) {
+    return (
+      <WorkspaceScreen>
+        <LoadingState message="جاري تحميل المتجر..." />
+      </WorkspaceScreen>
+    );
+  }
+
+  if (!store) return null;
 
   const isOpen = store.is_open ?? false;
   const statusLabel =
@@ -259,7 +467,82 @@ export default function MerchantStoreScreen() {
           {store.city ? (
             <WorkspaceRow label="المدينة" value={store.city} />
           ) : null}
+          {store.latitude != null && store.longitude != null ? (
+            <WorkspaceRow
+              label="الموقع الجغرافي"
+              value={`${store.latitude.toFixed(5)}, ${store.longitude.toFixed(5)}`}
+            />
+          ) : null}
           <WorkspaceRow label="حالة المتجر" value={statusLabel} isLast />
+        </SectionCard>
+
+        {/* Logo & Cover */}
+        <SectionCard>
+          <SectionTitle
+            icon={<ImagePlus color={colors.primary} size={tokens.spacing.lg} />}
+          >
+            الشعار والغلاف
+          </SectionTitle>
+
+          {/* Logo */}
+          <View style={{ marginBottom: tokens.spacing.md }}>
+            <WorkspaceText
+              color="secondary"
+              style={{ fontSize: tokens.typography.sizes.sm, marginBottom: tokens.spacing.xs, textAlign: "right" }}
+            >
+              شعار المتجر
+            </WorkspaceText>
+            {store.logo_url ? (
+              <Image
+                source={{ uri: store.logo_url }}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: tokens.radius.md,
+                  alignSelf: "flex-end",
+                  marginBottom: tokens.spacing.xs,
+                  borderWidth: 1,
+                  borderColor: colors.borderSubtle,
+                }}
+              />
+            ) : null}
+            <WorkspaceButton
+              title={uploadingLogo ? "جاري الرفع..." : "رفع الشعار"}
+              variant="outline"
+              onPress={() => pickAndUpload("logos")}
+              isLoading={uploadingLogo}
+            />
+          </View>
+
+          {/* Cover */}
+          <View>
+            <WorkspaceText
+              color="secondary"
+              style={{ fontSize: tokens.typography.sizes.sm, marginBottom: tokens.spacing.xs, textAlign: "right" }}
+            >
+              صورة الغلاف
+            </WorkspaceText>
+            {store.cover_url ? (
+              <Image
+                source={{ uri: store.cover_url }}
+                style={{
+                  width: "100%",
+                  height: 120,
+                  borderRadius: tokens.radius.md,
+                  marginBottom: tokens.spacing.xs,
+                  borderWidth: 1,
+                  borderColor: colors.borderSubtle,
+                }}
+                resizeMode="cover"
+              />
+            ) : null}
+            <WorkspaceButton
+              title={uploadingCover ? "جاري الرفع..." : "رفع صورة الغلاف"}
+              variant="outline"
+              onPress={() => pickAndUpload("covers")}
+              isLoading={uploadingCover}
+            />
+          </View>
         </SectionCard>
 
         {/* Opening hours */}
