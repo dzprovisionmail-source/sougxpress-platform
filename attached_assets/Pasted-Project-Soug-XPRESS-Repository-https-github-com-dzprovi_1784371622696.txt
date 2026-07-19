@@ -1,0 +1,159 @@
+Project: Soug-XPRESS
+Repository: https://github.com/dzprovisionmail-source/sougxpress-platform
+
+Continue from the latest origin/main.
+
+Founder Core Phase 1 is complete.
+
+This session has ONE goal ONLY:
+
+Founder Phase 2 — Complete User Management.
+
+The Founder/Admin is the highest authority of the platform and is responsible for preparing the marketplace before launch by manually creating and managing all users.
+
+Do not start Store Management yet.
+Do not modify Customer, Merchant or Driver business workflows.
+Do not redesign existing UI.
+Work only on Founder User Management.
+
+==================================================
+1. CUSTOMER MANAGEMENT
+==================================================
+
+Implement complete production CRUD.
+
+The Founder must be able to:
+
+- Create a customer manually.
+- Edit all customer information.
+- Upload/change customer profile image.
+- Reset customer password securely.
+- Activate / Suspend account.
+- Soft delete account with confirmation.
+- Search.
+- Filter.
+- View complete profile.
+- View all customer addresses.
+- View customer orders.
+- View favourites.
+- View account activity.
+
+==================================================
+2. MERCHANT MANAGEMENT
+==================================================
+
+The Founder must be able to:
+
+- Create merchant.
+- Edit merchant.
+- Approve.
+- Reject.
+- Suspend.
+- Reactivate.
+- View merchant profile.
+- Link merchant to one or multiple stores.
+- View merchant stores.
+- View merchant order statistics.
+- View merchant subscription status.
+
+==================================================
+3. DRIVER MANAGEMENT
+==================================================
+
+The Founder must be able to:
+
+- Create driver.
+- Edit driver.
+- Approve.
+- Reject.
+- Suspend.
+- Reactivate.
+- Assign working zone.
+- View driver profile.
+- View delivery statistics.
+- View completed deliveries.
+- View current balance.
+- View amount owed to platform.
+- View settlement status.
+- Reset settlement only after confirmation.
+
+==================================================
+4. SECURITY
+==================================================
+
+The Founder:
+
+- creates accounts directly.
+- There is NO public Founder registration.
+- Every action must be written into admin_audit_logs.
+- Respect existing RLS.
+- Never expose service-role keys.
+- Use secure RPC/Edge Functions when required.
+
+==================================================
+5. DATABASE
+==================================================
+
+Review the existing schema first.
+
+If new columns or tables are required:
+
+- create a single migration.
+- never duplicate existing schema.
+- maintain backward compatibility.
+
+==================================================
+6. USER EXPERIENCE
+==================================================
+
+Arabic RTL.
+
+Mobile first.
+
+Reuse existing design system.
+
+Loading.
+
+Empty state.
+
+Error state.
+
+Confirmation dialogs.
+
+Success feedback.
+
+Search.
+
+Filtering.
+
+Pagination if needed.
+
+==================================================
+7. VALIDATION
+==================================================
+
+Run:
+
+pnpm exec tsc --noEmit
+
+pnpm exec expo-doctor
+
+Verify CRUD against live Supabase.
+
+==================================================
+COMMIT
+==================================================
+
+feat(founder): implement founder user management
+
+Push to origin/main.
+
+Return ONLY:
+
+- Features implemented.
+- Database changes.
+- Migration name.
+- Files changed.
+- Validation results.
+- Commit hash.
+- Remaining blockers.

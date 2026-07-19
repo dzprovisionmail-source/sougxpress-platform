@@ -1,0 +1,171 @@
+Project: Soug-XPRESS
+Repository: https://github.com/dzprovisionmail-source/sougxpress-platform
+
+Continue Founder Phase 2 from the CURRENT uncommitted working tree.
+
+IMPORTANT:
+- Do NOT reset, restore, delete, or overwrite the existing uncommitted work.
+- Do NOT restart a full repository audit.
+- Do NOT start Founder Phase 3.
+- Inspect only the current Founder Phase 2 diff and finish the incomplete implementation.
+- Continue from the latest local state, then compare with origin/main only to avoid conflicts.
+
+Current known pending work includes:
+- apps/mobile/src/app/founder/users/
+- apps/mobile/src/services/founder-users.service.ts
+- supabase/functions/admin-reset-password/
+- supabase/migrations/202607110002800_founder_user_management.sql
+- deletion/replacement of the old apps/mobile/src/app/founder/users.tsx
+
+SESSION GOAL:
+Complete and validate Founder Phase 2 — User Management.
+
+==================================================
+1. FIRST: REVIEW CURRENT UNCOMMITTED WORK
+==================================================
+
+Run and inspect:
+
+- git status --short
+- git diff --stat
+- git diff
+- all files under apps/mobile/src/app/founder/users/
+- founder-users.service.ts
+- admin-reset-password Edge Function
+- migration 202607110002800_founder_user_management.sql
+
+Identify unfinished, broken, duplicated, or disconnected code.
+Do not rewrite completed files unnecessarily.
+
+==================================================
+2. COMPLETE FOUNDER USER MANAGEMENT
+==================================================
+
+A. Customers
+- list with live Supabase data
+- search and filters
+- create customer
+- view details
+- edit profile information
+- change avatar
+- activate / suspend
+- soft delete with confirmation
+- view addresses
+- view orders and favourites when existing schema supports them
+- secure password reset
+
+B. Merchants
+- list with live Supabase data
+- search and filters
+- create merchant
+- view details
+- edit
+- approve / reject
+- suspend / reactivate
+- soft delete with confirmation
+- show subscription status
+- show linked stores
+- store linking UI may only use existing schema; do not build full Store Management
+
+C. Drivers
+- list with live Supabase data
+- search and filters
+- create driver
+- view details
+- edit
+- approve / reject
+- suspend / reactivate
+- assign working zone
+- soft delete with confirmation
+- show delivery count
+- show current balance / platform debt
+- show settlement status
+- settlement reset only with confirmation and existing business rules
+
+==================================================
+3. SECURITY AND DATABASE
+==================================================
+
+- Founder/Admin only.
+- Preserve existing RLS.
+- Never expose the Supabase service-role key in the mobile app.
+- Privileged Auth operations must use a secure Edge Function or secure RPC.
+- Verify admin-reset-password authorization and input validation.
+- All create/update/status/delete/reset actions must write to admin_audit_logs.
+- Review migration 202607110002800_founder_user_management.sql for:
+  - correct existing column names
+  - idempotent SQL where appropriate
+  - no duplicate tables or columns
+  - correct soft-delete fields
+  - correct RLS policies
+  - secure avatar storage policies
+  - valid indexes
+  - BEGIN/COMMIT integrity
+- Create an additional migration only if fixing the current migration safely requires it. Prefer correcting the uncommitted migration before it is applied.
+
+==================================================
+4. ROUTING AND UI
+==================================================
+
+- Replace the old founder/users.tsx route cleanly with the new nested users routes.
+- Verify Expo Router route names and navigation links.
+- Ensure Founder hub links open the correct screens.
+- Arabic RTL only.
+- Mobile-first.
+- Reuse the existing Soug-XPRESS design system.
+- Add loading, empty, error, success, and confirmation states.
+- No mock data.
+- No unrelated redesign.
+
+==================================================
+5. VALIDATION
+==================================================
+
+From apps/mobile run:
+
+- pnpm install only if dependencies are missing
+- pnpm exec tsc --noEmit
+- pnpm exec expo-doctor
+
+Also verify:
+- no broken imports
+- no duplicate routes
+- no implicit any errors
+- no service-role key in client code
+- all new screens are reachable
+- git diff contains only intended Founder Phase 2 changes
+
+If Supabase CLI is configured, validate the migration and Edge Function without destroying or resetting production data.
+Do not run destructive database reset commands.
+
+==================================================
+6. GIT
+==================================================
+
+Only after validation succeeds:
+
+- remove the accidental attached_assets text file if it is unrelated to the application
+- git add only intended project files
+- commit with:
+
+feat(founder): implement complete user management
+
+- push to origin/main
+
+Do not push incomplete or failing code.
+
+==================================================
+RETURN ONLY
+==================================================
+
+1. Completed customer features
+2. Completed merchant features
+3. Completed driver features
+4. Security and audit-log implementation
+5. Database migration status
+6. Edge Function status
+7. Files changed
+8. TypeScript result
+9. Expo Doctor result
+10. Commit hash and push status
+11. Remaining blockers
