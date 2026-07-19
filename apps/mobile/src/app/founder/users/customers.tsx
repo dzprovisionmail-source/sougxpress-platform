@@ -13,6 +13,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import {
   getFounderCustomers, type FounderCustomer,
 } from "@/services/founder-users.service";
+import { useRealtimeUserList } from "@/hooks/useRealtimeUserList";
 
 type CustomerStatus = "all" | "active" | "suspended" | "banned";
 
@@ -63,6 +64,10 @@ export default function FounderCustomersScreen() {
   );
 
   useEffect(() => { load("", statusFilter, false, showDeleted); }, [load, statusFilter, showDeleted]);
+
+  useRealtimeUserList("customers", () => {
+    load(search, statusFilter, true, showDeleted);
+  });
 
   const handleSearch = () => load(search, statusFilter, false, showDeleted);
 

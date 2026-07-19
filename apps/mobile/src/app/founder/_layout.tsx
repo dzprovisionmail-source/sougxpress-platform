@@ -50,6 +50,7 @@ export default function FounderLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="approvals" />
       <Stack.Screen name="users" />
       <Stack.Screen name="stores" />
       <Stack.Screen name="orders" />

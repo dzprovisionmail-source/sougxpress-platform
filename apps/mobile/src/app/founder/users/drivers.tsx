@@ -13,6 +13,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import {
   getFounderDrivers, type FounderDriver,
 } from "@/services/founder-users.service";
+import { useRealtimeUserList } from "@/hooks/useRealtimeUserList";
 
 type DriverStatus = "all" | "pending_review" | "active" | "suspended" | "offline";
 
@@ -66,6 +67,10 @@ export default function FounderDriversScreen() {
   );
 
   useEffect(() => { load("", statusFilter, false, showDeleted); }, [load, statusFilter, showDeleted]);
+
+  useRealtimeUserList("drivers", () => {
+    load(search, statusFilter, true, showDeleted);
+  });
 
   return (
     <AdminPageShell title="الموصلون" showBack scrollable={false}>
