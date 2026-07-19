@@ -13,6 +13,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import {
   getFounderMerchants, type FounderMerchant,
 } from "@/services/founder-users.service";
+import { useRealtimeUserList } from "@/hooks/useRealtimeUserList";
 
 type MerchantStatus = "all" | "pending_review" | "active" | "suspended" | "rejected";
 
@@ -66,6 +67,10 @@ export default function FounderMerchantsScreen() {
   );
 
   useEffect(() => { load("", statusFilter, false, showDeleted); }, [load, statusFilter, showDeleted]);
+
+  useRealtimeUserList("merchants", () => {
+    load(search, statusFilter, true, showDeleted);
+  });
 
   return (
     <AdminPageShell title="التجار" showBack scrollable={false}>

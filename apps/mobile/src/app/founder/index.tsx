@@ -390,8 +390,8 @@ export default function FounderControlCenterScreen() {
         {/* ── Section: انتظار الموافقة ──────────────────────────────── */}
         <SectionBlock title="في انتظار الموافقة">
           <StatsRow>
-            <AdminStatCard label="تجار معلقون" value={fmtCount(stats?.pendingMerchants)} accent={warning} onPress={() => router.push("/founder/users" as never)} />
-            <AdminStatCard label="موصلون معلقون" value={fmtCount(stats?.pendingDrivers)} accent={warning} onPress={() => router.push("/founder/drivers" as never)} />
+            <AdminStatCard label="تجار معلقون" value={fmtCount(stats?.pendingMerchants)} accent={warning} onPress={() => router.push("/founder/approvals" as never)} />
+            <AdminStatCard label="موصلون معلقون" value={fmtCount(stats?.pendingDrivers)} accent={warning} onPress={() => router.push("/founder/approvals" as never)} />
           </StatsRow>
         </SectionBlock>
 
@@ -455,6 +455,7 @@ export default function FounderControlCenterScreen() {
         {/* ── Quick Actions ─────────────────────────────────────────── */}
         <SectionBlock title="الإجراءات السريعة">
           <View style={styles.quickActionsGrid}>
+            <QuickAction label="مركز الموافقات" icon={<CheckCircle size={18} color={warning} />} accentColor={warning} onPress={() => router.push("/founder/approvals" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إضافة زبون" icon={<UserPlus size={18} color={blue} />} accentColor={blue} onPress={() => router.push("/founder/add-customer" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إضافة تاجر" icon={<ShoppingBag size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/add-merchant" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إضافة موصل" icon={<Truck size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/add-driver" as never)} colors={colors} tokens={tokens} />
