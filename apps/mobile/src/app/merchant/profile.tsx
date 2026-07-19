@@ -23,7 +23,8 @@ import {
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import { getMerchant, updateMerchant } from "@/services/merchant.service";
-import { Merchant } from "@/types/schema-03-core";
+import { getStoreByMerchantId } from "@/services/store.service";
+import { Merchant, Store } from "@/types/schema-03-core";
 import { supabase } from "@/lib/supabase";
 import {
   WorkspaceScreen,
@@ -57,6 +58,7 @@ export default function MerchantProfileScreen() {
   const { userId } = useCurrentUserId();
 
   const [merchant, setMerchant] = useState<Merchant | null>(null);
+  const [store, setStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [form, setForm] = useState<MerchantFormValues>({
@@ -81,8 +83,8 @@ export default function MerchantProfileScreen() {
           address: data.address ?? "",
         });
       }
-      setLoading(false);
     });
+    getStoreByMerchantId(userId).then(setStore).finally(() => setLoading(false));
   }, [userId]);
 
   const handleLogout = async () => {
@@ -153,7 +155,7 @@ export default function MerchantProfileScreen() {
               variant="title"
               style={{ fontSize: tokens.typography.sizes.xl, fontWeight: "700", textAlign: "center" }}
             >
-              {merchant?.business_name || "—"}
+              {store?.name || merchant?.business_name || "—"}
             </WorkspaceText>
             <WorkspaceText
               color="secondary"
@@ -204,7 +206,7 @@ export default function MerchantProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <WorkspaceRow label="اسم النشاط" value={merchant?.business_name ?? "—"} />
+          <WorkspaceRow label="اسم المتجر" value={store?.name ?? (merchant?.business_name ?? "—")} />
           <WorkspaceRow label="اسم المالك" value={merchant?.owner_full_name ?? "—"} />
           <WorkspaceRow label="الهاتف" value={merchant?.phone ?? "—"} />
           {merchant?.email ? (

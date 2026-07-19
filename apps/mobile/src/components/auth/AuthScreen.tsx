@@ -557,7 +557,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                       onChange={setVehicleType}
                     />
                     <Input
-                      label="رقم تسجيل المركبة"
+                      label="رقم المركبة"
                       placeholder="000-000-00"
                       value={vehicleNumber}
                       onChangeText={setVehicleNumber}
