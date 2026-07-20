@@ -1,11 +1,33 @@
-import React from "react";
-import { Link } from "expo-router";
-import { Image } from "react-native";
-import { View, ScrollView, StyleSheet, SafeAreaView, I18nManager, TouchableOpacity } from "react-native";
+import React, { useState, useRef } from "react";
+import { Link, router } from "expo-router";
+import {
+  Image,
+  Modal,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  TextInput,
+  Pressable,
+  Keyboard,
+} from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  SafeAreaView,
+  I18nManager,
+  TouchableOpacity,
+} from "react-native";
 import { Typography } from "../components/ui";
-import { BRAND_NAME_AR, BRAND_SLOGAN, BRAND_CITY_LABEL, LOGO_DARK } from "../constants/brand";
+import {
+  BRAND_NAME_AR,
+  BRAND_SLOGAN,
+  BRAND_CITY_LABEL,
+  LOGO_DARK,
+} from "../constants/brand";
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
+import { supabase } from "../lib/supabase";
 
 /**
  * Soug-XPRESS Entry Screen — Brand Logo Integration
@@ -17,12 +39,92 @@ import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
  * - Primary action button: "الدخول إلى السوق"
  * - Button opens the existing role-selection flow (intent gateway)
  *
- * Uses the official logo asset. Logo is dark-bg only.
+ * Hidden: 6-second long press on the logo opens the Founder login dialog.
+ * Not accessible or visible during normal customer / merchant / driver use.
  */
+
+type DialogState = "idle" | "loading" | "denied";
 
 export default function EntryScreen() {
   const colors = getThemeColors(DEFAULT_THEME);
-  const isRTL = I18nManager.isRTL;
+
+  /* ── Founder dialog state ── */
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogState, setDialogState] = useState<DialogState>("idle");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const passwordRef = useRef<TextInput>(null);
+
+  /* ── Open / close helpers ── */
+  const openFounderDialog = () => {
+    setEmail("");
+    setPassword("");
+    setErrorMsg("");
+    setDialogState("idle");
+    setDialogVisible(true);
+  };
+
+  const closeFounderDialog = () => {
+    Keyboard.dismiss();
+    setDialogVisible(false);
+    setDialogState("idle");
+    setErrorMsg("");
+  };
+
+  /* ── Authentication ── */
+  const handleFounderLogin = async () => {
+    if (!email.trim() || !password) {
+      setErrorMsg("يرجى إدخال البريد الإلكتروني وكلمة المرور.");
+      return;
+    }
+
+    setDialogState("loading");
+    setErrorMsg("");
+
+    try {
+      // Sign out any existing session first so it doesn't bleed into founder space
+      await supabase.auth.signOut();
+
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+
+      if (authError || !authData.user) {
+        setErrorMsg("بريد إلكتروني أو كلمة مرور غير صحيحة.");
+        setDialogState("denied");
+        return;
+      }
+
+      // Verify role = 'founder' in public.profiles
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (profileError || !profile || profile.role !== "founder") {
+        // Sign the non-founder user back out immediately
+        await supabase.auth.signOut();
+        setErrorMsg("ليس لديك صلاحية دخول منطقة المؤسس.");
+        setDialogState("denied");
+        return;
+      }
+
+      // Success — close dialog then navigate
+      setDialogVisible(false);
+      router.replace("/founder");
+    } catch {
+      setErrorMsg("حدث خطأ غير متوقع. حاول مجدداً.");
+      setDialogState("denied");
+    }
+  };
+
+  /* ── Render ── */
+  const isLoading = dialogState === "loading";
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
@@ -31,13 +133,20 @@ export default function EntryScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Official Logo */}
+        {/* Official Logo — 6-second long press reveals Founder entry */}
         <View style={styles.logoArea}>
-          <Image
-            source={LOGO_DARK}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
+          <TouchableOpacity
+            activeOpacity={1}
+            delayLongPress={6000}
+            onLongPress={openFounderDialog}
+            accessible={false}
+          >
+            <Image
+              source={LOGO_DARK}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Slogan */}
@@ -46,14 +155,22 @@ export default function EntryScreen() {
         </Typography>
 
         {/* City Label */}
-        <Typography variant="body" color="secondary" align="center" style={styles.cityLabel}>
+        <Typography
+          variant="body"
+          color="secondary"
+          align="center"
+          style={styles.cityLabel}
+        >
           {BRAND_CITY_LABEL}
         </Typography>
 
         {/* Role Selection Gateway */}
         <View style={styles.gatewayContainer}>
           <Link href="/login" asChild>
-            <TouchableOpacity activeOpacity={0.8} style={styles.enterButton}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.enterButton}
+            >
               <Typography variant="h2" style={styles.enterButtonText}>
                 الدخول إلى السوق
               </Typography>
@@ -68,6 +185,149 @@ export default function EntryScreen() {
           </Typography>
         </View>
       </ScrollView>
+
+      {/* ── Founder Login Dialog ── Hidden from normal users ── */}
+      <Modal
+        visible={dialogVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={closeFounderDialog}
+      >
+        <Pressable
+          style={styles.backdrop}
+          onPress={isLoading ? undefined : closeFounderDialog}
+        >
+          {/* Prevent taps inside the card from closing the modal */}
+          <Pressable style={[styles.dialogCard, { backgroundColor: TOKENS.colors.dark.bgElevated }]}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+              {/* Header */}
+              <View style={styles.dialogHeader}>
+                <Typography
+                  variant="h2"
+                  align="center"
+                  style={{ color: TOKENS.colors.brandPrimary }}
+                >
+                  🔐 دخول خاص
+                </Typography>
+              </View>
+
+              {/* Email */}
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: TOKENS.colors.dark.bgSurface,
+                    color: TOKENS.colors.dark.textPrimary,
+                    borderColor: TOKENS.colors.dark.borderSubtle,
+                  },
+                ]}
+                placeholder="البريد الإلكتروني"
+                placeholderTextColor={TOKENS.colors.dark.textDisabled}
+                value={email}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  setErrorMsg("");
+                  setDialogState("idle");
+                }}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                textContentType="emailAddress"
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                editable={!isLoading}
+                textAlign="right"
+              />
+
+              {/* Password */}
+              <TextInput
+                ref={passwordRef}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: TOKENS.colors.dark.bgSurface,
+                    color: TOKENS.colors.dark.textPrimary,
+                    borderColor: TOKENS.colors.dark.borderSubtle,
+                  },
+                ]}
+                placeholder="كلمة المرور"
+                placeholderTextColor={TOKENS.colors.dark.textDisabled}
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  setErrorMsg("");
+                  setDialogState("idle");
+                }}
+                secureTextEntry
+                textContentType="password"
+                returnKeyType="done"
+                onSubmitEditing={handleFounderLogin}
+                editable={!isLoading}
+                textAlign="right"
+              />
+
+              {/* Error / denied message */}
+              {errorMsg ? (
+                <View style={styles.errorRow}>
+                  <Typography
+                    variant="caption"
+                    align="center"
+                    style={{ color: TOKENS.colors.statusError }}
+                  >
+                    {errorMsg}
+                  </Typography>
+                </View>
+              ) : null}
+
+              {/* Actions */}
+              <TouchableOpacity
+                style={[
+                  styles.loginButton,
+                  {
+                    backgroundColor: isLoading
+                      ? TOKENS.colors.dark.bgSurface
+                      : TOKENS.colors.brandPrimary,
+                  },
+                ]}
+                onPress={handleFounderLogin}
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={TOKENS.colors.brandPrimary} />
+                ) : (
+                  <Typography
+                    variant="body"
+                    style={{
+                      color: TOKENS.colors.dark.textOnBrand,
+                      fontWeight: "700",
+                    }}
+                  >
+                    دخول
+                  </Typography>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={closeFounderDialog}
+                disabled={isLoading}
+                activeOpacity={0.7}
+              >
+                <Typography
+                  variant="caption"
+                  style={{ color: TOKENS.colors.dark.textSecondary }}
+                >
+                  إلغاء
+                </Typography>
+              </TouchableOpacity>
+            </KeyboardAvoidingView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -124,5 +384,52 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
     width: "100%",
+  },
+
+  /* ── Founder dialog ── */
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: TOKENS.spacing.lg,
+  },
+  dialogCard: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: TOKENS.radius.lg,
+    padding: TOKENS.spacing.xl,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  dialogHeader: {
+    marginBottom: TOKENS.spacing.xl,
+    alignItems: "center",
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: TOKENS.radius.md,
+    paddingHorizontal: TOKENS.spacing.md,
+    paddingVertical: TOKENS.spacing.sm + 4,
+    fontSize: 15,
+    marginBottom: TOKENS.spacing.md,
+    writingDirection: "rtl",
+  },
+  errorRow: {
+    marginBottom: TOKENS.spacing.sm,
+    paddingHorizontal: TOKENS.spacing.xs,
+  },
+  loginButton: {
+    borderRadius: TOKENS.radius.full,
+    paddingVertical: TOKENS.spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: TOKENS.spacing.xs,
+    marginBottom: TOKENS.spacing.sm,
+    minHeight: 48,
+  },
+  cancelButton: {
+    alignItems: "center",
+    paddingVertical: TOKENS.spacing.sm,
   },
 });
