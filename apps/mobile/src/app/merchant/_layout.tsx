@@ -7,6 +7,7 @@ import {
   Bell,
   CircleUserRound,
   Wallet,
+  Tag,
 } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
@@ -50,6 +51,13 @@ export default function MerchantLayout() {
         options={{
           title: "متجري",
           tabBarIcon: ({ color, size }) => <StoreIcon color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="promotions"
+        options={{
+          title: "العروض",
+          tabBarIcon: ({ color, size }) => <Tag color={color} size={size} />,
         }}
       />
       <Tabs.Screen

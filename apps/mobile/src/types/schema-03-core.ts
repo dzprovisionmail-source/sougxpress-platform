@@ -103,8 +103,10 @@ export interface Product {
   name: string;
   description: string | null;
   price_minor: number;
-  image_url?: string;
+  category: string;
+  image_url?: string | null;
   stock_quantity: number | null;
+  is_available: boolean;
   status: ProductStatus;
   created_at: string;
   updated_at: string;
@@ -257,6 +259,27 @@ export interface PromotionRedemption {
   customer_id: string;
   discount_applied_minor: number;
   created_at: string;
+}
+
+// --- Store Promotions (merchant-scoped) -----------------------------------------
+
+export type StoreDiscountType = "percentage" | "fixed_amount" | "free_delivery";
+
+export interface StorePromotion {
+  id: string;
+  store_id: string;
+  title: string;
+  description?: string | null;
+  discount_type: StoreDiscountType;
+  discount_value: number;
+  image_url?: string | null;
+  starts_at: string;
+  ends_at: string;
+  is_active: boolean;
+  min_order_minor: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // --- Disputes -------------------------------------------------------------------

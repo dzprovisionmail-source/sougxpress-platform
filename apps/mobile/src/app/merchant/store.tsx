@@ -572,15 +572,13 @@ export default function MerchantStoreScreen() {
           />
         </SectionCard>
 
-        {/* Promotions info */}
+        {/* Promotions link */}
         <SectionCard>
-          <SectionTitle
-            icon={<Tag color={colors.primary} size={tokens.spacing.lg} />}
-          >
-            العروض والترقيات
+          <SectionTitle icon={<Tag color={colors.primary} size={tokens.spacing.lg} />}>
+            العروض الترويجية
           </SectionTitle>
-          <WorkspaceText color="secondary" style={{ textAlign: "center", paddingVertical: tokens.spacing.sm }}>
-            العروض الخاصة بمتجرك تُدار من قِبل فريق المنصة.{"\n"}تواصل معنا لإضافة عروض ترويجية مخصصة.
+          <WorkspaceText color="secondary" style={{ textAlign: "right", fontSize: tokens.typography.sizes.sm, marginBottom: tokens.spacing.sm }}>
+            أنشئ عروضاً وخصومات مخصصة لمتجرك من تبويب "العروض" في شريط التنقل.
           </WorkspaceText>
         </SectionCard>
 
@@ -604,6 +602,7 @@ export default function MerchantStoreScreen() {
         <SectionCard>
           <StoreProductManagement
             isMerchantView
+            storeId={store.id}
             products={products}
             loading={productsLoading}
             onAddProduct={addProduct}

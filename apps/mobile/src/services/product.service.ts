@@ -21,6 +21,7 @@ export const createProduct = async (input: {
   name: string;
   description?: string | null;
   price_minor: number;
+  category?: string;
   stock_quantity?: number | null;
   image_url?: string | null;
 }): Promise<Product | null> => {
@@ -31,6 +32,7 @@ export const createProduct = async (input: {
       name: input.name,
       description: input.description ?? null,
       price_minor: input.price_minor,
+      category: input.category ?? "عام",
       stock_quantity: input.stock_quantity ?? null,
       image_url: input.image_url ?? null,
       status: "active",
@@ -47,7 +49,7 @@ export const createProduct = async (input: {
 
 export const updateProduct = async (
   productId: string,
-  updates: Partial<Pick<Product, "name" | "description" | "price_minor" | "stock_quantity" | "image_url" | "status">>
+  updates: Partial<Pick<Product, "name" | "description" | "price_minor" | "category" | "stock_quantity" | "image_url" | "status">>
 ): Promise<Product | null> => {
   const { data, error } = await supabase
     .from("products")

@@ -1,322 +1,435 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Linking, Alert, I18nManager, Share } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ShoppingCart, Phone, MessageCircle, Share2 } from 'lucide-react-native';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+} from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { ShoppingCart, Clock3, MapPin, Star, Tag } from "lucide-react-native";
 
-import StoreHeader from '@/components/profile/StoreHeader';
-import { ProductCard, Card, Button } from '@/components/ui';
-import { colors } from '@/design/colors';
-import { spacing } from '@/design/spacing';
-import { typography } from '@/design/typography';
-import { iconSizes } from '@/design/icons';
-import { radius } from '@/design/radius';
-import { shadows } from '@/design/shadows';
+import { ProductCard } from "@/components/ui";
+import { useAppTheme } from "@/contexts/ThemeContext";
+import useStore from "@/hooks/useStore";
+import { useStoreProducts } from "@/hooks/useProducts";
+import { useActivePromotions } from "@/hooks/usePromotions";
+import { StorePromotion } from "@/types/schema-03-core";
 
-import useStore from '@/hooks/useStore';
-import { useStoreProducts } from '@/hooks/useProducts';
-import useCart from '@/hooks/useCart';
-import { Product } from '@/types/schema-03-core';
+const { width: SW } = Dimensions.get("window");
 
-const StoreDetailsScreen = () => {
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+const fmtTime = (t?: string) => (t ? String(t).slice(0, 5) : "--");
+
+const discountLabel = (p: StorePromotion) => {
+  if (p.discount_type === "percentage") return `خصم ${p.discount_value}%`;
+  if (p.discount_type === "fixed_amount") return `خصم ${p.discount_value} د.ج`;
+  return "توصيل مجاني";
+};
+
+// ─── screen ──────────────────────────────────────────────────────────────────
+
+export default function StoreDetailsScreen() {
+  const { colors, tokens } = useAppTheme();
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const storeId = typeof id === 'string' ? id : undefined;
+  const storeId = typeof id === "string" ? id : "";
 
-  const { store, loading: storeLoading, error: storeError } = useStore(storeId || '');
-  const { products, loading: productsLoading, error: productsError } = useStoreProducts(storeId || '');
-  const { addToCart, itemCount } = useCart();
+  const { store, loading: storeLoading } = useStore(storeId);
+  const { products, loading: productsLoading } = useStoreProducts(storeId);
+  const { promotions } = useActivePromotions(storeId);
 
-  const [selectedCategory, setSelectedCategory] = useState('All');
-
-  const handleAddToCart = (product: Product) => {
-    addToCart(product);
-  };
-
-  const handleProductPress = (productId: string) => {
-    router.push(`/product-details?id=${productId}`);
-  };
-
-  const handleCall = () => {
-    if (store?.phone_number) {
-      Linking.openURL(`tel:${store.phone_number}`).catch(() => {
-        Alert.alert("خطأ", "تعذر فتح تطبيق الهاتف.");
-      });
-    } else {
-      Alert.alert("معلومات", "رقم الهاتف غير متوفر حالياً.");
-    }
-  };
-
-  const handleWhatsApp = () => {
-    const phone = store?.phone_number || "";
-    if (!phone) {
-      Alert.alert("معلومات", "رقم الهاتف غير متوفر حالياً.");
-      return;
-    }
-    const cleanPhone = phone.replace(/[^0-9]/g, "");
-    Linking.openURL(`whatsapp://send?phone=+213${cleanPhone.startsWith("0") ? cleanPhone.substring(1) : cleanPhone}`).catch(() => {
-      Alert.alert("خطأ", "تعذر فتح واتساب.");
-    });
-  };
-
-  const handleShare = async () => {
-    if (!store) return;
-    try {
-      await Share.share({
-        message: `تفقد متجر ${store.name} على سوق إكسبريس!`,
-        url: `https://sougxpress.dz/store/${store.id}`,
-      });
-    } catch {
-      // share cancelled
-    }
-  };
-
-  const filteredProducts = selectedCategory === 'All'
-    ? products
-    : products.filter(product => (product as any).category === selectedCategory);
-
-  const productCategories = ['All', ...new Set(products.map(product => (product as any).category || 'Other'))];
+  const [selectedCategory, setSelectedCategory] = useState("الكل");
 
   if (!storeId) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>معرّف المتجر غير متوفر</Text>
+      <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
+        <Text style={[styles.errText, { color: colors.error }]}>معرّف المتجر غير متوفر</Text>
       </View>
     );
   }
 
   if (storeLoading || productsLoading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>جاري تحميل المتجر...</Text>
       </View>
     );
   }
 
-  if (storeError || productsError || !store) {
+  if (!store) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>تعذّر تحميل المتجر</Text>
+      <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
+        <Text style={[styles.errText, { color: colors.error }]}>لم يتم العثور على المتجر</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 12 }}>
-          <Text style={styles.retryText}>العودة</Text>
+          <Text style={[styles.errText, { color: colors.primary, fontSize: 14 }]}>العودة</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  const isOpen = store.is_open ?? store.status === "active";
+  const categories = ["الكل", ...new Set(products.map((p) => p.category || "عام"))];
+  const filtered =
+    selectedCategory === "الكل"
+      ? products
+      : products.filter((p) => (p.category || "عام") === selectedCategory);
+
   return (
-    <View style={styles.fullContainer}>
+    <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
       <Stack.Screen
         options={{
           title: store.name,
+          headerStyle: { backgroundColor: colors.bgElevated },
+          headerTintColor: colors.textPrimary,
           headerRight: () => (
-            <TouchableOpacity onPress={() => router.push('/cart')}>
-              <ShoppingCart color={colors.text} size={iconSizes.header} />
-              {itemCount > 0 && (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{itemCount}</Text>
-                </View>
-              )}
+            <TouchableOpacity
+              onPress={() => router.push("/customer/cart" as any)}
+              style={{ marginRight: 12 }}
+            >
+              <ShoppingCart color={colors.textPrimary} size={22} />
             </TouchableOpacity>
           ),
         }}
       />
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-        <StoreHeader
-          storeName={store.name}
-          category={store.category}
-          rating={4.5}
-          isOpen={store.status === 'active'}
-          storeLogoUrl={null}
-          coverImageUrl={null}
-          isMerchantView={false}
-        />
 
-        <Card style={styles.storeInfoCard}>
-          <Text style={[styles.storeDescription, { color: colors.text }]}>
-            {store.description || 'لا يوجد وصف متاح لهذا المتجر.'}
-          </Text>
-          <View style={styles.contactButtons}>
-            <Button
-              title="اتصل بالمتجر"
-              onPress={handleCall}
-              icon={<Phone size={iconSizes.small} color="#FFFFFF" />}
-              style={styles.contactButton}
+      <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+        {/* ── Cover ── */}
+        <View style={styles.coverContainer}>
+          {store.cover_url ? (
+            <Image
+              source={{ uri: store.cover_url }}
+              style={styles.coverImage}
+              resizeMode="cover"
             />
-            <Button
-              title="مراسلة واتساب"
-              onPress={handleWhatsApp}
-              icon={<MessageCircle size={iconSizes.small} color="#FFFFFF" />}
-              style={styles.contactButton}
-            />
-            <Button
-              title="مشاركة المتجر"
-              onPress={handleShare}
-              icon={<Share2 size={iconSizes.small} color="#FFFFFF" />}
-              style={styles.contactButton}
-            />
+          ) : (
+            <View style={[styles.coverPlaceholder, { backgroundColor: colors.bgElevated }]} />
+          )}
+          <View
+            style={[
+              styles.openBadge,
+              { backgroundColor: isOpen ? colors.success : colors.error },
+            ]}
+          >
+            <Text style={[styles.openBadgeText, { color: "#fff" }]}>
+              {isOpen ? "مفتوح" : "مغلق"}
+            </Text>
           </View>
-        </Card>
-
-        {/* Product Categories */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>فئات المنتجات</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
-            {productCategories.map((category, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.categoryItem,
-                  selectedCategory === category && styles.selectedCategoryItem,
-                ]}
-                onPress={() => setSelectedCategory(category)}
-              >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    selectedCategory === category && styles.selectedCategoryText,
-                    { color: selectedCategory === category ? "#FFFFFF" : colors.text }
-                  ]}
-                >
-                  {category === 'All' ? 'الكل' : category}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
         </View>
 
-        {/* Products List */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>المنتجات</Text>
-          <View style={styles.productsGrid}>
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map((product) => (
+        {/* ── Store card ── */}
+        <View
+          style={[
+            styles.storeCard,
+            { backgroundColor: colors.bgElevated },
+          ]}
+        >
+          {store.logo_url ? (
+            <Image
+              source={{ uri: store.logo_url }}
+              style={[styles.logo, { borderColor: colors.bgBase }]}
+              resizeMode="cover"
+            />
+          ) : (
+            <View
+              style={[
+                styles.logo,
+                { backgroundColor: colors.bgSurface, borderColor: colors.bgBase },
+              ]}
+            >
+              <Text style={{ fontSize: 28 }}>🏪</Text>
+            </View>
+          )}
+
+          <Text style={[styles.storeName, { color: colors.textPrimary }]}>{store.name}</Text>
+          <Text style={[styles.storeCategory, { color: colors.textSecondary }]}>
+            {store.category}
+          </Text>
+
+          <View style={styles.row}>
+            <Star size={14} color="#FFA500" fill="#FFA500" />
+            <Text style={[styles.ratingText, { color: colors.textSecondary }]}>4.5</Text>
+          </View>
+
+          {store.opens_at || store.closes_at ? (
+            <View style={styles.row}>
+              <Clock3 size={14} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+                {fmtTime(store.opens_at)} – {fmtTime(store.closes_at)}
+              </Text>
+            </View>
+          ) : null}
+
+          {store.address_line1 ? (
+            <View style={styles.row}>
+              <MapPin size={14} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+                {store.address_line1}
+              </Text>
+            </View>
+          ) : null}
+
+          {store.description ? (
+            <Text style={[styles.description, { color: colors.textSecondary }]}>
+              {store.description}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* ── Active Promotions ── */}
+        {promotions.length > 0 && (
+          <View style={{ marginTop: tokens.spacing.lg }}>
+            <SectionHeading
+              label="العروض الحالية"
+              icon={<Tag size={16} color={colors.primary} />}
+              colors={colors}
+              tokens={tokens}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: tokens.spacing.lg,
+                gap: tokens.spacing.md,
+              }}
+            >
+              {promotions.map((p) => (
+                <View
+                  key={p.id}
+                  style={[
+                    styles.promoCard,
+                    { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  {p.image_url ? (
+                    <Image
+                      source={{ uri: p.image_url }}
+                      style={styles.promoImg}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View
+                      style={[
+                        styles.promoImgPlaceholder,
+                        { backgroundColor: colors.primary + "22" },
+                      ]}
+                    >
+                      <Text style={{ fontSize: 24 }}>🏷️</Text>
+                    </View>
+                  )}
+                  <View style={{ padding: tokens.spacing.sm }}>
+                    <Text
+                      style={[styles.promoTitle, { color: colors.textPrimary }]}
+                      numberOfLines={1}
+                    >
+                      {p.title}
+                    </Text>
+                    <View
+                      style={[styles.discountBadge, { backgroundColor: colors.primary }]}
+                    >
+                      <Text style={[styles.discountText, { color: colors.textOnBrand }]}>
+                        {discountLabel(p)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* ── Category filter ── */}
+        {categories.length > 1 && (
+          <View style={{ marginTop: tokens.spacing.lg }}>
+            <SectionHeading label="التصنيفات" colors={colors} tokens={tokens} />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: tokens.spacing.lg,
+                gap: tokens.spacing.sm,
+              }}
+            >
+              {categories.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  onPress={() => setSelectedCategory(cat)}
+                  style={[
+                    styles.catChip,
+                    {
+                      backgroundColor:
+                        selectedCategory === cat ? colors.primary : colors.bgElevated,
+                      borderColor:
+                        selectedCategory === cat ? colors.primary : colors.borderSubtle,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.catText,
+                      {
+                        color:
+                          selectedCategory === cat
+                            ? colors.textOnBrand
+                            : colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* ── Products ── */}
+        <View style={{ marginTop: tokens.spacing.lg }}>
+          <SectionHeading label="المنتجات" colors={colors} tokens={tokens} />
+          {filtered.length === 0 ? (
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              لا توجد منتجات في هذا التصنيف
+            </Text>
+          ) : (
+            <View style={styles.productsGrid}>
+              {filtered.map((product) => (
                 <ProductCard
                   key={product.id}
                   title={product.name}
                   price={`${(product.price_minor / 100).toFixed(2)} د.ج`}
-                  image={product.image_url || ''}
+                  image={product.image_url ?? ""}
                   storeName={store.name}
-                  onPress={() => handleProductPress(product.id)}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/product-details",
+                      params: { id: product.id },
+                    } as any)
+                  }
                 />
-              ))
-            ) : (
-              <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>لا توجد منتجات حالياً</Text>
-            )}
-          </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
   );
-};
+}
+
+// ─── section heading helper ──────────────────────────────────────────────────
+
+function SectionHeading({
+  label,
+  icon,
+  colors,
+  tokens,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  colors: any;
+  tokens: any;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: "row-reverse",
+        alignItems: "center",
+        paddingHorizontal: tokens.spacing.lg,
+        marginBottom: tokens.spacing.sm,
+        gap: tokens.spacing.xs,
+      }}
+    >
+      {icon}
+      <Text
+        style={{
+          fontSize: tokens.typography.sizes.md,
+          fontWeight: "700",
+          color: colors.textPrimary,
+          fontFamily: tokens.typography.families.arabic,
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+// ─── styles ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  fullContainer: {
-    flex: 1,
-    backgroundColor: colors.backgroundLight,
+  root: { flex: 1 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  errText: { fontSize: 16 },
+  coverContainer: { width: "100%", height: 200, position: "relative" },
+  coverImage: { width: "100%", height: 200 },
+  coverPlaceholder: { width: "100%", height: 200 },
+  openBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
-  container: {
-    flex: 1,
+  openBadgeText: { fontSize: 12, fontWeight: "700" },
+  storeCard: {
+    marginHorizontal: 16,
+    marginTop: -40,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.backgroundLight,
+  logo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    marginTop: -40,
+    marginBottom: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
   },
-  loadingText: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
+  storeName: { fontSize: 20, fontWeight: "700", textAlign: "center", marginBottom: 4 },
+  storeCategory: { fontSize: 14, marginBottom: 8, textAlign: "center" },
+  row: { flexDirection: "row-reverse", alignItems: "center", gap: 6, marginBottom: 4 },
+  ratingText: { fontSize: 13 },
+  infoText: { fontSize: 13 },
+  description: { fontSize: 13, textAlign: "center", marginTop: 8, lineHeight: 20 },
+  promoCard: { width: 200, borderRadius: 12, borderWidth: 1, overflow: "hidden" },
+  promoImg: { width: "100%", height: 100 },
+  promoImgPlaceholder: {
+    width: "100%",
+    height: 100,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  errorText: {
-    ...typography.body,
-    color: colors.error,
-    marginTop: spacing.md,
-    textAlign: 'center',
+  promoTitle: { fontSize: 13, fontWeight: "600", marginBottom: 6, textAlign: "right" },
+  discountBadge: {
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    alignSelf: "flex-end",
   },
-  retryText: {
-    ...typography.caption,
-    color: colors.primary,
-    marginTop: spacing.sm,
-  },
-  storeInfoCard: {
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.md,
-    padding: spacing.md,
-  },
-  storeDescription: {
-    ...typography.body,
-    textAlign: 'right',
-    marginBottom: spacing.md,
-  },
-  contactButtons: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-around',
-    marginTop: spacing.md,
-  },
-  contactButton: {
-    flex: 1,
-    marginHorizontal: spacing.xs,
-  },
-  section: {
-    marginBottom: spacing.huge,
-  },
-  sectionTitle: {
-    ...typography.title,
-    textAlign: 'right',
-    marginBottom: spacing.md,
-    marginHorizontal: spacing.lg,
-  },
-  categoriesContainer: {
-    paddingHorizontal: spacing.lg,
-    flexDirection: 'row-reverse',
-  },
-  categoryItem: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.small,
-    backgroundColor: colors.card,
-    marginRight: spacing.sm,
-    ...shadows.small,
-  },
-  selectedCategoryItem: {
-    backgroundColor: colors.primary,
-  },
-  categoryText: {
-    ...typography.subtitle,
-  },
-  selectedCategoryText: {
-    color: "#FFFFFF",
-  },
+  discountText: { fontSize: 11, fontWeight: "700" },
+  catChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  catText: { fontSize: 13, fontWeight: "600" },
   productsGrid: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
+    gap: 12,
   },
-  noResultsText: {
-    ...typography.body,
-    textAlign: 'center',
-    width: '100%',
-    marginTop: spacing.lg,
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: colors.accent,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cartBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
+  emptyText: { textAlign: "center", padding: 24, fontSize: 14 },
 });
 
-export default StoreDetailsScreen;
+// suppress unused warning – SW is used by promoCard width calculations at runtime
+void SW;

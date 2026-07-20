@@ -42,6 +42,8 @@ export const useMerchantProducts = (storeId: string) => {
     description?: string | null;
     price_minor: number;
     stock_quantity?: number | null;
+    category?: string;
+    image_url?: string | null;
   }) => {
     const created = await createProduct({ store_id: storeId, ...input });
     if (created) await fetchProducts();
@@ -50,7 +52,7 @@ export const useMerchantProducts = (storeId: string) => {
 
   const editProduct = async (
     productId: string,
-    updates: Partial<Pick<Product, 'name' | 'description' | 'price_minor' | 'stock_quantity'>>
+    updates: Partial<Pick<Product, 'name' | 'description' | 'price_minor' | 'category' | 'stock_quantity' | 'image_url'>>
   ) => {
     const updated = await updateProduct(productId, updates);
     if (updated) await fetchProducts();
