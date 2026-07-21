@@ -4,7 +4,7 @@ import {
   FlatList, RefreshControl, Modal, ScrollView, ActivityIndicator, Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { Search, Filter, Clock, MapPin, User, Truck, XCircle, CheckCircle, RotateCcw, ChevronLeft } from "lucide-react-native";
+import { Search, Filter, Clock, MapPin, User, Truck, XCircle, CheckCircle, RotateCcw, ChevronLeft, X } from "lucide-react-native";
 import {
   AdminPageShell, AdminListItem, AdminStatCard,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
