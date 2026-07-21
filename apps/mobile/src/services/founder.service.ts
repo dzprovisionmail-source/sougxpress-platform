@@ -302,7 +302,7 @@ export async function getControlCenterStats(): Promise<ControlCenterStats> {
 
 export async function getFounderActivityFeed(limit = 20): Promise<ActivityFeedEntry[]> {
   const { data, error } = await supabase
-    .from("audit_logs")
+    .from("admin_audit_logs")
     .select("id, action, entity_type, entity_id, details, created_at")
     .order("created_at", { ascending: false })
     .limit(limit);

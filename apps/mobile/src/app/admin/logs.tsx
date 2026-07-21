@@ -8,15 +8,15 @@ import { supabase } from "@/lib/supabase";
 interface LogEntry {
   id: string;
   action?: string;
-  actor_id?: string;
-  target_type?: string;
+  admin_user_id?: string;
+  entity_type?: string;
   created_at?: string;
 }
 
 async function getLogs(search?: string): Promise<{ data: LogEntry[]; error: string | null }> {
   let query = supabase
-    .from("audit_logs")
-    .select("id, action, actor_id, target_type, created_at")
+    .from("admin_audit_logs")
+    .select("id, action, admin_user_id, entity_type, created_at")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -111,7 +111,7 @@ export default function AdminLogsScreen() {
               <AdminListItem
                 title={item.action ?? "عملية"}
                 subtitle={formatDate(item.created_at)}
-                badge={item.target_type ?? undefined}
+                badge={item.entity_type ?? undefined}
                 badgeColor={colors.secondary}
               />
             )}
