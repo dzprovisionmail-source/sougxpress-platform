@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Link, router } from "expo-router";
 import {
   Image,
@@ -39,16 +39,19 @@ import { supabase } from "../lib/supabase";
  * - Primary action button: "الدخول إلى السوق"
  * - Button opens the existing role-selection flow (intent gateway)
  *
- * Hidden: 6-second long press on the logo opens the Founder login dialog.
+ * Hidden: 5-tap sequence on the logo within 3 seconds opens the Founder login dialog.
  * Not accessible or visible during normal customer / merchant / driver use.
  */
 
 type DialogState = "idle" | "loading" | "denied";
 
+const FOUNDER_TAP_THRESHOLD = 5;
+const FOUNDER_TAP_WINDOW_MS = 3000;
+
 export default function EntryScreen() {
   const colors = getThemeColors(DEFAULT_THEME);
 
-  /* ── Founder dialog state ── */
+  /* ── Founder dialog state ─ */
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogState, setDialogState] = useState<DialogState>("idle");
   const [email, setEmail] = useState("");
@@ -57,21 +60,39 @@ export default function EntryScreen() {
 
   const passwordRef = useRef<TextInput>(null);
 
-  /* ── Open / close helpers ── */
-  const openFounderDialog = () => {
+  /* ── Multi-tap gesture state ─ */
+  const tapTimestamps = useRef<number[]>([]);
+
+  /* ── Open / close helpers ─ */
+  const openFounderDialog = useCallback(() => {
     setEmail("");
     setPassword("");
     setErrorMsg("");
     setDialogState("idle");
     setDialogVisible(true);
-  };
+  }, []);
 
-  const closeFounderDialog = () => {
+  const closeFounderDialog = useCallback(() => {
     Keyboard.dismiss();
     setDialogVisible(false);
     setDialogState("idle");
     setErrorMsg("");
-  };
+  }, []);
+
+  /* ── Multi-tap handler ─ */
+  const handleLogoPress = useCallback(() => {
+    const now = Date.now();
+    const taps = tapTimestamps.current;
+
+    const recentTaps = taps.filter((t) => now - t <= FOUNDER_TAP_WINDOW_MS);
+    recentTaps.push(now);
+    tapTimestamps.current = recentTaps;
+
+    if (recentTaps.length >= FOUNDER_TAP_THRESHOLD) {
+      tapTimestamps.current = [];
+      openFounderDialog();
+    }
+  }, [openFounderDialog]);
 
   /* ── Authentication ── */
   const handleFounderLogin = async () => {
@@ -117,7 +138,7 @@ export default function EntryScreen() {
       // Success — close dialog then navigate
       setDialogVisible(false);
       router.replace("/founder");
-    } catch {
+    } catch (e: unknown) {
       setErrorMsg("حدث خطأ غير متوقع. حاول مجدداً.");
       setDialogState("denied");
     }
@@ -133,13 +154,13 @@ export default function EntryScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Official Logo — 6-second long press reveals Founder entry */}
+        {/* Official Logo — 5-tap sequence within 3 seconds reveals Founder entry */}
         <View style={styles.logoArea}>
           <TouchableOpacity
-            activeOpacity={1}
-            delayLongPress={6000}
-            onLongPress={openFounderDialog}
+            activeOpacity={0.85}
+            onPress={handleLogoPress}
             accessible={false}
+            accessibilityRole="none"
           >
             <Image
               source={LOGO_DARK}
