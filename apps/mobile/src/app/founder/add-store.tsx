@@ -1,14 +1,14 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Store } from "lucide-react-native";
-import { AdminPageShell } from "@/components/admin";
+import { FounderPageShell } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
 /** Phase 3 placeholder — store creation not implemented yet */
 export default function FounderAddStoreScreen() {
   const { colors } = useAppTheme();
   return (
-    <AdminPageShell title="إضافة متجر" showBack>
+    <FounderPageShell title="إضافة متجر" showBack>
       <View style={styles.center}>
         <Store size={56} color={colors.textDisabled} />
         <Text style={[styles.title, { color: colors.textSecondary }]}>قيد البناء</Text>
@@ -16,7 +16,7 @@ export default function FounderAddStoreScreen() {
           إنشاء المتاجر سيكون متاحاً في المرحلة الثالثة
         </Text>
       </View>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

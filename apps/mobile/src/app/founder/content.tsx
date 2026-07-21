@@ -4,7 +4,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { BarChart3, Users, ShoppingBag, Truck, TrendingUp, Download, Calendar } from "lucide-react-native";
-import { AdminPageShell, AdminStatCard, AdminLoadingState, AdminEmptyState, AdminErrorState } from "@/components/admin";
+import { FounderPageShell, AdminStatCard, AdminLoadingState, AdminEmptyState, AdminErrorState } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { getFounderStatsForReports, getFounderMetrics, getFounderDeliveryPerformance, type FounderMetricsSnapshot } from "@/services/founder-reports.service";
 
@@ -77,22 +77,22 @@ export default function FounderContentScreen() {
 
   if (loading) {
     return (
-      <AdminPageShell title="التقارير" showBack>
+      <FounderPageShell title="التقارير" showBack>
         <AdminLoadingState message="جاري تحميل التقارير..." />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   if (stats.error && !stats.totalOrders) {
     return (
-      <AdminPageShell title="التقارير" showBack>
+      <FounderPageShell title="التقارير" showBack>
         <AdminErrorState message={stats.error} onRetry={() => loadAll(true)} />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="التقارير والتحليلات" showBack scrollable={false}>
+    <FounderPageShell title="التقارير والتحليلات" showBack scrollable={false}>
       <ScrollView
         contentContainerStyle={{ padding: tokens.spacing.lg, paddingBottom: 80 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadAll(true)} tintColor={colors.primary} />}
@@ -177,18 +177,18 @@ export default function FounderContentScreen() {
           metrics.slice(0, 10).map((m) => (
             <View key={m.id} style={[styles.metricRow, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
               <View style={{ flex: 1, alignItems: "flex-end" }}>
-                <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{new Date(m.period_start).toLocaleDateString("ar-DZ")}</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{m.total_orders} طلب · {fmtMinor(m.total_gmv_minor)}</Text>
+                <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{new Date(m.snapshot_time).toLocaleDateString("ar-DZ")}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{m.total_orders} طلب · {fmtMinor(m.total_revenue_minor)}</Text>
               </View>
               <View style={{ alignItems: "flex-end" }}>
-                <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700" }}>{fmtMinor(m.total_commission_minor)}</Text>
-                <Text style={{ color: colors.textDisabled, fontSize: 10 }}>عمولة</Text>
+                <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700" }}>{m.active_customers} عميل</Text>
+                <Text style={{ color: colors.textDisabled, fontSize: 10 }}>نشط</Text>
               </View>
             </View>
           ))
         )}
       </ScrollView>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

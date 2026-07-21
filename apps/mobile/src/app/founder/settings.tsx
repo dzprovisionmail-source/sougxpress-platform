@@ -4,7 +4,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Settings, Save, RotateCcw, Shield, Bell, Truck, DollarSign, Users } from "lucide-react-native";
-import { AdminPageShell, AdminLoadingState, AdminErrorState } from "@/components/admin";
+import { FounderPageShell, AdminLoadingState, AdminErrorState } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { getFounderSettings, updateFounderSetting, getFounderAdminProfiles, type FounderPlatformSetting } from "@/services/founder-settings.service";
 
@@ -72,14 +72,14 @@ export default function FounderSettingsScreen() {
 
   if (loading) {
     return (
-      <AdminPageShell title="الإعدادات" showBack>
+      <FounderPageShell title="الإعدادات" showBack>
         <AdminLoadingState message="جاري تحميل الإعدادات..." />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="إعدادات المنصة" showBack>
+    <FounderPageShell title="إعدادات المنصة" showBack>
       <ScrollView contentContainerStyle={{ padding: tokens.spacing.lg, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
         {error && (
           <View style={[styles.errorBox, { backgroundColor: colors.error + "18", borderColor: colors.error }]}>
@@ -152,7 +152,7 @@ export default function FounderSettingsScreen() {
           {admins.length === 0 && <Text style={{ color: colors.textDisabled, textAlign: "center", paddingVertical: 12 }}>لا توجد حسابات مشرفين</Text>}
         </View>
       </ScrollView>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

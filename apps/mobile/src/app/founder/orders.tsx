@@ -6,7 +6,7 @@ import {
 import { router } from "expo-router";
 import { Search, Filter, Clock, MapPin, User, Truck, XCircle, CheckCircle, RotateCcw, ChevronLeft, X } from "lucide-react-native";
 import {
-  AdminPageShell, AdminListItem, AdminStatCard,
+  FounderPageShell, AdminListItem, AdminStatCard,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
 } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -131,22 +131,22 @@ export default function FounderOrdersScreen() {
 
   if (loading && !refreshing && !showDetail) {
     return (
-      <AdminPageShell title="الطلبات" showBack>
+      <FounderPageShell title="الطلبات" showBack>
         <AdminLoadingState message="جاري تحميل الطلبات..." />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   if (error && !items.length) {
     return (
-      <AdminPageShell title="الطلبات" showBack>
+      <FounderPageShell title="الطلبات" showBack>
         <AdminErrorState message={error} onRetry={() => loadOrders(search, statusFilter)} />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="الطلبات" showBack scrollable={false}>
+    <FounderPageShell title="الطلبات" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         {/* Tabs */}
         <View style={[styles.tabBar, { backgroundColor: colors.bgElevated, borderBottomColor: colors.borderSubtle }]}>
@@ -383,7 +383,7 @@ export default function FounderOrdersScreen() {
           </View>
         </View>
       </Modal>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

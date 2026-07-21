@@ -6,7 +6,7 @@ import {
 import { router } from "expo-router";
 import { Plus, Filter, Search, Star, MapPin, Clock, Store, X, Check, Image as ImageIcon } from "lucide-react-native";
 import {
-  AdminPageShell, AdminListItem, AdminStatCard,
+  FounderPageShell, AdminListItem, AdminStatCard,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
 } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -218,22 +218,22 @@ export default function FounderStoresScreen() {
 
   if (loading && !refreshing && !showDetail) {
     return (
-      <AdminPageShell title="المتاجر" showBack>
+      <FounderPageShell title="المتاجر" showBack>
         <AdminLoadingState message="جاري تحميل المتاجر..." />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   if (error && !items.length) {
     return (
-      <AdminPageShell title="المتاجر" showBack>
+      <FounderPageShell title="المتاجر" showBack>
         <AdminErrorState message={error} onRetry={() => load(search, statusFilter)} />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="المتاجر" showBack scrollable={false}>
+    <FounderPageShell title="المتاجر" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         {/* Search + filter bar */}
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
@@ -493,7 +493,7 @@ export default function FounderStoresScreen() {
           </View>
         </View>
       </Modal>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

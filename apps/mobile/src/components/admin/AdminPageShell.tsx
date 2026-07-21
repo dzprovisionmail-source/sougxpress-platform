@@ -13,9 +13,10 @@ import {
   Image,
 } from "react-native";
 import { router } from "expo-router";
-import { ArrowRight, Bell, CircleUserRound } from "lucide-react-native";
+import { ArrowRight, Bell, CircleUserRound, LogOut } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { LOGO_DARK, LOGO_WORDMARK } from "@/constants/brand";
+import { useFounderLogout } from "@/app/founder/_layout";
 
 interface AdminPageShellProps {
   title: string;
@@ -23,6 +24,8 @@ interface AdminPageShellProps {
   showBack?: boolean;
   showNotification?: boolean;
   showProfile?: boolean;
+  showLogout?: boolean;
+  onLogout?: () => void;
   scrollable?: boolean;
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
@@ -43,6 +46,8 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
   showBack = false,
   showNotification = false,
   showProfile = false,
+  showLogout = false,
+  onLogout,
   scrollable = true,
   style,
   contentStyle,
@@ -50,6 +55,19 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
   const { colors, tokens, theme } = useAppTheme();
 
   const isDark = theme === "dark";
+
+  const handleLogout = async () => {
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      await supabase.auth.signOut();
+    } catch (_) {
+      // best-effort
+    }
+    onLogout?.();
+    router.replace("/login");
+  };
+
+  const founderLogout = useFounderLogout();
 
   return (
     <SafeAreaView style={[{ flex: 1, backgroundColor: colors.bgBase }, style]}>
@@ -69,7 +87,7 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
           },
         ]}
       >
-        {/* Right side: back or profile */}
+        {/* Right side: back or profile or logout */}
         <View style={styles.headerSide}>
           {showBack ? (
             <TouchableOpacity
@@ -81,6 +99,17 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <ArrowRight color={colors.textPrimary} size={20} />
+            </TouchableOpacity>
+          ) : showLogout && (onLogout || founderLogout) ? (
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={[
+                styles.iconBtn,
+                { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle },
+              ]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <LogOut color={colors.textPrimary} size={20} />
             </TouchableOpacity>
           ) : showProfile ? (
             <TouchableOpacity

@@ -6,7 +6,7 @@ import {
 import { router } from "expo-router";
 import { Plus, Filter, Search } from "lucide-react-native";
 import {
-  AdminPageShell, AdminListItem,
+  FounderPageShell, AdminListItem,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
 } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -75,7 +75,7 @@ export default function FounderCustomersScreen() {
     router.push(`/founder/users/customer-detail?id=${id}` as never);
 
   return (
-    <AdminPageShell title="الزبائن" showBack scrollable={false}>
+    <FounderPageShell title="الزبائن" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         {/* Search + filter bar */}
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
@@ -221,7 +221,7 @@ export default function FounderCustomersScreen() {
           </View>
         </View>
       </Modal>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

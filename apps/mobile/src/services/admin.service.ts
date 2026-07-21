@@ -273,14 +273,19 @@ export interface ProvisionAccountParams {
 export async function adminProvisionAccount(
   params: ProvisionAccountParams
 ): Promise<{ data: Record<string, unknown> | null; error: string | null }> {
-  const { data, error } = await supabase.functions.invoke(
-    "admin-provision-account",
-    { body: params }
-  );
+  try {
+    const { data, error } = await supabase.functions.invoke(
+      "admin-provision-account",
+      { body: params }
+    );
 
-  if (error) return { data: null, error: error.message };
-  if (data?.error) return { data: null, error: data.error as string };
-  return { data: data as Record<string, unknown>, error: null };
+    if (error) return { data: null, error: error.message };
+    if (data?.error) return { data: null, error: data.error as string };
+    return { data: data as Record<string, unknown>, error: null };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Edge Function returned a non-2xx status code";
+    return { data: null, error: message };
+  }
 }
 
 // ─── Status updates ───────────────────────────────────────────────────────────

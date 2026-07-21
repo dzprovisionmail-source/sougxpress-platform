@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { ScrollText, ChevronRight } from "lucide-react-native";
-import { AdminPageShell } from "@/components/admin";
+import { FounderPageShell } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import {
   getAdminAuditLogs,
@@ -165,7 +165,7 @@ export default function FounderAuditLogScreen() {
   }, [load]);
 
   return (
-    <AdminPageShell title="سجل العمليات" showBack scrollable={false}>
+    <FounderPageShell title="سجل العمليات" showBack scrollable={false}>
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -234,7 +234,7 @@ export default function FounderAuditLogScreen() {
           }
         />
       )}
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

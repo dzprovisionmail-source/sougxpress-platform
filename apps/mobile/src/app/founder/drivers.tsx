@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { Truck } from "lucide-react-native";
-import { AdminPageShell } from "@/components/admin";
+import { FounderPageShell } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
 export default function FounderDriversScreen() {
@@ -16,7 +16,7 @@ export default function FounderDriversScreen() {
   }, []);
 
   return (
-    <AdminPageShell title="الموصلون" showBack>
+    <FounderPageShell title="الموصلون" showBack>
       <View style={styles.center}>
         <Truck size={48} color={colors.textDisabled} />
         <Text style={{ color: colors.textSecondary, marginTop: 16, textAlign: "center" }}>
@@ -24,7 +24,7 @@ export default function FounderDriversScreen() {
         </Text>
         <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 12 }} />
       </View>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

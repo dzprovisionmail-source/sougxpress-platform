@@ -6,7 +6,7 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { Edit2, CheckCircle, Trash2, Store } from "lucide-react-native";
 import {
-  AdminPageShell, AdminLoadingState, AdminErrorState,
+  FounderPageShell, AdminLoadingState, AdminErrorState,
 } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import {
@@ -147,13 +147,13 @@ export default function MerchantDetailScreen() {
     loadData();
   };
 
-  if (loading) return <AdminPageShell title="..." showBack><AdminLoadingState /></AdminPageShell>;
-  if (error || !merchant) return <AdminPageShell title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></AdminPageShell>;
+  if (loading) return <FounderPageShell title="..." showBack><AdminLoadingState /></FounderPageShell>;
+  if (error || !merchant) return <FounderPageShell title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></FounderPageShell>;
 
   const statusColor = STATUS_COLORS[merchant.status] ?? colors.primary;
 
   return (
-    <AdminPageShell title="ملف التاجر" showBack scrollable={false}>
+    <FounderPageShell title="ملف التاجر" showBack scrollable={false}>
       <ScrollView contentContainerStyle={{ padding: tokens.spacing.lg, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
@@ -319,7 +319,7 @@ export default function MerchantDetailScreen() {
           </View>
         </View>
       </Modal>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

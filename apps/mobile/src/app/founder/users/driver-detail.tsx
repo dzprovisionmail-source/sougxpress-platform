@@ -6,7 +6,7 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import { Edit2, CheckCircle, Trash2, Truck, DollarSign, RotateCcw, Lock } from "lucide-react-native";
 import {
-  AdminPageShell, AdminLoadingState, AdminErrorState,
+  FounderPageShell, AdminLoadingState, AdminErrorState,
 } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import {
@@ -167,13 +167,13 @@ export default function DriverDetailScreen() {
     if (err) setPwError(err); else { setPwSuccess(true); setTimeout(() => { setShowPwReset(false); setPwSuccess(false); setNewPw(""); }, 2000); }
   };
 
-  if (loading) return <AdminPageShell title="..." showBack><AdminLoadingState /></AdminPageShell>;
-  if (error || !driver) return <AdminPageShell title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></AdminPageShell>;
+  if (loading) return <FounderPageShell title="..." showBack><AdminLoadingState /></FounderPageShell>;
+  if (error || !driver) return <FounderPageShell title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></FounderPageShell>;
 
   const statusColor = STATUS_COLORS[driver.status] ?? colors.primary;
 
   return (
-    <AdminPageShell title="ملف الموصل" showBack scrollable={false}>
+    <FounderPageShell title="ملف الموصل" showBack scrollable={false}>
       <ScrollView contentContainerStyle={{ padding: tokens.spacing.lg, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
         {/* Profile header */}
@@ -434,7 +434,7 @@ export default function DriverDetailScreen() {
           </View>
         </View>
       </Modal>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

@@ -9,7 +9,7 @@ import {
   Edit2, Lock, Ban, CheckCircle, Trash2, Camera, MapPin,
 } from "lucide-react-native";
 import {
-  AdminPageShell, AdminLoadingState, AdminErrorState,
+  FounderPageShell, AdminLoadingState, AdminErrorState,
 } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import {
@@ -193,13 +193,13 @@ export default function CustomerDetailScreen() {
     setAvatarLoading(false);
   };
 
-  if (loading) return <AdminPageShell title="..." showBack><AdminLoadingState /></AdminPageShell>;
-  if (error || !customer) return <AdminPageShell title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></AdminPageShell>;
+  if (loading) return <FounderPageShell title="..." showBack><AdminLoadingState /></FounderPageShell>;
+  if (error || !customer) return <FounderPageShell title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></FounderPageShell>;
 
   const statusColor = STATUS_COLORS[customer.status] ?? colors.primary;
 
   return (
-    <AdminPageShell title="ملف الزبون" showBack scrollable={false}>
+    <FounderPageShell title="ملف الزبون" showBack scrollable={false}>
       <ScrollView contentContainerStyle={{ padding: tokens.spacing.lg, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
         {/* ── Avatar + name + status ────────────────────────────────── */}
@@ -428,7 +428,7 @@ export default function CustomerDetailScreen() {
           </View>
         </View>
       </Modal>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

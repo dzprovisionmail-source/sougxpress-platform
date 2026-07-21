@@ -18,7 +18,9 @@ import {
   I18nManager,
   TouchableOpacity,
   Text,
+  useWindowDimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Typography } from "../components/ui";
 import {
   BRAND_NAME_AR,
@@ -48,6 +50,7 @@ type DialogState = "idle" | "loading" | "denied";
 
 export default function EntryScreen() {
   const colors = getThemeColors(DEFAULT_THEME);
+  const insets = useSafeAreaInsets();
 
   /* ── Founder dialog state ─ */
   const [dialogVisible, setDialogVisible] = useState(false);

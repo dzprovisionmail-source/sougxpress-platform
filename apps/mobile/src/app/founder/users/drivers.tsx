@@ -6,7 +6,7 @@ import {
 import { router } from "expo-router";
 import { Plus, Filter, Search } from "lucide-react-native";
 import {
-  AdminPageShell, AdminListItem,
+  FounderPageShell, AdminListItem,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
 } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -73,7 +73,7 @@ export default function FounderDriversScreen() {
   });
 
   return (
-    <AdminPageShell title="الموصلون" showBack scrollable={false}>
+    <FounderPageShell title="الموصلون" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
           <View style={[styles.searchWrap, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
@@ -175,7 +175,7 @@ export default function FounderDriversScreen() {
           </View>
         </View>
       </Modal>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

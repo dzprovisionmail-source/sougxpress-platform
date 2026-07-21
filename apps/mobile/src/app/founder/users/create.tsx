@@ -11,7 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { AdminPageShell } from "@/components/admin";
+import { FounderPageShell } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { adminProvisionAccount } from "@/services/admin.service";
 import { getFounderZones, type FounderZone } from "@/services/founder-users.service";
@@ -141,7 +141,7 @@ export default function FounderCreateUserScreen() {
   const title = `إضافة ${ROLE_LABELS[role]}`;
 
   return (
-    <AdminPageShell title={title} showBack scrollable={false}>
+    <FounderPageShell title={title} showBack scrollable={false}>
       <ScrollView
         contentContainerStyle={{ padding: tokens.spacing.lg, gap: tokens.spacing.lg, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
@@ -315,7 +315,7 @@ export default function FounderCreateUserScreen() {
           </View>
         </View>
       </Modal>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

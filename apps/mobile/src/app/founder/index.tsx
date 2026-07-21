@@ -37,7 +37,7 @@ import {
 } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { AdminPageShell, AdminStatCard, AdminErrorState } from "@/components/admin";
+import { FounderPageShell, AdminStatCard, AdminErrorState } from "@/components/admin";
 import {
   getControlCenterStats,
   getFounderActivityFeed,
@@ -315,27 +315,27 @@ export default function FounderControlCenterScreen() {
 
   if (loading) {
     return (
-      <AdminPageShell title="مركز التحكم" showProfile showNotification={false}>
+      <FounderPageShell title="مركز التحكم" showProfile showNotification={false}>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: tokens.spacing.xl }}>
           <ActivityIndicator size="large" color={primary} />
           <Text style={{ color: colors.textSecondary, marginTop: tokens.spacing.md, fontFamily: tokens.typography.families.arabic }}>
             جاري تحميل الإحصائيات...
           </Text>
         </View>
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   if (error && !stats) {
     return (
-      <AdminPageShell title="مركز التحكم" showProfile showNotification={false}>
+      <FounderPageShell title="مركز التحكم" showProfile showNotification={false}>
         <AdminErrorState message={error} onRetry={() => load()} />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="مركز التحكم" showProfile showNotification={false} scrollable={false}>
+    <FounderPageShell title="مركز التحكم" showProfile showNotification={false} scrollable={false}>
       <ScrollView
         contentContainerStyle={{
           paddingVertical: tokens.spacing.xl,
@@ -477,7 +477,7 @@ export default function FounderControlCenterScreen() {
           </View>
         </SectionBlock>
       </ScrollView>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

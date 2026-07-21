@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { Users, ShoppingBag, Truck, Plus } from "lucide-react-native";
-import { AdminPageShell } from "@/components/admin";
+import { FounderPageShell } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { getFounderCustomers, getFounderMerchants, getFounderDrivers } from "@/services/founder-users.service";
 
@@ -92,7 +92,7 @@ export default function FounderUsersHubScreen() {
     router.push(path as Parameters<typeof router.push>[0]);
 
   return (
-    <AdminPageShell title="إدارة المستخدمين" showBack>
+    <FounderPageShell title="إدارة المستخدمين" showBack>
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         <View style={styles.grid}>
           <HubCard
@@ -124,7 +124,7 @@ export default function FounderUsersHubScreen() {
           />
         </View>
       </ScrollView>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

@@ -6,7 +6,7 @@ import {
 import { router } from "expo-router";
 import { CheckCircle, XCircle, Clock, ChevronRight, Users, Truck, Search, Filter } from "lucide-react-native";
 
-import { AdminPageShell, AdminListItem, AdminLoadingState, AdminEmptyState, AdminErrorState } from "@/components/admin";
+import { FounderPageShell, AdminListItem, AdminLoadingState, AdminEmptyState, AdminErrorState } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import {
   getFounderMerchants,
@@ -159,22 +159,22 @@ export default function FounderApprovalsScreen() {
 
   if (loading && !refreshing) {
     return (
-      <AdminPageShell title="مركز العمليات والموافقات" showBack>
+      <FounderPageShell title="مركز العمليات والموافقات" showBack>
         <AdminLoadingState message="جاري تحميل طلبات الموافقة..." />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   if (error && !merchants.length && !drivers.length) {
     return (
-      <AdminPageShell title="مركز العمليات والموافقات" showBack>
+      <FounderPageShell title="مركز العمليات والموافقات" showBack>
         <AdminErrorState message={error} onRetry={() => { tab === "merchants" ? loadMerchants(mSearch, mStatus) : loadDrivers(dSearch, dStatus); }} />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="مركز العمليات والموافقات" showBack scrollable={false}>
+    <FounderPageShell title="مركز العمليات والموافقات" showBack scrollable={false}>
       {/* Tabs */}
       <View style={[styles.tabBar, { backgroundColor: colors.bgElevated, borderBottomColor: colors.borderSubtle }]}>
         <TouchableOpacity
@@ -395,7 +395,7 @@ export default function FounderApprovalsScreen() {
           </View>
         </View>
       </Modal>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 

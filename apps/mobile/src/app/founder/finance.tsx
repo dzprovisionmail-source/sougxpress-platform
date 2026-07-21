@@ -5,7 +5,7 @@ import {
 import { router } from "expo-router";
 import { DollarSign, TrendingUp, Wallet, ArrowUpRight, ArrowDownRight, Filter, ChevronLeft } from "lucide-react-native";
 import {
-  AdminPageShell, AdminStatCard, AdminListItem,
+  FounderPageShell, AdminStatCard, AdminListItem,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
 } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -60,22 +60,22 @@ export default function FounderFinanceScreen() {
 
   if (loading) {
     return (
-      <AdminPageShell title="المالية" showBack>
+      <FounderPageShell title="المالية" showBack>
         <AdminLoadingState message="جاري تحميل البيانات المالية..." />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   if (error && !summary.totalOrders) {
     return (
-      <AdminPageShell title="المالية" showBack>
+      <FounderPageShell title="المالية" showBack>
         <AdminErrorState message={error} onRetry={() => loadAll(true)} />
-      </AdminPageShell>
+      </FounderPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="المالية" showBack scrollable={false}>
+    <FounderPageShell title="المالية" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         {/* Tabs */}
         <View style={[styles.tabBar, { backgroundColor: colors.bgElevated, borderBottomColor: colors.borderSubtle }]}>
@@ -177,7 +177,7 @@ export default function FounderFinanceScreen() {
           </View>
         </Modal>
       </View>
-    </AdminPageShell>
+    </FounderPageShell>
   );
 }
 
