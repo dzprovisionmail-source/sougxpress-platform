@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Link, router } from "expo-router";
 import {
   Image,
@@ -17,6 +17,7 @@ import {
   SafeAreaView,
   I18nManager,
   TouchableOpacity,
+  Text,
 } from "react-native";
 import { Typography } from "../components/ui";
 import {
@@ -39,7 +40,7 @@ import { supabase } from "../lib/supabase";
  * - Primary action button: "الدخول إلى السوق"
  * - Button opens the existing role-selection flow (intent gateway)
  *
- * Hidden: 6-second long press on the logo opens the Founder login dialog.
+ * Hidden: Tapping the "Soug-XPRESS" footer text opens the Founder login dialog.
  * Not accessible or visible during normal customer / merchant / driver use.
  */
 
@@ -48,7 +49,7 @@ type DialogState = "idle" | "loading" | "denied";
 export default function EntryScreen() {
   const colors = getThemeColors(DEFAULT_THEME);
 
-  /* ── Founder dialog state ── */
+  /* ── Founder dialog state ─ */
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogState, setDialogState] = useState<DialogState>("idle");
   const [email, setEmail] = useState("");
@@ -57,21 +58,21 @@ export default function EntryScreen() {
 
   const passwordRef = useRef<TextInput>(null);
 
-  /* ── Open / close helpers ── */
-  const openFounderDialog = () => {
+  /* ── Open / close helpers ─ */
+  const openFounderDialog = useCallback(() => {
     setEmail("");
     setPassword("");
     setErrorMsg("");
     setDialogState("idle");
     setDialogVisible(true);
-  };
+  }, []);
 
-  const closeFounderDialog = () => {
+  const closeFounderDialog = useCallback(() => {
     Keyboard.dismiss();
     setDialogVisible(false);
     setDialogState("idle");
     setErrorMsg("");
-  };
+  }, []);
 
   /* ── Authentication ── */
   const handleFounderLogin = async () => {
@@ -117,7 +118,7 @@ export default function EntryScreen() {
       // Success — close dialog then navigate
       setDialogVisible(false);
       router.replace("/founder");
-    } catch {
+    } catch (e: unknown) {
       setErrorMsg("حدث خطأ غير متوقع. حاول مجدداً.");
       setDialogState("denied");
     }
@@ -133,20 +134,13 @@ export default function EntryScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Official Logo — 6-second long press reveals Founder entry */}
+        {/* Official Logo */}
         <View style={styles.logoArea}>
-          <TouchableOpacity
-            activeOpacity={1}
-            delayLongPress={6000}
-            onLongPress={openFounderDialog}
-            accessible={false}
-          >
-            <Image
-              source={LOGO_DARK}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+          <Image
+            source={LOGO_DARK}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Slogan */}
@@ -180,9 +174,16 @@ export default function EntryScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Typography variant="caption" color="disabled" align="center">
-            {BRAND_NAME_AR} — منصة التجارة المحلية الأولى في عين صفراء
-          </Typography>
+          <View style={styles.footerTextContainer}>
+            <TouchableOpacity onPress={openFounderDialog} activeOpacity={1}>
+              <Text style={[styles.footerText, { color: colors.textDisabled }]}>
+                {BRAND_NAME_AR}
+              </Text>
+            </TouchableOpacity>
+            <Text style={[styles.footerText, { color: colors.textDisabled }]}>
+              {" "}— منصة التجارة المحلية الأولى في عين صفراء
+            </Text>
+          </View>
         </View>
       </ScrollView>
 
@@ -384,6 +385,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
     width: "100%",
+  },
+  footerTextContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  footerText: {
+    fontFamily: TOKENS.typography.families.arabic,
+    fontSize: TOKENS.typography.sizes.xs,
+    fontWeight: "400",
+    textAlign: "center",
+    lineHeight: TOKENS.typography.lineHeights.arabic * TOKENS.typography.sizes.xs,
   },
 
   /* ── Founder dialog ── */

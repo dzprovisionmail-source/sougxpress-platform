@@ -1,28 +1,33 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { router } from "expo-router";
 import { Truck } from "lucide-react-native";
 import { AdminPageShell } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
 export default function FounderDriversScreen() {
-  const { colors } = useAppTheme();
+  const { colors, tokens } = useAppTheme();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.replace("/founder/users/drivers" as never);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <AdminPageShell title="الموصلون" showBack>
       <View style={styles.center}>
-        <Truck size={56} color={colors.textDisabled} />
-        <Text style={[styles.title, { color: colors.textSecondary }]}>
-          قيد البناء
+        <Truck size={48} color={colors.textDisabled} />
+        <Text style={{ color: colors.textSecondary, marginTop: 16, textAlign: "center" }}>
+          جاري التوجيه إلى إدارة الموصلين...
         </Text>
-        <Text style={[styles.sub, { color: colors.textDisabled }]}>
-          إدارة الموصلين ستكون متاحة في المرحلة القادمة
-        </Text>
+        <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 12 }} />
       </View>
     </AdminPageShell>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },
-  title: { fontSize: 20, fontWeight: "700", textAlign: "center" },
-  sub: { fontSize: 14, textAlign: "center", lineHeight: 22 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
 });
