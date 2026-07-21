@@ -147,13 +147,13 @@ export default function MerchantDetailScreen() {
     loadData();
   };
 
-  if (loading) return <AdminPageShell title="..." showBack><AdminLoadingState /></AdminPageShell>;
-  if (error || !merchant) return <AdminPageShell title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></AdminPageShell>;
+  if (loading) return <AdminPageShell showLogout title="..." showBack><AdminLoadingState /></AdminPageShell>;
+  if (error || !merchant) return <AdminPageShell showLogout title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></AdminPageShell>;
 
   const statusColor = STATUS_COLORS[merchant.status] ?? colors.primary;
 
   return (
-    <AdminPageShell title="ملف التاجر" showBack scrollable={false}>
+    <AdminPageShell showLogout title="ملف التاجر" showBack scrollable={false}>
       <ScrollView contentContainerStyle={{ padding: tokens.spacing.lg, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
         {/* Header */}

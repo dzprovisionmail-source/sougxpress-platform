@@ -19,6 +19,7 @@ import {
   TouchableOpacity,
   Text,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Typography } from "../components/ui";
 import {
   BRAND_NAME_AR,
@@ -48,6 +49,7 @@ type DialogState = "idle" | "loading" | "denied";
 
 export default function EntryScreen() {
   const colors = getThemeColors(DEFAULT_THEME);
+  const insets = useSafeAreaInsets();
 
   /* ── Founder dialog state ─ */
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -173,9 +175,9 @@ export default function EntryScreen() {
         </View>
 
         {/* Footer */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.footerTextContainer}>
-            <TouchableOpacity onPress={openFounderDialog} activeOpacity={0.7}>
+            <TouchableOpacity onPress={openFounderDialog} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={[styles.footerText, { color: colors.textPrimary }]}>
                 Soug-XPRESS
               </Text>

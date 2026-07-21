@@ -136,17 +136,27 @@ serve(async (req) => {
         id: userId,
         owner_full_name: full_name.trim(),
         business_name: business_name?.trim() || full_name.trim(),
+        contact_email: normalEmail,
+        contact_phone: normalPhone,
         phone: normalPhone,
         email: normalEmail,
         zone_id: zone_id || null,
         address: address?.trim() || null,
+        description: null,
+        logo_url: null,
+        commission_rate: 0,
+        is_active: true,
         status: status || "pending_review",
       });
       insertErr = error;
     } else if (role === "driver") {
+      const nameParts = full_name.trim().split(" ");
       const { error } = await adminClient.from("drivers").insert({
         id: userId,
+        first_name: nameParts[0] || "",
+        last_name: nameParts.slice(1).join(" ") || "",
         full_name: full_name.trim(),
+        phone_number: normalPhone,
         phone: normalPhone,
         email: normalEmail,
         zone_id: zone_id || null,

@@ -73,7 +73,7 @@ export default function FounderDriversScreen() {
   });
 
   return (
-    <AdminPageShell title="الموصلون" showBack scrollable={false}>
+    <AdminPageShell showLogout title="الموصلون" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
           <View style={[styles.searchWrap, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>

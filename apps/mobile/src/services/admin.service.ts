@@ -204,8 +204,12 @@ export interface CreateStoreParams {
   name: string;
   category: string;
   zone_id?: string;
-  address?: string;
-  phone?: string;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  country?: string;
+  phone_number?: string;
+  email?: string;
   description?: string;
   opening_hours?: string;
   status: string;
@@ -228,8 +232,12 @@ export async function createAdminStore(
   };
 
   if (params.zone_id) payload.zone_id = params.zone_id;
-  if (params.address?.trim()) payload.address = params.address.trim();
-  if (params.phone?.trim()) payload.phone = params.phone.trim();
+  if (params.address_line1?.trim()) payload.address_line1 = params.address_line1.trim();
+  if (params.address_line2?.trim()) payload.address_line2 = params.address_line2.trim();
+  if (params.city?.trim()) payload.city = params.city.trim();
+  if (params.country?.trim()) payload.country = params.country.trim();
+  if (params.phone_number?.trim()) payload.phone_number = params.phone_number.trim();
+  if (params.email?.trim()) payload.email = params.email.trim();
   if (params.description?.trim()) payload.description = params.description.trim();
   if (params.opening_hours?.trim()) payload.opening_hours = params.opening_hours.trim();
   if (params.merchant_id?.trim()) payload.merchant_id = params.merchant_id.trim();

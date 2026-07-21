@@ -193,13 +193,13 @@ export default function CustomerDetailScreen() {
     setAvatarLoading(false);
   };
 
-  if (loading) return <AdminPageShell title="..." showBack><AdminLoadingState /></AdminPageShell>;
-  if (error || !customer) return <AdminPageShell title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></AdminPageShell>;
+  if (loading) return <AdminPageShell showLogout title="..." showBack><AdminLoadingState /></AdminPageShell>;
+  if (error || !customer) return <AdminPageShell showLogout title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></AdminPageShell>;
 
   const statusColor = STATUS_COLORS[customer.status] ?? colors.primary;
 
   return (
-    <AdminPageShell title="ملف الزبون" showBack scrollable={false}>
+    <AdminPageShell showLogout title="ملف الزبون" showBack scrollable={false}>
       <ScrollView contentContainerStyle={{ padding: tokens.spacing.lg, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
         {/* ── Avatar + name + status ────────────────────────────────── */}

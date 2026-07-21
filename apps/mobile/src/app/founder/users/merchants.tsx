@@ -73,7 +73,7 @@ export default function FounderMerchantsScreen() {
   });
 
   return (
-    <AdminPageShell title="التجار" showBack scrollable={false}>
+    <AdminPageShell showLogout title="التجار" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
           <View style={[styles.searchWrap, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>

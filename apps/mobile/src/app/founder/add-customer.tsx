@@ -8,7 +8,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 export default function FounderAddCustomerScreen() {
   const { colors } = useAppTheme();
   return (
-    <AdminPageShell title="إضافة زبون" showBack>
+    <AdminPageShell showLogout title="إضافة زبون" showBack>
       <View style={styles.center}>
         <UserPlus size={56} color={colors.textDisabled} />
         <Text style={[styles.title, { color: colors.textSecondary }]}>قيد البناء</Text>

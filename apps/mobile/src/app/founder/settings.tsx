@@ -72,14 +72,14 @@ export default function FounderSettingsScreen() {
 
   if (loading) {
     return (
-      <AdminPageShell title="الإعدادات" showBack>
+      <AdminPageShell showLogout title="الإعدادات" showBack>
         <AdminLoadingState message="جاري تحميل الإعدادات..." />
       </AdminPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="إعدادات المنصة" showBack>
+    <AdminPageShell showLogout title="إعدادات المنصة" showBack>
       <ScrollView contentContainerStyle={{ padding: tokens.spacing.lg, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
         {error && (
           <View style={[styles.errorBox, { backgroundColor: colors.error + "18", borderColor: colors.error }]}>

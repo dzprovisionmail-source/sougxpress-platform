@@ -16,7 +16,7 @@ export default function FounderDriversScreen() {
   }, []);
 
   return (
-    <AdminPageShell title="الموصلون" showBack>
+    <AdminPageShell showLogout title="الموصلون" showBack>
       <View style={styles.center}>
         <Truck size={48} color={colors.textDisabled} />
         <Text style={{ color: colors.textSecondary, marginTop: 16, textAlign: "center" }}>

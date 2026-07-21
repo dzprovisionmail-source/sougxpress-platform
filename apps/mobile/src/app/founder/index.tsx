@@ -315,7 +315,7 @@ export default function FounderControlCenterScreen() {
 
   if (loading) {
     return (
-      <AdminPageShell title="مركز التحكم" showProfile showNotification={false}>
+      <AdminPageShell showLogout title="مركز التحكم" showProfile showNotification={false}>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: tokens.spacing.xl }}>
           <ActivityIndicator size="large" color={primary} />
           <Text style={{ color: colors.textSecondary, marginTop: tokens.spacing.md, fontFamily: tokens.typography.families.arabic }}>
@@ -328,14 +328,14 @@ export default function FounderControlCenterScreen() {
 
   if (error && !stats) {
     return (
-      <AdminPageShell title="مركز التحكم" showProfile showNotification={false}>
+      <AdminPageShell showLogout title="مركز التحكم" showProfile showNotification={false}>
         <AdminErrorState message={error} onRetry={() => load()} />
       </AdminPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="مركز التحكم" showProfile showNotification={false} scrollable={false}>
+    <AdminPageShell showLogout title="مركز التحكم" showProfile showNotification={false} scrollable={false}>
       <ScrollView
         contentContainerStyle={{
           paddingVertical: tokens.spacing.xl,

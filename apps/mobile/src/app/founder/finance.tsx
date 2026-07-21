@@ -60,7 +60,7 @@ export default function FounderFinanceScreen() {
 
   if (loading) {
     return (
-      <AdminPageShell title="المالية" showBack>
+      <AdminPageShell showLogout title="المالية" showBack>
         <AdminLoadingState message="جاري تحميل البيانات المالية..." />
       </AdminPageShell>
     );
@@ -68,14 +68,14 @@ export default function FounderFinanceScreen() {
 
   if (error && !summary.totalOrders) {
     return (
-      <AdminPageShell title="المالية" showBack>
+      <AdminPageShell showLogout title="المالية" showBack>
         <AdminErrorState message={error} onRetry={() => loadAll(true)} />
       </AdminPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="المالية" showBack scrollable={false}>
+    <AdminPageShell showLogout title="المالية" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         {/* Tabs */}
         <View style={[styles.tabBar, { backgroundColor: colors.bgElevated, borderBottomColor: colors.borderSubtle }]}>

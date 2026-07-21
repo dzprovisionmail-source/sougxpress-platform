@@ -75,7 +75,7 @@ export default function FounderCustomersScreen() {
     router.push(`/founder/users/customer-detail?id=${id}` as never);
 
   return (
-    <AdminPageShell title="الزبائن" showBack scrollable={false}>
+    <AdminPageShell showLogout title="الزبائن" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         {/* Search + filter bar */}
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>

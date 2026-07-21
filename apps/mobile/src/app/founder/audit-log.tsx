@@ -165,7 +165,7 @@ export default function FounderAuditLogScreen() {
   }, [load]);
 
   return (
-    <AdminPageShell title="سجل العمليات" showBack scrollable={false}>
+    <AdminPageShell showLogout title="سجل العمليات" showBack scrollable={false}>
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />

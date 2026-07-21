@@ -8,7 +8,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 export default function FounderAddMerchantScreen() {
   const { colors } = useAppTheme();
   return (
-    <AdminPageShell title="إضافة تاجر" showBack>
+    <AdminPageShell showLogout title="إضافة تاجر" showBack>
       <View style={styles.center}>
         <ShoppingBag size={56} color={colors.textDisabled} />
         <Text style={[styles.title, { color: colors.textSecondary }]}>قيد البناء</Text>

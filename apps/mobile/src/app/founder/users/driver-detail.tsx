@@ -167,13 +167,13 @@ export default function DriverDetailScreen() {
     if (err) setPwError(err); else { setPwSuccess(true); setTimeout(() => { setShowPwReset(false); setPwSuccess(false); setNewPw(""); }, 2000); }
   };
 
-  if (loading) return <AdminPageShell title="..." showBack><AdminLoadingState /></AdminPageShell>;
-  if (error || !driver) return <AdminPageShell title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></AdminPageShell>;
+  if (loading) return <AdminPageShell showLogout title="..." showBack><AdminLoadingState /></AdminPageShell>;
+  if (error || !driver) return <AdminPageShell showLogout title="خطأ" showBack><AdminErrorState message={error ?? "غير موجود"} onRetry={loadData} /></AdminPageShell>;
 
   const statusColor = STATUS_COLORS[driver.status] ?? colors.primary;
 
   return (
-    <AdminPageShell title="ملف الموصل" showBack scrollable={false}>
+    <AdminPageShell showLogout title="ملف الموصل" showBack scrollable={false}>
       <ScrollView contentContainerStyle={{ padding: tokens.spacing.lg, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
 
         {/* Profile header */}
