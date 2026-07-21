@@ -90,10 +90,10 @@ export default function RoleSelectionScreen() {
         <View style={styles.optionsContainer}>
           {INTENT_OPTIONS.map((option) => (
             <Link key={option.id} href={option.route} asChild>
-              <Card variant="elevated" style={styles.intentCard}>
+              <Card variant="elevated" style={[styles.intentCard, { backgroundColor: colors.bgElevated }]}>
                 <View style={[styles.cardContent, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                   {option.icon && (
-                    <View style={styles.iconWrapper}>
+                    <View style={[styles.iconWrapper, { backgroundColor: colors.bgSurface }]}>
                       <Image
                         source={option.icon}
                         style={styles.roleIcon}

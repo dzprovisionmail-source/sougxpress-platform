@@ -175,9 +175,9 @@ export default function EntryScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <View style={styles.footerTextContainer}>
-            <TouchableOpacity onPress={openFounderDialog} activeOpacity={1}>
-              <Text style={[styles.footerText, { color: colors.textDisabled }]}>
-                {BRAND_NAME_AR}
+            <TouchableOpacity onPress={openFounderDialog} activeOpacity={0.7}>
+              <Text style={[styles.footerText, { color: colors.textPrimary }]}>
+                Soug-XPRESS
               </Text>
             </TouchableOpacity>
             <Text style={[styles.footerText, { color: colors.textDisabled }]}>

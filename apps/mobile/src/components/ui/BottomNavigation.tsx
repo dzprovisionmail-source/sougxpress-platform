@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Typography } from "./Typography";
 import { TOKENS } from "../../constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface NavItem {
   id: string;
@@ -30,6 +31,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 }) => {
   const colors = getThemeColors(theme);
   const isRTL = I18nManager.isRTL;
+  const insets = useSafeAreaInsets();
 
   const items: NavItem[] = [
     { id: "home", label: "الرئيسية", icon: "home-outline", activeIcon: "home" },
@@ -44,7 +46,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       { 
         backgroundColor: colors.bgSurface, 
         borderTopColor: colors.borderSubtle,
-        flexDirection: isRTL ? "row-reverse" : "row"
+        flexDirection: isRTL ? "row-reverse" : "row",
+        paddingBottom: Math.max(insets.bottom, TOKENS.spacing.sm),
       }
     ]}>
       {items.map((item) => {

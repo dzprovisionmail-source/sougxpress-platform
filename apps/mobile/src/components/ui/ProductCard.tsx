@@ -38,7 +38,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <Card 
       onPress={onPress} 
-      style={[styles.container, style]}
+      style={[styles.container, style, { backgroundColor: colors.bgElevated }]}
     >
       <View style={styles.imageContainer}>
         {image ? (

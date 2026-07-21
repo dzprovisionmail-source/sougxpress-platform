@@ -206,7 +206,7 @@ export default function GuestMarketplaceScreen() {
               }
             ]}
           >
-            <Typography variant="caption" color="disabled">
+            <Typography variant="caption" color="secondary">
               صورة
             </Typography>
           </View>
@@ -250,7 +250,7 @@ export default function GuestMarketplaceScreen() {
         </TouchableOpacity>
         <Typography 
           variant="caption" 
-          color="disabled" 
+          color="secondary" 
           align="right"
           style={styles.heroStoreLabel}
         >

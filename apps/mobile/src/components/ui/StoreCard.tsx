@@ -44,7 +44,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   return (
     <Card 
       onPress={onPress} 
-      style={[styles.container, style]}
+      style={[styles.container, style, { backgroundColor: colors.bgElevated }]}
     >
       <View style={styles.imageContainer}>
         {coverImage ? (
