@@ -11,18 +11,19 @@ import {
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileCard from '@/components/profile/ProfileCard';
 import ProfileRow from '@/components/profile/ProfileRow';
-import { Button } from '@/components/ui'; // Use the new Button component
+import { Button } from '@/components/ui';
 
 import useProfile from '@/hooks/useProfile';
 import { supabase } from '@/lib/supabase';
 
-import { colors } from '@/design/colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
 
 const ProfileScreen = () => {
   const { profile, loading, error, updateProfile } = useProfile();
+  const { colors } = useAppTheme();
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -43,7 +44,7 @@ const ProfileScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Chargement du profil...</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement du profil...</Text>
       </View>
     );
   }
@@ -51,7 +52,7 @@ const ProfileScreen = () => {
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Erreur: {error}</Text>
+        <Text style={[styles.errorText, { color: colors.error }]}>Erreur: {error}</Text>
       </View>
     );
   }
@@ -126,22 +127,18 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundLight,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.backgroundLight,
   },
   loadingText: {
     ...typography.body,
-    color: colors.textSecondary,
     marginTop: spacing.md,
   },
   errorText: {
     ...typography.body,
-    color: colors.error,
     marginTop: spacing.md,
   },
   logoutButtonContainer: {

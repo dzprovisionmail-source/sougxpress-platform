@@ -4,7 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star } from 'lucide-react-native';
 
 import { Input, StoreCard } from '@/components/ui';
-import { colors } from '@/design/colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
@@ -16,6 +16,7 @@ import useCart from '@/hooks/useCart';
 
 const HomeScreen = () => {
   const router = useRouter();
+  const { colors, tokens } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const { stores: allStores, loading: storesLoading, error: storesError } = useStores();
   const { results: searchResults, loading: searchLoading, handleSearch } = useSearch();
@@ -38,16 +39,16 @@ const HomeScreen = () => {
   const error = storesError;
 
   return (
-    <View style={styles.fullContainer}>
+    <View style={[styles.fullContainer, { backgroundColor: colors.bgBase }]}>
       <Stack.Screen
         options={{
           title: 'Soug-XPRESS',
           headerRight: () => (
             <TouchableOpacity onPress={() => router.push('/cart')}>
-              <ShoppingCart color={colors.text} size={iconSizes.header} />
+              <ShoppingCart color={colors.textPrimary} size={iconSizes.header} />
               {itemCount > 0 && (
                 <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{itemCount}</Text>
+                  <Text style={[styles.cartBadgeText, { color: colors.textOnBrand }]}>{itemCount}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -57,7 +58,7 @@ const HomeScreen = () => {
 
       <ScrollView style={styles.container}>
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
+        <View style={[styles.searchContainer, { backgroundColor: colors.bgSurface }]}>
           <Input
             placeholder="بحث عن متاجر أو منتجات..."
             value={searchQuery}
@@ -72,13 +73,13 @@ const HomeScreen = () => {
         {loading && (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Chargement...</Text>
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement...</Text>
           </View>
         )}
 
         {error && (
           <View style={styles.centered}>
-            <Text style={styles.errorText}>Erreur: {error}</Text>
+            <Text style={[styles.errorText, { color: colors.error }]}>Erreur: {error}</Text>
           </View>
         )}
 
@@ -86,7 +87,7 @@ const HomeScreen = () => {
           <>
             {searchQuery.length > 0 ? (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>نتائج البحث</Text>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>نتائج البحث</Text>
                 {displayedStores.length > 0 ? (
                   displayedStores.map((store) => (
                     <StoreCard 
@@ -99,19 +100,19 @@ const HomeScreen = () => {
                     />
                   ))
                 ) : (
-                  <Text style={styles.noResultsText}>لا توجد نتائج للبحث.</Text>
+                  <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>لا توجد نتائج للبحث.</Text>
                 )}
               </View>
             ) : (
               <>
                 {/* Categories */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>الفئات</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>الفئات</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
                     {categories.map((category, index) => (
-                      <TouchableOpacity key={index} style={styles.categoryItem}>
+                      <TouchableOpacity key={index} style={[styles.categoryItem, { backgroundColor: colors.bgSurface }]}>
                         {category.icon}
-                        <Text style={styles.categoryText}>{category.name}</Text>
+                        <Text style={[styles.categoryText, { color: colors.textPrimary }]}>{category.name}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -119,7 +120,7 @@ const HomeScreen = () => {
 
                 {/* Featured Stores */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>المتاجر المميزة</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>المتاجر المميزة</Text>
                   {displayedStores.slice(0, 3).map((store) => (
                     <StoreCard 
                       key={store.id} 
@@ -134,7 +135,7 @@ const HomeScreen = () => {
 
                 {/* New Stores */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>متاجر جديدة</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر جديدة</Text>
                   {displayedStores.slice(3, 6).map((store) => (
                     <StoreCard 
                       key={store.id} 
@@ -149,7 +150,7 @@ const HomeScreen = () => {
 
                 {/* Nearby Stores (Placeholder) */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>متاجر قريبة</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر قريبة</Text>
                   {displayedStores.slice(6, 9).map((store) => (
                     <StoreCard 
                       key={store.id} 
@@ -164,7 +165,7 @@ const HomeScreen = () => {
 
                 {/* Special Offers (Placeholder) */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>عروض خاصة</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>عروض خاصة</Text>
                   {displayedStores.slice(9, 12).map((store) => (
                     <StoreCard 
                       key={store.id} 
@@ -188,7 +189,6 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   fullContainer: {
     flex: 1,
-    backgroundColor: colors.backgroundLight,
   },
   container: {
     flex: 1,
@@ -201,17 +201,14 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...typography.body,
-    color: colors.textSecondary,
     marginTop: spacing.md,
   },
   errorText: {
     ...typography.body,
-    color: colors.error,
     marginTop: spacing.md,
   },
   searchContainer: {
     padding: spacing.lg,
-    backgroundColor: colors.card,
     borderBottomLeftRadius: radius.medium,
     borderBottomRightRadius: radius.medium,
     marginBottom: spacing.md,
@@ -222,7 +219,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.title,
-    color: colors.text,
     textAlign: 'right',
     marginBottom: spacing.md,
     marginHorizontal: spacing.lg,
@@ -236,18 +232,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: spacing.sm,
     padding: spacing.sm,
-    backgroundColor: colors.card,
     borderRadius: radius.small,
     ...shadows.small,
   },
   categoryText: {
     ...typography.caption,
-    color: colors.text,
     marginTop: spacing.xs,
   },
   noResultsText: {
     ...typography.body,
-    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: spacing.lg,
   },
@@ -255,7 +248,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -5,
     right: -5,
-    backgroundColor: colors.accent,
     borderRadius: 10,
     width: 20,
     height: 20,
@@ -263,7 +255,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cartBadgeText: {
-    color: colors.white,
     fontSize: 12,
     fontWeight: 'bold',
   },

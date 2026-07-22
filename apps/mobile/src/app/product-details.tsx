@@ -4,7 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ShoppingCart, Minus, Plus } from 'lucide-react-native';
 
 import { Button, Card } from '@/components/ui';
-import { colors } from '@/design/colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
@@ -15,6 +15,7 @@ import useCart from '@/hooks/useCart';
 
 const ProductDetailsScreen = () => {
   const router = useRouter();
+  const { colors } = useAppTheme();
   const { id } = useLocalSearchParams();
   const productId = typeof id === 'string' ? id : undefined;
 
@@ -43,7 +44,7 @@ const ProductDetailsScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>جاري تحميل المنتج...</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>جاري تحميل المنتج...</Text>
       </View>
     );
   }
@@ -51,9 +52,9 @@ const ProductDetailsScreen = () => {
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>خطأ: {error}</Text>
+        <Text style={[styles.errorText, { color: colors.error }]}>خطأ: {error}</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: spacing.md }}>
-          <Text style={styles.retryText}>العودة</Text>
+          <Text style={[styles.retryText, { color: colors.primary }]}>العودة</Text>
         </TouchableOpacity>
       </View>
     );
@@ -62,9 +63,9 @@ const ProductDetailsScreen = () => {
   if (!product) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>المنتج غير متوفر</Text>
+        <Text style={[styles.errorText, { color: colors.error }]}>المنتج غير متوفر</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: spacing.md }}>
-          <Text style={styles.retryText}>العودة</Text>
+          <Text style={[styles.retryText, { color: colors.primary }]}>العودة</Text>
         </TouchableOpacity>
       </View>
     );
@@ -79,10 +80,10 @@ const ProductDetailsScreen = () => {
           title: product.name,
           headerRight: () => (
             <TouchableOpacity onPress={() => router.push('/cart')}>
-              <ShoppingCart color={colors.text} size={iconSizes.header} />
+              <ShoppingCart color={colors.textPrimary} size={iconSizes.header} />
               {itemCount > 0 && (
                 <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{itemCount}</Text>
+                  <Text style={[styles.cartBadgeText, { color: colors.textOnBrand }]}>{itemCount}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -93,17 +94,17 @@ const ProductDetailsScreen = () => {
         <Image source={{ uri: mainImage }} style={styles.productImage} />
 
         <Card style={styles.productDetailsCard}>
-          <Text style={[styles.productName, { textAlign: isRTL ? 'right' : 'left' }]}>{product.name}</Text>
-          <Text style={[styles.productPrice, { textAlign: isRTL ? 'right' : 'left' }]}>{`${(product.price_minor / 100).toFixed(2)} د.ج`}</Text>
-          <Text style={[styles.productDescription, { textAlign: isRTL ? 'right' : 'left' }]}>{product.description || 'لا يوجد وصف متاح لهذا المنتج.'}</Text>
+          <Text style={[styles.productName, { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{product.name}</Text>
+          <Text style={[styles.productPrice, { color: colors.primary, textAlign: isRTL ? 'right' : 'left' }]}>{`${(product.price_minor / 100).toFixed(2)} د.ج`}</Text>
+          <Text style={[styles.productDescription, { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{product.description || 'لا يوجد وصف متاح لهذا المنتج.'}</Text>
 
           <View style={[styles.quantitySelectorContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.quantityLabel, { textAlign: isRTL ? 'right' : 'left' }]}>الكمية:</Text>
+            <Text style={[styles.quantityLabel, { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>الكمية:</Text>
             <View style={[styles.quantityControls, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <TouchableOpacity onPress={() => setQuantity(prev => Math.max(1, prev - 1))} style={styles.quantityButton}>
                 <Minus size={iconSizes.default} color={colors.primary} />
               </TouchableOpacity>
-              <Text style={styles.quantityText}>{quantity}</Text>
+              <Text style={[styles.quantityText, { color: colors.textPrimary }]}>{quantity}</Text>
               <TouchableOpacity onPress={() => setQuantity(prev => prev + 1)} style={styles.quantityButton}>
                 <Plus size={iconSizes.default} color={colors.primary} />
               </TouchableOpacity>
@@ -114,7 +115,7 @@ const ProductDetailsScreen = () => {
             title="إضافة إلى السلة"
             onPress={handleAddToCart}
             variant="primary"
-            icon={<ShoppingCart size={iconSizes.default} color={colors.white} />}
+            icon={<ShoppingCart size={iconSizes.default} color={colors.textOnBrand} />}
             style={styles.addToCartButton}
           />
         </Card>
@@ -126,7 +127,6 @@ const ProductDetailsScreen = () => {
 const styles = StyleSheet.create({
   fullContainer: {
     flex: 1,
-    backgroundColor: colors.backgroundLight,
   },
   container: {
     flex: 1,
@@ -135,22 +135,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.backgroundLight,
   },
   loadingText: {
     ...typography.body,
-    color: colors.textSecondary,
     marginTop: spacing.md,
   },
   errorText: {
     ...typography.body,
-    color: colors.error,
     marginTop: spacing.md,
     textAlign: 'center',
   },
   retryText: {
     ...typography.caption,
-    color: colors.primary,
     marginTop: spacing.sm,
   },
   productImage: {
@@ -166,17 +162,14 @@ const styles = StyleSheet.create({
   },
   productName: {
     ...typography.heading,
-    color: colors.text,
     marginBottom: spacing.sm,
   },
   productPrice: {
     ...typography.title,
-    color: colors.primary,
     marginBottom: spacing.md,
   },
   productDescription: {
     ...typography.body,
-    color: colors.textSecondary,
     marginBottom: spacing.lg,
   },
   quantitySelectorContainer: {
@@ -186,21 +179,17 @@ const styles = StyleSheet.create({
   },
   quantityLabel: {
     ...typography.subtitle,
-    color: colors.text,
   },
   quantityControls: {
     alignItems: 'center',
-    backgroundColor: colors.backgroundLight,
     borderRadius: radius.small,
     borderWidth: 1,
-    borderColor: colors.divider,
   },
   quantityButton: {
     padding: spacing.sm,
   },
   quantityText: {
     ...typography.body,
-    color: colors.text,
     paddingHorizontal: spacing.md,
   },
   addToCartButton: {
@@ -210,7 +199,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -5,
     right: -5,
-    backgroundColor: colors.accent,
     borderRadius: 10,
     width: 20,
     height: 20,
@@ -218,7 +206,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cartBadgeText: {
-    color: colors.white,
     fontSize: 12,
     fontWeight: 'bold',
   },

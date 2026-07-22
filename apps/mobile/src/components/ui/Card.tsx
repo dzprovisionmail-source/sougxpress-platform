@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { View, StyleSheet, ViewStyle, TouchableOpacity, StyleProp } from 'react-native';
-import { colors } from '@/design/colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { radius } from '@/design/radius';
 import { spacing } from '@/design/spacing';
 import { shadows } from '@/design/shadows';
@@ -19,18 +19,19 @@ const Card: React.FC<CardProps> = ({
   style,
   variant = 'elevated',
 }) => {
+  const { colors } = useAppTheme();
   const Container = onPress ? TouchableOpacity : View;
 
   const getVariantStyles = () => {
     switch (variant) {
       case 'flat':
         return {
-          backgroundColor: colors.card,
+          backgroundColor: colors.bgSurface,
         };
       case 'elevated':
       default:
         return {
-          backgroundColor: colors.card,
+          backgroundColor: colors.bgElevated,
           ...shadows.medium,
         };
     }

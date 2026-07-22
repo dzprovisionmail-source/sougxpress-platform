@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Star, MapPin } from 'lucide-react-native';
-import { colors } from '@/design/colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { radius } from '@/design/radius';
 import { typography } from '@/design/typography';
@@ -15,6 +15,7 @@ interface StoreCardProps {
 }
 
 const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
+  const { colors } = useAppTheme();
   const handlePress = () => {
     onPress(store.id);
   };
@@ -24,35 +25,33 @@ const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
   const coverImage = 'https://via.placeholder.com/150x80';
 
   return (
-    <TouchableOpacity style={styles.card} onPress={handlePress}>
+    <TouchableOpacity style={[styles.card, { backgroundColor: colors.bgElevated }]} onPress={handlePress}>
       <Image source={{ uri: coverImage }} style={styles.coverImage} />
-      <View style={styles.logoContainer}>
+      <View style={[styles.logoContainer, { backgroundColor: colors.bgElevated }]}>
         <Image source={{ uri: storeLogo }} style={styles.storeLogo} />
       </View>
-      <View style={styles.infoContainer}>
-        <Text style={styles.storeName}>{store.name}</Text>
-        <Text style={styles.storeCategory}>{store.category}</Text>
-        <View style={styles.ratingContainer}>
-          <Star size={16} color={colors.accent} fill={colors.accent} />
-          <Text style={styles.ratingText}>4.5</Text>
-          <Text style={styles.statusText}>{store.status === 'active' ? '🟢 Ouvert' : '🔴 Fermé'}</Text>
+        <View style={styles.infoContainer}>
+          <Text style={[styles.storeName, { color: colors.textPrimary }]}>{store.name}</Text>
+          <Text style={[styles.storeCategory, { color: colors.textSecondary }]}>{store.category}</Text>
+          <View style={styles.ratingContainer}>
+            <Star size={16} color={colors.accent} fill={colors.accent} />
+            <Text style={[styles.ratingText, { color: colors.textPrimary }]}>4.5</Text>
+            <Text style={[styles.statusText, { color: colors.success }]}>{store.status === 'active' ? '🟢 Ouvert' : '🔴 Fermé'}</Text>
+          </View>
+          <View style={styles.locationContainer}>
+            <MapPin size={14} color={colors.textSecondary} />
+            <Text style={[styles.locationText, { color: colors.textSecondary }]}>5 km</Text>
+          </View>
         </View>
-        <View style={styles.locationContainer}>
-          <MapPin size={14} color={colors.textSecondary} />
-          <Text style={styles.locationText}>5 km</Text>
-        </View>
-      </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
     borderRadius: radius.medium,
     marginHorizontal: spacing.lg,
     marginVertical: spacing.sm,
-    ...shadows.small,
     overflow: 'hidden',
   },
   coverImage: {
@@ -64,10 +63,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 40,
     right: spacing.md,
-    backgroundColor: colors.card,
     borderRadius: radius.avatar,
     padding: spacing.xs,
-    ...shadows.small,
   },
   storeLogo: {
     width: 60,
@@ -81,12 +78,10 @@ const styles = StyleSheet.create({
   },
   storeName: {
     ...typography.title,
-    color: colors.text,
     marginBottom: spacing.xs,
   },
   storeCategory: {
     ...typography.caption,
-    color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
   ratingContainer: {
@@ -96,12 +91,10 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     ...typography.body,
-    color: colors.text,
     marginRight: spacing.xs,
   },
   statusText: {
     ...typography.caption,
-    color: colors.success,
     marginRight: spacing.sm,
   },
   locationContainer: {
@@ -110,7 +103,6 @@ const styles = StyleSheet.create({
   },
   locationText: {
     ...typography.caption,
-    color: colors.textSecondary,
     marginRight: spacing.xs,
   },
 });

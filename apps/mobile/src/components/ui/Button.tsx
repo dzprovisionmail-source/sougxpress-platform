@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { colors } from '@/design/colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { radius } from '@/design/radius';
 import { typography } from '@/design/typography';
@@ -27,6 +27,8 @@ const Button: React.FC<ButtonProps> = ({
   textStyle,
   disabled = false,
 }) => {
+  const { colors } = useAppTheme();
+
   const getButtonStyles = () => {
     switch (variant) {
       case 'primary':
@@ -68,12 +70,12 @@ const Button: React.FC<ButtonProps> = ({
       case 'primary':
       case 'danger':
         return {
-          color: colors.white,
+          color: colors.textOnBrand,
         };
       case 'secondary':
       case 'ghost':
         return {
-          color: colors.text,
+          color: colors.textPrimary,
         };
       case 'outline':
         return {
@@ -81,7 +83,7 @@ const Button: React.FC<ButtonProps> = ({
         };
       default:
         return {
-          color: colors.white,
+          color: colors.textOnBrand,
         };
     }
   };

@@ -5,7 +5,7 @@ import { ShoppingCart, XCircle } from 'lucide-react-native';
 
 import { Button, Card } from '@/components/ui';
 import { CartItem } from '@/components/cart/CartItem';
-import { colors } from '@/design/colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
@@ -15,6 +15,7 @@ import useCart from '@/hooks/useCart';
 
 const CartScreen = () => {
   const router = useRouter();
+  const { colors } = useAppTheme();
   const { cartItems, loading, removeFromCart, updateQuantity, subtotal, deliveryFee, total, clearCart } = useCart();
 
   const handleContinue = () => {
@@ -25,7 +26,7 @@ const CartScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Chargement du panier...</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement du panier...</Text>
       </View>
     );
   }
@@ -46,7 +47,7 @@ const CartScreen = () => {
         {cartItems.length === 0 ? (
           <View style={styles.centered}>
             <ShoppingCart size={48} color={colors.textSecondary} style={styles.emptyCartIcon} />
-            <Text style={styles.emptyCartText}>سلة التسوق فارغة.</Text>
+            <Text style={[styles.emptyCartText, { color: colors.textSecondary }]}>سلة التسوق فارغة.</Text>
             <Button title="ابدأ التسوق" onPress={() => router.push('/home')} variant="primary" style={styles.emptyCartButton} />
           </View>
         ) : (
@@ -62,24 +63,24 @@ const CartScreen = () => {
 
             <Card style={styles.summaryCard}>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>المجموع الفرعي:</Text>
-                <Text style={styles.summaryValue}>{`${(subtotal / 100).toFixed(2)} د.ج`}</Text>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>المجموع الفرعي:</Text>
+                <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{`${(subtotal / 100).toFixed(2)} د.ج`}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>رسوم التوصيل:</Text>
-                <Text style={styles.summaryValue}>{`${(deliveryFee / 100).toFixed(2)} د.ج`}</Text>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>رسوم التوصيل:</Text>
+                <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{`${(deliveryFee / 100).toFixed(2)} د.ج`}</Text>
               </View>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
               <View style={styles.summaryRow}>
-                <Text style={styles.totalLabel}>الإجمالي:</Text>
-                <Text style={styles.totalValue}>{`${(total / 100).toFixed(2)} د.ج`}</Text>
+                <Text style={[styles.totalLabel, { color: colors.textPrimary }]}>الإجمالي:</Text>
+                <Text style={[styles.totalValue, { color: colors.primary }]}>{`${(total / 100).toFixed(2)} د.ج`}</Text>
               </View>
             </Card>
           </>
         )}
       </ScrollView>
       {cartItems.length > 0 && (
-        <View style={styles.bottomAction}>
+        <View style={[styles.bottomAction, { backgroundColor: colors.bgSurface, borderTopColor: colors.borderSubtle }]}>
           <Button
             title="متابعة"
             onPress={handleContinue}
@@ -95,7 +96,6 @@ const CartScreen = () => {
 const styles = StyleSheet.create({
   fullContainer: {
     flex: 1,
-    backgroundColor: colors.backgroundLight,
   },
   container: {
     flex: 1,
@@ -104,12 +104,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.backgroundLight,
     padding: spacing.lg,
   },
   loadingText: {
     ...typography.body,
-    color: colors.textSecondary,
     marginTop: spacing.md,
   },
   emptyCartIcon: {
@@ -117,7 +115,6 @@ const styles = StyleSheet.create({
   },
   emptyCartText: {
     ...typography.title,
-    color: colors.textSecondary,
     marginBottom: spacing.lg,
   },
   emptyCartButton: {
@@ -135,30 +132,23 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     ...typography.body,
-    color: colors.textSecondary,
   },
   summaryValue: {
     ...typography.body,
-    color: colors.text,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.divider,
     marginVertical: spacing.sm,
   },
   totalLabel: {
     ...typography.subtitle,
-    color: colors.text,
   },
   totalValue: {
     ...typography.subtitle,
-    color: colors.primary,
   },
   bottomAction: {
     padding: spacing.lg,
-    backgroundColor: colors.card,
     borderTopWidth: 1,
-    borderTopColor: colors.divider,
     ...shadows.small,
   },
   continueButton: {
