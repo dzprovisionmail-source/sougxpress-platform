@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { colors } from '@/design/colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 
@@ -24,12 +24,13 @@ const Header: React.FC<HeaderProps> = ({
   titleStyle,
   subtitleStyle,
 }) => {
+  const { colors } = useAppTheme();
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, { backgroundColor: colors.bgSurface, borderBottomColor: colors.borderSubtle }, style]}>
       {leftContent && <View style={styles.leftContent}>{leftContent}</View>}
       <View style={styles.textContainer}>
-        <Text style={[styles.title, titleStyle]}>{title}</Text>
-        {subtitle && <Text style={[styles.subtitle, subtitleStyle]}>{subtitle}</Text>}
+        <Text style={[styles.title, { color: colors.textPrimary }, titleStyle]}>{title}</Text>
+        {subtitle && <Text style={[styles.subtitle, { color: colors.textSecondary }, subtitleStyle]}>{subtitle}</Text>}
       </View>
       {rightContent && <View style={styles.rightContent}>{rightContent}</View>}
     </View>
@@ -43,9 +44,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
   },
   leftContent: {
     // Styles for content on the left (e.g., back button)
@@ -60,11 +59,9 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.heading,
-    color: colors.text,
   },
   subtitle: {
     ...typography.body,
-    color: colors.textSecondary,
   },
 });
 

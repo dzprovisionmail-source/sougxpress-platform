@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
-import { colors } from '@/design/colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
@@ -30,17 +30,18 @@ const ListItem: React.FC<ListItemProps> = ({
   titleStyle,
   valueStyle,
 }) => {
+  const { colors } = useAppTheme();
   const content = (
     <View style={styles.contentContainer}>
       {icon && <View style={styles.iconContainer}>{icon}</View>}
-      <Text style={[styles.title, titleStyle]}>{title}</Text>
-      {value && <Text style={[styles.value, valueStyle]}>{value}</Text>}
+      <Text style={[styles.title, { color: colors.textPrimary }, titleStyle]}>{title}</Text>
+      {value && <Text style={[styles.value, { color: colors.textSecondary }, valueStyle]}>{value}</Text>}
       {showChevron && <ChevronLeft size={iconSizes.default} color={colors.textSecondary} />}
     </View>
   );
 
   return (
-    <View style={[styles.container, !isLast && styles.divider, style]}>
+    <View style={[styles.container, !isLast && { borderBottomColor: colors.borderSubtle }, style]}>
       {onPress ? (
         <TouchableOpacity onPress={onPress} style={styles.touchable}>
           {content}
@@ -59,7 +60,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
   },
   touchable: {
     flex: 1,
@@ -74,13 +74,11 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.body,
-    color: colors.text,
     flex: 1,
     textAlign: 'right', // RTL
   },
   value: {
     ...typography.body,
-    color: colors.textSecondary,
     marginRight: spacing.sm, // Adjust for RTL
   },
 });

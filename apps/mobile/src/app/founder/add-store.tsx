@@ -76,6 +76,7 @@ export default function FounderAddStoreScreen() {
       phone_number: phone.trim() || undefined,
       description: description.trim() || undefined,
       opening_hours: `{"${opensAt}":"${closesAt}"}`,
+      status: "active",
     });
     setSubmitting(false);
 
