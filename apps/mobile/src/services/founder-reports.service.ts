@@ -122,7 +122,7 @@ export async function getFounderStatsForReports(): Promise<{
     supabase.from("orders").select("id", { count: "exact", head: true }),
     supabase.from("orders").select("id", { count: "exact", head: true }).in("status", ["accepted", "preparing", "ready_for_pickup", "picked_up"]),
     supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "delivered"),
-    supabase.from("orders").select("total_minor").eq("status", "delivered"),
+    supabase.from("orders").select("order_total_minor").eq("status", "delivered"),
     supabase.from("orders").select("platform_commission_minor").eq("status", "delivered"),
   ]);
 
@@ -139,7 +139,7 @@ export async function getFounderStatsForReports(): Promise<{
     totalOrders: ordersRes.count ?? null,
     activeOrders: activeRes.count ?? null,
     completedOrders: completedRes.count ?? null,
-    gmvMinor: sumMinor(gmvRes.data as any, "total_minor"),
+    gmvMinor: sumMinor(gmvRes.data as any, "order_total_minor"),
     commissionMinor: sumMinor(commissionRes.data as any, "platform_commission_minor"),
     error: null,
   };

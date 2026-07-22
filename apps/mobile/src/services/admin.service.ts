@@ -147,7 +147,7 @@ export async function getAdminOrders(
 ): Promise<AdminListResult<Record<string, unknown>>> {
   let query = supabase
     .from("orders")
-    .select("id, status, total_minor, created_at, customer_id, store_id")
+    .select("id, status, order_total_minor, created_at, customer_id, store_id")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -189,7 +189,6 @@ export async function getAdminMerchantsForPicker(): Promise<{
   const { data, error } = await supabase
     .from("merchants")
     .select("id, business_name")
-    .in("status", ["active", "pending_review"])
     .order("business_name")
     .limit(100);
   return {
@@ -225,13 +224,9 @@ export async function createAdminStore(
   const payload: Record<string, unknown> = {
     name: params.name.trim(),
     category: params.category.trim(),
-    status: params.status,
-    is_new: params.is_new ?? false,
-    is_featured: params.is_featured ?? false,
-    show_on_home: params.show_on_home ?? false,
+    merchant_id: params.merchant_id?.trim(),
   };
 
-  if (params.zone_id) payload.zone_id = params.zone_id;
   if (params.address_line1?.trim()) payload.address_line1 = params.address_line1.trim();
   if (params.address_line2?.trim()) payload.address_line2 = params.address_line2.trim();
   if (params.city?.trim()) payload.city = params.city.trim();
@@ -240,12 +235,16 @@ export async function createAdminStore(
   if (params.email?.trim()) payload.email = params.email.trim();
   if (params.description?.trim()) payload.description = params.description.trim();
   if (params.opening_hours?.trim()) payload.opening_hours = params.opening_hours.trim();
-  if (params.merchant_id?.trim()) payload.merchant_id = params.merchant_id.trim();
+  if (params.zone_id?.trim()) payload.zone_id = params.zone_id.trim();
+  if (params.status?.trim()) payload.status = params.status.trim();
+  if (params.is_new !== undefined) payload.is_new = params.is_new;
+  if (params.is_featured !== undefined) payload.is_featured = params.is_featured;
+  if (params.show_on_home !== undefined) payload.show_on_home = params.show_on_home;
 
   const { data, error } = await supabase
     .from("stores")
     .insert(payload)
-    .select("id, name, status")
+    .select("id, name")
     .single();
 
   await writeAdminAuditLog(
@@ -267,8 +266,8 @@ export interface ProvisionAccountParams {
   role: "merchant" | "driver" | "customer";
   full_name: string;
   phone: string;
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
   zone_id?: string;
   address?: string;
   status?: string;

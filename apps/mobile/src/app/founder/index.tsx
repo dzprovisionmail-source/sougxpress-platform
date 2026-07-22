@@ -49,6 +49,34 @@ import {
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+const ACTION_LABELS: Record<string, string> = {
+  view_founder_dashboard: "عرض لوحة المؤسس",
+  create_store: "إنشاء متجر",
+  create_store_failed: "فشل إنشاء متجر",
+  update_store_status: "تحديث حالة متجر",
+  update_merchant_status: "تحديث حالة تاجر",
+  update_driver_status: "تحديث حالة موصل",
+  update_customer_status: "تحديث حالة زبون",
+  provision_account: "إنشاء حساب",
+};
+
+const ENTITY_LABELS: Record<string, string> = {
+  system: "النظام",
+  store: "المتجر",
+  merchant: "التاجر",
+  driver: "الموصل",
+  customer: "الزبون",
+  order: "الطلب",
+};
+
+function actionLabel(action: string) {
+  return ACTION_LABELS[action] ?? action;
+}
+
+function entityLabel(type: string) {
+  return ENTITY_LABELS[type] ?? type;
+}
+
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
 function SectionBlock({
@@ -233,7 +261,7 @@ function ActivityItem({ item, colors, tokens }: { item: ActivityFeedEntry; color
           }}
           numberOfLines={1}
         >
-          {item.action}
+          {actionLabel(item.action)}
         </Text>
         <Text
           style={{
@@ -253,7 +281,7 @@ function ActivityItem({ item, colors, tokens }: { item: ActivityFeedEntry; color
           fontFamily: tokens.typography.families.arabic,
         }}
       >
-        {item.entity_type}
+        {entityLabel(item.entity_type)}
         {item.entity_id ? ` • ${item.entity_id.slice(0, 8)}` : ""}
       </Text>
     </View>

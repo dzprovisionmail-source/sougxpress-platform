@@ -10,7 +10,8 @@ export interface FounderOrder {
   subtotal_minor: number;
   delivery_fee_minor: number;
   platform_commission_minor: number;
-  total_minor: number;
+  order_total_minor: number;
+  total_minor?: number;
   delivery_address_id: string;
   placed_at: string;
   delivered_at: string | null;
@@ -40,6 +41,34 @@ export interface FounderOrderTimelineEntry {
   created_at: string;
 }
 
+function mapOrderRow(row: Record<string, unknown>): FounderOrder {
+  const customer = row.customer as Record<string, unknown> | undefined;
+  const store = row.store as Record<string, unknown> | undefined;
+  const customerName =
+    customer && "full_name" in customer
+      ? String(customer.full_name)
+      : customer
+        ? `${String(customer.first_name ?? "")} ${String(customer.last_name ?? "")}`.trim()
+        : null;
+  const customerPhone =
+    customer && "phone" in customer
+      ? String(customer.phone)
+      : customer
+        ? String(customer.phone_number ?? "")
+        : "";
+
+  return {
+    ...(row as unknown as Omit<FounderOrder, "customer" | "store" | "driver">),
+    customer: customerName
+      ? { full_name: customerName, phone: customerPhone }
+      : null,
+    store: store
+      ? { name: String(store.name ?? ""), category: String(store.category ?? "") }
+      : null,
+    driver: null,
+  };
+}
+
 export async function getFounderOrders(
   search?: string,
   status?: string,
@@ -47,7 +76,7 @@ export async function getFounderOrders(
 ): Promise<FounderOrder[]> {
   let q = supabase
     .from("orders")
-    .select("*, customer:customers(full_name,phone), store:stores(name,category), driver:drivers(full_name,phone,vehicle_type)")
+    .select("*, customer:customers(first_name,last_name,phone_number), store:stores(name,category)")
     .order("placed_at", { ascending: false })
     .limit(limit);
 
@@ -56,7 +85,7 @@ export async function getFounderOrders(
 
   const { data, error } = await q;
   if (error) console.error("getFounderOrders:", error.message);
-  return (data ?? []) as FounderOrder[];
+  return ((data ?? []) as Record<string, unknown>[]).map(mapOrderRow);
 }
 
 export async function getFounderOrder(id: string): Promise<{
@@ -68,7 +97,7 @@ export async function getFounderOrder(id: string): Promise<{
   const [orderRes, itemsRes, timelineRes] = await Promise.all([
     supabase
       .from("orders")
-      .select("*, customer:customers(full_name,phone), store:stores(name,category), driver:drivers(full_name,phone,vehicle_type)")
+      .select("*, customer:customers(first_name,last_name,phone_number), store:stores(name,category)")
       .eq("id", id)
       .single(),
     supabase.from("order_items").select("*").eq("order_id", id),
@@ -79,8 +108,9 @@ export async function getFounderOrder(id: string): Promise<{
       .order("created_at", { ascending: true }),
   ]);
 
+  const mapped = orderRes.data ? mapOrderRow(orderRes.data) : null;
   return {
-    order: (orderRes.data as FounderOrder) ?? null,
+    order: mapped,
     items: (itemsRes.data ?? []) as FounderOrderItem[],
     timeline: (timelineRes.data ?? []) as FounderOrderTimelineEntry[],
     error: orderRes.error?.message ?? null,

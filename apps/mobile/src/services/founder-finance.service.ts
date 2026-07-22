@@ -67,7 +67,7 @@ export async function getFounderFinanceSummary(): Promise<{
     pendingPayoutsRes,
     ordersRes,
   ] = await Promise.all([
-    supabase.from("orders").select("total_minor").eq("status", "delivered"),
+    supabase.from("orders").select("order_total_minor").eq("status", "delivered"),
     supabase.from("orders").select("platform_commission_minor").eq("status", "delivered"),
     supabase.from("orders").select("delivery_fee_minor").eq("status", "delivered"),
     supabase.from("payouts").select("amount_minor").eq("status", "paid"),
@@ -81,7 +81,7 @@ export async function getFounderFinanceSummary(): Promise<{
     (rows ?? []).reduce((sum, row) => sum + (row[field] ?? 0), 0);
 
   return {
-    totalGMVMinor: sumMinor(gmvRes.data as any, "total_minor"),
+    totalGMVMinor: sumMinor(gmvRes.data as any, "order_total_minor"),
     totalCommissionMinor: sumMinor(commissionRes.data as any, "platform_commission_minor"),
     totalDeliveryFeesMinor: sumMinor(deliveryRes.data as any, "delivery_fee_minor"),
     totalPayoutsMinor: sumMinor(payoutsRes.data as any, "amount_minor"),

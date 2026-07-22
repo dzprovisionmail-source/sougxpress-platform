@@ -241,7 +241,7 @@ export async function getControlCenterStats(): Promise<ControlCenterStats> {
     supabase.from("stores").select("id", { count: "exact", head: true }).neq("status", "active"),
     supabase
       .from("orders")
-      .select("total_minor")
+      .select("order_total_minor")
       .eq("status", "delivered"),
     supabase
       .from("orders")
@@ -266,7 +266,7 @@ export async function getControlCenterStats(): Promise<ControlCenterStats> {
     return rows.reduce((sum, row) => sum + (row[field] ?? 0), 0);
   };
 
-  const gmv = sumMinor(gmvRes.data as any, "total_minor");
+  const gmv = sumMinor(gmvRes.data as any, "order_total_minor");
   const commission = sumMinor(commissionRes.data as any, "platform_commission_minor");
   const deliveryFees = sumMinor(deliveryFeesRes.data as any, "delivery_fee_minor");
   const payouts = sumMinor(payoutsRes.data as any, "amount_minor");

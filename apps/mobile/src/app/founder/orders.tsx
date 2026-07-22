@@ -207,7 +207,7 @@ export default function FounderOrdersScreen() {
                     {item.store?.name ?? "متجر"} · {item.customer?.full_name ?? "زبون"}
                   </Text>
                   <Text style={{ color: colors.textSecondary, fontSize: tokens.typography.sizes.xs, textAlign: "right" }}>
-                    {STATUS_LABELS[item.status] ?? item.status} · {fmtMinor(item.total_minor)}
+                    {STATUS_LABELS[item.status] ?? item.status} · {fmtMinor(item.order_total_minor ?? item.total_minor ?? 0)}
                   </Text>
                   {item.driver && <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>الموصل: {item.driver.full_name}</Text>}
                 </View>
@@ -268,7 +268,7 @@ export default function FounderOrdersScreen() {
                   </View>
                   <View style={styles.infoRow}>
                     <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "right", flex: 1 }}>الإجمالي</Text>
-                    <Text style={{ color: colors.primary, fontSize: 14, textAlign: "right", flex: 2, fontWeight: "700" }}>{fmtMinor(selectedOrder.order.total_minor)}</Text>
+                    <Text style={{ color: colors.primary, fontSize: 14, textAlign: "right", flex: 2, fontWeight: "700" }}>{fmtMinor(selectedOrder.order.order_total_minor ?? selectedOrder.order.total_minor ?? 0)}</Text>
                   </View>
                   <View style={styles.infoRow}>
                     <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "right", flex: 1 }}>العمولة</Text>

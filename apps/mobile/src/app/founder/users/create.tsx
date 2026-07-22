@@ -110,8 +110,8 @@ export default function FounderCreateUserScreen() {
     setError(null);
     if (!fullName.trim()) return setError("الاسم الكامل مطلوب");
     if (!phone.trim()) return setError("رقم الهاتف مطلوب");
-    if (!email.trim()) return setError("البريد الإلكتروني مطلوب");
-    if (!password || password.length < 6) return setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+    if (email.trim() && !password) return setError("كلمة المرور مطلوبة عند توفير البريد الإلكتروني");
+    if (password && password.length < 6) return setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
     if (role === "merchant" && !businessName.trim()) return setError("اسم التجارة مطلوب للتاجر");
 
     setLoading(true);
@@ -119,8 +119,8 @@ export default function FounderCreateUserScreen() {
       role,
       full_name: fullName.trim(),
       phone: phone.trim(),
-      email: email.trim(),
-      password,
+      email: email.trim() || undefined,
+      password: password || undefined,
       zone_id: selectedZone?.id,
       address: address.trim() || undefined,
       business_name: businessName.trim() || undefined,
@@ -163,11 +163,11 @@ export default function FounderCreateUserScreen() {
           <FieldLabel label="رقم الهاتف" required />
           <FormInput value={phone} onChange={setPhone} placeholder="+213..." keyboard="phone-pad" />
 
-          <FieldLabel label="البريد الإلكتروني" required />
-          <FormInput value={email} onChange={setEmail} placeholder="example@email.com" keyboard="email-address" />
+          <FieldLabel label="البريد الإلكتروني" />
+          <FormInput value={email} onChange={setEmail} placeholder="اختياري — مثال@email.com" keyboard="email-address" />
 
-          <FieldLabel label="كلمة المرور" required />
-          <FormInput value={password} onChange={setPassword} placeholder="6 أحرف على الأقل" secure />
+          <FieldLabel label="كلمة المرور" />
+          <FormInput value={password} onChange={setPassword} placeholder="اختياري — 6 أحرف على الأقل" secure />
 
           <FieldLabel label="العنوان" />
           <FormInput value={address} onChange={setAddress} placeholder="العنوان التفصيلي" />
