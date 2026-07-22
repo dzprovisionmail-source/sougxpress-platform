@@ -15,13 +15,13 @@ import { Button } from '@/components/ui'; // Use the new Button component
 
 import useProfile from '@/hooks/useProfile';
 import { supabase } from '@/lib/supabase';
-
-import { colors } from '@/design/colors';
+import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
 
 const ProfileScreen = () => {
+  const { colors } = useAppTheme();
   const { profile, loading, error, updateProfile } = useProfile();
 
   const handleLogout = async () => {
@@ -126,13 +126,13 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: colors.bgBase,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: colors.bgBase,
   },
   loadingText: {
     ...typography.body,

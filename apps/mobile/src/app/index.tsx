@@ -175,14 +175,15 @@ export default function EntryScreen() {
         </View>
 
         {/* Footer */}
+        <View style={{ flex: 1 }} />
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.footerTextContainer}>
             <TouchableOpacity onPress={openFounderDialog} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={[styles.footerText, { color: colors.textPrimary }]}>
+              <Text style={[styles.footerLatinText, { color: colors.textPrimary }]}>
                 Soug-XPRESS
               </Text>
             </TouchableOpacity>
-            <Text style={[styles.footerText, { color: colors.textDisabled }]}>
+            <Text style={[styles.footerArabicText, { color: colors.textDisabled }]}>
               {" "}— منصة التجارة المحلية الأولى في عين صفراء
             </Text>
           </View>
@@ -382,11 +383,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   footer: {
-    marginTop: "auto",
+    width: "100%",
     paddingTop: TOKENS.spacing.lg,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
-    width: "100%",
   },
   footerTextContainer: {
     flexDirection: "row",
@@ -394,7 +394,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexWrap: "wrap",
   },
-  footerText: {
+  footerLatinText: {
+    fontFamily: TOKENS.typography.families.latin,
+    fontSize: TOKENS.typography.sizes.xs,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: TOKENS.typography.lineHeights.latin * TOKENS.typography.sizes.xs,
+  },
+  footerArabicText: {
     fontFamily: TOKENS.typography.families.arabic,
     fontSize: TOKENS.typography.sizes.xs,
     fontWeight: "400",

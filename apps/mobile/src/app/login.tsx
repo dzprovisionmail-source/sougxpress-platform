@@ -5,63 +5,10 @@ import { View, ScrollView, StyleSheet, SafeAreaView, I18nManager } from "react-n
 import { Typography, Card } from "../components/ui";
 import { BRAND_NAME_AR, LOGO_ICON, ICON_SHOPPING, ICON_STORE, ICON_DELIVERY } from "../constants/brand";
 import { TOKENS } from "../constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
-
-/**
- * Role Selection Gateway — Brand Icon Integration
- *
- * This is the role-selection screen accessed from the entry screen via
- * the "الدخول إلى السوق" button. It presents the 4 role options:
- * - أريد التسوق (customer)
- * - أريد بيع منتجاتي (merchant)
- * - أريد العمل كموصل (driver)
- * - استكشف السوق أولاً (guest)
- *
- * Uses official brand role illustration icons in the role cards.
- * Uses the official logo icon in the header.
- */
-
-interface IntentOption {
-  id: string;
-  icon?: any;
-  titleAr: string;
-  descriptionAr: string;
-  route: string;
-}
-
-const INTENT_OPTIONS: IntentOption[] = [
-  {
-    id: "customer",
-    icon: ICON_SHOPPING,
-    titleAr: "أريد التسوق",
-    descriptionAr: "اكتشف المتاجر المحلية واطلب ما تحتاجه.",
-    route: "/customer-auth",
-  },
-  {
-    id: "merchant",
-    icon: ICON_STORE,
-    titleAr: "أريد بيع منتجاتي",
-    descriptionAr: "أنشئ متجرك وابدأ البيع بعد اعتماد حسابك.",
-    route: "/merchant-auth",
-  },
-  {
-    id: "driver",
-    icon: ICON_DELIVERY,
-    titleAr: "أريد العمل كموصل",
-    descriptionAr: "انضم إلى فريق التوصيل بعد الموافقة.",
-    route: "/driver-auth",
-  },
-  {
-    id: "guest",
-    icon: ICON_SHOPPING,
-    titleAr: "استكشف السوق أولًا",
-    descriptionAr: "تصفح المتاجر والمنتجات دون إنشاء حساب.",
-    route: "/guest-marketplace",
-  },
-];
+import { useAppTheme } from "../contexts/ThemeContext";
 
 export default function RoleSelectionScreen() {
-  const colors = getThemeColors(DEFAULT_THEME);
+  const { colors, tokens } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
   return (
@@ -135,39 +82,39 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flexGrow: 1,
-    paddingHorizontal: TOKENS.spacing.lg,
-    paddingTop: TOKENS.spacing["3xl"],
-    paddingBottom: TOKENS.spacing.xl,
+    paddingHorizontal: tokens.spacing.lg,
+    paddingTop: tokens.spacing["3xl"],
+    paddingBottom: tokens.spacing.xl,
   },
   header: {
-    marginBottom: TOKENS.spacing["3xl"],
+    marginBottom: tokens.spacing["3xl"],
     alignItems: "center",
   },
   headerLogo: {
     width: 64,
     height: 64,
-    marginBottom: TOKENS.spacing.md,
+    marginBottom: tokens.spacing.md,
   },
   headerTitle: {
-    color: TOKENS.colors.brandPrimary,
-    marginBottom: TOKENS.spacing.xs,
+    color: colors.brandPrimary,
+    marginBottom: tokens.spacing.xs,
   },
   optionsContainer: {
-    gap: TOKENS.spacing.md,
+    gap: tokens.spacing.md,
     flex: 1,
   },
   intentCard: {
-    marginBottom: TOKENS.spacing.xs,
+    marginBottom: tokens.spacing.xs,
   },
   cardContent: {
     alignItems: "center",
-    gap: TOKENS.spacing.lg,
+    gap: tokens.spacing.lg,
   },
   iconWrapper: {
     width: 64,
     height: 64,
-    borderRadius: TOKENS.radius.md,
-    backgroundColor: "rgba(255, 138, 0, 0.05)",
+    borderRadius: tokens.radius.md,
+    backgroundColor: colors.bgSurface,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -183,8 +130,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   footer: {
-    marginTop: TOKENS.spacing["2xl"],
-    paddingTop: TOKENS.spacing.lg,
+    marginTop: tokens.spacing["2xl"],
+    paddingTop: tokens.spacing.lg,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
   },

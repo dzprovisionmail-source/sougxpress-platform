@@ -3,16 +3,23 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { CircleUserRound, Store, Bike, Home } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { TOKENS } from '@/constants/tokens';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
 
   return (
     <Tabs screenOptions={{
-      tabBarActiveTintColor: '#007BFF',
-      tabBarInactiveTintColor: '#666',
-      tabBarLabelStyle: { fontFamily: 'Arabic-Font', fontSize: 12 },
-      tabBarStyle: { backgroundColor: '#FFF', paddingBottom: Math.max(insets.bottom, 8) },
+      tabBarActiveTintColor: colors.primary,
+      tabBarInactiveTintColor: colors.textSecondary,
+      tabBarLabelStyle: { fontFamily: TOKENS.typography.families.arabic, fontSize: 12 },
+      tabBarStyle: { 
+        backgroundColor: colors.bgSurface, 
+        borderTopColor: colors.borderSubtle,
+        paddingBottom: Math.max(insets.bottom, 12),
+      },
       headerShown: false,
     }}>
       <Tabs.Screen
