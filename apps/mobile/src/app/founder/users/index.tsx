@@ -92,7 +92,7 @@ export default function FounderUsersHubScreen() {
     router.push(path as Parameters<typeof router.push>[0]);
 
   return (
-    <AdminPageShell title="إدارة المستخدمين" showBack>
+    <AdminPageShell showLogout title="إدارة المستخدمين" showBack>
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         <View style={styles.grid}>
           <HubCard

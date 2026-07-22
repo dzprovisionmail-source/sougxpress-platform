@@ -159,7 +159,7 @@ export default function FounderApprovalsScreen() {
 
   if (loading && !refreshing) {
     return (
-      <AdminPageShell title="مركز العمليات والموافقات" showBack>
+      <AdminPageShell showLogout title="مركز العمليات والموافقات" showBack>
         <AdminLoadingState message="جاري تحميل طلبات الموافقة..." />
       </AdminPageShell>
     );
@@ -167,14 +167,14 @@ export default function FounderApprovalsScreen() {
 
   if (error && !merchants.length && !drivers.length) {
     return (
-      <AdminPageShell title="مركز العمليات والموافقات" showBack>
+      <AdminPageShell showLogout title="مركز العمليات والموافقات" showBack>
         <AdminErrorState message={error} onRetry={() => { tab === "merchants" ? loadMerchants(mSearch, mStatus) : loadDrivers(dSearch, dStatus); }} />
       </AdminPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="مركز العمليات والموافقات" showBack scrollable={false}>
+    <AdminPageShell showLogout title="مركز العمليات والموافقات" showBack scrollable={false}>
       {/* Tabs */}
       <View style={[styles.tabBar, { backgroundColor: colors.bgElevated, borderBottomColor: colors.borderSubtle }]}>
         <TouchableOpacity

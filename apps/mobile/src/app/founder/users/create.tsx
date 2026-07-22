@@ -141,7 +141,7 @@ export default function FounderCreateUserScreen() {
   const title = `إضافة ${ROLE_LABELS[role]}`;
 
   return (
-    <AdminPageShell title={title} showBack scrollable={false}>
+    <AdminPageShell showLogout title={title} showBack scrollable={false}>
       <ScrollView
         contentContainerStyle={{ padding: tokens.spacing.lg, gap: tokens.spacing.lg, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}

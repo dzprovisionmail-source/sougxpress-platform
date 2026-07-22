@@ -77,7 +77,7 @@ export default function FounderContentScreen() {
 
   if (loading) {
     return (
-      <AdminPageShell title="التقارير" showBack>
+      <AdminPageShell showLogout title="التقارير" showBack>
         <AdminLoadingState message="جاري تحميل التقارير..." />
       </AdminPageShell>
     );
@@ -85,14 +85,14 @@ export default function FounderContentScreen() {
 
   if (stats.error && !stats.totalOrders) {
     return (
-      <AdminPageShell title="التقارير" showBack>
+      <AdminPageShell showLogout title="التقارير" showBack>
         <AdminErrorState message={stats.error} onRetry={() => loadAll(true)} />
       </AdminPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="التقارير والتحليلات" showBack scrollable={false}>
+    <AdminPageShell showLogout title="التقارير والتحليلات" showBack scrollable={false}>
       <ScrollView
         contentContainerStyle={{ padding: tokens.spacing.lg, paddingBottom: 80 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadAll(true)} tintColor={colors.primary} />}
@@ -174,18 +174,24 @@ export default function FounderContentScreen() {
         {metrics.length === 0 ? (
           <Text style={{ color: colors.textDisabled, textAlign: "center", paddingVertical: 20 }}>لا توجد بيانات اتجاهات متاحة</Text>
         ) : (
-          metrics.slice(0, 10).map((m) => (
-            <View key={m.id} style={[styles.metricRow, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-              <View style={{ flex: 1, alignItems: "flex-end" }}>
-                <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{new Date(m.period_start).toLocaleDateString("ar-DZ")}</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{m.total_orders} طلب · {fmtMinor(m.total_gmv_minor)}</Text>
+          metrics.slice(0, 10).map((m) => {
+            const dateLabel = m.period_start ?? m.snapshot_time ?? "";
+            const gmv = m.total_gmv_minor ?? m.total_revenue_minor ?? 0;
+            const commission = m.total_commission_minor ?? 0;
+            const dateText = dateLabel ? new Date(dateLabel).toLocaleDateString("ar-DZ") : "—";
+            return (
+              <View key={m.id} style={[styles.metricRow, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
+                <View style={{ flex: 1, alignItems: "flex-end" }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{dateText}</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{m.total_orders} طلب · {fmtMinor(gmv)}</Text>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700" }}>{fmtMinor(commission)}</Text>
+                  <Text style={{ color: colors.textDisabled, fontSize: 10 }}>عمولة</Text>
+                </View>
               </View>
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700" }}>{fmtMinor(m.total_commission_minor)}</Text>
-                <Text style={{ color: colors.textDisabled, fontSize: 10 }}>عمولة</Text>
-              </View>
-            </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </AdminPageShell>

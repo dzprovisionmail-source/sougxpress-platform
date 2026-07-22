@@ -3,17 +3,22 @@ import { supabase } from "@/lib/supabase";
 export interface FounderMetricsSnapshot {
   id: string;
   zone_id: string | null;
-  metric_period: string;
-  period_start: string;
-  period_end: string;
+  metric_period?: string;
+  period_start?: string;
+  period_end?: string;
+  snapshot_time?: string;
   total_orders: number;
-  total_gmv_minor: number;
-  total_commission_minor: number;
-  total_delivery_fees_minor: number;
+  total_gmv_minor?: number;
+  total_commission_minor?: number;
+  total_delivery_fees_minor?: number;
+  total_revenue_minor?: number;
   active_customers: number;
   active_merchants: number;
   active_drivers: number;
-  dispute_count: number;
+  dispute_count?: number;
+  new_users_24h?: number;
+  completed_deliveries_24h?: number;
+  average_delivery_time_minutes?: number;
   created_at: string;
 }
 
@@ -21,12 +26,26 @@ export async function getFounderMetrics(
   period: "daily" | "weekly" | "monthly" = "daily",
   limit = 30
 ): Promise<FounderMetricsSnapshot[]> {
-  const { data, error } = await supabase
+  let data: FounderMetricsSnapshot[] | null = null;
+  let error: { message: string } | null = null;
+
+  const res = await supabase
     .from("platform_metrics_snapshots")
     .select("*")
-    .eq("metric_period", period)
     .order("period_start", { ascending: false })
     .limit(limit);
+  data = (res.data ?? null) as FounderMetricsSnapshot[] | null;
+  error = res.error;
+
+  if (error?.message?.includes("period_start") || error?.message?.includes("metric_period")) {
+    const res2 = await supabase
+      .from("platform_metrics_snapshots")
+      .select("*")
+      .order("snapshot_time", { ascending: false })
+      .limit(limit);
+    data = (res2.data ?? null) as FounderMetricsSnapshot[] | null;
+    error = res2.error;
+  }
 
   if (error) console.error("getFounderMetrics:", error.message);
   return (data ?? []) as FounderMetricsSnapshot[];

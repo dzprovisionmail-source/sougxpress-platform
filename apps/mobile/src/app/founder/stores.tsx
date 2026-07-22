@@ -218,7 +218,7 @@ export default function FounderStoresScreen() {
 
   if (loading && !refreshing && !showDetail) {
     return (
-      <AdminPageShell title="المتاجر" showBack>
+      <AdminPageShell showLogout title="المتاجر" showBack>
         <AdminLoadingState message="جاري تحميل المتاجر..." />
       </AdminPageShell>
     );
@@ -226,14 +226,14 @@ export default function FounderStoresScreen() {
 
   if (error && !items.length) {
     return (
-      <AdminPageShell title="المتاجر" showBack>
+      <AdminPageShell showLogout title="المتاجر" showBack>
         <AdminErrorState message={error} onRetry={() => load(search, statusFilter)} />
       </AdminPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="المتاجر" showBack scrollable={false}>
+    <AdminPageShell showLogout title="المتاجر" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         {/* Search + filter bar */}
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>

@@ -8,7 +8,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 export default function FounderAddDriverScreen() {
   const { colors } = useAppTheme();
   return (
-    <AdminPageShell title="إضافة موصل" showBack>
+    <AdminPageShell showLogout title="إضافة موصل" showBack>
       <View style={styles.center}>
         <Truck size={56} color={colors.textDisabled} />
         <Text style={[styles.title, { color: colors.textSecondary }]}>قيد البناء</Text>

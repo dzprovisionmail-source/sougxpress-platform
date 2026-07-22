@@ -11,11 +11,13 @@ import {
   StyleProp,
   I18nManager,
   Image,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { ArrowRight, Bell, CircleUserRound } from "lucide-react-native";
+import { ArrowRight, Bell, CircleUserRound, LogOut } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { LOGO_DARK, LOGO_WORDMARK } from "@/constants/brand";
+import { supabase } from "@/lib/supabase";
 
 interface AdminPageShellProps {
   title: string;
@@ -23,6 +25,7 @@ interface AdminPageShellProps {
   showBack?: boolean;
   showNotification?: boolean;
   showProfile?: boolean;
+  showLogout?: boolean;
   scrollable?: boolean;
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
@@ -43,6 +46,7 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
   showBack = false,
   showNotification = false,
   showProfile = false,
+  showLogout = false,
   scrollable = true,
   style,
   contentStyle,
@@ -50,6 +54,15 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
   const { colors, tokens, theme } = useAppTheme();
 
   const isDark = theme === "dark";
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.replace("/");
+    } catch {
+      Alert.alert("خطأ", "تعذّر تسجيل الخروج");
+    }
+  };
 
   return (
     <SafeAreaView style={[{ flex: 1, backgroundColor: colors.bgBase }, style]}>
@@ -115,8 +128,20 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
           </Text>
         </View>
 
-        {/* Left side: logo + notification */}
+        {/* Left side: logo + notification + logout */}
         <View style={[styles.headerSide, styles.headerLeft]}>
+          {showLogout && (
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={[
+                styles.iconBtn,
+                { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle },
+              ]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <LogOut color={colors.textSecondary} size={18} />
+            </TouchableOpacity>
+          )}
           {showNotification && (
             <TouchableOpacity
               onPress={() => router.push("/admin/notifications" as Parameters<typeof router.push>[0])}

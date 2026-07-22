@@ -131,7 +131,7 @@ export default function FounderOrdersScreen() {
 
   if (loading && !refreshing && !showDetail) {
     return (
-      <AdminPageShell title="الطلبات" showBack>
+      <AdminPageShell showLogout title="الطلبات" showBack>
         <AdminLoadingState message="جاري تحميل الطلبات..." />
       </AdminPageShell>
     );
@@ -139,14 +139,14 @@ export default function FounderOrdersScreen() {
 
   if (error && !items.length) {
     return (
-      <AdminPageShell title="الطلبات" showBack>
+      <AdminPageShell showLogout title="الطلبات" showBack>
         <AdminErrorState message={error} onRetry={() => loadOrders(search, statusFilter)} />
       </AdminPageShell>
     );
   }
 
   return (
-    <AdminPageShell title="الطلبات" showBack scrollable={false}>
+    <AdminPageShell showLogout title="الطلبات" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         {/* Tabs */}
         <View style={[styles.tabBar, { backgroundColor: colors.bgElevated, borderBottomColor: colors.borderSubtle }]}>
