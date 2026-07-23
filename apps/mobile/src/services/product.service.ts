@@ -24,6 +24,7 @@ export const createProduct = async (input: {
   category?: string;
   stock_quantity?: number | null;
   image_url?: string | null;
+  is_demo?: boolean;
 }): Promise<Product | null> => {
   const { data, error } = await supabase
     .from("products")
@@ -36,6 +37,7 @@ export const createProduct = async (input: {
       stock_quantity: input.stock_quantity ?? null,
       image_url: input.image_url ?? null,
       status: "active",
+      is_demo: input.is_demo ?? false,
     })
     .select()
     .single();

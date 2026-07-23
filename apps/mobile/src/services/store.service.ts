@@ -1,6 +1,6 @@
 
 import { supabase } from "../lib/supabase";
-import { Store } from "../types/schema-03-core";
+import { Store, StoreGalleryImage, StoreVideo } from "../types/schema-03-core";
 
 const isValidUUID = (uuid: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -160,4 +160,89 @@ export const getStoreGalleryImages = async (storeId: string): Promise<string[]> 
   });
 
   return imageUrls;
+};
+
+// ============================================================================
+// Store Gallery DB-backed CRUD
+// ============================================================================
+
+export const getStoreGallery = async (storeId: string): Promise<StoreGalleryImage[]> => {
+  if (!storeId || !isValidUUID(storeId)) return [];
+  const { data, error } = await supabase
+    .from("store_gallery")
+    .select("*")
+    .eq("store_id", storeId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) { console.error("Error fetching store gallery:", error); return []; }
+  return data as StoreGalleryImage[];
+};
+
+export const addStoreGalleryImage = async (storeId: string, imageUrl: string, title?: string | null): Promise<StoreGalleryImage | null> => {
+  const { data, error } = await supabase
+    .from("store_gallery")
+    .insert({ store_id: storeId, image_url: imageUrl, title: title ?? null })
+    .select()
+    .single();
+  if (error) { console.error("Error adding gallery image:", error); return null; }
+  return data as StoreGalleryImage;
+};
+
+export const updateStoreGalleryImage = async (id: string, updates: { title?: string | null; is_visible?: boolean; sort_order?: number }): Promise<StoreGalleryImage | null> => {
+  const { data, error } = await supabase
+    .from("store_gallery")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) { console.error("Error updating gallery image:", error); return null; }
+  return data as StoreGalleryImage;
+};
+
+export const deleteStoreGalleryImage = async (id: string): Promise<boolean> => {
+  const { error } = await supabase.from("store_gallery").delete().eq("id", id);
+  if (error) { console.error("Error deleting gallery image:", error); return false; }
+  return true;
+};
+
+// ============================================================================
+// Store Videos DB-backed CRUD
+// ============================================================================
+
+export const getStoreVideos = async (storeId: string): Promise<StoreVideo[]> => {
+  if (!storeId || !isValidUUID(storeId)) return [];
+  const { data, error } = await supabase
+    .from("store_videos")
+    .select("*")
+    .eq("store_id", storeId)
+    .order("created_at", { ascending: true });
+  if (error) { console.error("Error fetching store videos:", error); return []; }
+  return data as StoreVideo[];
+};
+
+export const addStoreVideo = async (storeId: string, url: string, title?: string | null, platform: string = "youtube"): Promise<StoreVideo | null> => {
+  const { data, error } = await supabase
+    .from("store_videos")
+    .insert({ store_id: storeId, url, title: title ?? null, platform })
+    .select()
+    .single();
+  if (error) { console.error("Error adding video:", error); return null; }
+  return data as StoreVideo;
+};
+
+export const updateStoreVideo = async (id: string, updates: { title?: string | null; url?: string; platform?: string; is_visible?: boolean }): Promise<StoreVideo | null> => {
+  const { data, error } = await supabase
+    .from("store_videos")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) { console.error("Error updating video:", error); return null; }
+  return data as StoreVideo;
+};
+
+export const deleteStoreVideo = async (id: string): Promise<boolean> => {
+  const { error } = await supabase.from("store_videos").delete().eq("id", id);
+  if (error) { console.error("Error deleting video:", error); return false; }
+  return true;
 };

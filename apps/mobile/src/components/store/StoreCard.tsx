@@ -20,15 +20,11 @@ const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
     onPress(store.id);
   };
 
-  // Placeholder for store logo and cover image. In a real app, these would come from store data.
-  const storeLogo = 'https://via.placeholder.com/60'; 
-  const coverImage = 'https://via.placeholder.com/150x80';
-
   return (
     <TouchableOpacity style={[styles.card, { backgroundColor: colors.bgElevated }]} onPress={handlePress}>
-      <Image source={{ uri: coverImage }} style={styles.coverImage} />
+      <Image source={{ uri: store.cover_url || "https://via.placeholder.com/150x80" }} style={styles.coverImage} />
       <View style={[styles.logoContainer, { backgroundColor: colors.bgElevated }]}>
-        <Image source={{ uri: storeLogo }} style={styles.storeLogo} />
+        <Image source={{ uri: store.logo_url || "https://via.placeholder.com/60" }} style={styles.storeLogo} />
       </View>
         <View style={styles.infoContainer}>
           <Text style={[styles.storeName, { color: colors.textPrimary }]}>{store.name}</Text>
@@ -36,11 +32,15 @@ const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
           <View style={styles.ratingContainer}>
             <Star size={16} color={colors.accent} fill={colors.accent} />
             <Text style={[styles.ratingText, { color: colors.textPrimary }]}>4.5</Text>
-            <Text style={[styles.statusText, { color: colors.success }]}>{store.status === 'active' ? '🟢 Ouvert' : '🔴 Fermé'}</Text>
+            <Text style={[styles.statusText, { color: colors.success }]}>{store.status === 'active' ? '🟢 مفتوح' : '🔴 مغلق'}</Text>
+          </View>
+          <View style={styles.badgesRow}>
+            {store.is_featured && <Text style={[styles.badgeText, { color: colors.warning }]}>⭐ مميز</Text>}
+            {store.is_new && <Text style={[styles.badgeText, { color: colors.primary }]}>جديد</Text>}
           </View>
           <View style={styles.locationContainer}>
             <MapPin size={14} color={colors.textSecondary} />
-            <Text style={[styles.locationText, { color: colors.textSecondary }]}>5 km</Text>
+            <Text style={[styles.locationText, { color: colors.textSecondary }]}>{store.address_line1 ? `${store.address_line1} · ${store.city || ""}` : "—"}</Text>
           </View>
         </View>
     </TouchableOpacity>
@@ -104,6 +104,15 @@ const styles = StyleSheet.create({
   locationText: {
     ...typography.caption,
     marginRight: spacing.xs,
+  },
+  badgesRow: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+    marginTop: 4,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 });
 

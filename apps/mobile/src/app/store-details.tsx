@@ -17,7 +17,8 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import useStore from "@/hooks/useStore";
 import { useStoreProducts } from "@/hooks/useProducts";
 import { useActivePromotions } from "@/hooks/usePromotions";
-import { StorePromotion } from "@/types/schema-03-core";
+import { getStoreGallery, getStoreVideos } from "@/services/store.service";
+import { StorePromotion, StoreGalleryImage } from "@/types/schema-03-core";
 
 const { width: SW } = Dimensions.get("window");
 
@@ -44,6 +45,14 @@ export default function StoreDetailsScreen() {
   const { promotions } = useActivePromotions(storeId);
 
   const [selectedCategory, setSelectedCategory] = useState("الكل");
+  const [gallery, setGallery] = useState<StoreGalleryImage[]>([]);
+  const [videos, setVideos] = useState<StoreGalleryImage[]>([]);
+
+  useEffect(() => {
+    if (!storeId) return;
+    getStoreGallery(storeId).then(setGallery).catch(() => {});
+    getStoreVideos(storeId).then(setVideos).catch(() => {});
+  }, [storeId]);
 
   if (!storeId) {
     return (
@@ -179,6 +188,33 @@ export default function StoreDetailsScreen() {
             </Text>
           ) : null}
         </View>
+
+        {/* ── Gallery ── */}
+        {gallery.filter((g) => g.is_visible).length > 0 && (
+          <View style={{ marginTop: tokens.spacing.lg }}>
+            <SectionHeading label="معرض الصور" colors={colors} tokens={tokens} />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: tokens.spacing.lg, gap: tokens.spacing.sm }}>
+              {gallery.filter((g) => g.is_visible).map((img) => (
+                <Image key={img.id} source={{ uri: img.image_url }} style={[styles.galleryImg, { borderRadius: tokens.radius.sm }]} resizeMode="cover" />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* ── Videos ── */}
+        {videos.filter((v) => v.is_visible).length > 0 && (
+          <View style={{ marginTop: tokens.spacing.lg }}>
+            <SectionHeading label="فيديوهات" colors={colors} tokens={tokens} />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: tokens.spacing.lg, gap: tokens.spacing.sm }}>
+              {videos.filter((v) => v.is_visible).map((vid) => (
+                <View key={vid.id} style={[styles.videoCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, borderRadius: tokens.radius.sm, padding: tokens.spacing.sm, width: 200 }]}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{vid.title || vid.url}</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right", marginTop: 4 }}>{vid.platform}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* ── Active Promotions ── */}
         {promotions.length > 0 && (
@@ -429,6 +465,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: { textAlign: "center", padding: 24, fontSize: 14 },
+  galleryImg: { width: 160, height: 120 },
+  videoCard: { overflow: "hidden" },
 });
 
 // suppress unused warning – SW is used by promoCard width calculations at runtime

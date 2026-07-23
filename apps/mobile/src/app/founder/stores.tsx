@@ -4,7 +4,8 @@ import {
   FlatList, RefreshControl, Modal, ScrollView, ActivityIndicator, Image, Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { Plus, Filter, Search, Star, MapPin, Clock, Store, X, Check, Image as ImageIcon } from "lucide-react-native";
+import { Plus, Filter, Search, Star, MapPin, Clock, Store, X, Check, Image as ImageIcon, Upload, Trash2, Eye, EyeOff, Video, Package } from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
 import {
   AdminPageShell, AdminListItem, AdminStatCard,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
@@ -15,6 +16,13 @@ import {
   softDeleteFounderStore, uploadStoreLogo, uploadStoreCover,
   type FounderStore,
 } from "@/services/founder-stores.service";
+import {
+  getFounderStoreGallery, addFounderGalleryImage, updateFounderGalleryImage, deleteFounderGalleryImage,
+  getFounderStoreVideos, addFounderVideo, updateFounderVideo, deleteFounderVideo,
+  getFounderStoreProducts, addFounderProduct, updateFounderProduct, deleteFounderProduct,
+} from "@/services/founder-store-content.service";
+import { StoreGalleryImage, StoreVideo, Product } from "@/types/schema-03-core";
+import { supabase } from "@/lib/supabase";
 
 type StoreStatus = "all" | "draft" | "active" | "paused" | "suspended";
 type StoreCategory = "all" | "grocery" | "restaurant" | "pharmacy" | "bakery" | "butcher" | "electronics" | "household" | "other";
@@ -82,6 +90,18 @@ export default function FounderStoresScreen() {
   const [logoLoading, setLogoLoading] = useState(false);
   const [coverLoading, setCoverLoading] = useState(false);
 
+  const [contentTab, setContentTab] = useState<"gallery" | "videos" | "products">("gallery");
+  const [gallery, setGallery] = useState<StoreGalleryImage[]>([]);
+  const [videos, setVideos] = useState<StoreVideo[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [contentLoading, setContentLoading] = useState(false);
+  const [newProductName, setNewProductName] = useState("");
+  const [newProductPrice, setNewProductPrice] = useState("");
+  const [newVideoUrl, setNewVideoUrl] = useState("");
+  const [newVideoTitle, setNewVideoTitle] = useState("");
+  const [newVideoPlatform, setNewVideoPlatform] = useState("youtube");
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+
   const load = useCallback(
     async (q?: string, status?: StoreStatus, refresh = false) => {
       if (refresh) setRefreshing(true); else setLoading(true);
@@ -110,6 +130,30 @@ export default function FounderStoresScreen() {
     setLoading(false);
     setShowDetail(true);
   };
+
+  const loadContent = useCallback(async (storeId: string) => {
+    setContentLoading(true);
+    try {
+      const [g, v, p] = await Promise.all([
+        getFounderStoreGallery(storeId),
+        getFounderStoreVideos(storeId),
+        getFounderStoreProducts(storeId),
+      ]);
+      setGallery(g);
+      setVideos(v);
+      setProducts(p);
+    } catch {
+      // content load best-effort
+    } finally {
+      setContentLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedStore) {
+      loadContent(selectedStore.id);
+    }
+  }, [selectedStore, loadContent]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!selectedStore) return;
@@ -217,6 +261,96 @@ export default function FounderStoresScreen() {
     const { store: updated } = await getFounderStore(selectedStore.id);
     setSelectedStore(updated);
     load(search, statusFilter, true);
+  };
+
+  const handleGalleryUpload = async () => {
+    if (!selectedStore) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("خطأ", "يجب منح صلاحية الوصول للصور");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (result.canceled) return;
+    setUploadingGallery(true);
+    const asset = result.assets[0];
+    try {
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+      const fileExt = asset.uri.split(".").pop() || "jpg";
+      const fileName = `${selectedStore.id}-${Date.now()}.${fileExt}`;
+      const filePath = `store_gallery/${fileName}`;
+      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, blob, { contentType: blob.type });
+      if (uploadError) throw uploadError;
+      const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
+      const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl);
+      if (image) setGallery((g) => [...g, image]);
+      else if (err) Alert.alert("خطأ", err);
+    } catch (e: any) {
+      Alert.alert("خطأ", e.message);
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
+
+  const handleDeleteGallery = async (id: string) => {
+    const { error: err } = await deleteFounderGalleryImage(id);
+    if (err) Alert.alert("خطأ", err);
+    else setGallery((g) => g.filter((img) => img.id !== id));
+  };
+
+  const handleToggleGalleryVisibility = async (id: string, current: boolean) => {
+    const { image, error: err } = await updateFounderGalleryImage(id, { is_visible: !current });
+    if (image) setGallery((g) => g.map((img) => img.id === id ? image : img));
+    else if (err) Alert.alert("خطأ", err);
+  };
+
+  const handleAddVideo = async () => {
+    if (!selectedStore || !newVideoUrl.trim()) return;
+    const { video, error: err } = await addFounderVideo(selectedStore.id, newVideoUrl.trim(), newVideoTitle.trim() || null, newVideoPlatform);
+    if (video) {
+      setVideos((v) => [...v, video]);
+      setNewVideoUrl("");
+      setNewVideoTitle("");
+    } else if (err) {
+      Alert.alert("خطأ", err);
+    }
+  };
+
+  const handleDeleteVideo = async (id: string) => {
+    const { error: err } = await deleteFounderVideo(id);
+    if (err) Alert.alert("خطأ", err);
+    else setVideos((v) => v.filter((vid) => vid.id !== id));
+  };
+
+  const handleAddProduct = async () => {
+    if (!selectedStore || !newProductName.trim()) return;
+    const priceMinor = newProductPrice.trim() ? Math.round(parseFloat(newProductPrice) * 100) : 0;
+    const { product, error: err } = await addFounderProduct(selectedStore.id, {
+      name: newProductName.trim(),
+      price_minor: priceMinor,
+      is_demo: true,
+    });
+    if (product) {
+      setProducts((p) => [...p, product as Product]);
+      setNewProductName("");
+      setNewProductPrice("");
+    } else if (err) {
+      Alert.alert("خطأ", err);
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    const { error: err } = await deleteFounderProduct(id);
+    if (err) Alert.alert("خطأ", err);
+    else setProducts((p) => p.filter((prod) => prod.id !== id));
+  };
+
+  const handleToggleProductVisibility = async (id: string, currentStatus: string) => {
+    const next = currentStatus === "active" ? "archived" : "active";
+    const { product, error: err } = await updateFounderProduct(id, { status: next });
+    if (product) setProducts((p) => p.map((prod) => prod.id === id ? product as Product : prod));
+    else if (err) Alert.alert("خطأ", err);
   };
 
   if (loading && !refreshing && !showDetail) {
@@ -417,6 +551,111 @@ export default function FounderStoresScreen() {
                   <TouchableOpacity onPress={() => setShowDeleteConfirm(true)} style={[styles.actionBtn, { backgroundColor: colors.error + "18", borderColor: colors.error + "44", flex: 1 }]}>
                     <Text style={{ color: colors.error, fontSize: 13, fontWeight: "700", textAlign: "center" }}>حذف</Text>
                   </TouchableOpacity>
+                </View>
+
+                {/* Content Tabs: Gallery | Videos | Products */}
+                <View style={{ marginTop: 24, borderTopWidth: 1, borderTopColor: colors.borderSubtle, paddingTop: 16 }}>
+                  <View style={{ flexDirection: "row-reverse", gap: 8, marginBottom: 12 }}>
+                    {[
+                      { key: "gallery", label: "معرض", icon: <ImageIcon size={16} color={contentTab === "gallery" ? colors.primary : colors.textSecondary} /> },
+                      { key: "videos", label: "فيديوهات", icon: <Video size={16} color={contentTab === "videos" ? colors.primary : colors.textSecondary} /> },
+                      { key: "products", label: "منتجات", icon: <Package size={16} color={contentTab === "products" ? colors.primary : colors.textSecondary} /> },
+                    ].map((tab) => (
+                      <TouchableOpacity
+                        key={tab.key}
+                        onPress={() => setContentTab(tab.key as typeof contentTab)}
+                        style={[styles.tabBtn, { borderColor: contentTab === tab.key ? colors.primary : colors.borderSubtle, backgroundColor: contentTab === tab.key ? colors.primary + "18" : "transparent" }]}
+                      >
+                        <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 6 }}>
+                          {tab.icon}
+                          <Text style={{ color: contentTab === tab.key ? colors.primary : colors.textSecondary, fontSize: 13, fontWeight: "600" }}>{tab.label}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {contentLoading && <ActivityIndicator color={colors.primary} style={{ padding: 16 }} />}
+
+                  {/* Gallery Tab */}
+                  {contentTab === "gallery" && !contentLoading && (
+                    <View>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 8 }}>
+                        {gallery.map((img) => (
+                          <View key={img.id} style={{ position: "relative", width: 120, height: 120, borderRadius: 8, overflow: "hidden", borderWidth: 1, borderColor: colors.borderSubtle }}>
+                            <Image source={{ uri: img.image_url }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+                            <View style={{ position: "absolute", top: 4, right: 4, flexDirection: "row", gap: 4 }}>
+                              <TouchableOpacity onPress={() => handleToggleGalleryVisibility(img.id, img.is_visible)} style={{ backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 10, padding: 4 }}>
+                                {img.is_visible ? <EyeOff size={12} color="#fff" /> : <Eye size={12} color="#fff" />}
+                              </TouchableOpacity>
+                              <TouchableOpacity onPress={() => handleDeleteGallery(img.id)} style={{ backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 10, padding: 4 }}>
+                                <Trash2 size={12} color="#fff" />
+                              </TouchableOpacity>
+                            </View>
+                            {!img.is_visible && <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.5)", paddingVertical: 2, alignItems: "center" }}><Text style={{ color: "#fff", fontSize: 10 }}>مخفي</Text></View>}
+                          </View>
+                        ))}
+                        <TouchableOpacity onPress={handleGalleryUpload} style={{ width: 120, height: 120, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated, alignItems: "center", justifyContent: "center" }}>
+                          <Upload size={24} color={colors.textSecondary} />
+                          <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>إضافة صورة</Text>
+                        </TouchableOpacity>
+                      </ScrollView>
+                      {uploadingGallery && <ActivityIndicator color={colors.primary} style={{ padding: 8 }} />}
+                      {gallery.length === 0 && !uploadingGallery && <Text style={{ color: colors.textDisabled, textAlign: "center", padding: 16, fontSize: 13 }}>لا توجد صور في المعرض</Text>}
+                    </View>
+                  )}
+
+                  {/* Videos Tab */}
+                  {contentTab === "videos" && !contentLoading && (
+                    <View style={{ gap: 8 }}>
+                      {videos.map((vid) => (
+                        <View key={vid.id} style={{ flexDirection: "row-reverse", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{vid.title || vid.url}</Text>
+                            <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{vid.platform}</Text>
+                          </View>
+                          <TouchableOpacity onPress={() => handleDeleteVideo(vid.id)} style={{ padding: 6, borderRadius: 6, backgroundColor: colors.error + "18" }}>
+                            <Trash2 size={14} color={colors.error} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                      <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 8 }}>
+                        <TextInput value={newVideoUrl} onChangeText={setNewVideoUrl} placeholder="رابط الفيديو" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 2, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
+                        <TextInput value={newVideoTitle} onChangeText={setNewVideoTitle} placeholder="العنوان (اختياري)" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 1, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
+                        <TouchableOpacity onPress={handleAddVideo} style={[styles.saveBtn, { backgroundColor: colors.primary, paddingHorizontal: 12 }]}>
+                          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12 }}>إضافة</Text>
+                        </TouchableOpacity>
+                      </View>
+                      {videos.length === 0 && <Text style={{ color: colors.textDisabled, textAlign: "center", padding: 16, fontSize: 13 }}>لا توجد فيديوهات</Text>}
+                    </View>
+                  )}
+
+                  {/* Products Tab */}
+                  {contentTab === "products" && !contentLoading && (
+                    <View style={{ gap: 8 }}>
+                      {products.map((prod) => (
+                        <View key={prod.id} style={{ flexDirection: "row-reverse", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{prod.name}</Text>
+                            <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{(prod.price_minor / 100).toFixed(2)} د.ج · {prod.status === "active" ? "ظاهر" : "مخفي"}</Text>
+                          </View>
+                          <TouchableOpacity onPress={() => handleToggleProductVisibility(prod.id, prod.status)} style={{ padding: 6, borderRadius: 6, backgroundColor: colors.success + "18" }}>
+                            {prod.status === "active" ? <EyeOff size={14} color={colors.success} /> : <Eye size={14} color={colors.success} />}
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => handleDeleteProduct(prod.id)} style={{ padding: 6, borderRadius: 6, backgroundColor: colors.error + "18" }}>
+                            <Trash2 size={14} color={colors.error} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                      <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 8 }}>
+                        <TextInput value={newProductName} onChangeText={setNewProductName} placeholder="اسم المنتج" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 2, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
+                        <TextInput value={newProductPrice} onChangeText={setNewProductPrice} placeholder="السعر (د.ج)" placeholderTextColor={colors.textDisabled} keyboardType="decimal-pad" textAlign="right" style={[styles.modalInput, { flex: 1, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
+                        <TouchableOpacity onPress={handleAddProduct} style={[styles.saveBtn, { backgroundColor: colors.primary, paddingHorizontal: 12 }]}>
+                          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12 }}>إضافة</Text>
+                        </TouchableOpacity>
+                      </View>
+                      {products.length === 0 && <Text style={{ color: colors.textDisabled, textAlign: "center", padding: 16, fontSize: 13 }}>لا توجد منتجات</Text>}
+                    </View>
+                  )}
                 </View>
               </>
             )}

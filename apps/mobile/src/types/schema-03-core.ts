@@ -110,6 +110,7 @@ export interface Product {
   status: ProductStatus;
   created_at: string;
   updated_at: string;
+  is_demo?: boolean;
   stores?: {
     name: string;
   };
@@ -120,6 +121,28 @@ export interface ProductImage {
   product_id: string;
   url: string;
   sort_order: number;
+}
+
+export interface StoreGalleryImage {
+  id: string;
+  store_id: string;
+  image_url: string;
+  title: string | null;
+  is_visible: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoreVideo {
+  id: string;
+  store_id: string;
+  url: string;
+  title: string | null;
+  platform: string;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // --- Orders -------------------------------------------------------------------

@@ -88,17 +88,14 @@ const HomeScreen = () => {
             {searchQuery.length > 0 ? (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>نتائج البحث</Text>
-                {displayedStores.length > 0 ? (
-                  displayedStores.map((store) => (
-                    <StoreCard 
-                      key={store.id} 
-                      id={store.id}
-                      name={store.name}
-                      category={store.category}
-                      rating="4.5"
-                      onPress={() => handleStorePress(store.id)} 
-                    />
-                  ))
+                    {displayedStores.length > 0 ? (
+                      displayedStores.map((store) => (
+                        <StoreCard 
+                          key={store.id} 
+                          store={store}
+                          onPress={() => handleStorePress(store.id)} 
+                        />
+                      ))
                 ) : (
                   <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>لا توجد نتائج للبحث.</Text>
                 )}
@@ -124,10 +121,7 @@ const HomeScreen = () => {
                   {displayedStores.slice(0, 3).map((store) => (
                     <StoreCard 
                       key={store.id} 
-                      id={store.id}
-                      name={store.name}
-                      category={store.category}
-                      rating="4.5"
+                      store={store}
                       onPress={() => handleStorePress(store.id)} 
                     />
                   ))}
@@ -139,10 +133,7 @@ const HomeScreen = () => {
                   {displayedStores.slice(3, 6).map((store) => (
                     <StoreCard 
                       key={store.id} 
-                      id={store.id}
-                      name={store.name}
-                      category={store.category}
-                      rating="4.5"
+                      store={store}
                       onPress={() => handleStorePress(store.id)} 
                     />
                   ))}
@@ -154,10 +145,7 @@ const HomeScreen = () => {
                   {displayedStores.slice(6, 9).map((store) => (
                     <StoreCard 
                       key={store.id} 
-                      id={store.id}
-                      name={store.name}
-                      category={store.category}
-                      rating="4.5"
+                      store={store}
                       onPress={() => handleStorePress(store.id)} 
                     />
                   ))}
@@ -169,10 +157,7 @@ const HomeScreen = () => {
                   {displayedStores.slice(9, 12).map((store) => (
                     <StoreCard 
                       key={store.id} 
-                      id={store.id}
-                      name={store.name}
-                      category={store.category}
-                      rating="4.5"
+                      store={store}
                       onPress={() => handleStorePress(store.id)} 
                     />
                   ))}
