@@ -60,6 +60,7 @@ serve(async (req) => {
       vehicle_number,
       is_gold_member,
       business_name,
+      is_demo,
     } = body;
 
     if (!["merchant", "driver", "customer"].includes(role)) {
@@ -99,14 +100,13 @@ serve(async (req) => {
     if (dupPhone) return json({ error: "رقم الهاتف مستخدم مسبقاً" }, 409);
 
     // Create Auth user
-    const authPayload: Record<string, unknown> = {
-      email: normalEmail,
+    const createUserOptions: Record<string, unknown> = {
       email_confirm: true,
     };
-    if (hasPassword) authPayload.password = password as string;
+    if (hasPassword) createUserOptions.password = password as string;
 
     const { data: authData, error: authErr } =
-      await adminClient.auth.admin.createUser(authPayload);
+      await adminClient.auth.admin.createUser(normalEmail, createUserOptions);
     if (authErr || !authData?.user) {
       return json(
         { error: `خطأ في إنشاء حساب المصادقة: ${authErr?.message}` },
@@ -130,7 +130,10 @@ serve(async (req) => {
 
     const nameParts = full_name.trim().split(" ");
 
-    // Insert role-specific record (base columns only)
+    const demoFlag = Boolean(is_demo);
+    const demoStatus = demoFlag ? "active" : (status?.trim() || "pending_review");
+
+    // Insert role-specific record (base columns + demo flag)
     let insertErr: unknown = null;
     if (role === "merchant") {
       const { error } = await adminClient.from("merchants").insert({
@@ -141,6 +144,8 @@ serve(async (req) => {
         description: null,
         logo_url: null,
         is_active: true,
+        status: demoStatus,
+        is_demo: demoFlag,
       });
       insertErr = error;
     } else if (role === "driver") {
@@ -155,6 +160,8 @@ serve(async (req) => {
         is_available: false,
         rating: 0,
         review_count: 0,
+        status: demoStatus,
+        is_demo: demoFlag,
       });
       insertErr = error;
     } else {
@@ -164,6 +171,8 @@ serve(async (req) => {
         last_name: nameParts.slice(1).join(" ") || "",
         phone_number: normalPhone,
         email: normalEmail,
+        status: demoStatus,
+        is_demo: demoFlag,
       });
       insertErr = error;
     }

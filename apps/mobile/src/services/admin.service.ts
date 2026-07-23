@@ -275,6 +275,7 @@ export interface ProvisionAccountParams {
   vehicle_type?: string;
   vehicle_number?: string;
   is_gold_member?: boolean;
+  is_demo?: boolean;
 }
 
 export async function adminProvisionAccount(
