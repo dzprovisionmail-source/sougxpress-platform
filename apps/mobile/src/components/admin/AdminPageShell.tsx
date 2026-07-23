@@ -13,6 +13,7 @@ import {
   Image,
   Alert,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ArrowRight, Bell, CircleUserRound, LogOut } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -52,6 +53,7 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
   contentStyle,
 }) => {
   const { colors, tokens, theme } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   const isDark = theme === "dark";
 
@@ -79,6 +81,8 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
             backgroundColor: colors.bgSurface,
             borderBottomColor: colors.borderSubtle,
             paddingHorizontal: tokens.spacing.lg,
+            paddingTop: Math.max(insets.top, tokens.spacing.sm),
+            minHeight: 60 + Math.max(insets.top, tokens.spacing.sm) - (tokens.spacing.sm),
           },
         ]}
       >

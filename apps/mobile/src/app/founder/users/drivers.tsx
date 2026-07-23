@@ -130,7 +130,7 @@ export default function FounderDriversScreen() {
             renderItem={({ item }) => {
               return (
                 <AdminListItem
-                  title={item.full_name || item.email}
+                  title={item.full_name || "موصل بدون اسم"}
                   subtitle={`${item.phone}${item.vehicle_type ? ` · ${item.vehicle_type}` : ""}${item.is_demo ? " 🔒 تجريبي" : ""}`}
                   badge={item.deleted_at ? "محذوف" : STATUS_LABELS[item.status] ?? item.status}
                   badgeColor={item.deleted_at ? colors.textDisabled : STATUS_COLORS[item.status] ?? colors.primary}

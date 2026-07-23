@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Images, Camera, CirclePlus } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAppTheme } from '@/contexts/ThemeContext';
+import { addStoreGalleryImage, deleteStoreGalleryImage } from '@/services/store.service';
 
 interface StoreImageGalleryProps {
   storeId: string;
@@ -64,10 +65,25 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
 
       const { data: publicUrlData } = supabase.storage.from('store_images').getPublicUrl(filePath);
       onImageUpload(publicUrlData.publicUrl);
+      try {
+        await addStoreGalleryImage(storeId, publicUrlData.publicUrl);
+      } catch (dbErr: any) {
+        Alert.alert('خطأ', `تم رفع الصورة لكن فشل حفظها في المعرض: ${dbErr.message}`);
+      }
 
     } catch (error: any) {
       Alert.alert('Erreur d\'upload', error.message);
     }
+  };
+
+  const deleteStoreGalleryImageByUrl = async (currentStoreId: string, imageUrl: string) => {
+    const { data } = await supabase
+      .from('store_gallery')
+      .select('id')
+      .eq('store_id', currentStoreId)
+      .eq('image_url', imageUrl)
+      .maybeSingle();
+    if (data?.id) await deleteStoreGalleryImage(data.id);
   };
 
   const handleDeleteImage = async (imageUrl: string) => {
@@ -89,6 +105,7 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
               if (error) {
                 throw error;
               }
+              await deleteStoreGalleryImageByUrl(storeId, imageUrl);
               onImageDelete(imageUrl);
             } catch (error: any) {
               Alert.alert('Erreur de suppression', error.message);

@@ -128,13 +128,13 @@ export default function FounderMerchantsScreen() {
             }
             ListEmptyComponent={<AdminEmptyState message="لا يوجد تجار" />}
             renderItem={({ item }) => (
-              <AdminListItem
-                title={item.business_name}
-                subtitle={item.phone}
-                badge={item.deleted_at ? "محذوف" : STATUS_LABELS[item.status] ?? item.status}
-                badgeColor={item.deleted_at ? colors.textDisabled : STATUS_COLORS[item.status] ?? colors.primary}
-                onPress={() => router.push(`/founder/users/merchant-detail?id=${item.id}` as never)}
-              />
+                 <AdminListItem
+                  title={item.business_name || "تاجر بدون اسم"}
+                  subtitle={item.phone}
+                  badge={item.deleted_at ? "محذوف" : STATUS_LABELS[item.status] ?? item.status}
+                  badgeColor={item.deleted_at ? colors.textDisabled : STATUS_COLORS[item.status] ?? colors.primary}
+                  onPress={() => router.push(`/founder/users/merchant-detail?id=${item.id}` as never)}
+                />
             )}
           />
         )}

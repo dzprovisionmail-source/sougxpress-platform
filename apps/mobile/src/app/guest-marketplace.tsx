@@ -184,8 +184,8 @@ export default function GuestMarketplaceScreen() {
   const renderHeroSlide = ({ item }: { item: HeroSlide }) => (
     <TouchableOpacity 
       style={[styles.heroSlide, { backgroundColor: colors.bgElevated }]}
-      activeOpacity={0.8}
-      onPress={() => router.push("/store-details")}
+      activeOpacity={1}
+      onPress={() => {}}
     >
       {/* Cover Image with Branded Placeholder */}
       <View style={styles.heroImageContainer}>
@@ -355,7 +355,7 @@ export default function GuestMarketplaceScreen() {
                 key={store.id}
                 {...store}
                 theme={theme}
-                onPress={() => router.push("/store-details")}
+                onPress={() => {}}
               />
             ))}
           </ScrollView>
@@ -377,7 +377,7 @@ export default function GuestMarketplaceScreen() {
                 key={store.id}
                 {...store}
                 theme={theme}
-                onPress={() => router.push("/store-details")}
+                onPress={() => {}}
               />
             ))}
           </ScrollView>

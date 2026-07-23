@@ -38,8 +38,8 @@ interface HeroSlide {
   title: string;
   description: string;
   buttonLabel: string;
-  storeId: string;
-  storeName: string;
+  storeId?: string;
+  storeName?: string;
 }
 
 interface StoreRow {
@@ -50,15 +50,13 @@ interface StoreRow {
   status: string;
 }
 
-const HERO_SLIDES: HeroSlide[] = [
+const HERO_SLIDES_TEMPLATES: Omit<HeroSlide, "storeId" | "storeName">[] = [
   {
     id: "1",
     image: "",
     title: "عروض الأسبوع",
     description: "خصومات حصرية على الخضروات والفواكه الطازجة",
     buttonLabel: "تسوق الآن",
-    storeId: "5",
-    storeName: "سوبر ماركت الوفاء",
   },
   {
     id: "2",
@@ -66,8 +64,6 @@ const HERO_SLIDES: HeroSlide[] = [
     title: "متجر جديد في السوق",
     description: "مخبزة السعادة تفتح أبوابها — خبز طازج يومياً",
     buttonLabel: "اكتشف المتجر",
-    storeId: "2",
-    storeName: "مخبزة السعادة",
   },
   {
     id: "3",
@@ -75,10 +71,10 @@ const HERO_SLIDES: HeroSlide[] = [
     title: "توصيل مجاني",
     description: "لأول طلب لك — يوصلك لبابك بدون رسوم",
     buttonLabel: "اطلب الآن",
-    storeId: "1",
-    storeName: "واحة عين صفراء",
   },
 ];
+
+const HERO_STORE_TITLES = ["سوبر ماركت الوفاء", "مخبزة السعادة", "واحة عين صفراء"];
 
 const CATEGORIES = [
   { id: "all", name: "الكل", icon: "apps-outline" as const },
@@ -100,6 +96,7 @@ export default function CustomerHomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
+  const [heroStores, setHeroStores] = useState<StoreRow[]>([]);
 
   const colors = getThemeColors(theme);
   const isRTL = I18nManager.isRTL;
@@ -120,7 +117,9 @@ export default function CustomerHomeScreen() {
         .limit(20);
 
       if (fetchError) throw fetchError;
-      setStores((data as StoreRow[]) || []);
+      const stores = (data as StoreRow[]) || [];
+      setStores(stores);
+      setHeroStores(stores.slice(0, 3));
     } catch (err) {
       console.error("Error fetching stores:", err);
       setError("حدث خطأ أثناء تحميل المتاجر");
@@ -160,12 +159,19 @@ export default function CustomerHomeScreen() {
     setActiveSlide(slideIndex);
   };
 
-  const renderHeroSlide = ({ item }: { item: HeroSlide }) => (
-    <TouchableOpacity
-      style={[styles.heroSlide, { backgroundColor: colors.bgElevated }]}
-      activeOpacity={0.8}
-      onPress={() => router.push({ pathname: "/store-details", params: { id: item.storeId } })}
-    >
+  const renderHeroSlide = ({ item, index }: { item: HeroSlide; index: number }) => {
+    const heroStore = heroStores[index];
+    const hasStore = !!heroStore;
+    return (
+      <TouchableOpacity
+        style={[styles.heroSlide, { backgroundColor: colors.bgElevated }]}
+        activeOpacity={hasStore ? 0.8 : 1}
+        onPress={() => {
+          if (hasStore) {
+            router.push({ pathname: "/store-details", params: { id: heroStore.id } });
+          }
+        }}
+      >
       <View style={styles.heroImageContainer}>
         {item.image ? (
           <Image
@@ -231,7 +237,7 @@ export default function CustomerHomeScreen() {
           align="right"
           style={styles.heroStoreLabel}
         >
-          {item.storeName}
+          {heroStore ? heroStore.name : item.storeName || HERO_STORE_TITLES[index] || ""}
         </Typography>
       </View>
     </TouchableOpacity>
@@ -313,7 +319,7 @@ export default function CustomerHomeScreen() {
         <View style={styles.section}>
           <FlatList
             ref={heroScrollRef}
-            data={HERO_SLIDES}
+            data={HERO_SLIDES_TEMPLATES}
             renderItem={renderHeroSlide}
             keyExtractor={(item) => item.id}
             horizontal
@@ -325,7 +331,7 @@ export default function CustomerHomeScreen() {
             bounces={false}
           />
           <View style={[styles.dotsContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            {HERO_SLIDES.map((_, index) => (
+            {HERO_SLIDES_TEMPLATES.map((_, index) => (
               <TouchableOpacity
                 key={index}
                 style={[
