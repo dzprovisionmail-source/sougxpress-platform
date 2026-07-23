@@ -4,13 +4,15 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  SafeAreaView,
   ActivityIndicator,
   TouchableOpacity,
   Image,
   Dimensions,
+  Linking,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { ShoppingCart, Clock3, MapPin, Star, Tag } from "lucide-react-native";
+import { ShoppingCart, Clock3, MapPin, Star, Tag, Play } from "lucide-react-native";
 
 import { ProductCard } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -89,7 +91,7 @@ export default function StoreDetailsScreen() {
       : products.filter((p) => (p.category || "عام") === selectedCategory);
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.bgBase }]}>
       <Stack.Screen
         options={{
           title: store.name,
@@ -190,7 +192,7 @@ export default function StoreDetailsScreen() {
         </View>
 
         {/* ── Gallery ── */}
-        {gallery.filter((g) => g.is_visible).length > 0 && (
+        {gallery.filter((g) => g.is_visible).length > 0 ? (
           <View style={{ marginTop: tokens.spacing.lg }}>
             <SectionHeading label="معرض الصور" colors={colors} tokens={tokens} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: tokens.spacing.lg, gap: tokens.spacing.sm }}>
@@ -199,20 +201,39 @@ export default function StoreDetailsScreen() {
               ))}
             </ScrollView>
           </View>
+        ) : (
+          <View style={{ marginTop: tokens.spacing.lg, paddingHorizontal: tokens.spacing.lg }}>
+            <Text style={{ color: colors.textDisabled, textAlign: "center", fontSize: 13 }}>لا توجد صور في المعرض</Text>
+          </View>
         )}
 
         {/* ── Videos ── */}
-        {videos.filter((v) => v.is_visible).length > 0 && (
+        {videos.filter((v) => v.is_visible).length > 0 ? (
           <View style={{ marginTop: tokens.spacing.lg }}>
             <SectionHeading label="فيديوهات" colors={colors} tokens={tokens} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: tokens.spacing.lg, gap: tokens.spacing.sm }}>
               {videos.filter((v) => v.is_visible).map((vid) => (
-                <View key={vid.id} style={[styles.videoCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, borderRadius: tokens.radius.sm, padding: tokens.spacing.sm, width: 200 }]}>
-                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{vid.title || vid.url}</Text>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right", marginTop: 4 }}>{vid.platform}</Text>
-                </View>
+                <TouchableOpacity
+                  key={vid.id}
+                  style={[styles.videoCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, borderRadius: tokens.radius.sm, padding: tokens.spacing.sm, width: 200 }]}
+                  onPress={() => {
+                    Linking.openURL(vid.url).catch(() => {
+                      // URL could not be opened
+                    });
+                  }}
+                >
+                  <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                    <Play size={14} color={colors.primary} fill={colors.primary} />
+                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right", flex: 1 }}>{vid.title || vid.url}</Text>
+                  </View>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{vid.platform}</Text>
+                </TouchableOpacity>
               ))}
             </ScrollView>
+          </View>
+        ) : (
+          <View style={{ marginTop: tokens.spacing.lg, paddingHorizontal: tokens.spacing.lg }}>
+            <Text style={{ color: colors.textDisabled, textAlign: "center", fontSize: 13 }}>لا توجد فيديوهات</Text>
           </View>
         )}
 
@@ -351,7 +372,7 @@ export default function StoreDetailsScreen() {
           )}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

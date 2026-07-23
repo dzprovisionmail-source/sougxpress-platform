@@ -73,13 +73,13 @@ const HomeScreen = () => {
         {loading && (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement...</Text>
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>جاري التحميل...</Text>
           </View>
         )}
 
         {error && (
           <View style={styles.centered}>
-            <Text style={[styles.errorText, { color: colors.error }]}>Erreur: {error}</Text>
+            <Text style={[styles.errorText, { color: colors.error }]}>{String(error)}</Text>
           </View>
         )}
 
@@ -88,20 +88,21 @@ const HomeScreen = () => {
             {searchQuery.length > 0 ? (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>نتائج البحث</Text>
-                    {displayedStores.length > 0 ? (
-                      displayedStores.map((store) => (
-                        <StoreCard 
-                          key={store.id} 
-                          id={store.id}
-                          name={store.name}
-                          category={store.category}
-                          rating="4.5"
-                          coverImage={store.cover_url}
-                          isOpen={store.is_open}
-                          isFeatured={(store as any).is_featured}
-                          onPress={() => handleStorePress(store.id)} 
-                        />
-                      ))
+                {displayedStores.length > 0 ? (
+                  displayedStores.map((store) => (
+                    <StoreCard
+                      key={store.id}
+                      id={store.id}
+                      name={store.name}
+                      category={store.category}
+                      rating="4.5"
+                      coverImage={store.cover_url}
+                      isOpen={store.is_open}
+                      isFeatured={(store as any).is_featured}
+                      address={(store as any).address_line1 ?? (store as any).city ?? ""}
+                      onPress={() => handleStorePress(store.id)}
+                    />
+                  ))
                 ) : (
                   <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>لا توجد نتائج للبحث.</Text>
                 )}
@@ -125,8 +126,8 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>المتاجر المميزة</Text>
                   {displayedStores.slice(0, 3).map((store) => (
-                    <StoreCard 
-                      key={store.id} 
+                    <StoreCard
+                      key={store.id}
                       id={store.id}
                       name={store.name}
                       category={store.category}
@@ -134,7 +135,8 @@ const HomeScreen = () => {
                       coverImage={store.cover_url}
                       isOpen={store.is_open}
                       isFeatured={(store as any).is_featured}
-                      onPress={() => handleStorePress(store.id)} 
+                      address={(store as any).address_line1 ?? (store as any).city ?? ""}
+                      onPress={() => handleStorePress(store.id)}
                     />
                   ))}
                 </View>
@@ -143,8 +145,8 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر جديدة</Text>
                   {displayedStores.slice(3, 6).map((store) => (
-                    <StoreCard 
-                      key={store.id} 
+                    <StoreCard
+                      key={store.id}
                       id={store.id}
                       name={store.name}
                       category={store.category}
@@ -152,7 +154,8 @@ const HomeScreen = () => {
                       coverImage={store.cover_url}
                       isOpen={store.is_open}
                       isFeatured={(store as any).is_featured}
-                      onPress={() => handleStorePress(store.id)} 
+                      address={(store as any).address_line1 ?? (store as any).city ?? ""}
+                      onPress={() => handleStorePress(store.id)}
                     />
                   ))}
                 </View>
@@ -161,8 +164,8 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر قريبة</Text>
                   {displayedStores.slice(6, 9).map((store) => (
-                    <StoreCard 
-                      key={store.id} 
+                    <StoreCard
+                      key={store.id}
                       id={store.id}
                       name={store.name}
                       category={store.category}
@@ -170,7 +173,8 @@ const HomeScreen = () => {
                       coverImage={store.cover_url}
                       isOpen={store.is_open}
                       isFeatured={(store as any).is_featured}
-                      onPress={() => handleStorePress(store.id)} 
+                      address={(store as any).address_line1 ?? (store as any).city ?? ""}
+                      onPress={() => handleStorePress(store.id)}
                     />
                   ))}
                 </View>
@@ -179,8 +183,8 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>عروض خاصة</Text>
                   {displayedStores.slice(9, 12).map((store) => (
-                    <StoreCard 
-                      key={store.id} 
+                    <StoreCard
+                      key={store.id}
                       id={store.id}
                       name={store.name}
                       category={store.category}
@@ -188,7 +192,8 @@ const HomeScreen = () => {
                       coverImage={store.cover_url}
                       isOpen={store.is_open}
                       isFeatured={(store as any).is_featured}
-                      onPress={() => handleStorePress(store.id)} 
+                      address={(store as any).address_line1 ?? (store as any).city ?? ""}
+                      onPress={() => handleStorePress(store.id)}
                     />
                   ))}
                 </View>

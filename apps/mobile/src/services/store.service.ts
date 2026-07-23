@@ -163,6 +163,19 @@ export const getStoreGalleryImages = async (storeId: string): Promise<string[]> 
 };
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+export const detectVideoPlatform = (url: string): string => {
+  const lower = url.toLowerCase();
+  if (lower.includes("facebook.com") || lower.includes("fb.watch")) return "facebook";
+  if (lower.includes("tiktok.com")) return "tiktok";
+  if (lower.includes("instagram.com") || lower.includes("instagr.am")) return "instagram";
+  if (lower.includes("youtube.com") || lower.includes("youtu.be")) return "youtube";
+  return "youtube";
+};
+
+// ============================================================================
 // Store Gallery DB-backed CRUD
 // ============================================================================
 
@@ -219,10 +232,11 @@ export const getStoreVideos = async (storeId: string): Promise<StoreVideo[]> => 
   return data as StoreVideo[];
 };
 
-export const addStoreVideo = async (storeId: string, url: string, title?: string | null, platform: string = "youtube"): Promise<StoreVideo> => {
+export const addStoreVideo = async (storeId: string, url: string, title?: string | null, platform?: string): Promise<StoreVideo> => {
+  const detectedPlatform = platform ?? detectVideoPlatform(url);
   const { data, error } = await supabase
     .from("store_videos")
-    .insert({ store_id: storeId, url, title: title ?? null, platform })
+    .insert({ store_id: storeId, url, title: title ?? null, platform: detectedPlatform })
     .select()
     .single();
   if (error) throw new Error(error.message || "فشل إضافة الفيديو");

@@ -25,8 +25,21 @@ export async function createDemoStore(
   if (!trimmedName) return { storeId: null, merchantId: null, error: "اسم المتجر مطلوب" };
   if (!input.category) return { storeId: null, merchantId: null, error: "التصنيف مطلوب" };
 
-  const merchantName = `متجر تجريبي ${trimmedName}`;
-  const merchantPhone = `demo-${Date.now()}@local`;
+  const arabicFirstNames = [
+    "أحمد", "محمد", "عبد الله", "يوسف", "عمر", "خالد", "سعيد", "علي", "حسن", "إبراهيم",
+    "فاطمة", "مريم", "خديجة", "عائشة", "زينب", "رقية", "سارة", "ليلى", "نور", "هدى"
+  ];
+  const arabicLastNames = [
+    "بن أحمد", "بن محمد", "العربي", "المصري", "الجزائري", "الهاشمي", "الرملي", "السعدي",
+    "التلمساني", "الشنقيطي", "البلاطي", "الوهراني", "القسنطيني", "البجاوي", "الميزابي"
+  ];
+  const randomArabicName = () => {
+    const first = arabicFirstNames[Math.floor(Math.random() * arabicFirstNames.length)];
+    const last = arabicLastNames[Math.floor(Math.random() * arabicLastNames.length)];
+    return `${first} ${last}`;
+  };
+  const merchantName = randomArabicName();
+  const merchantPhone = `0${Math.floor(2000000000 + Math.random() * 8000000000)}`;
 
   const { data: merchantData, error: merchantErr } =
     await adminProvisionAccount({

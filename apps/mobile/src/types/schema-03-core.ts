@@ -84,11 +84,25 @@ export interface Store {
   is_open?: boolean;
   phone_number?: string;
   address_line1?: string;
+  address_line2?: string;
   city?: string;
+  state_province?: string;
+  postal_code?: string;
+  country?: string;
   logo_url?: string;
   cover_url?: string;
   latitude?: number | null;
   longitude?: number | null;
+  opening_hours?: unknown | null;
+  rating?: number | null;
+  review_count?: number | null;
+  is_new?: boolean;
+  is_featured?: boolean;
+  show_on_home?: boolean;
+  is_demo?: boolean;
+  created_by?: string | null;
+  deleted_at?: string | null;
+  admin_notes?: string | null;
   created_at: string;
   updated_at: string;
 }

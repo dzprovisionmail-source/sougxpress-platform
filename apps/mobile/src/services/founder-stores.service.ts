@@ -98,7 +98,7 @@ export async function softDeleteFounderStore(id: string): Promise<{ error: strin
   const now = new Date().toISOString();
   const { error } = await supabase
     .from("stores")
-    .update({ status: "suspended", updated_at: now })
+    .update({ status: "suspended", deleted_at: now, updated_at: now })
     .eq("id", id);
 
   return { error: error?.message ?? null };

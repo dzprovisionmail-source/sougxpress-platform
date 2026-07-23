@@ -55,7 +55,7 @@ export default function FounderAddDemoCustomerScreen() {
     const { error: err } = await adminProvisionAccount({
       role: "customer",
       full_name: fullName.trim(),
-      phone: `demo-${Date.now()}@local`,
+      phone: `0${Math.floor(500000000 + Math.random() * 499999999)}`,
       address: address.trim() || undefined,
       zone_id: selectedZone?.id,
       is_gold_member: isGoldMember,

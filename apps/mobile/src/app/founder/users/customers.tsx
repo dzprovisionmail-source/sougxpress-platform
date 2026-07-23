@@ -159,7 +159,7 @@ export default function FounderCustomersScreen() {
               return (
                 <AdminListItem
                   title={item.full_name || "زبون بدون اسم"}
-                  subtitle={`${item.phone}${item.is_gold_member ? " 🥇" : ""}${item.is_demo ? " 🔒 تجريبي" : ""}`}
+                  subtitle={`${[item.neighborhood, item.address].filter(Boolean).join('، ') || item.phone || ''}${item.is_gold_member ? " 🥇" : ""}${item.is_demo ? " 🔒 تجريبي" : ""}`}
                   badge={
                     item.deleted_at
                       ? "محذوف"

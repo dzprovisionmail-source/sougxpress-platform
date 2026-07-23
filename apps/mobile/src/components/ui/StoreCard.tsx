@@ -24,6 +24,7 @@ interface StoreCardProps {
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   theme?: ThemeType;
+  address?: string;
 }
 
 export const StoreCard: React.FC<StoreCardProps> = ({
@@ -36,7 +37,8 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   isFeatured = false,
   onPress,
   style,
-  theme = DEFAULT_THEME
+  theme = DEFAULT_THEME,
+  address,
 }) => {
   const colors = getThemeColors(theme);
   const isRTL = I18nManager.isRTL;
@@ -116,6 +118,26 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         >
           {category}
         </Typography>
+        
+        {address ? (
+          <View style={[styles.addressRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            <Ionicons 
+              name="location-outline" 
+              size={12} 
+              color={colors.textSecondary}
+              style={{ marginRight: isRTL ? 0 : 4, marginLeft: isRTL ? 4 : 0 }}
+            />
+            <Typography 
+              variant="caption" 
+              color="secondary"
+              align="right"
+              numberOfLines={1}
+              style={{ color: colors.textSecondary, fontSize: 11 }}
+            >
+              {address}
+            </Typography>
+          </View>
+        ) : null}
         
         <View style={[styles.footer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <View style={[styles.ratingContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
@@ -199,6 +221,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   category: {
+    marginBottom: 4,
+  },
+  addressRow: {
+    alignItems: "center",
+    gap: 4,
     marginBottom: 8,
   },
   footer: {

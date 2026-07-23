@@ -48,6 +48,15 @@ interface StoreRow {
   category: string;
   rating?: string;
   status: string;
+  cover_url?: string;
+  logo_url?: string;
+  description?: string;
+  address_line1?: string;
+  city?: string;
+  is_open?: boolean;
+  is_featured?: boolean;
+  is_new?: boolean;
+  phone_number?: string;
 }
 
 const HERO_SLIDES_TEMPLATES: Omit<HeroSlide, "storeId" | "storeName">[] = [
@@ -111,7 +120,7 @@ export default function CustomerHomeScreen() {
       setError(null);
       const { data, error: fetchError } = await supabase
         .from("stores")
-        .select("id, name, category, rating, status")
+        .select("id, name, category, rating, status, cover_url, logo_url, description, address_line1, city, is_open, is_featured, is_new, phone_number")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(20);
@@ -252,7 +261,10 @@ export default function CustomerHomeScreen() {
         name={store.name}
         category={store.category}
         rating={store.rating?.toString() || "0.0"}
-        isOpen={store.status === "active"}
+        coverImage={store.cover_url}
+        isOpen={store.is_open ?? store.status === "active"}
+        isFeatured={store.is_featured}
+        address={store.address_line1 ?? store.city ?? ""}
         theme={theme}
         onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
       />

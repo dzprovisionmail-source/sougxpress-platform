@@ -34,7 +34,7 @@ export const createProduct = async (input: {
       description: input.description ?? null,
       price_minor: input.price_minor,
       category: input.category ?? "عام",
-      stock_quantity: input.stock_quantity ?? null,
+      stock_quantity: input.stock_quantity ?? 0,
       image_url: input.image_url ?? null,
       status: "active",
       is_demo: input.is_demo ?? false,
@@ -43,7 +43,7 @@ export const createProduct = async (input: {
     .single();
 
   if (error) {
-    console.error("Error creating product:", error);
+    console.error("Error creating product [code:", error.code, "]:", error.message, error.details, error.hint);
     return null;
   }
   return data as Product;

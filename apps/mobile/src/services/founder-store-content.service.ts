@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { FounderStore } from "./founder-stores.service";
-import { StoreGalleryImage, StoreVideo, ProductStatus } from "@/types/schema-03-core";
+import { StoreGalleryImage, StoreVideo, Product, ProductStatus } from "@/types/schema-03-core";
 import {
   getStoreGallery,
   addStoreGalleryImage,
@@ -72,12 +72,13 @@ export async function addFounderVideo(
   storeId: string,
   url: string,
   title?: string | null,
-  platform: string = "youtube"
+  platform?: string
 ): Promise<{ video: StoreVideo | null; error: string | null }> {
   try {
     const video = await addStoreVideo(storeId, url, title, platform);
     return { video, error: null };
   } catch (e: any) {
+    console.error("addFounderVideo error:", e);
     return { video: null, error: e.message || "فشل إضافة الفيديو" };
   }
 }
@@ -116,15 +117,21 @@ export async function addFounderProduct(storeId: string, input: {
   price_minor?: number;
   image_url?: string | null;
   is_demo?: boolean;
-}): Promise<{ product: unknown | null; error: string | null }> {
+}): Promise<{ product: Product | null; error: string | null }> {
   const product = await createProduct({
     store_id: storeId,
     name: input.name,
     price_minor: input.price_minor ?? 0,
     image_url: input.image_url ?? null,
     is_demo: input.is_demo ?? true,
+    stock_quantity: 0,
+    category: "عام",
   });
-  return { product, error: product ? null : "فشل إضافة المنتج" };
+  if (!product) {
+    console.error("addFounderProduct: createProduct returned null");
+    return { product: null, error: "فشل إضافة المنتج — تحقق من البيانات المدخلة" };
+  }
+  return { product, error: null };
 }
 
 export async function updateFounderProduct(
