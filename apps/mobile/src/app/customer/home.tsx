@@ -241,7 +241,8 @@ export default function CustomerHomeScreen() {
         </Typography>
       </View>
     </TouchableOpacity>
-  );
+    );
+  };
 
   const renderStoreItem = useCallback(
     (store: StoreRow) => (
