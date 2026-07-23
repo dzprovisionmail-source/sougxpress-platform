@@ -1,6 +1,12 @@
 -- Migration: 202607190000500_payouts_schema_fix.sql
 -- Purpose: Align payouts table with documented v2 schema.
 
+-- Drop dependent policies before dropping columns
+DROP POLICY IF EXISTS rls_select_payouts ON public.payouts;
+DROP POLICY IF EXISTS rls_insert_payouts ON public.payouts;
+DROP POLICY IF EXISTS rls_update_payouts ON public.payouts;
+DROP POLICY IF EXISTS rls_delete_payouts ON public.payouts;
+
 -- Add missing columns
 ALTER TABLE public.payouts ADD COLUMN IF NOT EXISTS recipient_type TEXT;
 ALTER TABLE public.payouts ADD COLUMN IF NOT EXISTS recipient_id UUID;
