@@ -35,8 +35,8 @@ const StoreCard: React.FC<StoreCardProps> = ({ store, onPress }) => {
             <Text style={[styles.statusText, { color: colors.success }]}>{store.status === 'active' ? '🟢 مفتوح' : '🔴 مغلق'}</Text>
           </View>
           <View style={styles.badgesRow}>
-            {store.is_featured && <Text style={[styles.badgeText, { color: colors.warning }]}>⭐ مميز</Text>}
-            {store.is_new && <Text style={[styles.badgeText, { color: colors.primary }]}>جديد</Text>}
+            {(store as any).is_featured && <Text style={[styles.badgeText, { color: colors.warning }]}>⭐ مميز</Text>}
+            {(store as any).is_new && <Text style={[styles.badgeText, { color: colors.primary }]}>جديد</Text>}
           </View>
           <View style={styles.locationContainer}>
             <MapPin size={14} color={colors.textSecondary} />

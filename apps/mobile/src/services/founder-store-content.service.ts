@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { FounderStore } from "./founder-stores.service";
-import { StoreGalleryImage } from "@/types/schema-03-core";
+import { StoreGalleryImage, StoreVideo, ProductStatus } from "@/types/schema-03-core";
 import {
   getStoreGallery,
   addStoreGalleryImage,
@@ -52,8 +52,8 @@ export async function deleteFounderGalleryImage(id: string): Promise<{ error: st
 // Videos
 // ============================================================================
 
-export async function getFounderStoreVideos(storeId: string): Promise<StoreGalleryImage[]> {
-  return getStoreVideos(storeId) as Promise<StoreGalleryImage[]>;
+export async function getFounderStoreVideos(storeId: string): Promise<StoreVideo[]> {
+  return getStoreVideos(storeId);
 }
 
 export async function addFounderVideo(
@@ -61,7 +61,7 @@ export async function addFounderVideo(
   url: string,
   title?: string | null,
   platform: string = "youtube"
-): Promise<{ video: StoreGalleryImage | null; error: string | null }> {
+): Promise<{ video: StoreVideo | null; error: string | null }> {
   const video = await addStoreVideo(storeId, url, title, platform);
   return { video, error: video ? null : "فشل إضافة الفيديو" };
 }
@@ -69,7 +69,7 @@ export async function addFounderVideo(
 export async function updateFounderVideo(
   id: string,
   data: { title?: string | null; url?: string; platform?: string; is_visible?: boolean }
-): Promise<{ video: StoreGalleryImage | null; error: string | null }> {
+): Promise<{ video: StoreVideo | null; error: string | null }> {
   const video = await updateStoreVideo(id, data);
   return { video, error: video ? null : "فشل تحديث الفيديو" };
 }

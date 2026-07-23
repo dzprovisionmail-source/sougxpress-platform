@@ -145,6 +145,8 @@ export interface StoreVideo {
   updated_at: string;
 }
 
+export type StoreContentItem = StoreGalleryImage | StoreVideo;
+
 // --- Orders -------------------------------------------------------------------
 
 export type OrderStatus =

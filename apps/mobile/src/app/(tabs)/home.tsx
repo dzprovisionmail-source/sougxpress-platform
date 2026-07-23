@@ -92,7 +92,13 @@ const HomeScreen = () => {
                       displayedStores.map((store) => (
                         <StoreCard 
                           key={store.id} 
-                          store={store}
+                          id={store.id}
+                          name={store.name}
+                          category={store.category}
+                          rating="4.5"
+                          coverImage={store.cover_url}
+                          isOpen={store.is_open}
+                          isFeatured={(store as any).is_featured}
                           onPress={() => handleStorePress(store.id)} 
                         />
                       ))
@@ -121,7 +127,13 @@ const HomeScreen = () => {
                   {displayedStores.slice(0, 3).map((store) => (
                     <StoreCard 
                       key={store.id} 
-                      store={store}
+                      id={store.id}
+                      name={store.name}
+                      category={store.category}
+                      rating="4.5"
+                      coverImage={store.cover_url}
+                      isOpen={store.is_open}
+                      isFeatured={(store as any).is_featured}
                       onPress={() => handleStorePress(store.id)} 
                     />
                   ))}
@@ -133,7 +145,13 @@ const HomeScreen = () => {
                   {displayedStores.slice(3, 6).map((store) => (
                     <StoreCard 
                       key={store.id} 
-                      store={store}
+                      id={store.id}
+                      name={store.name}
+                      category={store.category}
+                      rating="4.5"
+                      coverImage={store.cover_url}
+                      isOpen={store.is_open}
+                      isFeatured={(store as any).is_featured}
                       onPress={() => handleStorePress(store.id)} 
                     />
                   ))}
@@ -145,7 +163,13 @@ const HomeScreen = () => {
                   {displayedStores.slice(6, 9).map((store) => (
                     <StoreCard 
                       key={store.id} 
-                      store={store}
+                      id={store.id}
+                      name={store.name}
+                      category={store.category}
+                      rating="4.5"
+                      coverImage={store.cover_url}
+                      isOpen={store.is_open}
+                      isFeatured={(store as any).is_featured}
                       onPress={() => handleStorePress(store.id)} 
                     />
                   ))}
@@ -157,7 +181,13 @@ const HomeScreen = () => {
                   {displayedStores.slice(9, 12).map((store) => (
                     <StoreCard 
                       key={store.id} 
-                      store={store}
+                      id={store.id}
+                      name={store.name}
+                      category={store.category}
+                      rating="4.5"
+                      coverImage={store.cover_url}
+                      isOpen={store.is_open}
+                      isFeatured={(store as any).is_featured}
                       onPress={() => handleStorePress(store.id)} 
                     />
                   ))}
