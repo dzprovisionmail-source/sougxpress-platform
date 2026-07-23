@@ -64,6 +64,9 @@ export default function FounderLayout() {
       <Stack.Screen name="add-merchant" />
       <Stack.Screen name="add-driver" />
       <Stack.Screen name="add-store" />
+      <Stack.Screen name="add-demo-store" />
+      <Stack.Screen name="add-demo-driver" />
+      <Stack.Screen name="add-demo-customer" />
     </Stack>
   );
 }

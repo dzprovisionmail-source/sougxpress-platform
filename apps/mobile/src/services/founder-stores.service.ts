@@ -23,6 +23,10 @@ export interface FounderStore {
   show_on_home: boolean;
   created_at: string;
   updated_at: string;
+  is_demo: boolean;
+  created_by: string | null;
+  deleted_at: string | null;
+  admin_notes: string | null;
   merchant?: {
     business_name: string;
     owner_full_name: string;

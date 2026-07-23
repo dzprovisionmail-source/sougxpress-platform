@@ -100,13 +100,14 @@ serve(async (req) => {
     if (dupPhone) return json({ error: "رقم الهاتف مستخدم مسبقاً" }, 409);
 
     // Create Auth user
-    const createUserOptions: Record<string, unknown> = {
+    const createUserAttributes: Record<string, unknown> = {
+      email: normalEmail,
       email_confirm: true,
     };
-    if (hasPassword) createUserOptions.password = password as string;
+    if (hasPassword) createUserAttributes.password = password as string;
 
     const { data: authData, error: authErr } =
-      await adminClient.auth.admin.createUser(normalEmail, createUserOptions);
+      await adminClient.auth.admin.createUser(createUserAttributes);
     if (authErr || !authData?.user) {
       return json(
         { error: `خطأ في إنشاء حساب المصادقة: ${authErr?.message}` },

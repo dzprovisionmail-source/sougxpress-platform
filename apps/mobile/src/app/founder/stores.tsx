@@ -19,13 +19,16 @@ import {
 type StoreStatus = "all" | "draft" | "active" | "paused" | "suspended";
 type StoreCategory = "all" | "grocery" | "restaurant" | "pharmacy" | "bakery" | "butcher" | "electronics" | "household" | "other";
 
-const STATUS_OPTS: Array<{ value: StoreStatus; label: string; color?: string }> = [
-  { value: "all", label: "الكل" },
-  { value: "draft", label: "مسودة", color: "#64748B" },
-  { value: "active", label: "نشط", color: "#00C853" },
-  { value: "paused", label: "متوقف", color: "#FFD600" },
-  { value: "suspended", label: "موقوف", color: "#D50000" },
-];
+  const STATUS_OPTS: Array<{ value: StoreStatus; label: string; color?: string }> = [
+    { value: "all", label: "الكل" },
+    { value: "draft", label: "مسودة", color: "#64748B" },
+    { value: "active", label: "نشط", color: "#00C853" },
+    { value: "paused", label: "متوقف", color: "#FFD600" },
+    { value: "suspended", label: "موقوف", color: "#D50000" },
+  ];
+
+  const DEMO_BADGE_COLOR = "#9C27B0";
+  const DEMO_BADGE_LABEL = "تجريبي";
 
 const CATEGORY_OPTS: Array<{ value: StoreCategory; label: string }> = [
   { value: "all", label: "الكل" },
@@ -283,6 +286,11 @@ export default function FounderStoresScreen() {
                     {item.merchant?.business_name ?? "—"} · {item.category} · {STATUS_LABELS[item.status] ?? item.status}
                   </Text>
                   {item.is_featured && <Text style={{ color: colors.warning, fontSize: 11, textAlign: "right" }}>⭐ مميز</Text>}
+                  {item.is_demo && (
+                    <Text style={{ color: DEMO_BADGE_COLOR, fontSize: 11, textAlign: "right", fontWeight: "700" }}>
+                      🔒 {DEMO_BADGE_LABEL}
+                    </Text>
+                  )}
                 </View>
                 <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[item.status] ?? colors.primary) + "18", borderColor: (STATUS_COLORS[item.status] ?? colors.primary) + "44" }]}>
                   <Text style={{ color: STATUS_COLORS[item.status] ?? colors.primary, fontSize: 11, fontWeight: "700" }}>
@@ -327,6 +335,14 @@ export default function FounderStoresScreen() {
                   <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "700", textAlign: "right", flex: 1 }}>{selectedStore.name}</Text>
                   <TouchableOpacity onPress={() => setShowDetail(false)}><X size={20} color={colors.textSecondary} /></TouchableOpacity>
                 </View>
+
+                {selectedStore.is_demo && (
+                  <View style={[styles.infoCard, { backgroundColor: DEMO_BADGE_COLOR + "18", borderColor: DEMO_BADGE_COLOR + "44", marginBottom: 12 }]}>
+                    <Text style={{ color: DEMO_BADGE_COLOR, textAlign: "right", fontSize: 13, fontWeight: "700" }}>
+                      🔒 {DEMO_BADGE_LABEL} — سيظهر للزبائن كمتجر عادي
+                    </Text>
+                  </View>
+                )}
 
                 {/* Logo / Cover */}
                 <View style={{ flexDirection: "row-reverse", gap: 12, marginBottom: 16 }}>

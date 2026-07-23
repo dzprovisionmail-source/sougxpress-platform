@@ -127,15 +127,17 @@ export default function FounderDriversScreen() {
               />
             }
             ListEmptyComponent={<AdminEmptyState message="لا يوجد موصلون" />}
-            renderItem={({ item }) => (
-              <AdminListItem
-                title={item.full_name || item.email}
-                subtitle={`${item.phone}${item.vehicle_type ? ` · ${item.vehicle_type}` : ""}`}
-                badge={item.deleted_at ? "محذوف" : STATUS_LABELS[item.status] ?? item.status}
-                badgeColor={item.deleted_at ? colors.textDisabled : STATUS_COLORS[item.status] ?? colors.primary}
-                onPress={() => router.push(`/founder/users/driver-detail?id=${item.id}` as never)}
-              />
-            )}
+            renderItem={({ item }) => {
+              return (
+                <AdminListItem
+                  title={item.full_name || item.email}
+                  subtitle={`${item.phone}${item.vehicle_type ? ` · ${item.vehicle_type}` : ""}${item.is_demo ? " 🔒 تجريبي" : ""}`}
+                  badge={item.deleted_at ? "محذوف" : STATUS_LABELS[item.status] ?? item.status}
+                  badgeColor={item.deleted_at ? colors.textDisabled : STATUS_COLORS[item.status] ?? colors.primary}
+                  onPress={() => router.push(`/founder/users/driver-detail?id=${item.id}` as never)}
+                />
+              );
+            }}
           />
         )}
       </View>

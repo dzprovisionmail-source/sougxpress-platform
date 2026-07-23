@@ -488,6 +488,9 @@ export default function FounderControlCenterScreen() {
             <QuickAction label="إضافة تاجر" icon={<ShoppingBag size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/add-merchant" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إضافة موصل" icon={<Truck size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/add-driver" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إضافة متجر" icon={<Store size={18} color={info} />} accentColor={info} onPress={() => router.push("/founder/add-store" as never)} colors={colors} tokens={tokens} />
+            <QuickAction label="إنشاء متجر تجريبي" icon={<Plus size={18} color={warning} />} accentColor={warning} onPress={() => router.push("/founder/add-demo-store" as never)} colors={colors} tokens={tokens} />
+            <QuickAction label="إنشاء موصل تجريبي" icon={<Truck size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/add-demo-driver" as never)} colors={colors} tokens={tokens} />
+            <QuickAction label="إنشاء زبون تجريبي" icon={<UserPlus size={18} color={blue} />} accentColor={blue} onPress={() => router.push("/founder/add-demo-customer" as never)} colors={colors} tokens={tokens} />
           </View>
         </SectionBlock>
 

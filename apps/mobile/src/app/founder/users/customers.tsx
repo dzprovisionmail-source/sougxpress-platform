@@ -155,23 +155,25 @@ export default function FounderCustomersScreen() {
               />
             }
             ListEmptyComponent={<AdminEmptyState message="لا يوجد زبائن" />}
-            renderItem={({ item }) => (
-              <AdminListItem
-                title={item.full_name || `${item.email}`}
-                subtitle={`${item.phone}${item.is_gold_member ? " 🥇" : ""}`}
-                badge={
-                  item.deleted_at
-                    ? "محذوف"
-                    : STATUS_LABELS[item.status] ?? item.status
-                }
-                badgeColor={
-                  item.deleted_at
-                    ? colors.textDisabled
-                    : STATUS_COLORS[item.status] ?? colors.primary
-                }
-                onPress={() => navigate(item.id)}
-              />
-            )}
+            renderItem={({ item }) => {
+              return (
+                <AdminListItem
+                  title={item.full_name || `${item.email}`}
+                  subtitle={`${item.phone}${item.is_gold_member ? " 🥇" : ""}${item.is_demo ? " 🔒 تجريبي" : ""}`}
+                  badge={
+                    item.deleted_at
+                      ? "محذوف"
+                      : STATUS_LABELS[item.status] ?? item.status
+                  }
+                  badgeColor={
+                    item.deleted_at
+                      ? colors.textDisabled
+                      : STATUS_COLORS[item.status] ?? colors.primary
+                  }
+                  onPress={() => navigate(item.id)}
+                />
+              );
+            }}
           />
         )}
       </View>

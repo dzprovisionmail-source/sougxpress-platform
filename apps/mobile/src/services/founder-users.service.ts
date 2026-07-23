@@ -23,6 +23,7 @@ export interface FounderCustomer {
   admin_notes:    string | null;
   city:           string | null;
   neighborhood:   string | null;
+  is_demo:        boolean;
   created_at:     string;
   updated_at:     string;
 }
@@ -41,6 +42,7 @@ export interface FounderMerchant {
   commission_rate: number;
   deleted_at:      string | null;
   admin_notes:     string | null;
+  is_demo:         boolean;
   created_at:      string;
   updated_at:      string;
 }
@@ -60,6 +62,7 @@ export interface FounderDriver {
   rating:          number;
   deleted_at:      string | null;
   admin_notes:     string | null;
+  is_demo:         boolean;
   created_at:      string;
   updated_at:      string;
 }
@@ -123,7 +126,7 @@ export async function getFounderZones(): Promise<FounderZone[]> {
 // ─── Customers ────────────────────────────────────────────────────────────────
 
 const CUSTOMER_COLS =
-  "id,full_name,phone,email,status,zone_id,address,is_gold_member,avatar_url,deleted_at,admin_notes,city,neighborhood,created_at,updated_at";
+  "id,full_name,phone,email,status,zone_id,address,is_gold_member,avatar_url,deleted_at,admin_notes,city,neighborhood,is_demo,created_at,updated_at";
 
 export async function getFounderCustomers(
   search?: string,
@@ -209,7 +212,7 @@ export async function softDeleteFounderCustomer(id: string): Promise<{ error: st
 // ─── Merchants ────────────────────────────────────────────────────────────────
 
 const MERCHANT_COLS =
-  "id,owner_full_name,business_name,phone,email,status,zone_id,address,description,logo_url,commission_rate,deleted_at,admin_notes,created_at,updated_at";
+  "id,owner_full_name,business_name,phone,email,status,zone_id,address,description,logo_url,commission_rate,deleted_at,admin_notes,is_demo,created_at,updated_at";
 
 export async function getFounderMerchants(
   search?: string,
@@ -300,7 +303,7 @@ export async function softDeleteFounderMerchant(id: string): Promise<{ error: st
 // ─── Drivers ─────────────────────────────────────────────────────────────────
 
 const DRIVER_COLS =
-  "id,full_name,phone,email,status,availability,zone_id,address,vehicle_type,vehicle_number,delivered_count,rating,deleted_at,admin_notes,created_at,updated_at";
+  "id,full_name,phone,email,status,availability,zone_id,address,vehicle_type,vehicle_number,delivered_count,rating,deleted_at,admin_notes,is_demo,created_at,updated_at";
 
 export async function getFounderDrivers(
   search?: string,
