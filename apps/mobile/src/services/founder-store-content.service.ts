@@ -105,7 +105,7 @@ export async function addFounderProduct(storeId: string, input: {
 
 export async function updateFounderProduct(
   productId: string,
-  updates: { name?: string; price_minor?: number; image_url?: string | null; status?: string }
+  updates: { name?: string; price_minor?: number; image_url?: string | null; status?: ProductStatus }
 ): Promise<{ product: unknown | null; error: string | null }> {
   const product = await updateProduct(productId, updates);
   return { product, error: product ? null : "فشل تحديث المنتج" };

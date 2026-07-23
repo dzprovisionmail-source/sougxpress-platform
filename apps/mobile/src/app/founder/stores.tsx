@@ -776,4 +776,5 @@ const styles = StyleSheet.create({
   logoImg: { width: "100%", height: "100%" },
   coverImg: { width: "100%", height: "100%" },
   logoOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, paddingVertical: 4, alignItems: "center" },
+  tabBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, alignItems: "center", justifyContent: "center" },
 });

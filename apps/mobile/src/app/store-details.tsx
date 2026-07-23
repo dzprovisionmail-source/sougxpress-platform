@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import useStore from "@/hooks/useStore";
 import { useStoreProducts } from "@/hooks/useProducts";
 import { useActivePromotions } from "@/hooks/usePromotions";
 import { getStoreGallery, getStoreVideos } from "@/services/store.service";
-import { StorePromotion, StoreGalleryImage } from "@/types/schema-03-core";
+import { StorePromotion, StoreGalleryImage, StoreVideo } from "@/types/schema-03-core";
 
 const { width: SW } = Dimensions.get("window");
 
@@ -46,7 +46,7 @@ export default function StoreDetailsScreen() {
 
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [gallery, setGallery] = useState<StoreGalleryImage[]>([]);
-  const [videos, setVideos] = useState<StoreGalleryImage[]>([]);
+  const [videos, setVideos] = useState<StoreVideo[]>([]);
 
   useEffect(() => {
     if (!storeId) return;
