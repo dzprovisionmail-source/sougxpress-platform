@@ -417,7 +417,7 @@ export default function FounderStoresScreen() {
                 <View style={{ flex: 1, alignItems: "flex-end" }}>
                   <Text style={{ color: colors.textPrimary, fontSize: tokens.typography.sizes.base, fontWeight: "600", textAlign: "right" }}>{item.name}</Text>
                   <Text style={{ color: colors.textSecondary, fontSize: tokens.typography.sizes.xs, textAlign: "right" }}>
-                    {item.merchant?.business_name ?? "—"} · {item.category} · {STATUS_LABELS[item.status] ?? item.status}
+                    {item.is_demo ? "متجر تجريبي" : (item.merchant?.business_name ?? "—")} · {item.category} · {STATUS_LABELS[item.status] ?? item.status}
                   </Text>
                   {item.is_featured && <Text style={{ color: colors.warning, fontSize: 11, textAlign: "right" }}>⭐ مميز</Text>}
                   {item.is_demo && (

@@ -178,31 +178,30 @@ export const getStoreGallery = async (storeId: string): Promise<StoreGalleryImag
   return data as StoreGalleryImage[];
 };
 
-export const addStoreGalleryImage = async (storeId: string, imageUrl: string, title?: string | null): Promise<StoreGalleryImage | null> => {
+export const addStoreGalleryImage = async (storeId: string, imageUrl: string, title?: string | null): Promise<StoreGalleryImage> => {
   const { data, error } = await supabase
     .from("store_gallery")
     .insert({ store_id: storeId, image_url: imageUrl, title: title ?? null })
     .select()
     .single();
-  if (error) { console.error("Error adding gallery image:", error); return null; }
+  if (error) throw new Error(error.message || "فشل إضافة الصورة");
   return data as StoreGalleryImage;
 };
 
-export const updateStoreGalleryImage = async (id: string, updates: { title?: string | null; is_visible?: boolean; sort_order?: number }): Promise<StoreGalleryImage | null> => {
+export const updateStoreGalleryImage = async (id: string, updates: { title?: string | null; is_visible?: boolean; sort_order?: number }): Promise<StoreGalleryImage> => {
   const { data, error } = await supabase
     .from("store_gallery")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();
-  if (error) { console.error("Error updating gallery image:", error); return null; }
+  if (error) throw new Error(error.message || "فشل تحديث الصورة");
   return data as StoreGalleryImage;
 };
 
-export const deleteStoreGalleryImage = async (id: string): Promise<boolean> => {
+export const deleteStoreGalleryImage = async (id: string): Promise<void> => {
   const { error } = await supabase.from("store_gallery").delete().eq("id", id);
-  if (error) { console.error("Error deleting gallery image:", error); return false; }
-  return true;
+  if (error) throw new Error(error.message || "فشل حذف الصورة");
 };
 
 // ============================================================================
@@ -220,29 +219,28 @@ export const getStoreVideos = async (storeId: string): Promise<StoreVideo[]> => 
   return data as StoreVideo[];
 };
 
-export const addStoreVideo = async (storeId: string, url: string, title?: string | null, platform: string = "youtube"): Promise<StoreVideo | null> => {
+export const addStoreVideo = async (storeId: string, url: string, title?: string | null, platform: string = "youtube"): Promise<StoreVideo> => {
   const { data, error } = await supabase
     .from("store_videos")
     .insert({ store_id: storeId, url, title: title ?? null, platform })
     .select()
     .single();
-  if (error) { console.error("Error adding video:", error); return null; }
+  if (error) throw new Error(error.message || "فشل إضافة الفيديو");
   return data as StoreVideo;
 };
 
-export const updateStoreVideo = async (id: string, updates: { title?: string | null; url?: string; platform?: string; is_visible?: boolean }): Promise<StoreVideo | null> => {
+export const updateStoreVideo = async (id: string, updates: { title?: string | null; url?: string; platform?: string; is_visible?: boolean }): Promise<StoreVideo> => {
   const { data, error } = await supabase
     .from("store_videos")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();
-  if (error) { console.error("Error updating video:", error); return null; }
+  if (error) throw new Error(error.message || "فشل تحديث الفيديو");
   return data as StoreVideo;
 };
 
-export const deleteStoreVideo = async (id: string): Promise<boolean> => {
+export const deleteStoreVideo = async (id: string): Promise<void> => {
   const { error } = await supabase.from("store_videos").delete().eq("id", id);
-  if (error) { console.error("Error deleting video:", error); return false; }
-  return true;
+  if (error) throw new Error(error.message || "فشل حذف الفيديو");
 };

@@ -31,21 +31,33 @@ export async function addFounderGalleryImage(
   imageUrl: string,
   title?: string | null
 ): Promise<{ image: StoreGalleryImage | null; error: string | null }> {
-  const image = await addStoreGalleryImage(storeId, imageUrl, title);
-  return { image, error: image ? null : "فشل إضافة الصورة" };
+  try {
+    const image = await addStoreGalleryImage(storeId, imageUrl, title);
+    return { image, error: null };
+  } catch (e: any) {
+    return { image: null, error: e.message || "فشل إضافة الصورة" };
+  }
 }
 
 export async function updateFounderGalleryImage(
   id: string,
   data: { title?: string | null; is_visible?: boolean; sort_order?: number }
 ): Promise<{ image: StoreGalleryImage | null; error: string | null }> {
-  const image = await updateStoreGalleryImage(id, data);
-  return { image, error: image ? null : "فشل تحديث الصورة" };
+  try {
+    const image = await updateStoreGalleryImage(id, data);
+    return { image, error: null };
+  } catch (e: any) {
+    return { image: null, error: e.message || "فشل تحديث الصورة" };
+  }
 }
 
 export async function deleteFounderGalleryImage(id: string): Promise<{ error: string | null }> {
-  const ok = await deleteStoreGalleryImage(id);
-  return { error: ok ? null : "فشل حذف الصورة" };
+  try {
+    await deleteStoreGalleryImage(id);
+    return { error: null };
+  } catch (e: any) {
+    return { error: e.message || "فشل حذف الصورة" };
+  }
 }
 
 // ============================================================================
@@ -62,21 +74,33 @@ export async function addFounderVideo(
   title?: string | null,
   platform: string = "youtube"
 ): Promise<{ video: StoreVideo | null; error: string | null }> {
-  const video = await addStoreVideo(storeId, url, title, platform);
-  return { video, error: video ? null : "فشل إضافة الفيديو" };
+  try {
+    const video = await addStoreVideo(storeId, url, title, platform);
+    return { video, error: null };
+  } catch (e: any) {
+    return { video: null, error: e.message || "فشل إضافة الفيديو" };
+  }
 }
 
 export async function updateFounderVideo(
   id: string,
   data: { title?: string | null; url?: string; platform?: string; is_visible?: boolean }
 ): Promise<{ video: StoreVideo | null; error: string | null }> {
-  const video = await updateStoreVideo(id, data);
-  return { video, error: video ? null : "فشل تحديث الفيديو" };
+  try {
+    const video = await updateStoreVideo(id, data);
+    return { video, error: null };
+  } catch (e: any) {
+    return { video: null, error: e.message || "فشل تحديث الفيديو" };
+  }
 }
 
 export async function deleteFounderVideo(id: string): Promise<{ error: string | null }> {
-  const ok = await deleteStoreVideo(id);
-  return { error: ok ? null : "فشل حذف الفيديو" };
+  try {
+    await deleteStoreVideo(id);
+    return { error: null };
+  } catch (e: any) {
+    return { error: e.message || "فشل حذف الفيديو" };
+  }
 }
 
 // ============================================================================
