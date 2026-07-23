@@ -1,7 +1,7 @@
 -- Migration: 202607240000100_cleanup_demo_data.sql
 -- Purpose: Rename any existing demo records with ugly seed/UUID/null values
 -- to realistic Arabic demo names before the mobile app fix is fully live.
--- Safe: only updates rows where is_demo = true AND (name is null OR name LIKE 'seed-%' OR name LIKE 'demo-%' OR name LIKE 'تاجر تجريبي %' OR name LIKE 'تجريبي %').
+-- Safe: only updates rows where is_demo = true.
 
 BEGIN;
 
@@ -10,12 +10,34 @@ UPDATE merchants
 SET
   business_name = CASE
     WHEN business_name IS NULL OR business_name ILIKE 'seed-%' OR business_name ILIKE 'demo-%' OR business_name ILIKE 'تاجر تجريبي %' OR business_name ILIKE 'تجريبي %'
-    THEN 'متجر ' || (SELECT ARRAY['الوفاء','النور','الخير','السعادة','السهبة','الراحة','النجاح','الأمل','الصفوة','الرقي'][(floor(random()*10)+1)::int])
+    THEN 'متجر ' || CASE floor(random()*10)
+      WHEN 0 THEN 'الوفاء'
+      WHEN 1 THEN 'النور'
+      WHEN 2 THEN 'الخير'
+      WHEN 3 THEN 'السعادة'
+      WHEN 4 THEN 'السهبة'
+      WHEN 5 THEN 'الراحة'
+      WHEN 6 THEN 'النجاح'
+      WHEN 7 THEN 'الأمل'
+      WHEN 8 THEN 'الصفوة'
+      ELSE 'الرقي'
+    END
     ELSE business_name
   END,
   owner_full_name = CASE
     WHEN owner_full_name IS NULL OR owner_full_name ILIKE 'seed-%' OR owner_full_name ILIKE 'demo-%' OR owner_full_name = ''
-    THEN (SELECT ARRAY['أحمد بن محمد','عبد الله العربي','يوسف المصري','عمر الجزائري','خالد الهاشمي','سعيد الرملي','علي السعدي','حسن التلمساني','إبراهيم البلاطي','فاطمة الوهرانية'][(floor(random()*10)+1)::int])
+    THEN CASE floor(random()*10)
+      WHEN 0 THEN 'أحمد بن محمد'
+      WHEN 1 THEN 'عبد الله العربي'
+      WHEN 2 THEN 'يوسف المصري'
+      WHEN 3 THEN 'عمر الجزائري'
+      WHEN 4 THEN 'خالد الهاشمي'
+      WHEN 5 THEN 'سعيد الرملي'
+      WHEN 6 THEN 'علي السعدي'
+      WHEN 7 THEN 'حسن التلمساني'
+      WHEN 8 THEN 'إبراهيم البلاطي'
+      ELSE 'فاطمة الوهرانية'
+    END
     ELSE owner_full_name
   END,
   contact_phone = CASE
@@ -31,7 +53,18 @@ UPDATE stores
 SET
   name = CASE
     WHEN name IS NULL OR name ILIKE 'seed-%' OR name ILIKE 'demo-%' OR name ILIKE 'تجريبي %'
-    THEN 'متجر ' || (SELECT ARRAY['الوفاء','النور','الخير','السعادة','السهبة','الراحة','النجاح','الأمل','الصفوة','الرقي'][(floor(random()*10)+1)::int])
+    THEN 'متجر ' || CASE floor(random()*10)
+      WHEN 0 THEN 'الوفاء'
+      WHEN 1 THEN 'النور'
+      WHEN 2 THEN 'الخير'
+      WHEN 3 THEN 'السعادة'
+      WHEN 4 THEN 'السهبة'
+      WHEN 5 THEN 'الراحة'
+      WHEN 6 THEN 'النجاح'
+      WHEN 7 THEN 'الأمل'
+      WHEN 8 THEN 'الصفوة'
+      ELSE 'الرقي'
+    END
     ELSE name
   END,
   updated_at = now()
@@ -42,7 +75,18 @@ UPDATE drivers
 SET
   full_name = CASE
     WHEN full_name IS NULL OR full_name ILIKE 'seed-%' OR full_name ILIKE 'demo-%' OR full_name = ''
-    THEN (SELECT ARRAY['أحمد بن محمد','عبد الله العربي','يوسف المصري','عمر الجزائري','خالد الهاشمي','سعيد الرملي','علي السعدي','حسن التلمساني','إبراهيم البلاطي','فاطمة الوهرانية'][(floor(random()*10)+1)::int])
+    THEN CASE floor(random()*10)
+      WHEN 0 THEN 'أحمد بن محمد'
+      WHEN 1 THEN 'عبد الله العربي'
+      WHEN 2 THEN 'يوسف المصري'
+      WHEN 3 THEN 'عمر الجزائري'
+      WHEN 4 THEN 'خالد الهاشمي'
+      WHEN 5 THEN 'سعيد الرملي'
+      WHEN 6 THEN 'علي السعدي'
+      WHEN 7 THEN 'حسن التلمساني'
+      WHEN 8 THEN 'إبراهيم البلاطي'
+      ELSE 'فاطمة الوهرانية'
+    END
     ELSE full_name
   END,
   phone = CASE
@@ -68,7 +112,18 @@ UPDATE customers
 SET
   full_name = CASE
     WHEN full_name IS NULL OR full_name ILIKE 'seed-%' OR full_name ILIKE 'demo-%' OR full_name = ''
-    THEN (SELECT ARRAY['أحمد بن محمد','عبد الله العربي','يوسف المصري','عمر الجزائري','خالد الهاشمي','سعيد الرملي','علي السعدي','حسن التلمساني','إبراهيم البلاطي','فاطمة الوهرانية'][(floor(random()*10)+1)::int])
+    THEN CASE floor(random()*10)
+      WHEN 0 THEN 'أحمد بن محمد'
+      WHEN 1 THEN 'عبد الله العربي'
+      WHEN 2 THEN 'يوسف المصري'
+      WHEN 3 THEN 'عمر الجزائري'
+      WHEN 4 THEN 'خالد الهاشمي'
+      WHEN 5 THEN 'سعيد الرملي'
+      WHEN 6 THEN 'علي السعدي'
+      WHEN 7 THEN 'حسن التلمساني'
+      WHEN 8 THEN 'إبراهيم البلاطي'
+      ELSE 'فاطمة الوهرانية'
+    END
     ELSE full_name
   END,
   first_name = CASE
