@@ -56,3 +56,6 @@ Thumbs.db
 *.rej
 
 apps/mobile/.env.local
+
+# Supabase local auth token
+.supabase/access_token

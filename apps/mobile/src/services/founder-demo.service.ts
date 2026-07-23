@@ -66,6 +66,7 @@ export async function createDemoStore(
   if (input.city?.trim()) storePayload.city = input.city.trim();
   if (input.description?.trim()) storePayload.description = input.description.trim();
   if (input.logo_url) storePayload.logo_url = input.logo_url;
+  if (!storePayload.country) storePayload.country = "DZ";
 
   const { data: storeData, error: storeErr } = await supabase
     .from("stores")

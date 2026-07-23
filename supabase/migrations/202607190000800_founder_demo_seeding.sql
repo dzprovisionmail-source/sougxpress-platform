@@ -22,6 +22,7 @@ ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS is_demo     BOOLEAN NOT NULL 
 ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS created_by   UUID REFERENCES auth.users(id) ON DELETE SET NULL;
 ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS deleted_at   TIMESTAMPTZ;
 ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS admin_notes  TEXT;
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS description TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_stores_is_demo   ON public.stores(is_demo);
 CREATE INDEX IF NOT EXISTS idx_stores_created_by ON public.stores(created_by);
