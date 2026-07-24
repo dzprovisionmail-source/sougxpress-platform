@@ -148,6 +148,26 @@ export interface StoreGalleryImage {
   updated_at: string;
 }
 
+export type MediaProvider = "facebook" | "youtube" | "tiktok" | "instagram";
+
+export type RejectionReason =
+  | "invalid_url"
+  | "unsupported_provider"
+  | "private_or_restricted"
+  | "not_found_or_deleted"
+  | "oembed_unavailable"
+  | "network_error"
+  | "blocked_host";
+
+export interface PublicStoreVideo {
+  id: string;
+  provider: MediaProvider;
+  embed_url: string;
+  embed_html: string | null;
+  thumbnail_url: string | null;
+  title: string | null;
+}
+
 export interface StoreVideo {
   id: string;
   store_id: string;
@@ -159,9 +179,13 @@ export interface StoreVideo {
   embed_url: string | null;
   embed_html: string | null;
   thumbnail_url: string | null;
+  author_name: string | null;
   can_embed: boolean | null;
-  meta_checked_at: string | null;
   is_visible: boolean;
+  rejection_reason: string | null;
+  meta_checked_at: string | null;
+  recheck_due_at: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 }

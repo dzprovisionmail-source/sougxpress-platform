@@ -6,13 +6,14 @@ import {
   addStoreGalleryImage,
   updateStoreGalleryImage,
   deleteStoreGalleryImage,
-  getStoreVideos,
-  addStoreVideo,
-  updateStoreVideo,
   deleteStoreVideo,
-  getFacebookVideosForStore,
-  addFacebookVideo,
 } from "@/services/store.service";
+import {
+  addStoreVideo as addMediaStoreVideo,
+  getFounderStoreVideos as getFounderVideosFromMedia,
+  logVideoRejection,
+  type ResolveFailure,
+} from "@/services/store-media.service";
 import {
   getProductsByStoreForMerchant,
   createProduct,
@@ -67,33 +68,20 @@ export async function deleteFounderGalleryImage(id: string): Promise<{ error: st
 // ============================================================================
 
 export async function getFounderStoreVideos(storeId: string): Promise<StoreVideo[]> {
-  return getStoreVideos(storeId);
+  return getFounderVideosFromMedia(storeId);
 }
 
 export async function addFounderVideo(
   storeId: string,
   url: string,
-  title?: string | null,
-  platform?: string
+  title?: string | null
 ): Promise<{ video: StoreVideo | null; error: string | null }> {
   try {
-    const video = await addStoreVideo(storeId, url, title, platform);
-    return { video, error: null };
+    const result = await addMediaStoreVideo(storeId, url, title);
+    return result;
   } catch (e: any) {
     console.error("addFounderVideo error:", e);
     return { video: null, error: e.message || "فشل إضافة الفيديو" };
-  }
-}
-
-export async function updateFounderVideo(
-  id: string,
-  data: { title?: string | null; url?: string; platform?: string; is_visible?: boolean }
-): Promise<{ video: StoreVideo | null; error: string | null }> {
-  try {
-    const video = await updateStoreVideo(id, data);
-    return { video, error: null };
-  } catch (e: any) {
-    return { video: null, error: e.message || "فشل تحديث الفيديو" };
   }
 }
 
@@ -107,11 +95,11 @@ export async function deleteFounderVideo(id: string): Promise<{ error: string | 
 }
 
 // ============================================================================
-// Facebook Videos (Phase 1D-FB)
+// Facebook Videos (Phase 1D-FB) — kept for backward compat
 // ============================================================================
 
 export async function getFounderStoreFacebookVideos(storeId: string): Promise<StoreVideo[]> {
-  return getFacebookVideosForStore(storeId);
+  return getFounderVideosFromMedia(storeId);
 }
 
 export async function addFounderFacebookVideo(
@@ -120,7 +108,7 @@ export async function addFounderFacebookVideo(
   title?: string | null
 ): Promise<{ video: StoreVideo | null; error: string | null }> {
   try {
-    const result = await addFacebookVideo(storeId, url, title, true);
+    const result = await addMediaStoreVideo(storeId, url, title);
     return result;
   } catch (e: any) {
     console.error("addFounderFacebookVideo error:", e);

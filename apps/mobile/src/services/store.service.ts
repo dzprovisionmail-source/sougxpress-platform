@@ -221,6 +221,8 @@ export const deleteStoreGalleryImage = async (id: string): Promise<void> => {
 // Store Videos DB-backed CRUD
 // ============================================================================
 
+import { PublicStoreVideo } from "@/types/schema-03-core";
+
 export const getStoreVideos = async (storeId: string): Promise<StoreVideo[]> => {
   if (!storeId || !isValidUUID(storeId)) return [];
   const { data, error } = await supabase
@@ -230,6 +232,20 @@ export const getStoreVideos = async (storeId: string): Promise<StoreVideo[]> => 
     .order("created_at", { ascending: true });
   if (error) { console.error("Error fetching store videos:", error); return []; }
   return data as StoreVideo[];
+};
+
+export const getPublicStoreVideos = async (storeId: string): Promise<PublicStoreVideo[]> => {
+  if (!storeId || !isValidUUID(storeId)) return [];
+  const { data, error } = await supabase
+    .from("store_videos")
+    .select("id, provider, embed_url, embed_html, thumbnail_url, title")
+    .eq("store_id", storeId)
+    .eq("can_embed", true)
+    .eq("is_visible", true)
+    .not("embed_url", "is", null)
+    .order("created_at", { ascending: true });
+  if (error) { console.error("Error fetching public store videos:", error); return []; }
+  return (data ?? []) as PublicStoreVideo[];
 };
 
 export const addStoreVideo = async (storeId: string, url: string, title?: string | null, platform?: string): Promise<StoreVideo> => {

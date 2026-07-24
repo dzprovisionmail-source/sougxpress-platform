@@ -100,8 +100,6 @@ export default function FounderStoresScreen() {
   const [newProductPrice, setNewProductPrice] = useState("");
   const [newVideoUrl, setNewVideoUrl] = useState("");
   const [newVideoTitle, setNewVideoTitle] = useState("");
-  const [newVideoPlatform, setNewVideoPlatform] = useState("youtube");
-  const [newVideoIsFacebook, setNewVideoIsFacebook] = useState(false);
   const [videoSubmitError, setVideoSubmitError] = useState<string | null>(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
 
@@ -312,34 +310,18 @@ export default function FounderStoresScreen() {
     if (!selectedStore || !newVideoUrl.trim()) return;
     setVideoSubmitError(null);
 
-    const url = newVideoUrl.trim();
-    const isFacebook = url.includes("facebook.com") || url.includes("fb.watch");
-
-    if (isFacebook) {
-      // Use Facebook oEmbed validation flow
-      const { video, error: err } = await addFounderFacebookVideo(
-        selectedStore.id,
-        url,
-        newVideoTitle.trim() || null
-      );
-      if (video) {
-        setVideos((v) => [...v, video]);
-        setNewVideoUrl("");
-        setNewVideoTitle("");
-      } else if (err) {
-        setVideoSubmitError(err);
-        Alert.alert("خطأ", err);
-      }
-    } else {
-      // Use legacy platform detection flow
-      const { video, error: err } = await addFounderVideo(selectedStore.id, url, newVideoTitle.trim() || null, newVideoPlatform);
-      if (video) {
-        setVideos((v) => [...v, video]);
-        setNewVideoUrl("");
-        setNewVideoTitle("");
-      } else if (err) {
-        Alert.alert("خطأ", err);
-      }
+    const { video, error: err } = await addFounderVideo(
+      selectedStore.id,
+      newVideoUrl.trim(),
+      newVideoTitle.trim() || null
+    );
+    if (video) {
+      setVideos((v) => [...v, video]);
+      setNewVideoUrl("");
+      setNewVideoTitle("");
+    } else if (err) {
+      setVideoSubmitError(err);
+      Alert.alert("خطأ", err);
     }
   };
 
@@ -637,9 +619,9 @@ export default function FounderStoresScreen() {
                             <View key={vid.id} style={{ flexDirection: "row-reverse", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }}>
                               <View style={{ flex: 1 }}>
                                 <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{vid.title || vid.url}</Text>
-                                <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{vid.platform}</Text>
-                                {vid.provider === "facebook" && (
-                                  <Text style={{ color: "#1877F2", fontSize: 10, textAlign: "right", fontWeight: "600" }}>فيسبوك · قابل للعرض</Text>
+                                <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{vid.provider || vid.platform}</Text>
+                                {vid.can_embed && (
+                                  <Text style={{ color: colors.success, fontSize: 10, textAlign: "right", fontWeight: "600" }}>قابل للعرض</Text>
                                 )}
                               </View>
                               {selectedStore && (
