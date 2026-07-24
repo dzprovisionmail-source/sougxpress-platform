@@ -281,12 +281,21 @@ export const getFacebookVideosForStore = async (storeId: string): Promise<StoreV
 export const addFacebookVideo = async (
   storeId: string,
   url: string,
-  title?: string | null
+  title?: string | null,
+  debug = false
 ): Promise<{ video: StoreVideo | null; error: string | null }> => {
   try {
+    // Reject partial or non-URL paths
+    if (!url || typeof url !== "string" || !/^https?:\/\//i.test(url)) {
+      return {
+        video: null,
+        error: "يرجى لصق رابط فيسبوك كاملاً يبدأ بـ https://",
+      };
+    }
+
     // Call the facebook-video-meta edge function
     const { data: meta, error: metaErr } = await supabase.functions.invoke("facebook-video-meta", {
-      body: { url },
+      body: { url, debug },
     });
 
     if (metaErr || !meta?.ok) {

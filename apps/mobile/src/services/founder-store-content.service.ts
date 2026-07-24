@@ -120,7 +120,7 @@ export async function addFounderFacebookVideo(
   title?: string | null
 ): Promise<{ video: StoreVideo | null; error: string | null }> {
   try {
-    const result = await addFacebookVideo(storeId, url, title);
+    const result = await addFacebookVideo(storeId, url, title, true);
     return result;
   } catch (e: any) {
     console.error("addFounderFacebookVideo error:", e);
