@@ -258,3 +258,77 @@ export const deleteStoreVideo = async (id: string): Promise<void> => {
   const { error } = await supabase.from("store_videos").delete().eq("id", id);
   if (error) throw new Error(error.message || "فشل حذف الفيديو");
 };
+
+// ============================================================================
+// Facebook-specific video methods (Phase 1D-FB)
+// ============================================================================
+
+export const getFacebookVideosForStore = async (storeId: string): Promise<StoreVideo[]> => {
+  if (!storeId || !isValidUUID(storeId)) return [];
+  const { data, error } = await supabase
+    .from("store_videos")
+    .select("*")
+    .eq("store_id", storeId)
+    .eq("provider", "facebook")
+    .eq("can_embed", true)
+    .not("embed_url", "is", null)
+    .order("created_at", { ascending: true });
+  if (error) { console.error("Error fetching Facebook videos:", error); return []; }
+  return (data ?? []) as StoreVideo[];
+};
+
+export const addFacebookVideo = async (
+  storeId: string,
+  url: string,
+  title?: string | null
+): Promise<{ video: StoreVideo | null; error: string | null }> => {
+  try {
+    // Call the facebook-video-meta edge function
+    const { data: meta, error: metaErr } = await supabase.functions.invoke("facebook-video-meta", {
+      body: { url },
+    });
+
+    if (metaErr || !meta?.ok) {
+      return {
+        video: null,
+        error: "هذا الفيديو خاص أو غير قابل للعرض داخل السوق. يرجى استعمال رابط فيديو فيسبوك عام.",
+      };
+    }
+
+    const { provider, normalized_url, embed_url, embed_html, thumbnail_url } = meta as {
+      provider: string;
+      normalized_url: string;
+      embed_url: string;
+      embed_html: string | null;
+      thumbnail_url: string | null;
+    };
+
+    const { data: video, error: insertErr } = await supabase
+      .from("store_videos")
+      .insert({
+        store_id: storeId,
+        title: title ?? meta.title ?? null,
+        url,
+        provider,
+        normalized_url,
+        embed_url,
+        embed_html,
+        thumbnail_url,
+        can_embed: true,
+        meta_checked_at: new Date().toISOString(),
+        platform: "facebook",
+        is_visible: true,
+      })
+      .select()
+      .single();
+
+    if (insertErr) throw insertErr;
+    return { video: video as StoreVideo, error: null };
+  } catch (e: any) {
+    console.error("addFacebookVideo error:", e);
+    return {
+      video: null,
+      error: e.message || "هذا الفيديو خاص أو غير قابل للعرض داخل السوق. يرجى استعمال رابط فيديو فيسبوك عام.",
+    };
+  }
+};

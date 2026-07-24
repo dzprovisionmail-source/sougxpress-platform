@@ -10,6 +10,8 @@ import {
   addStoreVideo,
   updateStoreVideo,
   deleteStoreVideo,
+  getFacebookVideosForStore,
+  addFacebookVideo,
 } from "@/services/store.service";
 import {
   getProductsByStoreForMerchant,
@@ -101,6 +103,31 @@ export async function deleteFounderVideo(id: string): Promise<{ error: string | 
     return { error: null };
   } catch (e: any) {
     return { error: e.message || "فشل حذف الفيديو" };
+  }
+}
+
+// ============================================================================
+// Facebook Videos (Phase 1D-FB)
+// ============================================================================
+
+export async function getFounderStoreFacebookVideos(storeId: string): Promise<StoreVideo[]> {
+  return getFacebookVideosForStore(storeId);
+}
+
+export async function addFounderFacebookVideo(
+  storeId: string,
+  url: string,
+  title?: string | null
+): Promise<{ video: StoreVideo | null; error: string | null }> {
+  try {
+    const result = await addFacebookVideo(storeId, url, title);
+    return result;
+  } catch (e: any) {
+    console.error("addFounderFacebookVideo error:", e);
+    return {
+      video: null,
+      error: "هذا الفيديو خاص أو غير قابل للعرض داخل السوق. يرجى استعمال رابط فيديو فيسبوك عام.",
+    };
   }
 }
 

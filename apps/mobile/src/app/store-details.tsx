@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
-  Linking,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { ShoppingCart, Clock3, MapPin, Star, Tag, Play } from "lucide-react-native";
@@ -19,7 +18,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import useStore from "@/hooks/useStore";
 import { useStoreProducts } from "@/hooks/useProducts";
 import { useActivePromotions } from "@/hooks/usePromotions";
-import { getStoreGallery, getStoreVideos } from "@/services/store.service";
+import { getStoreGallery, getFacebookVideosForStore } from "@/services/store.service";
 import { StorePromotion, StoreGalleryImage, StoreVideo } from "@/types/schema-03-core";
 
 const { width: SW } = Dimensions.get("window");
@@ -52,8 +51,7 @@ export default function StoreDetailsScreen() {
 
   useEffect(() => {
     if (!storeId) return;
-    getStoreGallery(storeId).then(setGallery).catch(() => {});
-    getStoreVideos(storeId).then(setVideos).catch(() => {});
+    getFacebookVideosForStore(storeId).then(setVideos).catch(() => {});
   }, [storeId]);
 
   if (!storeId) {
@@ -208,25 +206,43 @@ export default function StoreDetailsScreen() {
         )}
 
         {/* ── Videos ── */}
-        {videos.filter((v) => v.is_visible).length > 0 ? (
+        {videos.length > 0 ? (
           <View style={{ marginTop: tokens.spacing.lg }}>
             <SectionHeading label="فيديوهات" colors={colors} tokens={tokens} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: tokens.spacing.lg, gap: tokens.spacing.sm }}>
-              {videos.filter((v) => v.is_visible).map((vid) => (
+              {videos.map((vid) => (
                 <TouchableOpacity
                   key={vid.id}
                   style={[styles.videoCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, borderRadius: tokens.radius.sm, padding: tokens.spacing.sm, width: 200 }]}
                   onPress={() => {
-                    Linking.openURL(vid.url).catch(() => {
-                      // URL could not be opened
-                    });
+                    router.push({
+                      pathname: "/facebook-video-player",
+                      params: {
+                        embedUrl: vid.embed_url,
+                        title: vid.title ?? vid.url,
+                      },
+                    } as never);
                   }}
                 >
-                  <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  {vid.thumbnail_url ? (
+                    <Image
+                      source={{ uri: vid.thumbnail_url }}
+                      style={[styles.videoThumbnail, { borderRadius: tokens.radius.xs }]}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[styles.videoPlaceholder, { backgroundColor: "#1a1a2e", borderRadius: tokens.radius.xs }]}>
+                      <Play size={24} color={colors.primary} fill={colors.primary} />
+                    </View>
+                  )}
+                  <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 6, marginTop: 4 }}>
                     <Play size={14} color={colors.primary} fill={colors.primary} />
-                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right", flex: 1 }}>{vid.title || vid.url}</Text>
+                    <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: "600", textAlign: "right", flex: 1 }} numberOfLines={2}>{vid.title || vid.url}</Text>
                   </View>
-                  <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{vid.platform}</Text>
+                  <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 4 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#1877F2" }} />
+                    <Text style={{ color: colors.textSecondary, fontSize: 10, textAlign: "right" }}>فيسبوك</Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -488,6 +504,8 @@ const styles = StyleSheet.create({
   emptyText: { textAlign: "center", padding: 24, fontSize: 14 },
   galleryImg: { width: 160, height: 120 },
   videoCard: { overflow: "hidden" },
+  videoThumbnail: { width: "100%", height: 100 },
+  videoPlaceholder: { width: "100%", height: 100, justifyContent: "center", alignItems: "center" },
 });
 
 // suppress unused warning – SW is used by promoCard width calculations at runtime

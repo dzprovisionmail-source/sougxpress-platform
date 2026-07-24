@@ -154,6 +154,13 @@ export interface StoreVideo {
   url: string;
   title: string | null;
   platform: string;
+  provider: string | null;
+  normalized_url: string | null;
+  embed_url: string | null;
+  embed_html: string | null;
+  thumbnail_url: string | null;
+  can_embed: boolean | null;
+  meta_checked_at: string | null;
   is_visible: boolean;
   created_at: string;
   updated_at: string;
