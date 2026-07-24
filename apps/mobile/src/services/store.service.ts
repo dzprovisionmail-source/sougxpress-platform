@@ -271,6 +271,7 @@ export const getFacebookVideosForStore = async (storeId: string): Promise<StoreV
     .eq("store_id", storeId)
     .eq("provider", "facebook")
     .eq("can_embed", true)
+    .eq("is_visible", true)
     .not("embed_url", "is", null)
     .order("created_at", { ascending: true });
   if (error) { console.error("Error fetching Facebook videos:", error); return []; }

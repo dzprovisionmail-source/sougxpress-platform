@@ -109,7 +109,9 @@ export async function uploadStoreLogo(
   uri: string
 ): Promise<{ url: string | null; error: string | null }> {
   try {
+    if (!uri) return { url: null, error: "لم يتم تحديد صورة للشعار" };
     const response = await fetch(uri);
+    if (!response.ok) return { url: null, error: `فشل قراءة الصورة: ${response.status}` };
     const blob = await response.blob();
     const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
     const path = `${storeId}/logo.${ext}`;
@@ -133,7 +135,9 @@ export async function uploadStoreCover(
   uri: string
 ): Promise<{ url: string | null; error: string | null }> {
   try {
+    if (!uri) return { url: null, error: "لم يتم تحديد صورة الغلاف" };
     const response = await fetch(uri);
+    if (!response.ok) return { url: null, error: `فشل قراءة الصورة: ${response.status}` };
     const blob = await response.blob();
     const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
     const path = `${storeId}/cover.${ext}`;

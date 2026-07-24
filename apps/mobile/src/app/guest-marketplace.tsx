@@ -15,7 +15,6 @@ import {
   ActivityIndicator,
   TextInput,
   RefreshControl,
-  Linking,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
@@ -239,26 +238,26 @@ export default function GuestMarketplaceScreen() {
         title: "عروض الأسبوع",
         description: "خصومات حصرية على المتاجر المميزة في السوق",
         buttonLabel: "تسوق الآن",
-        storeId: heroStores[0]?.id || "",
-        storeName: heroStores[0]?.name || "",
+        storeId: heroStores[0]?.id ?? "",
+        storeName: heroStores[0]?.name ?? "",
       },
       {
         id: "2",
         title: "متاجر جديدة",
         description: "اكتشف أحدث المتاجر التي انضمت إلى المنصة",
         buttonLabel: "اكتشف",
-        storeId: heroStores[1]?.id || "",
-        storeName: heroStores[1]?.name || "",
+        storeId: heroStores[1]?.id ?? "",
+        storeName: heroStores[1]?.name ?? "",
       },
       {
         id: "3",
         title: "توصيل سريع",
         description: "اطلب الآن واستمتع بالتوصيل لبابك",
         buttonLabel: "اطلب الآن",
-        storeId: heroStores[2]?.id || "",
-        storeName: heroStores[2]?.name || "",
+        storeId: heroStores[2]?.id ?? "",
+        storeName: heroStores[2]?.name ?? "",
       },
-    ],
+    ].filter((slide) => slide.storeId !== ""),
     [heroStores]
   );
 

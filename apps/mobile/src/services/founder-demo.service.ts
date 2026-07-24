@@ -72,14 +72,14 @@ export async function createDemoStore(
     is_open: true,
     opens_at: "08:00:00",
     closes_at: "22:00:00",
+    address_line1: input.address_line1?.trim() || "عين الصفراء",
+    city: input.city?.trim() || "عين الصفراء",
+    country: "DZ",
   };
 
   if (input.zone_id?.trim()) storePayload.zone_id = input.zone_id.trim();
-  if (input.address_line1?.trim()) storePayload.address_line1 = input.address_line1.trim();
-  if (input.city?.trim()) storePayload.city = input.city.trim();
   if (input.description?.trim()) storePayload.description = input.description.trim();
   if (input.logo_url) storePayload.logo_url = input.logo_url;
-  if (!storePayload.country) storePayload.country = "DZ";
 
   const { data: storeData, error: storeErr } = await supabase
     .from("stores")

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star } from 'lucide-react-native';
 
@@ -39,7 +39,8 @@ const HomeScreen = () => {
   const error = storesError;
 
   return (
-    <View style={[styles.fullContainer, { backgroundColor: colors.bgBase }]}>
+    <SafeAreaView style={[styles.fullContainer, { backgroundColor: colors.bgBase }]}>
+      <StatusBar barStyle="dark-content" />
       <Stack.Screen
         options={{
           title: 'Soug-XPRESS',
@@ -202,7 +203,7 @@ const HomeScreen = () => {
           </>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
