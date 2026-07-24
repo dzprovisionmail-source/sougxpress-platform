@@ -14,18 +14,37 @@ function json(body: unknown, status = 200) {
   });
 }
 
-// Facebook video URL patterns: standard video, reel, watch page, video embed
+// Facebook video URL patterns — accept all public embeddable Facebook video formats
 const FACEBOOK_VIDEO_PATTERNS = [
-  /^(https?:\/\/)?(www\.)?facebook\.com\/.+\/videos\/.+/i,
+  // facebook.com/share/r/* (reel share URL)
+  /^(https?:\/\/)?(www\.)?facebook\.com\/share\/r\/.+/i,
+  // facebook.com/share/v/* (video share URL)
+  /^(https?:\/\/)?(www\.)?facebook\.com\/share\/v\/.+/i,
+  // facebook.com/reel/*
   /^(https?:\/\/)?(www\.)?facebook\.com\/reel\/.+/i,
+  // facebook.com/reels/* (plural)
+  /^(https?:\/\/)?(www\.)?facebook\.com\/reels\/.+/i,
+  // facebook.com/watch?v=*
   /^(https?:\/\/)?(www\.)?facebook\.com\/watch\?v=.+/i,
+  // facebook.com/watch/*
   /^(https?:\/\/)?(www\.)?facebook\.com\/watch\/.+/i,
+  // facebook.com/*/videos/*
+  /^(https?:\/\/)?(www\.)?facebook\.com\/.+\/videos\/.+/i,
+  // fb.watch/*
+  /^(https?:\/\/)?(www\.)?fb\.watch\/.+/i,
 ];
+
+const ALLOWED_ORIGINS = new Set([
+  "https://www.facebook.com",
+  "https://facebook.com",
+  "https://www.fb.watch",
+  "https://fb.watch",
+]);
 
 function isValidFacebookVideoUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    if (!["https://www.facebook.com", "https://facebook.com", "https://www.fb.watch", "https://fb.watch"].includes(parsed.origin)) {
+    if (!ALLOWED_ORIGINS.has(parsed.origin)) {
       return false;
     }
     return FACEBOOK_VIDEO_PATTERNS.some((pat) => pat.test(url));
@@ -37,13 +56,18 @@ function isValidFacebookVideoUrl(url: string): boolean {
 function normalizeFacebookUrl(url: string): string {
   try {
     const parsed = new URL(url);
-    // Strip tracking parameters
+    // Strip tracking parameters only — preserve the path and core query params
     parsed.searchParams.delete("ref");
     parsed.searchParams.delete("utm_source");
     parsed.searchParams.delete("utm_medium");
     parsed.searchParams.delete("utm_campaign");
     parsed.searchParams.delete("fbclid");
     parsed.searchParams.delete("mibextid");
+    parsed.searchParams.delete("app");
+    parsed.searchParams.delete("xs");
+    parsed.searchParams.delete("sfid");
+    parsed.searchParams.delete("__tn__");
+    parsed.searchParams.delete("comment_id");
     // Remove trailing slash
     let normalized = parsed.toString().replace(/\/+$/, "");
     return normalized;
