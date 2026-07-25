@@ -18,7 +18,7 @@ import {
 } from "@/services/founder-stores.service";
 import {
   getFounderStoreGallery, addFounderGalleryImage, updateFounderGalleryImage, deleteFounderGalleryImage,
-  getFounderStoreVideos, addFounderVideo, updateFounderVideo, deleteFounderVideo,
+  getFounderStoreVideos, addFounderVideo, deleteFounderVideo,
   getFounderStoreFacebookVideos, addFounderFacebookVideo,
   getFounderStoreProducts, addFounderProduct, updateFounderProduct, deleteFounderProduct,
 } from "@/services/founder-store-content.service";

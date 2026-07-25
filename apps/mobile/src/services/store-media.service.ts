@@ -98,10 +98,10 @@ export async function addStoreVideo(
   const resolved = await resolveStoreVideo(url, storeId);
 
   if (!resolved.ok) {
-    await logVideoRejection(storeId, url, resolved);
+    await logVideoRejection(storeId, url, resolved as Exclude<ResolveResult, ResolveSuccess>);
     return {
       video: null,
-      error: resolved.message_ar,
+      error: (resolved as Exclude<ResolveResult, ResolveSuccess>).message_ar,
     };
   }
 
