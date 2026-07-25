@@ -298,6 +298,7 @@ export default function FounderControlCenterScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dashboardAccessLoggedRef = React.useRef(false);
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -321,7 +322,10 @@ export default function FounderControlCenterScreen() {
 
   useEffect(() => {
     load();
-    logFounderDashboardAccess();
+    if (!dashboardAccessLoggedRef.current) {
+      dashboardAccessLoggedRef.current = true;
+      logFounderDashboardAccess();
+    }
     const subscription = subscribeToFounderStats(() => load(true));
     return () => {
       subscription.unsubscribe();

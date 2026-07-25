@@ -106,30 +106,40 @@ export async function addStoreVideo(
   }
 
   try {
+    const insertPayload: Record<string, unknown> = {
+      store_id: storeId,
+      url,
+      title: title ?? resolved.title ?? null,
+      platform: resolved.provider,
+      provider: resolved.provider,
+      normalized_url: resolved.normalized_url,
+      embed_url: resolved.embed_url,
+      embed_html: resolved.embed_html,
+      thumbnail_url: resolved.thumbnail_url,
+      author_name: resolved.author_name,
+      can_embed: true,
+      is_visible: true,
+      meta_checked_at: new Date().toISOString(),
+    };
+
     const { data: video, error: insertErr } = await supabase
       .from("store_videos")
-      .insert({
-        store_id: storeId,
-        url,
-        title: title ?? resolved.title ?? null,
-        platform: resolved.provider,
-        provider: resolved.provider,
-        normalized_url: resolved.normalized_url,
-        embed_url: resolved.embed_url,
-        embed_html: resolved.embed_html,
-        thumbnail_url: resolved.thumbnail_url,
-        author_name: resolved.author_name,
-        can_embed: true,
-        is_visible: true,
-        meta_checked_at: new Date().toISOString(),
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
-    if (insertErr) throw insertErr;
+    if (insertErr) {
+      console.error("addStoreVideo insert error:", insertErr);
+      return { video: null, error: `فشل إضافة الفيديو: ${insertErr.message}` };
+    }
+
+    if (!video) {
+      return { video: null, error: "فشل إضافة الفيديو: لم يتم إرجاع بيانات" };
+    }
+
     return { video: video as StoreVideo, error: null };
   } catch (e: any) {
-    console.error("addStoreVideo insert error:", e);
+    console.error("addStoreVideo unexpected error:", e);
     return { video: null, error: e.message || "فشل إضافة الفيديو" };
   }
 }

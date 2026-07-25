@@ -13,7 +13,7 @@ import {
 import { useAppTheme } from "@/contexts/ThemeContext";
 import {
   getFounderStores, getFounderStore, updateFounderStore, setFounderStoreStatus,
-  softDeleteFounderStore, uploadStoreLogo, uploadStoreCover,
+  softDeleteFounderStore,
   type FounderStore,
 } from "@/services/founder-stores.service";
 import {
@@ -222,30 +222,66 @@ export default function FounderStoresScreen() {
 
   const handleLogoUpload = async () => {
     if (!selectedStore) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("خطأ", "يجب منح صلاحية الوصول للصور");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (result.canceled) return;
     setLogoLoading(true);
-    const { url, error: err } = await uploadStoreLogo(selectedStore.id, "");
-    if (url) {
-      await updateFounderStore(selectedStore.id, { logo_url: url });
+    const asset = result.assets[0];
+    try {
+      const response = await fetch(asset.uri);
+      if (!response.ok) throw new Error(`فشل قراءة الصورة: ${response.status}`);
+      const blob = await response.blob();
+      const fileExt = asset.uri.split(".").pop() || "jpg";
+      const filePath = `${selectedStore.id}/logo.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, blob, { contentType: blob.type, upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
+      const publicUrl = urlData.publicUrl;
+      if (!publicUrl) throw new Error("فشل توليد رابط الصورة");
+      await updateFounderStore(selectedStore.id, { logo_url: publicUrl });
       const { store: updated } = await getFounderStore(selectedStore.id);
       setSelectedStore(updated);
-    } else if (err) {
-      Alert.alert("خطأ", err);
+    } catch (e: any) {
+      Alert.alert("خطأ في رفع الشعار", e.message);
+    } finally {
+      setLogoLoading(false);
     }
-    setLogoLoading(false);
   };
 
   const handleCoverUpload = async () => {
     if (!selectedStore) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("خطأ", "يجب منح صلاحية الوصول للصور");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (result.canceled) return;
     setCoverLoading(true);
-    const { url, error: err } = await uploadStoreCover(selectedStore.id, "");
-    if (url) {
-      await updateFounderStore(selectedStore.id, { cover_url: url });
+    const asset = result.assets[0];
+    try {
+      const response = await fetch(asset.uri);
+      if (!response.ok) throw new Error(`فشل قراءة الصورة: ${response.status}`);
+      const blob = await response.blob();
+      const fileExt = asset.uri.split(".").pop() || "jpg";
+      const filePath = `${selectedStore.id}/cover.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, blob, { contentType: blob.type, upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
+      const publicUrl = urlData.publicUrl;
+      if (!publicUrl) throw new Error("فشل توليد رابط الصورة");
+      await updateFounderStore(selectedStore.id, { cover_url: publicUrl });
       const { store: updated } = await getFounderStore(selectedStore.id);
       setSelectedStore(updated);
-    } else if (err) {
-      Alert.alert("خطأ", err);
+    } catch (e: any) {
+      Alert.alert("خطأ في رفع الغلاف", e.message);
+    } finally {
+      setCoverLoading(false);
     }
-    setCoverLoading(false);
   };
 
   const toggleFeatured = async () => {
@@ -615,28 +651,36 @@ export default function FounderStoresScreen() {
                       {/* Videos Tab */}
                       {contentTab === "videos" && !contentLoading && (
                         <View style={{ gap: 8 }}>
-                          {videos.map((vid) => (
-                            <View key={vid.id} style={{ flexDirection: "row-reverse", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }}>
-                              <View style={{ flex: 1 }}>
-                                <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{vid.title || vid.url}</Text>
-                                <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{vid.provider || vid.platform}</Text>
-                                {vid.can_embed && (
-                                  <Text style={{ color: colors.success, fontSize: 10, textAlign: "right", fontWeight: "600" }}>قابل للعرض</Text>
-                                )}
+                          {videos.map((vid) => {
+                            const providerLabel = vid.provider === "facebook" ? "فيسبوك" : vid.provider === "youtube" ? "يوتيوب" : vid.provider === "tiktok" ? "تيك توك" : vid.provider === "instagram" ? "إنستغرام" : vid.platform || "—";
+                            const providerColor = vid.provider === "facebook" ? "#1877F2" : vid.provider === "youtube" ? "#FF0000" : vid.provider === "tiktok" ? "#000000" : vid.provider === "instagram" ? "#E4405F" : colors.textSecondary;
+                            return (
+                              <View key={vid.id} style={{ borderRadius: 10, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated, overflow: "hidden" }}>
+                                <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 10, padding: 10 }}>
+                                  <View style={{ width: 64, height: 48, borderRadius: 6, backgroundColor: "#1a1a2e", justifyContent: "center", alignItems: "center", overflow: "hidden" }}>
+                                    {vid.embed_url ? (
+                                      <Image source={{ uri: vid.thumbnail_url || undefined }} style={{ width: "100%", height: "100%", position: "absolute" }} resizeMode="cover" />
+                                    ) : null}
+                                    <View style={{ position: "absolute", justifyContent: "center", alignItems: "center" }}>
+                                      <Text style={{ fontSize: 18 }}>▶</Text>
+                                    </View>
+                                  </View>
+                                  <View style={{ flex: 1, gap: 2 }}>
+                                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }} numberOfLines={1}>{vid.title || vid.url}</Text>
+                                    <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 6 }}>
+                                      <View style={{ backgroundColor: providerColor, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                        <Text style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}>{providerLabel}</Text>
+                                      </View>
+                                      <Text style={{ color: vid.can_embed ? colors.success : colors.error, fontSize: 10, fontWeight: "600" }}>{vid.can_embed ? "قابل للعرض" : "غير قابل للعرض"}</Text>
+                                    </View>
+                                  </View>
+                                  <TouchableOpacity onPress={() => handleDeleteVideo(vid.id)} style={{ padding: 6, borderRadius: 6, backgroundColor: colors.error + "18" }}>
+                                    <Trash2 size={14} color={colors.error} />
+                                  </TouchableOpacity>
+                                </View>
                               </View>
-                              {selectedStore && (
-                                <TouchableOpacity onPress={() => {
-                                  // Founder debug-only: open original link
-                                  Linking.openURL(vid.url).catch(() => {});
-                                }} style={{ padding: 6, borderRadius: 6, backgroundColor: colors.textSecondary + "18" }}>
-                                  <Text style={{ fontSize: 10, color: colors.textSecondary }}>فتح</Text>
-                                </TouchableOpacity>
-                              )}
-                              <TouchableOpacity onPress={() => handleDeleteVideo(vid.id)} style={{ padding: 6, borderRadius: 6, backgroundColor: colors.error + "18" }}>
-                                <Trash2 size={14} color={colors.error} />
-                              </TouchableOpacity>
-                            </View>
-                          ))}
+                            );
+                          })}
                           <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 8 }}>
                             <TextInput value={newVideoUrl} onChangeText={setNewVideoUrl} placeholder="رابط الفيديو" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 2, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
                             <TextInput value={newVideoTitle} onChangeText={setNewVideoTitle} placeholder="العنوان (اختياري)" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 1, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
