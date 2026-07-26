@@ -15,12 +15,14 @@ import { Typography } from "./Typography";
 interface MarketplaceHeaderProps {
   onNotificationPress?: () => void;
   onProfilePress?: () => void;
+  onBackPress?: () => void;
   theme?: ThemeType;
 }
 
 export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
   onNotificationPress,
   onProfilePress,
+  onBackPress,
   theme = DEFAULT_THEME
 }) => {
   const colors = getThemeColors(theme);
@@ -28,13 +30,15 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
 
   return (
     <View style={[styles.container, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-      {/* Wordmark logo for marketplace header */}
+      {/* Back / Wordmark */}
       <View style={styles.logoContainer}>
-        <Image
-          source={LOGO_WORDMARK}
-          style={styles.wordmarkLogo}
-          resizeMode="contain"
-        />
+        {onBackPress ? (
+          <TouchableOpacity onPress={onBackPress} style={styles.iconButton}>
+            <Ionicons name="arrow-forward" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+        ) : (
+          <Image source={LOGO_WORDMARK} style={styles.wordmarkLogo} resizeMode="contain" />
+        )}
       </View>
 
       {/* Actions: notification + profile */}
