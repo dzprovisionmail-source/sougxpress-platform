@@ -287,8 +287,16 @@ export async function adminProvisionAccount(
   );
 
   if (error) return { data: null, error: error.message };
-  if (data?.error) return { data: null, error: data.error as string };
-  return { data: data as Record<string, unknown>, error: null };
+  if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    if (obj.success === false && typeof obj.error === "string") {
+      return { data: null, error: obj.error };
+    }
+    if (obj.success === true) {
+      return { data: obj as Record<string, unknown>, error: null };
+    }
+  }
+  return { data: data as Record<string, unknown> | null, error: null };
 }
 
 // ─── Status updates ───────────────────────────────────────────────────────────

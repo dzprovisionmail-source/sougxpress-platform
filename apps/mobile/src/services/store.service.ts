@@ -163,19 +163,6 @@ export const getStoreGalleryImages = async (storeId: string): Promise<string[]> 
 };
 
 // ============================================================================
-// Helpers
-// ============================================================================
-
-export const detectVideoPlatform = (url: string): string => {
-  const lower = url.toLowerCase();
-  if (lower.includes("facebook.com") || lower.includes("fb.watch")) return "facebook";
-  if (lower.includes("tiktok.com")) return "tiktok";
-  if (lower.includes("instagram.com") || lower.includes("instagr.am")) return "instagram";
-  if (lower.includes("youtube.com") || lower.includes("youtu.be")) return "youtube";
-  return "youtube";
-};
-
-// ============================================================================
 // Store Gallery DB-backed CRUD
 // ============================================================================
 
@@ -221,8 +208,6 @@ export const deleteStoreGalleryImage = async (id: string): Promise<void> => {
 // Store Videos DB-backed CRUD
 // ============================================================================
 
-import { PublicStoreVideo } from "@/types/schema-03-core";
-
 export const getStoreVideos = async (storeId: string): Promise<StoreVideo[]> => {
   if (!storeId || !isValidUUID(storeId)) return [];
   const { data, error } = await supabase
@@ -234,25 +219,10 @@ export const getStoreVideos = async (storeId: string): Promise<StoreVideo[]> => 
   return data as StoreVideo[];
 };
 
-export const getPublicStoreVideos = async (storeId: string): Promise<PublicStoreVideo[]> => {
-  if (!storeId || !isValidUUID(storeId)) return [];
+export const addStoreVideo = async (storeId: string, url: string, title?: string | null, platform: string = "youtube"): Promise<StoreVideo> => {
   const { data, error } = await supabase
     .from("store_videos")
-    .select("id, provider, embed_url, embed_html, thumbnail_url, title")
-    .eq("store_id", storeId)
-    .eq("can_embed", true)
-    .eq("is_visible", true)
-    .not("embed_url", "is", null)
-    .order("created_at", { ascending: true });
-  if (error) { console.error("Error fetching public store videos:", error); return []; }
-  return (data ?? []) as PublicStoreVideo[];
-};
-
-export const addStoreVideo = async (storeId: string, url: string, title?: string | null, platform?: string): Promise<StoreVideo> => {
-  const detectedPlatform = platform ?? detectVideoPlatform(url);
-  const { data, error } = await supabase
-    .from("store_videos")
-    .insert({ store_id: storeId, url, title: title ?? null, platform: detectedPlatform })
+    .insert({ store_id: storeId, url, title: title ?? null, platform })
     .select()
     .single();
   if (error) throw new Error(error.message || "فشل إضافة الفيديو");
@@ -273,88 +243,4 @@ export const updateStoreVideo = async (id: string, updates: { title?: string | n
 export const deleteStoreVideo = async (id: string): Promise<void> => {
   const { error } = await supabase.from("store_videos").delete().eq("id", id);
   if (error) throw new Error(error.message || "فشل حذف الفيديو");
-};
-
-// ============================================================================
-// Facebook-specific video methods (Phase 1D-FB)
-// ============================================================================
-
-export const getFacebookVideosForStore = async (storeId: string): Promise<StoreVideo[]> => {
-  if (!storeId || !isValidUUID(storeId)) return [];
-  const { data, error } = await supabase
-    .from("store_videos")
-    .select("*")
-    .eq("store_id", storeId)
-    .eq("provider", "facebook")
-    .eq("can_embed", true)
-    .eq("is_visible", true)
-    .not("embed_url", "is", null)
-    .order("created_at", { ascending: true });
-  if (error) { console.error("Error fetching Facebook videos:", error); return []; }
-  return (data ?? []) as StoreVideo[];
-};
-
-export const addFacebookVideo = async (
-  storeId: string,
-  url: string,
-  title?: string | null,
-  debug = false
-): Promise<{ video: StoreVideo | null; error: string | null }> => {
-  try {
-    // Reject partial or non-URL paths
-    if (!url || typeof url !== "string" || !/^https?:\/\//i.test(url)) {
-      return {
-        video: null,
-        error: "يرجى لصق رابط فيسبوك كاملاً يبدأ بـ https://",
-      };
-    }
-
-    // Call the facebook-video-meta edge function
-    const { data: meta, error: metaErr } = await supabase.functions.invoke("facebook-video-meta", {
-      body: { url, debug },
-    });
-
-    if (metaErr || !meta?.ok) {
-      return {
-        video: null,
-        error: "هذا الفيديو خاص أو غير قابل للعرض داخل السوق. يرجى استعمال رابط فيديو فيسبوك عام.",
-      };
-    }
-
-    const { provider, normalized_url, embed_url, embed_html, thumbnail_url } = meta as {
-      provider: string;
-      normalized_url: string;
-      embed_url: string;
-      embed_html: string | null;
-      thumbnail_url: string | null;
-    };
-
-    const { data: video, error: insertErr } = await supabase
-      .from("store_videos")
-      .insert({
-        store_id: storeId,
-        title: title ?? meta.title ?? null,
-        url,
-        provider,
-        normalized_url,
-        embed_url,
-        embed_html,
-        thumbnail_url,
-        can_embed: true,
-        meta_checked_at: new Date().toISOString(),
-        platform: "facebook",
-        is_visible: true,
-      })
-      .select()
-      .single();
-
-    if (insertErr) throw insertErr;
-    return { video: video as StoreVideo, error: null };
-  } catch (e: any) {
-    console.error("addFacebookVideo error:", e);
-    return {
-      video: null,
-      error: e.message || "هذا الفيديو خاص أو غير قابل للعرض داخل السوق. يرجى استعمال رابط فيديو فيسبوك عام.",
-    };
-  }
 };

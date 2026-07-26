@@ -15,12 +15,20 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function ok(body: Record<string, unknown>) {
+  return json(body, 200);
+}
+
+function fail(error: string) {
+  return json({ success: false, error }, 200);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return json({ error: "غير مصرح" }, 401);
+    if (!authHeader) return fail("غير مصرح");
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -31,7 +39,7 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: { user: caller }, error: callerErr } =
       await adminClient.auth.getUser(token);
-    if (callerErr || !caller) return json({ error: "جلسة غير صالحة" }, 401);
+    if (callerErr || !caller) return fail("جلسة غير صالحة");
 
     const { data: callerProfile, error: roleErr } = await adminClient
       .from("profiles")
@@ -43,7 +51,7 @@ serve(async (req) => {
       !callerProfile ||
       !["admin", "founder"].includes(callerProfile.role)
     ) {
-      return json({ error: "يتطلب دور مشرف أو مؤسس" }, 403);
+      return fail("يتطلب دور مشرف أو مؤسس");
     }
 
     const body = await req.json();
@@ -64,18 +72,18 @@ serve(async (req) => {
     } = body;
 
     if (!["merchant", "driver", "customer"].includes(role)) {
-      return json({ error: "دور غير صالح" }, 400);
+      return fail("دور غير صالح");
     }
 
-    if (!full_name?.trim()) return json({ error: "الاسم الكامل مطلوب" }, 400);
-    if (!phone?.trim()) return json({ error: "رقم الهاتف مطلوب" }, 400);
+    if (!full_name?.trim()) return fail("الاسم الكامل مطلوب");
+    if (!phone?.trim()) return fail("رقم الهاتف مطلوب");
 
     const normalPhone = phone.trim();
     const hasEmail = Boolean(email?.trim());
     const hasPassword = Boolean(password && String(password).length >= 6);
 
     if (hasEmail && !hasPassword) {
-      return json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل عند توفير البريد الإلكتروني" }, 400);
+      return fail("كلمة المرور يجب أن تكون 6 أحرف على الأقل عند توفير البريد الإلكتروني");
     }
 
     let normalEmail = "";
@@ -97,7 +105,7 @@ serve(async (req) => {
       .select("id")
       .eq(phoneColumn, normalPhone)
       .maybeSingle();
-    if (dupPhone) return json({ error: "رقم الهاتف مستخدم مسبقاً" }, 409);
+    if (dupPhone) return fail("رقم الهاتف مستخدم مسبقاً");
 
     // Create Auth user
     const createUserAttributes: Record<string, unknown> = {
@@ -109,10 +117,7 @@ serve(async (req) => {
     const { data: authData, error: authErr } =
       await adminClient.auth.admin.createUser(createUserAttributes);
     if (authErr || !authData?.user) {
-      return json(
-        { error: `خطأ في إنشاء حساب المصادقة: ${authErr?.message}` },
-        500
-      );
+      return fail(`خطأ في إنشاء حساب المصادقة: ${authErr?.message}`);
     }
     userId = authData.user.id;
 
@@ -123,10 +128,7 @@ serve(async (req) => {
     });
     if (profileErr) {
       await adminClient.auth.admin.deleteUser(userId);
-      return json(
-        { error: `خطأ في إنشاء الملف الشخصي: ${profileErr.message}` },
-        500
-      );
+      return fail(`خطأ في إنشاء الملف الشخصي: ${profileErr.message}`);
     }
 
     const nameParts = full_name.trim().split(" ");
@@ -180,10 +182,7 @@ serve(async (req) => {
 
     if (insertErr) {
       await adminClient.auth.admin.deleteUser(userId);
-      return json(
-        { error: `خطأ في إنشاء السجل: ${(insertErr as Error).message}` },
-        500
-      );
+      return fail(`خطأ في إنشاء السجل: ${(insertErr as Error).message}`);
     }
 
     // Audit log — best-effort
@@ -207,7 +206,7 @@ serve(async (req) => {
     const roleLabel =
       role === "merchant" ? "التاجر" : role === "driver" ? "الموصل" : "الزبون";
 
-    return json({
+    return ok({
       success: true,
       user_id: userId,
       role,
@@ -217,6 +216,6 @@ serve(async (req) => {
       message: `تم إنشاء حساب ${roleLabel} بنجاح`,
     });
   } catch (err) {
-    return json({ error: `خطأ داخلي: ${(err as Error).message}` }, 500);
+    return fail(`خطأ داخلي: ${(err as Error).message}`);
   }
 });
