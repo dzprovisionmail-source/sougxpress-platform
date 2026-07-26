@@ -1361,38 +1361,129 @@ export type Database = {
           },
         ]
       }
-      store_videos: {
+      store_video_rejections: {
         Row: {
           created_at: string
+          created_by: string | null
+          debug_detail: string | null
+          id: string
+          message_ar: string
+          original_url: string
+          provider: string | null
+          reason: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          debug_detail?: string | null
+          id?: string
+          message_ar: string
+          original_url: string
+          provider?: string | null
+          reason: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          debug_detail?: string | null
+          id?: string
+          message_ar?: string
+          original_url?: string
+          provider?: string | null
+          reason?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_video_rejections_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_video_rejections_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_videos: {
+        Row: {
+          author_name: string | null
+          can_embed: boolean
+          created_at: string
+          created_by: string | null
+          embed_html: string | null
+          embed_url: string | null
           id: string
           is_visible: boolean
+          meta_checked_at: string | null
+          normalized_url: string | null
           platform: string
+          provider: string | null
+          recheck_due_at: string | null
+          rejection_reason: string | null
           store_id: string
+          thumbnail_url: string | null
           title: string | null
           updated_at: string
           url: string
         }
         Insert: {
+          author_name?: string | null
+          can_embed?: boolean
           created_at?: string
+          created_by?: string | null
+          embed_html?: string | null
+          embed_url?: string | null
           id?: string
           is_visible?: boolean
+          meta_checked_at?: string | null
+          normalized_url?: string | null
           platform?: string
+          provider?: string | null
+          recheck_due_at?: string | null
+          rejection_reason?: string | null
           store_id: string
+          thumbnail_url?: string | null
           title?: string | null
           updated_at?: string
           url: string
         }
         Update: {
+          author_name?: string | null
+          can_embed?: boolean
           created_at?: string
+          created_by?: string | null
+          embed_html?: string | null
+          embed_url?: string | null
           id?: string
           is_visible?: boolean
+          meta_checked_at?: string | null
+          normalized_url?: string | null
           platform?: string
+          provider?: string | null
+          recheck_due_at?: string | null
+          rejection_reason?: string | null
           store_id?: string
+          thumbnail_url?: string | null
           title?: string | null
           updated_at?: string
           url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "store_videos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "store_videos_store_id_fkey"
             columns: ["store_id"]
