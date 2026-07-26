@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
-  FlatList, RefreshControl, Modal, ScrollView, ActivityIndicator, Image, Alert,
+  FlatList, RefreshControl, Modal, ScrollView, ActivityIndicator, Image, Alert, Linking,
 } from "react-native";
 import { router } from "expo-router";
 import { Plus, Filter, Search, Star, MapPin, Clock, Store, X, Check, Image as ImageIcon, Upload, Trash2, Eye, EyeOff, Video, Package } from "lucide-react-native";
@@ -18,7 +18,8 @@ import {
 } from "@/services/founder-stores.service";
 import {
   getFounderStoreGallery, addFounderGalleryImage, updateFounderGalleryImage, deleteFounderGalleryImage,
-  getFounderStoreVideos, addFounderVideo, updateFounderVideo, deleteFounderVideo,
+  getFounderStoreVideos, addFounderVideo, deleteFounderVideo,
+  getFounderStoreFacebookVideos, addFounderFacebookVideo,
   getFounderStoreProducts, addFounderProduct, updateFounderProduct, deleteFounderProduct,
 } from "@/services/founder-store-content.service";
 import { StoreGalleryImage, StoreVideo, Product } from "@/types/schema-03-core";
@@ -100,7 +101,7 @@ export default function FounderStoresScreen() {
   const [newProductPrice, setNewProductPrice] = useState("");
   const [newVideoUrl, setNewVideoUrl] = useState("");
   const [newVideoTitle, setNewVideoTitle] = useState("");
-  const [newVideoPlatform, setNewVideoPlatform] = useState("youtube");
+  const [videoSubmitError, setVideoSubmitError] = useState<string | null>(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
 
   const load = useCallback(
@@ -312,12 +313,19 @@ export default function FounderStoresScreen() {
 
   const handleAddVideo = async () => {
     if (!selectedStore || !newVideoUrl.trim()) return;
-    const { video, error: err } = await addFounderVideo(selectedStore.id, newVideoUrl.trim(), newVideoTitle.trim() || null, newVideoPlatform);
+    setVideoSubmitError(null);
+
+    const { video, error: err } = await addFounderVideo(
+      selectedStore.id,
+      newVideoUrl.trim(),
+      newVideoTitle.trim() || null
+    );
     if (video) {
       setVideos((v) => [...v, video]);
       setNewVideoUrl("");
       setNewVideoTitle("");
     } else if (err) {
+      setVideoSubmitError(err);
       Alert.alert("خطأ", err);
     }
   };
@@ -422,7 +430,7 @@ export default function FounderStoresScreen() {
                 <View style={{ flex: 1, alignItems: "flex-end" }}>
                   <Text style={{ color: colors.textPrimary, fontSize: tokens.typography.sizes.base, fontWeight: "600", textAlign: "right" }}>{item.name}</Text>
                   <Text style={{ color: colors.textSecondary, fontSize: tokens.typography.sizes.xs, textAlign: "right" }}>
-                    {item.merchant?.business_name ?? "—"} · {item.category} · {STATUS_LABELS[item.status] ?? item.status}
+                    {item.is_demo ? "متجر تجريبي" : (item.merchant?.business_name ?? "—")} · {item.category} · {STATUS_LABELS[item.status] ?? item.status}
                   </Text>
                   {item.is_featured && <Text style={{ color: colors.warning, fontSize: 11, textAlign: "right" }}>⭐ مميز</Text>}
                   {item.is_demo && (
@@ -609,30 +617,44 @@ export default function FounderStoresScreen() {
                     </View>
                   )}
 
-                  {/* Videos Tab */}
-                  {contentTab === "videos" && !contentLoading && (
-                    <View style={{ gap: 8 }}>
-                      {videos.map((vid) => (
-                        <View key={vid.id} style={{ flexDirection: "row-reverse", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }}>
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{vid.title || vid.url}</Text>
-                            <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{vid.platform}</Text>
+                      {/* Videos Tab */}
+                      {contentTab === "videos" && !contentLoading && (
+                        <View style={{ gap: 8 }}>
+                          {videos.map((vid) => (
+                            <View key={vid.id} style={{ flexDirection: "row-reverse", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }}>
+                              <View style={{ flex: 1 }}>
+                                <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right" }}>{vid.title || vid.url}</Text>
+                                <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{vid.provider || vid.platform}</Text>
+                                {vid.can_embed && (
+                                  <Text style={{ color: colors.success, fontSize: 10, textAlign: "right", fontWeight: "600" }}>قابل للعرض</Text>
+                                )}
+                              </View>
+                              {selectedStore && (
+                                <TouchableOpacity onPress={() => {
+                                  // Founder debug-only: open original link
+                                  Linking.openURL(vid.url).catch(() => {});
+                                }} style={{ padding: 6, borderRadius: 6, backgroundColor: colors.textSecondary + "18" }}>
+                                  <Text style={{ fontSize: 10, color: colors.textSecondary }}>فتح</Text>
+                                </TouchableOpacity>
+                              )}
+                              <TouchableOpacity onPress={() => handleDeleteVideo(vid.id)} style={{ padding: 6, borderRadius: 6, backgroundColor: colors.error + "18" }}>
+                                <Trash2 size={14} color={colors.error} />
+                              </TouchableOpacity>
+                            </View>
+                          ))}
+                          <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 8 }}>
+                            <TextInput value={newVideoUrl} onChangeText={setNewVideoUrl} placeholder="رابط الفيديو" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 2, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
+                            <TextInput value={newVideoTitle} onChangeText={setNewVideoTitle} placeholder="العنوان (اختياري)" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 1, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
+                            <TouchableOpacity onPress={handleAddVideo} style={[styles.saveBtn, { backgroundColor: colors.primary, paddingHorizontal: 12 }]}>
+                              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12 }}>إضافة</Text>
+                            </TouchableOpacity>
                           </View>
-                          <TouchableOpacity onPress={() => handleDeleteVideo(vid.id)} style={{ padding: 6, borderRadius: 6, backgroundColor: colors.error + "18" }}>
-                            <Trash2 size={14} color={colors.error} />
-                          </TouchableOpacity>
+                          {videoSubmitError && (
+                            <Text style={{ color: colors.error, fontSize: 12, textAlign: "right" }}>{videoSubmitError}</Text>
+                          )}
+                          {videos.length === 0 && <Text style={{ color: colors.textDisabled, textAlign: "center", padding: 16, fontSize: 13 }}>لا توجد فيديوهات</Text>}
                         </View>
-                      ))}
-                      <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 8 }}>
-                        <TextInput value={newVideoUrl} onChangeText={setNewVideoUrl} placeholder="رابط الفيديو" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 2, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
-                        <TextInput value={newVideoTitle} onChangeText={setNewVideoTitle} placeholder="العنوان (اختياري)" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 1, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
-                        <TouchableOpacity onPress={handleAddVideo} style={[styles.saveBtn, { backgroundColor: colors.primary, paddingHorizontal: 12 }]}>
-                          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12 }}>إضافة</Text>
-                        </TouchableOpacity>
-                      </View>
-                      {videos.length === 0 && <Text style={{ color: colors.textDisabled, textAlign: "center", padding: 16, fontSize: 13 }}>لا توجد فيديوهات</Text>}
-                    </View>
-                  )}
+                      )}
 
                   {/* Products Tab */}
                   {contentTab === "products" && !contentLoading && (
@@ -781,4 +803,5 @@ const styles = StyleSheet.create({
   logoImg: { width: "100%", height: "100%" },
   coverImg: { width: "100%", height: "100%" },
   logoOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, paddingVertical: 4, alignItems: "center" },
+  tabBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, alignItems: "center", justifyContent: "center" },
 });
