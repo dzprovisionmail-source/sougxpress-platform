@@ -24,6 +24,7 @@ import {
 } from "@/services/founder-store-content.service";
 import { StoreGalleryImage, StoreVideo, Product } from "@/types/schema-03-core";
 import { supabase } from "@/lib/supabase";
+import { useRealtimeStoreList } from "@/hooks/useRealtimeStoreList";
 
 type StoreStatus = "all" | "draft" | "active" | "paused" | "suspended";
 type StoreCategory = "all" | "grocery" | "restaurant" | "pharmacy" | "bakery" | "butcher" | "electronics" | "household" | "other";
@@ -121,6 +122,10 @@ export default function FounderStoresScreen() {
   );
 
   useEffect(() => { load(search, statusFilter); }, [load, search, statusFilter]);
+
+  useRealtimeStoreList(() => {
+    load(search, statusFilter, true);
+  });
 
   const handleSearch = () => load(search, statusFilter, false);
 
