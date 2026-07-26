@@ -227,8 +227,16 @@ export default function FounderStoresScreen() {
 
   const handleLogoUpload = async () => {
     if (!selectedStore) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("خطأ", "يجب منح صلاحية الوصول للصور");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (result.canceled) return;
     setLogoLoading(true);
-    const { url, error: err } = await uploadStoreLogo(selectedStore.id, "");
+    const asset = result.assets[0];
+    const { url, error: err } = await uploadStoreLogo(selectedStore.id, asset.uri);
     if (url) {
       await updateFounderStore(selectedStore.id, { logo_url: url });
       const { store: updated } = await getFounderStore(selectedStore.id);
@@ -241,8 +249,16 @@ export default function FounderStoresScreen() {
 
   const handleCoverUpload = async () => {
     if (!selectedStore) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("خطأ", "يجب منح صلاحية الوصول للصور");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (result.canceled) return;
     setCoverLoading(true);
-    const { url, error: err } = await uploadStoreCover(selectedStore.id, "");
+    const asset = result.assets[0];
+    const { url, error: err } = await uploadStoreCover(selectedStore.id, asset.uri);
     if (url) {
       await updateFounderStore(selectedStore.id, { cover_url: url });
       const { store: updated } = await getFounderStore(selectedStore.id);
