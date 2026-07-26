@@ -1,1 +1,40 @@
 
+name: Gemini Code Assistant
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Google GenAI SDK
+        run: pip install google-genai
+
+      - name: Run Gemini Analysis
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python -c "
+          import os
+          from google import genai
+
+          client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+          response = client.models.generate_content(
+              model='gemini-2.5-flash',
+              contents='قم بتقديم تحليل سريع وموجز لأهم الملفات في هذا المستودع.'
+          )
+          print('=== نتيجة تحليل Gemini ===')
+          print(response.text)
+          "
