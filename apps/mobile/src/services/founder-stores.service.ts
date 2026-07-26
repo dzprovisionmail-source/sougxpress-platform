@@ -1,3 +1,4 @@
+import { File } from "expo-file-system";
 import { supabase } from "@/lib/supabase";
 
 export interface FounderStore {
@@ -110,16 +111,14 @@ export async function uploadStoreLogo(
 ): Promise<{ url: string | null; error: string | null }> {
   try {
     if (!uri) return { url: null, error: "لم يتم تحديد صورة للشعار" };
-    const response = await fetch(uri);
-    if (!response.ok) return { url: null, error: `فشل قراءة الصورة: ${response.status}` };
-    const blob = await response.blob();
+    const arrayBuffer = await new File(uri).arrayBuffer();
     const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
     const path = `${storeId}/logo.${ext}`;
     const contentType = `image/${ext === "jpg" ? "jpeg" : ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from("store_images")
-      .upload(path, blob, { upsert: true, contentType });
+      .upload(path, arrayBuffer, { upsert: true, contentType });
 
     if (uploadError) return { url: null, error: uploadError.message };
 
@@ -136,16 +135,14 @@ export async function uploadStoreCover(
 ): Promise<{ url: string | null; error: string | null }> {
   try {
     if (!uri) return { url: null, error: "لم يتم تحديد صورة الغلاف" };
-    const response = await fetch(uri);
-    if (!response.ok) return { url: null, error: `فشل قراءة الصورة: ${response.status}` };
-    const blob = await response.blob();
+    const arrayBuffer = await new File(uri).arrayBuffer();
     const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
     const path = `${storeId}/cover.${ext}`;
     const contentType = `image/${ext === "jpg" ? "jpeg" : ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from("store_images")
-      .upload(path, blob, { upsert: true, contentType });
+      .upload(path, arrayBuffer, { upsert: true, contentType });
 
     if (uploadError) return { url: null, error: uploadError.message };
 

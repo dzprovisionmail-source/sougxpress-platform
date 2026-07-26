@@ -1,3 +1,4 @@
+import { File } from "expo-file-system";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
@@ -297,12 +298,12 @@ export default function FounderStoresScreen() {
     setUploadingGallery(true);
     const asset = result.assets[0];
     try {
-      const response = await fetch(asset.uri);
-      const blob = await response.blob();
+      const arrayBuffer = await new File(asset.uri).arrayBuffer();
       const fileExt = asset.uri.split(".").pop() || "jpg";
       const fileName = `${selectedStore.id}-${Date.now()}.${fileExt}`;
       const filePath = `store_gallery/${fileName}`;
-      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, blob, { contentType: blob.type });
+      const contentType = `image/${fileExt === "jpg" ? "jpeg" : fileExt}`;
+      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, arrayBuffer, { contentType });
       if (uploadError) throw uploadError;
       const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
       const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl);
