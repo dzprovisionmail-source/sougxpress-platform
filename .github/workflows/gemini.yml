@@ -5,7 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch: # يتيح لك تشغيل الكود يدوياً من تبويب Actions
+  workflow_dispatch:
 
 jobs:
   review:
@@ -27,7 +27,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python -c "
-          import os
+          import os, time
           from google import genai
 
           key = os.getenv('GEMINI_API_KEY')
@@ -36,10 +36,21 @@ jobs:
               exit(1)
 
           client = genai.Client(api_key=key)
-          response = client.models.generate_content(
-              model='gemini-2.0-flash',
-              contents='قم بتقديم تحليل سريع وموجز لأهم ملفات هذا المستودع.'
-          )
-          print('=== نتيجة تحليل Gemini ===')
-          print(response.text)
+
+          # المحاولة حتى 3 مرات في حال وجود ضغط على الـ API
+          for attempt in range(1, 4):
+              try:
+                  response = client.models.generate_content(
+                      model='gemini-2.0-flash',
+                      contents='قم بتقديم تحليل سريع وموجز لأهم ملفات هذا المستودع.'
+                  )
+                  print('=== نتيجة تحليل Gemini ===')
+                  print(response.text)
+                  break
+              except Exception as e:
+                  if '429' in str(e) or 'Quota' in str(e):
+                      print(f'⚠️ تجاوز حد الطلبات، سأنتظر 10 ثوانٍ وأحاول مجدداً... (المحاولة {attempt}/3)')
+                      time.sleep(10)
+                  else:
+                      raise e
           "
