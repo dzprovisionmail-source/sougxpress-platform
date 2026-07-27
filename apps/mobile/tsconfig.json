@@ -3,9 +3,19 @@
     "strict": false,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
-    }
+      "@/*": [
+        "src/*"
+      ]
+    },
+    "target": "es2022",
+    "lib": [
+      "dom",
+      "es2022"
+    ],
+    "jsx": "react-jsx"
   },
   "extends": "expo/tsconfig.base",
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

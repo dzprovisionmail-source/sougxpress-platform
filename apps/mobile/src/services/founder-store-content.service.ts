@@ -131,7 +131,7 @@ export async function updateFounderProduct(
   productId: string,
   updates: { name?: string; price_minor?: number; image_url?: string | null; status?: string }
 ): Promise<{ product: unknown | null; error: string | null }> {
-  const product = await updateProduct(productId, updates);
+  const product = await updateProduct(productId, updates as any);
   return { product, error: product ? null : "فشل تحديث المنتج" };
 }
 
