@@ -6,6 +6,7 @@ import {
 import { router } from "expo-router";
 import { Plus, Filter, Search, Star, MapPin, Clock, Store, X, Check, Image as ImageIcon, Upload, Trash2, Eye, EyeOff, Video, Package } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
+import { File } from "expo-file-system";
 import {
   AdminPageShell, AdminListItem, AdminStatCard,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
@@ -297,12 +298,12 @@ export default function FounderStoresScreen() {
     setUploadingGallery(true);
     const asset = result.assets[0];
     try {
-      const response = await fetch(asset.uri);
-      const blob = await response.blob();
-      const fileExt = asset.uri.split(".").pop() || "jpg";
+      const fileExt = asset.uri.split(".").pop()?.split("?")[0].toLowerCase() || "jpg";
+      const contentType = `image/${fileExt === "jpg" ? "jpeg" : fileExt}`;
       const fileName = `${selectedStore.id}-${Date.now()}.${fileExt}`;
       const filePath = `store_gallery/${fileName}`;
-      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, blob, { contentType: blob.type });
+      const arrayBuffer = await new File(asset.uri).arrayBuffer();
+      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, arrayBuffer, { contentType });
       if (uploadError) throw uploadError;
       const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
       const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl);
