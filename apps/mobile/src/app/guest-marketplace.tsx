@@ -29,6 +29,7 @@ import {
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "../constants/theme";
 import { supabase } from "../lib/supabase";
+import { MAIN_CATEGORIES } from "@/config/storeCategories";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -36,6 +37,8 @@ interface StoreItem {
   id: string;
   name: string;
   category: string;
+  main_category?: string | null;
+  sub_category?: string | null;
   rating?: string;
   cover_url?: string;
   logo_url?: string;
@@ -59,11 +62,11 @@ interface HeroSlide {
 
 const CATEGORIES = [
   { id: "all", name: "الكل", icon: "apps-outline" as const },
-  { id: "خضروات", name: "خضروات", icon: "leaf-outline" as const },
-  { id: "فواكه", name: "فواكه", icon: "nutrition-outline" as const },
-  { id: "لحوم", name: "لحوم", icon: "restaurant-outline" as const },
-  { id: "مخبوزات", name: "مخبوزات", icon: "pizza-outline" as const },
-  { id: "ألبان", name: "ألبان", icon: "water-outline" as const },
+  ...MAIN_CATEGORIES.map((c) => ({
+    id: c.value,
+    name: c.label,
+    icon: (c.icon || "storefront-outline") as any,
+  })),
 ];
 
 export default function GuestMarketplaceScreen() {
@@ -91,7 +94,7 @@ export default function GuestMarketplaceScreen() {
       setError(null);
       const { data, error: fetchError } = await supabase
         .from("stores")
-        .select("id, name, category, rating, status, cover_url, logo_url, description, address_line1, city, is_open, is_featured")
+        .select("id, name, category, main_category, rating, status, cover_url, logo_url, description, address_line1, city, is_open, is_featured")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(50);
@@ -115,7 +118,9 @@ export default function GuestMarketplaceScreen() {
   const filteredStores = React.useMemo(() => {
     let result = stores;
     if (activeCategory !== "all") {
-      result = result.filter((s) => s.category === activeCategory);
+      result = result.filter(
+        (s) => s.main_category === activeCategory || s.category === activeCategory
+      );
     }
     if (search.trim().length > 0) {
       const q = search.trim().toLowerCase();

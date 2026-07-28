@@ -7,6 +7,10 @@ export interface FounderStore {
   zone_id: string;
   name: string;
   category: string;
+  main_category: string | null;
+  sub_category: string | null;
+  tags: string[];
+  badges: string[];
   description: string | null;
   status: string;
   opens_at: string;
@@ -49,7 +53,7 @@ export async function getFounderStores(
     .limit(limit);
 
   if (search?.trim()) q = q.or(`name.ilike.%${search.trim()}%,address_line1.ilike.%${search.trim()}%`);
-  if (category && category !== "all") q = q.eq("category", category);
+  if (category && category !== "all") q = q.or(`main_category.eq.${category},category.eq.${category}`);
   if (status && status !== "all") q = q.eq("status", status);
   if (featured !== undefined) q = q.eq("is_featured", featured);
 

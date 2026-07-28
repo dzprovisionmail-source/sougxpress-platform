@@ -77,6 +77,10 @@ export interface Store {
   zone_id: string;
   name: string;
   category: string;
+  main_category?: string | null;
+  sub_category?: string | null;
+  tags?: string[];
+  badges?: string[];
   description?: string;
   status: StoreStatus;
   opens_at: string;

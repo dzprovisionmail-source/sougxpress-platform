@@ -1497,111 +1497,123 @@ export type Database = {
         Row: {
           address_line1: string
           address_line2: string | null
-          admin_notes: string | null
-          category: string
-          city: string
-          closes_at: string | null
-          country: string
-          cover_url: string | null
-          created_at: string
-          created_by: string | null
-          deleted_at: string | null
-          description: string | null
-          email: string | null
-          id: string
-          is_demo: boolean
-          is_featured: boolean
-          is_new: boolean
-          is_open: boolean
-          latitude: number | null
-          logo_url: string | null
-          longitude: number | null
-          merchant_id: string
-          name: string
-          opening_hours: Json | null
-          opens_at: string | null
-          phone_number: string | null
-          postal_code: string | null
-          rating: number | null
-          review_count: number | null
-          show_on_home: boolean
-          state_province: string | null
-          status: string
-          updated_at: string
+           admin_notes: string | null
+           badges: string[]
+           category: string
+           city: string
+           closes_at: string | null
+           country: string
+           cover_url: string | null
+           created_at: string
+           created_by: string | null
+           deleted_at: string | null
+           description: string | null
+           email: string | null
+           id: string
+           is_demo: boolean
+           is_featured: boolean
+           is_new: boolean
+           is_open: boolean
+           latitude: number | null
+           logo_url: string | null
+           longitude: number | null
+           main_category: string | null
+           merchant_id: string
+           name: string
+           opening_hours: Json | null
+           opens_at: string | null
+           phone_number: string | null
+           postal_code: string | null
+           rating: number | null
+           review_count: number | null
+           show_on_home: boolean
+           state_province: string | null
+           status: string
+           sub_category: string | null
+           tags: string[]
+           updated_at: string
           zone_id: string | null
         }
         Insert: {
-          address_line1: string
-          address_line2?: string | null
-          admin_notes?: string | null
-          category: string
-          city: string
-          closes_at?: string | null
-          country: string
-          cover_url?: string | null
-          created_at?: string
-          created_by?: string | null
-          deleted_at?: string | null
-          description?: string | null
-          email?: string | null
-          id?: string
-          is_demo?: boolean
-          is_featured?: boolean
-          is_new?: boolean
-          is_open?: boolean
-          latitude?: number | null
-          logo_url?: string | null
-          longitude?: number | null
-          merchant_id: string
-          name: string
-          opening_hours?: Json | null
-          opens_at?: string | null
-          phone_number?: string | null
-          postal_code?: string | null
-          rating?: number | null
-          review_count?: number | null
-          show_on_home?: boolean
-          state_province?: string | null
-          status?: string
-          updated_at?: string
-          zone_id?: string | null
-        }
-        Update: {
-          address_line1?: string
-          address_line2?: string | null
-          admin_notes?: string | null
-          category?: string
-          city?: string
-          closes_at?: string | null
-          country?: string
-          cover_url?: string | null
-          created_at?: string
-          created_by?: string | null
-          deleted_at?: string | null
-          description?: string | null
-          email?: string | null
-          id?: string
-          is_demo?: boolean
-          is_featured?: boolean
-          is_new?: boolean
-          is_open?: boolean
-          latitude?: number | null
-          logo_url?: string | null
-          longitude?: number | null
-          merchant_id?: string
-          name?: string
-          opening_hours?: Json | null
-          opens_at?: string | null
-          phone_number?: string | null
-          postal_code?: string | null
-          rating?: number | null
-          review_count?: number | null
-          show_on_home?: boolean
-          state_province?: string | null
-          status?: string
-          updated_at?: string
-          zone_id?: string | null
-        }
+           address_line1: string
+           address_line2?: string | null
+           admin_notes?: string | null
+           badges?: string[]
+           category: string
+           city: string
+           closes_at?: string | null
+           country: string
+           cover_url?: string | null
+           created_at?: string
+           created_by?: string | null
+           deleted_at?: string | null
+           description?: string | null
+           email?: string | null
+           id?: string
+           is_demo?: boolean
+           is_featured?: boolean
+           is_new?: boolean
+           is_open?: boolean
+           latitude?: number | null
+           logo_url?: string | null
+           longitude?: number | null
+           main_category?: string | null
+           merchant_id: string
+           name: string
+           opening_hours?: Json | null
+           opens_at?: string | null
+           phone_number?: string | null
+           postal_code?: string | null
+           rating?: number | null
+           review_count?: number | null
+           show_on_home?: boolean
+           state_province?: string | null
+           status?: string
+           sub_category?: string | null
+           tags?: string[]
+           updated_at?: string
+           zone_id?: string | null
+         }
+         Update: {
+           address_line1?: string
+           address_line2?: string | null
+           admin_notes?: string | null
+           badges?: string[]
+           category?: string
+           city?: string
+           closes_at?: string | null
+           country?: string
+           cover_url?: string | null
+           created_at?: string
+           created_by?: string | null
+           deleted_at?: string | null
+           description?: string | null
+           email?: string | null
+           id?: string
+           is_demo?: boolean
+           is_featured?: boolean
+           is_new?: boolean
+           is_open?: boolean
+           latitude?: number | null
+           logo_url?: string | null
+           longitude?: number | null
+           main_category?: string | null
+           merchant_id?: string
+           name?: string
+           opening_hours?: Json | null
+           opens_at?: string | null
+           phone_number?: string | null
+           postal_code?: string | null
+           rating?: number | null
+           review_count?: number | null
+           show_on_home?: boolean
+           state_province?: string | null
+           status?: string
+           sub_category?: string | null
+           tags?: string[]
+           updated_at?: string
+           zone_id?: string | null
+         }
         Relationships: [
           {
             foreignKeyName: "fk_stores_zone"

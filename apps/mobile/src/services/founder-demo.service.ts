@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { adminProvisionAccount, type ProvisionAccountParams } from "@/services/admin.service";
+import { mapLegacyCategoryToMain } from "@/config/storeCategories";
 
 export interface DemoStoreInput {
   name: string;
@@ -65,6 +66,7 @@ export async function createDemoStore(
   const storePayload: Record<string, unknown> = {
     name: trimmedName,
     category: input.category,
+    main_category: mapLegacyCategoryToMain(input.category),
     merchant_id: merchantId,
     is_demo: true,
     created_by: founderId,

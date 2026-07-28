@@ -16,17 +16,9 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import { createDemoStore } from "@/services/founder-demo.service";
 import { getFounderZones, type FounderZone } from "@/services/founder-users.service";
+import { MAIN_CATEGORIES } from "@/config/storeCategories";
 
-const CATEGORIES = [
-  { value: "grocery", label: "بقالة" },
-  { value: "restaurant", label: "مطعم" },
-  { value: "pharmacy", label: "صيدلية" },
-  { value: "bakery", label: "مخبز" },
-  { value: "butcher", label: "جزارة" },
-  { value: "electronics", label: "إلكترونيات" },
-  { value: "household", label: "منزلية" },
-  { value: "other", label: "أخرى" },
-];
+const CATEGORIES = MAIN_CATEGORIES.map(c => ({ value: c.value, label: c.label }));
 
 export default function FounderAddDemoStoreScreen() {
   const { colors, tokens } = useAppTheme();
@@ -34,7 +26,7 @@ export default function FounderAddDemoStoreScreen() {
   const [loadingZones, setLoadingZones] = useState(true);
 
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("grocery");
+  const [category, setCategory] = useState("Groceries");
   const [selectedZone, setSelectedZone] = useState<FounderZone | null>(null);
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");

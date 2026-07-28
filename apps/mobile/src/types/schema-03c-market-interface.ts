@@ -44,7 +44,11 @@ export interface FounderOverrideAction {
 export interface StoreListItem {
   id: string;
   name: string;
-  category: StoreCategory;
+  category: string;
+  main_category?: string | null;
+  sub_category?: string | null;
+  tags?: string[];
+  badges?: string[];
   zone_id: string;
   status: "draft" | "active" | "paused" | "suspended";
   is_open_now: boolean;

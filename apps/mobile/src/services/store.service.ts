@@ -61,7 +61,7 @@ export const getStoresByCategory = async (category: string): Promise<Store[]> =>
     .from("stores")
     .select("*")
     .eq("status", "active")
-    .eq("category", category);
+    .or(`main_category.eq.${category},category.eq.${category}`);
 
   if (error) {
     console.error("Error fetching stores by category:", error);
