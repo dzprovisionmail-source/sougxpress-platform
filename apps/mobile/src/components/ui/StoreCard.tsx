@@ -184,15 +184,13 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   );
 };
 
-const CARD_WIDTH = 280;
-const IMAGE_HEIGHT = 110;
+const IMAGE_HEIGHT = 140;
 
 const styles = StyleSheet.create({
   container: {
-    width: CARD_WIDTH,
+    width: "100%",
     padding: 0,
-    marginRight: TOKENS.spacing.md,
-    marginBottom: TOKENS.spacing.md,
+    marginVertical: TOKENS.spacing.xs,
     overflow: "hidden",
   },
   imageContainer: {

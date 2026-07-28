@@ -379,7 +379,14 @@ export async function getAdminAuditLogs(limit = 60): Promise<AdminAuditLogEntry[
  * Uses the SECURITY DEFINER RPC — the server re-verifies the caller's role.
  * Never throws; failure is silently swallowed to avoid blocking the UI.
  */
+let lastDashboardLogTime = 0;
+
 export async function logFounderDashboardAccess(): Promise<void> {
+  const now = Date.now();
+  if (now - lastDashboardLogTime < 300000) { // 5 minutes debounce
+    return;
+  }
+  lastDashboardLogTime = now;
   try {
     await supabase.rpc("log_admin_audit_event", {
       p_action: "view_founder_dashboard",
