@@ -25,6 +25,8 @@ import {
 import { StoreGalleryImage, StoreVideo, Product } from "@/types/schema-03-core";
 import { supabase } from "@/lib/supabase";
 import { useRealtimeStoreList } from "@/hooks/useRealtimeStoreList";
+import { ImageOptimizerModal } from "@/components/ui";
+import { ImageType } from "@/utils/imageOptimizer";
 
 type StoreStatus = "all" | "draft" | "active" | "paused" | "suspended";
 type StoreCategory = "all" | "grocery" | "restaurant" | "pharmacy" | "bakery" | "butcher" | "electronics" | "household" | "other";
@@ -91,6 +93,10 @@ export default function FounderStoresScreen() {
 
   const [logoLoading, setLogoLoading] = useState(false);
   const [coverLoading, setCoverLoading] = useState(false);
+  const [optimizerVisible, setOptimizerVisible] = useState(false);
+  const [optimizerType, setOptimizerType] = useState<ImageType>("logo");
+  const [pendingUploadType, setPendingUploadType] = useState<"logo" | "cover" | "gallery" | null>(null);
+  const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
 
   const [contentTab, setContentTab] = useState<"gallery" | "videos" | "products">("gallery");
   const [gallery, setGallery] = useState<StoreGalleryImage[]>([]);
@@ -232,19 +238,12 @@ export default function FounderStoresScreen() {
       Alert.alert("خطأ", "يجب منح صلاحية الوصول للصور");
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
     if (result.canceled) return;
-    setLogoLoading(true);
-    const asset = result.assets[0];
-    const { url, error: err } = await uploadStoreLogo(selectedStore.id, asset.uri);
-    if (url) {
-      await updateFounderStore(selectedStore.id, { logo_url: url });
-      const { store: updated } = await getFounderStore(selectedStore.id);
-      setSelectedStore(updated);
-    } else if (err) {
-      Alert.alert("خطأ", err);
-    }
-    setLogoLoading(false);
+    setPendingImageUri(result.assets[0].uri);
+    setOptimizerType("logo");
+    setPendingUploadType("logo");
+    setOptimizerVisible(true);
   };
 
   const handleCoverUpload = async () => {
@@ -254,19 +253,12 @@ export default function FounderStoresScreen() {
       Alert.alert("خطأ", "يجب منح صلاحية الوصول للصور");
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
     if (result.canceled) return;
-    setCoverLoading(true);
-    const asset = result.assets[0];
-    const { url, error: err } = await uploadStoreCover(selectedStore.id, asset.uri);
-    if (url) {
-      await updateFounderStore(selectedStore.id, { cover_url: url });
-      const { store: updated } = await getFounderStore(selectedStore.id);
-      setSelectedStore(updated);
-    } else if (err) {
-      Alert.alert("خطأ", err);
-    }
-    setCoverLoading(false);
+    setPendingImageUri(result.assets[0].uri);
+    setOptimizerType("cover");
+    setPendingUploadType("cover");
+    setOptimizerVisible(true);
   };
 
   const toggleFeatured = async () => {
@@ -292,27 +284,63 @@ export default function FounderStoresScreen() {
       Alert.alert("خطأ", "يجب منح صلاحية الوصول للصور");
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
     if (result.canceled) return;
-    setUploadingGallery(true);
-    const asset = result.assets[0];
-    try {
-      const fileExt = asset.uri.split(".").pop()?.split("?")[0].toLowerCase() || "jpg";
-      const contentType = `image/${fileExt === "jpg" ? "jpeg" : fileExt}`;
-      const fileName = `${selectedStore.id}-${Date.now()}.${fileExt}`;
-      const filePath = `store_gallery/${fileName}`;
-      const arrayBuffer = await new File(asset.uri).arrayBuffer();
-      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, arrayBuffer, { contentType });
-      if (uploadError) throw uploadError;
-      const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
-      const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl);
-      if (image) setGallery((g) => [...g, image]);
-      else if (err) Alert.alert("خطأ", err);
-    } catch (e: any) {
-      Alert.alert("خطأ", e.message);
-    } finally {
-      setUploadingGallery(false);
+    setPendingImageUri(result.assets[0].uri);
+    setOptimizerType("gallery");
+    setPendingUploadType("gallery");
+    setOptimizerVisible(true);
+  };
+
+  const handleOptimizerComplete = async (processedUri: string) => {
+    if (!selectedStore || !pendingUploadType) return;
+    const type = pendingUploadType;
+    setOptimizerVisible(false);
+
+    if (type === "logo") {
+      setLogoLoading(true);
+      const { url, error: err } = await uploadStoreLogo(selectedStore.id, processedUri);
+      if (url) {
+        await updateFounderStore(selectedStore.id, { logo_url: url });
+        const { store: updated } = await getFounderStore(selectedStore.id);
+        setSelectedStore(updated);
+      } else if (err) {
+        Alert.alert("خطأ", err);
+      }
+      setLogoLoading(false);
+    } else if (type === "cover") {
+      setCoverLoading(true);
+      const { url, error: err } = await uploadStoreCover(selectedStore.id, processedUri);
+      if (url) {
+        await updateFounderStore(selectedStore.id, { cover_url: url });
+        const { store: updated } = await getFounderStore(selectedStore.id);
+        setSelectedStore(updated);
+      } else if (err) {
+        Alert.alert("خطأ", err);
+      }
+      setCoverLoading(false);
+    } else if (type === "gallery") {
+      setUploadingGallery(true);
+      try {
+        const fileExt = "jpg";
+        const contentType = "image/jpeg";
+        const fileName = `${selectedStore.id}-${Date.now()}.${fileExt}`;
+        const filePath = `store_gallery/${fileName}`;
+        const arrayBuffer = await new File(processedUri).arrayBuffer();
+        const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, arrayBuffer, { contentType });
+        if (uploadError) throw uploadError;
+        const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
+        const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl);
+        if (image) setGallery((g) => [...g, image]);
+        else if (err) Alert.alert("خطأ", err);
+      } catch (e: any) {
+        Alert.alert("خطأ", e.message);
+      } finally {
+        setUploadingGallery(false);
+      }
     }
+    setPendingUploadType(null);
+    setPendingImageUri(null);
   };
 
   const handleDeleteGallery = async (id: string) => {
@@ -784,13 +812,21 @@ export default function FounderStoresScreen() {
               <TouchableOpacity onPress={handleDelete} disabled={actionLoading} style={[styles.saveBtn, { backgroundColor: colors.error, flex: 1 }]}>
                 {actionLoading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700", textAlign: "center" }}>تأكيد</Text>}
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowDeleteConfirm(false)} style={[styles.saveBtn, { backgroundColor: colors.bgElevated, flex: 1, borderWidth: 1, borderColor: colors.borderSubtle }]}>
+               <TouchableOpacity onPress={() => setShowDeleteConfirm(false)} style={[styles.saveBtn, { backgroundColor: colors.bgElevated, flex: 1, borderWidth: 1, borderColor: colors.borderSubtle }]}>
                 <Text style={{ color: colors.textSecondary, textAlign: "center" }}>إلغاء</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
+      <ImageOptimizerModal
+        visible={optimizerVisible}
+        imageUri={pendingImageUri}
+        imageType={optimizerType}
+        onClose={() => setOptimizerVisible(false)}
+        onComplete={handleOptimizerComplete}
+      />
     </AdminPageShell>
   );
 }

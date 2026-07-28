@@ -33,6 +33,8 @@ import { Store } from "@/types/schema-03-core";
 import StoreImageGallery from "@/components/profile/StoreImageGallery";
 import StoreProductManagement from "@/components/profile/StoreProductManagement";
 import { supabase } from "@/lib/supabase";
+import { ImageOptimizerModal } from "@/components/ui";
+import { ImageType } from "@/utils/imageOptimizer";
 import {
   WorkspaceScreen,
   SectionCard,
@@ -130,6 +132,10 @@ export default function MerchantStoreScreen() {
   // Logo / cover upload state
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [optimizerVisible, setOptimizerVisible] = useState(false);
+  const [optimizerType, setOptimizerType] = useState<ImageType>("logo");
+  const [pendingAssetType, setPendingAssetType] = useState<"logos" | "covers" | null>(null);
+  const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -246,23 +252,36 @@ export default function MerchantStoreScreen() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: asset === "logos" ? [1, 1] : [16, 9],
-      quality: 0.85,
+      quality: 1,
     });
     if (result.canceled) return;
-    const uri = result.assets[0].uri;
+    setPendingImageUri(result.assets[0].uri);
+    setPendingAssetType(asset);
+    setOptimizerType(asset === "logos" ? "logo" : "cover");
+    setOptimizerVisible(true);
+  };
+
+  const handleOptimizerComplete = async (processedUri: string) => {
+    if (!store || !pendingAssetType) return;
+    const asset = pendingAssetType;
+    setOptimizerVisible(false);
+
     if (asset === "logos") setUploadingLogo(true);
     else setUploadingCover(true);
-    const url = await uploadStoreAsset(store.id, asset, uri);
+
+    const url = await uploadStoreAsset(store.id, asset, processedUri);
+
     if (asset === "logos") setUploadingLogo(false);
     else setUploadingCover(false);
+
     if (url) {
       const field = asset === "logos" ? { logo_url: url } : { cover_url: url };
       await updateStoreHook(field as Partial<Store>);
     } else {
       Alert.alert("خطأ", "تعذر رفع الصورة. حاول مرة أخرى.");
     }
+    setPendingAssetType(null);
+    setPendingImageUri(null);
   };
 
   /* ── Loading guard ─────────────────────────────────────────── */
@@ -724,6 +743,14 @@ export default function MerchantStoreScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <ImageOptimizerModal
+        visible={optimizerVisible}
+        imageUri={pendingImageUri}
+        imageType={optimizerType}
+        onClose={() => setOptimizerVisible(false)}
+        onComplete={handleOptimizerComplete}
+      />
     </WorkspaceScreen>
   );
 }

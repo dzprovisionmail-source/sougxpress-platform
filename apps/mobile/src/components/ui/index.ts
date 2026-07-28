@@ -18,3 +18,4 @@ export { default as IconButton } from "./IconButton";
 export { AinSefraZoneSelect } from "./AinSefraZoneSelect";
 export { SimpleSelect } from "./SimpleSelect";
 export type { SelectOption } from "./SimpleSelect";
+export { ImageOptimizerModal } from "./ImageOptimizerModal";
