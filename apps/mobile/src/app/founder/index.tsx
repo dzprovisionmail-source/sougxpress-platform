@@ -41,11 +41,9 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { AdminPageShell, AdminStatCard, AdminErrorState } from "@/components/admin";
 import {
   getControlCenterStats,
-  getFounderActivityFeed,
   subscribeToFounderStats,
   logFounderDashboardAccess,
   type ControlCenterStats,
-  type ActivityFeedEntry,
 } from "@/services/founder.service";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -228,73 +226,13 @@ function QuickAction({
   );
 }
 
-// ─── Activity item ────────────────────────────────────────────────────────────
 
-function ActivityItem({ item, colors, tokens }: { item: ActivityFeedEntry; colors: ReturnType<typeof useAppTheme>["colors"]; tokens: ReturnType<typeof useAppTheme>["tokens"] }) {
-  const time = new Date(item.created_at).toLocaleString("ar-DZ", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  return (
-    <View
-      style={[
-        styles.activityItem,
-        {
-          backgroundColor: colors.bgElevated,
-          borderColor: colors.borderSubtle,
-          borderRadius: tokens.radius.sm,
-          padding: tokens.spacing.md,
-          marginBottom: tokens.spacing.sm,
-        },
-      ]}
-    >
-      <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" }}>
-        <Text
-          style={{
-            color: colors.textPrimary,
-            fontSize: tokens.typography.sizes.sm,
-            fontWeight: "600",
-            fontFamily: tokens.typography.families.arabic,
-            flex: 1,
-          }}
-          numberOfLines={1}
-        >
-          {actionLabel(item.action)}
-        </Text>
-        <Text
-          style={{
-            color: colors.textDisabled,
-            fontSize: tokens.typography.sizes.xs,
-            fontFamily: tokens.typography.families.arabic,
-          }}
-        >
-          {time}
-        </Text>
-      </View>
-      <Text
-        style={{
-          color: colors.textSecondary,
-          fontSize: tokens.typography.sizes.xs,
-          marginTop: 2,
-          fontFamily: tokens.typography.families.arabic,
-        }}
-      >
-        {entityLabel(item.entity_type)}
-        {item.entity_id ? ` • ${item.entity_id.slice(0, 8)}` : ""}
-      </Text>
-    </View>
-  );
-}
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function FounderControlCenterScreen() {
   const { colors, tokens } = useAppTheme();
   const [stats, setStats] = useState<ControlCenterStats | null>(null);
-  const [activity, setActivity] = useState<ActivityFeedEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -304,12 +242,8 @@ export default function FounderControlCenterScreen() {
     else setLoading(true);
     setError(null);
     try {
-      const [statsData, activityData] = await Promise.all([
-        getControlCenterStats(),
-        getFounderActivityFeed(20),
-      ]);
+      const statsData = await getControlCenterStats();
       setStats(statsData);
-      setActivity(activityData);
     } catch (err) {
       console.error("Founder Control Center load error:", err);
       setError("تعذّر تحميل البيانات");
@@ -468,18 +402,7 @@ export default function FounderControlCenterScreen() {
           </View>
         </SectionBlock>
 
-        {/* ── Section: نشاط المنصة ─────────────────────────────────── */}
-        <SectionBlock title="نشاط المنصة">
-          <View style={{ paddingHorizontal: tokens.spacing.lg }}>
-            {activity.length === 0 ? (
-              <Text style={{ color: colors.textDisabled, textAlign: "center", paddingVertical: 20, fontFamily: tokens.typography.families.arabic }}>
-                لا يوجد نشاط حديث
-              </Text>
-            ) : (
-              activity.map((item) => <ActivityItem key={item.id} item={item} colors={colors} tokens={tokens} />)
-            )}
-          </View>
-        </SectionBlock>
+
 
         {/* ── Quick Actions ─────────────────────────────────────────── */}
         <SectionBlock title="الإجراءات السريعة">
@@ -506,6 +429,7 @@ export default function FounderControlCenterScreen() {
             <NavTile label="المالية" icon={<DollarSign size={20} color={primary} />} onPress={() => router.push("/founder/finance" as never)} colors={colors} tokens={tokens} />
             <NavTile label="المحتوى" icon={<FileText size={20} color={primary} />} onPress={() => router.push("/founder/content" as never)} colors={colors} tokens={tokens} />
             <NavTile label="الإعدادات" icon={<Settings size={20} color={primary} />} onPress={() => router.push("/founder/settings" as never)} colors={colors} tokens={tokens} />
+            <NavTile label="نشاط المنصة" icon={<Activity size={20} color={primary} />} onPress={() => router.push("/founder/activity" as never)} colors={colors} tokens={tokens} />
             <NavTile label="سجل العمليات" icon={<ScrollText size={20} color={primary} />} onPress={() => router.push("/founder/audit-log" as never)} colors={colors} tokens={tokens} />
           </View>
         </SectionBlock>

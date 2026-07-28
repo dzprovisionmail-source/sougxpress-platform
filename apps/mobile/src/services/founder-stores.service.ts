@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { File } from "expo-file-system";
+import { mapLegacyCategoryToMain } from "@/config/storeCategories";
 
 export interface FounderStore {
   id: string;
@@ -57,9 +58,27 @@ export async function getFounderStores(
   if (status && status !== "all") q = q.eq("status", status);
   if (featured !== undefined) q = q.eq("is_featured", featured);
 
-  const { data, error } = await q;
+  let { data, error } = await q;
+  if (error && (error.code === '42703' || error.message?.includes('main_category'))) {
+    let fallbackQ = supabase
+      .from("stores")
+      .select("*, merchant:merchants(business_name,owner_full_name,phone)")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (search?.trim()) fallbackQ = fallbackQ.or(`name.ilike.%${search.trim()}%,address_line1.ilike.%${search.trim()}%`);
+    if (category && category !== "all") fallbackQ = fallbackQ.eq("category", category);
+    if (status && status !== "all") fallbackQ = fallbackQ.eq("status", status);
+    if (featured !== undefined) fallbackQ = fallbackQ.eq("is_featured", featured);
+    const fallbackRes = await fallbackQ;
+    data = fallbackRes.data;
+    error = fallbackRes.error;
+  }
+
   if (error) console.error("getFounderStores:", error.message);
-  return (data ?? []) as FounderStore[];
+  return ((data ?? []) as FounderStore[]).map(s => ({
+    ...s,
+    main_category: s.main_category || mapLegacyCategoryToMain(s.category)
+  }));
 }
 
 export async function getFounderStore(id: string): Promise<{ store: FounderStore | null; error: string | null }> {

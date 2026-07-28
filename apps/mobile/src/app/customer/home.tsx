@@ -29,7 +29,7 @@ import {
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
-import { MAIN_CATEGORIES } from "@/config/storeCategories";
+import { MAIN_CATEGORIES, mapLegacyCategoryToMain, getArabicCategoryName } from "@/config/storeCategories";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -121,17 +121,31 @@ export default function CustomerHomeScreen() {
     try {
       setLoading(true);
       setError(null);
-      const { data, error: fetchError } = await supabase
+      let { data, error: fetchError } = await supabase
         .from("stores")
         .select("id, name, category, main_category, rating, status, cover_url, logo_url, description, address_line1, city, is_open, is_featured, is_new, phone_number")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(20);
 
+      if (fetchError && (fetchError.code === '42703' || fetchError.message?.includes('main_category'))) {
+        const fallback = await supabase
+          .from("stores")
+          .select("id, name, category, rating, status, cover_url, logo_url, description, address_line1, city, is_open, is_featured, is_new, phone_number")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(20);
+        data = (fallback.data || []).map(s => ({ ...s, main_category: mapLegacyCategoryToMain(s.category) })) as any;
+        fetchError = fallback.error;
+      }
+
       if (fetchError) throw fetchError;
-      const stores = (data as StoreRow[]) || [];
-      setStores(stores);
-      setHeroStores(stores.slice(0, 3));
+      const storesData = ((data as StoreRow[]) || []).map(s => ({
+        ...s,
+        main_category: s.main_category || mapLegacyCategoryToMain(s.category)
+      }));
+      setStores(storesData);
+      setHeroStores(storesData.slice(0, 3));
     } catch (err) {
       console.error("Error fetching stores:", err);
       setError("حدث خطأ أثناء تحميل المتاجر");
@@ -264,9 +278,10 @@ export default function CustomerHomeScreen() {
         key={store.id}
         id={store.id}
         name={store.name}
-        category={store.category}
+        category={getArabicCategoryName(store.category)}
         rating={store.rating?.toString() || "0.0"}
         coverImage={store.cover_url}
+        logoImage={store.logo_url}
         isOpen={store.is_open ?? store.status === "active"}
         isFeatured={store.is_featured}
         address={store.address_line1 ?? store.city ?? ""}

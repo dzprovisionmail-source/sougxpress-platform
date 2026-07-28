@@ -1,6 +1,7 @@
 
 import { supabase } from "../lib/supabase";
 import { Store, StoreGalleryImage, StoreVideo } from "../types/schema-03-core";
+import { mapLegacyCategoryToMain } from "../config/storeCategories";
 
 const isValidUUID = (uuid: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -44,30 +45,55 @@ export const getStoreByMerchantId = async (merchantId: string): Promise<Store | 
 };
 
 export const getAllStores = async (): Promise<Store[]> => {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("stores")
     .select("*")
     .eq("status", "active");
+
+  if (error && (error.code === '42703' || error.message?.includes('main_category'))) {
+    const fallback = await supabase
+      .from("stores")
+      .select("id, name, category, merchant_id, zone_id, address_line1, city, country, status, is_open, opens_at, closes_at, rating, cover_url, logo_url, description")
+      .eq("status", "active");
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) {
     console.error("Error fetching all stores:", error);
     return [];
   }
-  return data as Store[];
+  return ((data as Store[]) || []).map(s => ({
+    ...s,
+    main_category: (s as any).main_category || mapLegacyCategoryToMain(s.category)
+  }));
 };
 
 export const getStoresByCategory = async (category: string): Promise<Store[]> => {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("stores")
     .select("*")
     .eq("status", "active")
     .or(`main_category.eq.${category},category.eq.${category}`);
 
+  if (error && (error.code === '42703' || error.message?.includes('main_category'))) {
+    const fallback = await supabase
+      .from("stores")
+      .select("*")
+      .eq("status", "active")
+      .eq("category", category);
+    data = fallback.data;
+    error = fallback.error;
+  }
+
   if (error) {
     console.error("Error fetching stores by category:", error);
     return [];
   }
-  return data as Store[];
+  return ((data as Store[]) || []).map(s => ({
+    ...s,
+    main_category: (s as any).main_category || mapLegacyCategoryToMain(s.category)
+  }));
 };
 
 export const searchStores = async (query: string): Promise<Store[]> => {

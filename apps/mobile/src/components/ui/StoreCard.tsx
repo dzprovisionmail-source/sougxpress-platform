@@ -19,6 +19,7 @@ interface StoreCardProps {
   rating: string;
   deliveryTime?: string;
   coverImage?: string;
+  logoImage?: string;
   isOpen?: boolean;
   isFeatured?: boolean;
   onPress?: () => void;
@@ -33,6 +34,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   rating,
   deliveryTime = "20-30 دقيقة",
   coverImage,
+  logoImage,
   isOpen = true,
   isFeatured = false,
   onPress,
@@ -55,10 +57,14 @@ export const StoreCard: React.FC<StoreCardProps> = ({
             style={[styles.image, { backgroundColor: colors.bgSurface }]}
             resizeMode="cover"
           />
+        ) : logoImage ? (
+          <View style={[styles.image, styles.logoFallbackContainer, { backgroundColor: colors.primary + "12" }]}>
+            <Image source={{ uri: logoImage }} style={styles.fallbackLogo} resizeMode="cover" />
+          </View>
         ) : (
-          <View style={[styles.image, styles.placeholderContainer, { backgroundColor: colors.bgElevated }]}>
-            <Ionicons name="business-outline" size={48} color={colors.textDisabled} />
-            <Typography variant="caption" color="disabled" style={{ marginTop: 8 }}>{name}</Typography>
+          <View style={[styles.image, styles.placeholderContainer, { backgroundColor: colors.primary + "12" }]}>
+            <Ionicons name="storefront" size={32} color={colors.primary} />
+            <Typography variant="caption" color="primary" style={{ marginTop: 4, fontWeight: "600" }}>{name}</Typography>
           </View>
         )}
         
@@ -179,7 +185,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
 };
 
 const CARD_WIDTH = 280;
-const IMAGE_HEIGHT = 160;
+const IMAGE_HEIGHT = 110;
 
 const styles = StyleSheet.create({
   container: {
@@ -201,6 +207,15 @@ const styles = StyleSheet.create({
   placeholderContainer: {
     justifyContent: "center",
     alignItems: "center",
+  },
+  logoFallbackContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fallbackLogo: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   badgesContainer: {
     position: "absolute",

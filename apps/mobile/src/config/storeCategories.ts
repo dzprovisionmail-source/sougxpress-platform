@@ -117,3 +117,17 @@ export function mapLegacyCategoryToMain(legacyCategory?: string | null): string 
       return "other";
   }
 }
+
+export function getArabicCategoryName(slug?: string | null): string {
+  if (!slug) return "أخرى";
+  const lower = slug.toLowerCase().trim();
+  const found = MAIN_CATEGORIES.find(c => c.value === lower || c.label === slug);
+  if (found) return found.label;
+  for (const c of MAIN_CATEGORIES) {
+    if (c.subcategories) {
+      const sub = c.subcategories.find(s => s.value === lower || s.label === slug);
+      if (sub) return `${c.label} • ${sub.label}`;
+    }
+  }
+  return slug;
+}

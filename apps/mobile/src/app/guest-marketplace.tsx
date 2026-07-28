@@ -29,7 +29,7 @@ import {
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "../constants/theme";
 import { supabase } from "../lib/supabase";
-import { MAIN_CATEGORIES } from "@/config/storeCategories";
+import { MAIN_CATEGORIES, mapLegacyCategoryToMain, getArabicCategoryName } from "@/config/storeCategories";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -92,15 +92,29 @@ export default function GuestMarketplaceScreen() {
     try {
       setLoading(true);
       setError(null);
-      const { data, error: fetchError } = await supabase
+      let { data, error: fetchError } = await supabase
         .from("stores")
         .select("id, name, category, main_category, rating, status, cover_url, logo_url, description, address_line1, city, is_open, is_featured")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(50);
 
+      if (fetchError && (fetchError.code === '42703' || fetchError.message?.includes('main_category'))) {
+        const fallback = await supabase
+          .from("stores")
+          .select("id, name, category, rating, status, cover_url, logo_url, description, address_line1, city, is_open, is_featured")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(50);
+        data = (fallback.data || []).map(s => ({ ...s, main_category: mapLegacyCategoryToMain(s.category) })) as any;
+        fetchError = fallback.error;
+      }
+
       if (fetchError) throw fetchError;
-      const items = (data as StoreItem[]) || [];
+      const items = ((data as StoreItem[]) || []).map(s => ({
+        ...s,
+        main_category: s.main_category || mapLegacyCategoryToMain(s.category)
+      }));
       setStores(items);
       setHeroStores(items.slice(0, 3));
     } catch (err: any) {
@@ -272,9 +286,10 @@ export default function GuestMarketplaceScreen() {
         key={store.id}
         id={store.id}
         name={store.name}
-        category={store.category}
+        category={getArabicCategoryName(store.category)}
         rating={store.rating?.toString() || "0.0"}
         coverImage={store.cover_url}
+        logoImage={store.logo_url}
         isOpen={store.is_open ?? store.status === "active"}
         isFeatured={store.is_featured}
         address={store.address_line1 ?? store.city ?? ""}

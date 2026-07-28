@@ -11,7 +11,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { ShoppingCart, Clock3, MapPin, Star, Tag } from "lucide-react-native";
+import { ShoppingCart, Clock3, MapPin, Star, Tag, Video } from "lucide-react-native";
 
 import { ProductCard } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -22,6 +22,7 @@ import { getStoreGallery } from "@/services/store.service";
 import { getPublicStoreVideos } from "@/services/store-media.service";
 import { StorePromotion, StoreGalleryImage, PublicStoreVideo } from "@/types/schema-03-core";
 import PublicStoreVideoCard from "@/components/video/PublicStoreVideoCard";
+import { getArabicCategoryName } from "@/config/storeCategories";
 
 const { width: SW } = Dimensions.get("window");
 
@@ -158,7 +159,7 @@ export default function StoreDetailsScreen() {
 
           <Text style={[styles.storeName, { color: colors.textPrimary }]}>{store.name}</Text>
           <Text style={[styles.storeCategory, { color: colors.textSecondary }]}>
-            {store.category}
+            {getArabicCategoryName(store.category)}
           </Text>
 
           <View style={styles.row}>
@@ -207,12 +208,12 @@ export default function StoreDetailsScreen() {
           </View>
         )}
 
-        {/* ── Videos ── */}
-        {videos.length > 0 ? (
-          <View style={{ marginTop: tokens.spacing.lg }}>
-            <SectionHeading label="فيديوهات" colors={colors} tokens={tokens} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: tokens.spacing.lg, gap: tokens.spacing.sm }}>
-              {videos.map((vid) => (
+        {/* ── Videos / Social Commerce Preview ── */}
+        <View style={{ marginTop: tokens.spacing.lg }}>
+          <SectionHeading label="فيديوهات ومنصات التواصل (فيسبوك، تيك توك، إنستغرام، يوتيوب)" icon={<Video size={16} color={colors.primary} />} colors={colors} tokens={tokens} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: tokens.spacing.lg, gap: tokens.spacing.sm }}>
+            {videos.length > 0 ? (
+              videos.map((vid) => (
                 <PublicStoreVideoCard
                   key={vid.id}
                   provider={vid.provider}
@@ -221,14 +222,36 @@ export default function StoreDetailsScreen() {
                   thumbnail_url={vid.thumbnail_url}
                   title={vid.title}
                 />
-              ))}
-            </ScrollView>
-          </View>
-        ) : (
-          <View style={{ marginTop: tokens.spacing.lg, paddingHorizontal: tokens.spacing.lg }}>
-            <Text style={{ color: colors.textDisabled, textAlign: "center", fontSize: 13 }}>لا توجد فيديوهات</Text>
-          </View>
-        )}
+              ))
+            ) : (
+              <>
+                {[
+                  { name: "تيك توك", provider: "tiktok", color: "#000000", tag: "TikTok", desc: "عروض ومنشورات تيك توك" },
+                  { name: "إنستغرام", provider: "instagram", color: "#E4405F", tag: "Instagram", desc: "قصص ومنشورات إنستغرام" },
+                  { name: "فيسبوك", provider: "facebook", color: "#1877F2", tag: "Facebook", desc: "ريلز وفيديوهات فيسبوك" },
+                  { name: "يوتيوب", provider: "youtube", color: "#FF0000", tag: "YouTube", desc: "فيديوهات ومراجعات يوتيوب" },
+                ].map((item, idx) => (
+                  <View key={idx} style={[styles.promoCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
+                    <View style={[styles.promoImgPlaceholder, { backgroundColor: item.color + "15", position: "relative" }]}>
+                      <View style={{ position: "absolute", top: 8, right: 8, backgroundColor: item.color, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, zIndex: 2 }}>
+                        <Text style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}>{item.tag}</Text>
+                      </View>
+                      <Text style={{ fontSize: 32 }}>🎬</Text>
+                    </View>
+                    <View style={{ padding: tokens.spacing.sm }}>
+                      <Text style={[styles.promoTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                        متجر {item.name}
+                      </Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }} numberOfLines={1}>
+                        {item.desc}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
+          </ScrollView>
+        </View>
 
         {/* ── Active Promotions ── */}
         {promotions.length > 0 && (
