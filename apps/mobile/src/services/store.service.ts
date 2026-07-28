@@ -110,14 +110,19 @@ export const searchStores = async (query: string): Promise<Store[]> => {
   return data as Store[];
 };
 
-export const updateStore = async (storeId: string, updates: Partial<Store>): Promise<Store | null> => {
+export const updateStore = async (storeId: string, updates: Partial<Store> & { category?: string }): Promise<Store | null> => {
   if (!storeId || !isValidUUID(storeId)) {
     return null;
   }
 
+  const payload: any = { ...updates };
+  if (payload.category && !payload.main_category) {
+    payload.main_category = mapLegacyCategoryToMain(payload.category);
+  }
+
   const { data, error } = await supabase
     .from("stores")
-    .update(updates)
+    .update(payload)
     .eq("id", storeId)
     .select()
     .single();
@@ -134,6 +139,10 @@ export const createStore = async (
   data: {
     name: string;
     category: string;
+    main_category?: string;
+    sub_category?: string;
+    tags?: string[];
+    badges?: string[];
     address_line1: string;
     city?: string;
     country?: string;
@@ -149,6 +158,10 @@ export const createStore = async (
       merchant_id: merchantId,
       name: data.name,
       category: data.category,
+      main_category: data.main_category || mapLegacyCategoryToMain(data.category),
+      sub_category: data.sub_category || null,
+      tags: data.tags || [],
+      badges: data.badges || [],
       address_line1: data.address_line1,
       city: data.city || "عين الصفراء",
       country: data.country || "Algeria",
