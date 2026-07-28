@@ -433,6 +433,39 @@ export default function FounderControlCenterScreen() {
             <NavTile label="سجل العمليات" icon={<ScrollText size={20} color={primary} />} onPress={() => router.push("/founder/audit-log" as never)} colors={colors} tokens={tokens} />
           </View>
         </SectionBlock>
+
+        {/* ── سجل النشاط (Activity Log Card) ────────────────────────── */}
+        <SectionBlock title="سجل النشاط">
+          <TouchableOpacity
+            onPress={() => router.push("/founder/activity" as never)}
+            activeOpacity={0.8}
+            style={{
+              backgroundColor: colors.bgElevated,
+              borderColor: colors.borderSubtle,
+              borderWidth: 1,
+              borderRadius: tokens.radius.md,
+              padding: tokens.spacing.md,
+              flexDirection: "row-reverse",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View style={{ flexDirection: "row-reverse", alignItems: "center", gap: 12, flex: 1 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: primary + "18", alignItems: "center", justifyContent: "center" }}>
+                <Activity size={20} color={primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textPrimary, fontSize: tokens.typography.sizes.base, fontWeight: "700", textAlign: "right", fontFamily: tokens.typography.families.arabic }}>
+                  سجل النشاط
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", fontFamily: tokens.typography.families.arabic, marginTop: 2 }} numberOfLines={1}>
+                  عرض السجل الكامل لجميع أنشطة وأحداث المنصة الحية
+                </Text>
+              </View>
+            </View>
+            <Text style={{ color: primary, fontWeight: "700", fontSize: 16, marginRight: 8 }}>←</Text>
+          </TouchableOpacity>
+        </SectionBlock>
       </ScrollView>
     </AdminPageShell>
   );

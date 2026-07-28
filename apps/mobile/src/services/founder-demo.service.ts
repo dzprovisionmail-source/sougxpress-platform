@@ -5,6 +5,9 @@ import { mapLegacyCategoryToMain } from "@/config/storeCategories";
 export interface DemoStoreInput {
   name: string;
   category: string;
+  main_category?: string;
+  sub_category?: string;
+  tags?: string[];
   zone_id?: string;
   address_line1?: string;
   city?: string;
@@ -66,7 +69,9 @@ export async function createDemoStore(
   const storePayload: Record<string, unknown> = {
     name: trimmedName,
     category: input.category,
-    main_category: mapLegacyCategoryToMain(input.category),
+    main_category: input.main_category || mapLegacyCategoryToMain(input.category),
+    sub_category: input.sub_category || null,
+    tags: input.tags || [],
     merchant_id: merchantId,
     is_demo: true,
     created_by: founderId,

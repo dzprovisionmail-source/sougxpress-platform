@@ -10,7 +10,7 @@ import {
   Modal,
 } from "react-native";
 import { router } from "expo-router";
-import { ChevronDown } from "lucide-react-native";
+import { ChevronDown, X, Plus } from "lucide-react-native";
 import { AdminPageShell } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -18,19 +18,22 @@ import { createDemoStore } from "@/services/founder-demo.service";
 import { getFounderZones, type FounderZone } from "@/services/founder-users.service";
 import { MAIN_CATEGORIES } from "@/config/storeCategories";
 
-const CATEGORIES = MAIN_CATEGORIES.map(c => ({ value: c.value, label: c.label }));
-
 export default function FounderAddDemoStoreScreen() {
   const { colors, tokens } = useAppTheme();
   const [zones, setZones] = useState<FounderZone[]>([]);
   const [loadingZones, setLoadingZones] = useState(true);
 
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("Groceries");
+  const [mainCategory, setMainCategory] = useState(MAIN_CATEGORIES[0].value);
+  const [subCategory, setSubCategory] = useState(MAIN_CATEGORIES[0].subcategories[0]?.value || "");
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+
   const [selectedZone, setSelectedZone] = useState<FounderZone | null>(null);
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showSubCategoryPicker, setShowSubCategoryPicker] = useState(false);
   const [showZonePicker, setShowZonePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +50,24 @@ export default function FounderAddDemoStoreScreen() {
     return () => { mounted = false; };
   }, []);
 
+  const selectedMainConfig = MAIN_CATEGORIES.find((c) => c.value === mainCategory) || MAIN_CATEGORIES[0];
+
+  const handleAddTag = () => {
+    const trimmed = tagInput.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed]);
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter((t) => t !== tagToRemove));
+  };
+
   const handleSubmit = useCallback(async () => {
     setError(null);
     if (!name.trim()) return setError("اسم المتجر مطلوب");
+    if (!mainCategory) return setError("التصنيف الرئيسي مطلوب");
     if (!selectedZone && !address.trim()) return setError("يرجى اختيار الحي أو إدخال العنوان");
 
     setSubmitting(true);
@@ -60,7 +78,10 @@ export default function FounderAddDemoStoreScreen() {
 
     const { storeId, error: err } = await createDemoStore(founderId, {
       name: name.trim(),
-      category,
+      category: selectedMainConfig.label,
+      main_category: mainCategory,
+      sub_category: subCategory || undefined,
+      tags,
       zone_id: selectedZone?.id,
       address_line1: address.trim() || undefined,
       city: selectedZone?.city,
@@ -74,7 +95,7 @@ export default function FounderAddDemoStoreScreen() {
       setSuccess(true);
       setTimeout(() => router.back(), 1200);
     }
-  }, [name, category, selectedZone, address, description]);
+  }, [name, mainCategory, subCategory, tags, selectedZone, address, description, selectedMainConfig]);
 
   const selectedZoneLabel = selectedZone
     ? `${selectedZone.name} — ${selectedZone.city}`
@@ -92,16 +113,55 @@ export default function FounderAddDemoStoreScreen() {
           <FieldLabel label="اسم المتجر" required />
           <FormInput value={name} onChange={setName} placeholder="اسم المتجر التجريبي" />
 
-          <FieldLabel label="التصنيف" required />
+          <FieldLabel label="التصنيف الرئيسي" required />
           <TouchableOpacity
             onPress={() => setShowCategoryPicker(true)}
             style={[styles.pickerBtn, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
           >
             <Text style={{ color: colors.textPrimary, textAlign: "right", flex: 1, fontSize: tokens.typography.sizes.base }}>
-              {CATEGORIES.find((c) => c.value === category)?.label ?? category}
+              {selectedMainConfig.label}
             </Text>
             <ChevronDown size={18} color={colors.textSecondary} />
           </TouchableOpacity>
+
+          <FieldLabel label="التصنيف الفرعي" />
+          <TouchableOpacity
+            onPress={() => setShowSubCategoryPicker(true)}
+            style={[styles.pickerBtn, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
+          >
+            <Text style={{ color: colors.textPrimary, textAlign: "right", flex: 1, fontSize: tokens.typography.sizes.base }}>
+              {selectedMainConfig.subcategories.find((s) => s.value === subCategory)?.label || "اختر التصنيف الفرعي"}
+            </Text>
+            <ChevronDown size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <FieldLabel label="الوسوم (Tags)" />
+          <View style={{ flexDirection: "row-reverse", gap: 8, alignItems: "center" }}>
+            <TextInput
+              value={tagInput}
+              onChangeText={setTagInput}
+              placeholder="أضف وسماً واضغط إضافة"
+              placeholderTextColor={colors.textDisabled}
+              textAlign="right"
+              style={[styles.input, { flex: 1, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary, borderRadius: tokens.radius.sm, padding: tokens.spacing.md, fontSize: tokens.typography.sizes.base }]}
+              onSubmitEditing={handleAddTag}
+            />
+            <TouchableOpacity onPress={handleAddTag} style={[styles.addTagBtn, { backgroundColor: colors.primary, borderRadius: tokens.radius.sm, paddingHorizontal: 16, paddingVertical: 12 }]}>
+              <Text style={{ color: "#fff", fontWeight: "700" }}>إضافة</Text>
+            </TouchableOpacity>
+          </View>
+          {tags.length > 0 && (
+            <View style={{ flexDirection: "row-reverse", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+              {tags.map((t) => (
+                <View key={t} style={[styles.tagChip, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "44" }]}>
+                  <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "600" }}>{t}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveTag(t)}>
+                    <X size={14} color={colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
 
           <FieldLabel label="الحي / المنطقة" required />
           <TouchableOpacity
@@ -161,25 +221,60 @@ export default function FounderAddDemoStoreScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Category picker */}
+      {/* Main Category picker */}
       <Modal visible={showCategoryPicker} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface }]}>
             <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "700", textAlign: "right", marginBottom: 16 }}>
-              اختر التصنيف
+              اختر التصنيف الرئيسي
             </Text>
             <ScrollView>
-              {CATEGORIES.map((c) => (
+              {MAIN_CATEGORIES.map((c) => (
                 <TouchableOpacity
                   key={c.value}
-                  onPress={() => { setCategory(c.value); setShowCategoryPicker(false); }}
-                  style={[styles.zoneItem, { borderColor: category === c.value ? colors.primary : colors.borderSubtle, backgroundColor: category === c.value ? colors.primary + "18" : "transparent" }]}
+                  onPress={() => {
+                    setMainCategory(c.value);
+                    setSubCategory(c.subcategories[0]?.value || "");
+                    setShowCategoryPicker(false);
+                  }}
+                  style={[styles.zoneItem, { borderColor: mainCategory === c.value ? colors.primary : colors.borderSubtle, backgroundColor: mainCategory === c.value ? colors.primary + "18" : "transparent" }]}
                 >
-                  <Text style={{ color: category === c.value ? colors.primary : colors.textPrimary, textAlign: "right", fontWeight: "600" }}>{c.label}</Text>
+                  <Text style={{ color: mainCategory === c.value ? colors.primary : colors.textPrimary, textAlign: "right", fontWeight: "600" }}>{c.label}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
             <TouchableOpacity onPress={() => setShowCategoryPicker(false)} style={{ marginTop: 12, alignItems: "center" }}>
+              <Text style={{ color: colors.error, fontSize: 14 }}>إلغاء</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Sub Category picker */}
+      <Modal visible={showSubCategoryPicker} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface }]}>
+            <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "700", textAlign: "right", marginBottom: 16 }}>
+              اختر التصنيف الفرعي
+            </Text>
+            <ScrollView>
+              <TouchableOpacity
+                onPress={() => { setSubCategory(""); setShowSubCategoryPicker(false); }}
+                style={[styles.zoneItem, { borderColor: colors.borderSubtle }]}
+              >
+                <Text style={{ color: colors.textSecondary, textAlign: "right" }}>بدون تصنيف فرعي</Text>
+              </TouchableOpacity>
+              {selectedMainConfig.subcategories.map((sub) => (
+                <TouchableOpacity
+                  key={sub.value}
+                  onPress={() => { setSubCategory(sub.value); setShowSubCategoryPicker(false); }}
+                  style={[styles.zoneItem, { borderColor: subCategory === sub.value ? colors.primary : colors.borderSubtle, backgroundColor: subCategory === sub.value ? colors.primary + "18" : "transparent" }]}
+                >
+                  <Text style={{ color: subCategory === sub.value ? colors.primary : colors.textPrimary, textAlign: "right", fontWeight: "600" }}>{sub.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity onPress={() => setShowSubCategoryPicker(false)} style={{ marginTop: 12, alignItems: "center" }}>
               <Text style={{ color: colors.error, fontSize: 14 }}>إلغاء</Text>
             </TouchableOpacity>
           </View>
@@ -267,4 +362,6 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
   modalSheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40, maxHeight: "70%" },
   zoneItem: { borderBottomWidth: 1, paddingVertical: 12, gap: 2 },
+  tagChip: { flexDirection: "row-reverse", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  addTagBtn: { justifyContent: "center", alignItems: "center" },
 });
