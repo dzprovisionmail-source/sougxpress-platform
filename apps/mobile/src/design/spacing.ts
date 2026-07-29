@@ -1,12 +1,3 @@
+import { TOKENS } from '../constants/tokens';
 
-export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-  huge: 32,
-  giant: 40,
-  massive: 48,
-};
+export const spacing = TOKENS.spacing;

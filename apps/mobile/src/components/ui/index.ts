@@ -1,7 +1,9 @@
+export type { ThemeType } from "../../contexts/ThemeContext";
 export { default as Button } from "./Button";
 export { default as Card } from "./Card";
 export { default as Input } from "./Input";
 export { Typography } from "./Typography";
+export { default as ScreenContainer } from "./ScreenContainer";
 export { SearchBar } from "./SearchBar";
 export { ProductCard } from "./ProductCard";
 export { StoreCard } from "./StoreCard";

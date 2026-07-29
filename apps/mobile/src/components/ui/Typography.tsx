@@ -1,83 +1,105 @@
-import React from "react";
-import { Text, TextProps, TextStyle, StyleProp, StyleSheet, I18nManager } from "react-native";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
+import React from 'react';
+import { Text, TextProps, TextStyle, StyleProp, I18nManager } from 'react-native';
+import { TOKENS } from '../../constants/tokens';
+import { useAppTheme } from '../../contexts/ThemeContext';
 
-interface TypographyProps {
+export interface TypographyProps extends TextProps {
   children: React.ReactNode;
-  variant?: "display" | "h1" | "h2" | "h3" | "body" | "caption" | "button";
-  color?: "primary" | "secondary" | "disabled" | "brand" | "error" | "success";
-  align?: "left" | "center" | "right" | "auto";
+  variant?: 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'caption' | 'button' | 'title' | 'subtitle';
+  color?: 'primary' | 'secondary' | 'disabled' | 'brand' | 'error' | 'success' | 'white';
+  align?: 'left' | 'center' | 'right' | 'auto';
+  fontFamily?: 'arabic' | 'secondary' | 'mono';
   style?: StyleProp<TextStyle>;
-  numberOfLines?: TextProps["numberOfLines"];
-  theme?: "dark" | "light" | "ivory";
+  numberOfLines?: TextProps['numberOfLines'];
 }
 
 export const Typography: React.FC<TypographyProps> = ({
   children,
-  variant = "body",
-  color = "primary",
-  align = "auto",
+  variant = 'body',
+  color = 'primary',
+  align = 'auto',
+  fontFamily = 'arabic',
   style,
   numberOfLines,
-  theme = DEFAULT_THEME
+  ...rest
 }) => {
-  const colors = getThemeColors(theme);
+  const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
-  const getVariantStyle = () => {
+  const getVariantStyle = (): TextStyle => {
     switch (variant) {
-      case "display":
-        return { fontSize: TOKENS.typography.sizes["2xl"], fontWeight: "800" as const };
-      case "h1":
-        return { fontSize: TOKENS.typography.sizes.xl, fontWeight: "700" as const };
-      case "h2":
-        return { fontSize: TOKENS.typography.sizes.lg, fontWeight: "700" as const };
-      case "h3":
-        return { fontSize: TOKENS.typography.sizes.md, fontWeight: "600" as const };
-      case "caption":
-        return { fontSize: TOKENS.typography.sizes.xs, fontWeight: "400" as const };
-      case "button":
-        return { fontSize: TOKENS.typography.sizes.base, fontWeight: "600" as const };
-      case "body":
+      case 'display':
+        return { fontSize: TOKENS.typography.sizes['2xl'], fontWeight: '800' };
+      case 'h1':
+        return { fontSize: TOKENS.typography.sizes.xl, fontWeight: '700' };
+      case 'h2':
+      case 'title':
+        return { fontSize: TOKENS.typography.sizes.lg, fontWeight: '700' };
+      case 'h3':
+      case 'subtitle':
+        return { fontSize: TOKENS.typography.sizes.md, fontWeight: '600' };
+      case 'caption':
+        return { fontSize: TOKENS.typography.sizes.xs, fontWeight: '400' };
+      case 'button':
+        return { fontSize: TOKENS.typography.sizes.base, fontWeight: '600' };
+      case 'body':
       default:
-        return { fontSize: TOKENS.typography.sizes.base, fontWeight: "400" as const };
+        return { fontSize: TOKENS.typography.sizes.base, fontWeight: '400' };
     }
   };
 
-  const getColorStyle = () => {
+  const getColorStyle = (): string => {
     switch (color) {
-      case "secondary":
+      case 'secondary':
         return colors.textSecondary;
-      case "disabled":
+      case 'disabled':
         return colors.textDisabled;
-      case "brand":
+      case 'brand':
         return colors.primary;
-      case "error":
+      case 'error':
         return colors.error;
-      case "success":
+      case 'success':
         return colors.success;
-      case "primary":
+      case 'white':
+        return '#FFFFFF';
+      case 'primary':
       default:
         return colors.textPrimary;
     }
   };
 
+  const getFontFamily = (): string => {
+    switch (fontFamily) {
+      case 'secondary':
+        return TOKENS.typography.families.secondary;
+      case 'mono':
+        return TOKENS.typography.families.mono;
+      case 'arabic':
+      default:
+        return TOKENS.typography.families.arabic;
+    }
+  };
+
+  const variantStyle = getVariantStyle();
+
   return (
     <Text
-    numberOfLines={numberOfLines}
+      numberOfLines={numberOfLines}
       style={[
         {
-          fontFamily: TOKENS.typography.families.arabic,
+          fontFamily: getFontFamily(),
           color: getColorStyle(),
-          textAlign: align === "auto" ? (isRTL ? "right" : "left") : align,
-          lineHeight: TOKENS.typography.lineHeights.arabic * (getVariantStyle().fontSize || 16),
+          textAlign: align === 'auto' ? (isRTL ? 'right' : 'left') : align,
+          lineHeight: TOKENS.typography.lineHeights.arabic * (variantStyle.fontSize || 16),
         },
-        getVariantStyle(),
+        variantStyle,
         style,
       ]}
+      {...rest}
     >
       {children}
     </Text>
   );
 };
+
+export default Typography;

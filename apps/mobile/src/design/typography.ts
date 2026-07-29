@@ -1,38 +1,46 @@
 import { TextStyle } from 'react-native';
+import { TOKENS } from '../constants/tokens';
 
 export const typography: Record<string, TextStyle> = {
   display: {
-    fontSize: 32,
+    fontFamily: TOKENS.typography.families.arabic,
+    fontSize: TOKENS.typography.sizes['2xl'],
     fontWeight: '700' as const,
     lineHeight: 40,
   },
   heading: {
-    fontSize: 24,
+    fontFamily: TOKENS.typography.families.arabic,
+    fontSize: TOKENS.typography.sizes.xl,
     fontWeight: '700' as const,
     lineHeight: 32,
   },
   title: {
-    fontSize: 20,
+    fontFamily: TOKENS.typography.families.arabic,
+    fontSize: TOKENS.typography.sizes.lg,
     fontWeight: '600' as const,
     lineHeight: 28,
   },
   subtitle: {
-    fontSize: 16,
+    fontFamily: TOKENS.typography.families.arabic,
+    fontSize: TOKENS.typography.sizes.md,
     fontWeight: '500' as const,
     lineHeight: 24,
   },
   body: {
-    fontSize: 16,
+    fontFamily: TOKENS.typography.families.arabic,
+    fontSize: TOKENS.typography.sizes.base,
     fontWeight: '400' as const,
     lineHeight: 24,
   },
   caption: {
-    fontSize: 12,
+    fontFamily: TOKENS.typography.families.secondary,
+    fontSize: TOKENS.typography.sizes.xs,
     fontWeight: '400' as const,
     lineHeight: 16,
   },
   button: {
-    fontSize: 16,
+    fontFamily: TOKENS.typography.families.arabic,
+    fontSize: TOKENS.typography.sizes.base,
     fontWeight: '600' as const,
     lineHeight: 24,
   },

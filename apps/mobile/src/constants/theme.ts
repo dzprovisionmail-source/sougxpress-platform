@@ -11,6 +11,7 @@ export const getThemeColors = (theme: ThemeType) => {
     error: TOKENS.colors.statusError,
     warning: TOKENS.colors.statusWarning,
     info: TOKENS.colors.statusInfo,
+    white: "#FFFFFF",
   };
 
   switch (theme) {

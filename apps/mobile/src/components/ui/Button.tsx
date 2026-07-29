@@ -1,19 +1,26 @@
-
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { useAppTheme } from '@/contexts/ThemeContext';
-import { spacing } from '@/design/spacing';
-import { radius } from '@/design/radius';
-import { typography } from '@/design/typography';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  ViewStyle,
+  TextStyle,
+  StyleProp,
+} from 'react-native';
+import { useAppTheme } from '../../contexts/ThemeContext';
+import { TOKENS } from '../../constants/tokens';
 
-interface ButtonProps {
+export interface ButtonProps {
   title?: string;
-  onPress: () => void;
+  onPress?: () => void;
   variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
+  loading?: boolean;
   icon?: React.ReactNode;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   disabled?: boolean;
 }
 
@@ -21,15 +28,18 @@ const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
   variant = 'primary',
+  size = 'md',
   isLoading = false,
+  loading = false,
   icon,
   style,
   textStyle,
   disabled = false,
 }) => {
   const { colors } = useAppTheme();
+  const showLoading = isLoading || loading;
 
-  const getButtonStyles = () => {
+  const getButtonStyles = (): ViewStyle => {
     switch (variant) {
       case 'primary':
         return {
@@ -38,8 +48,8 @@ const Button: React.FC<ButtonProps> = ({
         };
       case 'secondary':
         return {
-          backgroundColor: colors.textSecondary,
-          borderColor: colors.textSecondary,
+          backgroundColor: colors.secondary,
+          borderColor: colors.secondary,
         };
       case 'danger':
         return {
@@ -50,7 +60,7 @@ const Button: React.FC<ButtonProps> = ({
         return {
           backgroundColor: 'transparent',
           borderColor: colors.primary,
-          borderWidth: 1,
+          borderWidth: 1.5,
         };
       case 'ghost':
         return {
@@ -65,14 +75,41 @@ const Button: React.FC<ButtonProps> = ({
     }
   };
 
-  const getButtonTextStyles = () => {
+  const getSizeStyles = (): ViewStyle => {
+    switch (size) {
+      case 'sm':
+        return {
+          minHeight: 38,
+          paddingVertical: TOKENS.spacing.xs,
+          paddingHorizontal: TOKENS.spacing.md,
+          borderRadius: TOKENS.radius.sm,
+        };
+      case 'lg':
+        return {
+          minHeight: 52,
+          paddingVertical: TOKENS.spacing.md,
+          paddingHorizontal: TOKENS.spacing.xl,
+          borderRadius: TOKENS.radius.md,
+        };
+      case 'md':
+      default:
+        return {
+          minHeight: TOKENS.touchTarget.minHeight,
+          paddingVertical: TOKENS.spacing.sm,
+          paddingHorizontal: TOKENS.spacing.lg,
+          borderRadius: TOKENS.radius.md,
+        };
+    }
+  };
+
+  const getButtonTextStyles = (): TextStyle => {
     switch (variant) {
       case 'primary':
       case 'danger':
+      case 'secondary':
         return {
           color: colors.textOnBrand,
         };
-      case 'secondary':
       case 'ghost':
         return {
           color: colors.textPrimary,
@@ -92,25 +129,31 @@ const Button: React.FC<ButtonProps> = ({
     <TouchableOpacity
       style={[
         styles.buttonBase,
+        getSizeStyles(),
         getButtonStyles(),
+        (showLoading || disabled) && styles.disabledButton,
         style,
-        (isLoading || disabled) && styles.disabledButton,
       ]}
       onPress={onPress}
-      disabled={isLoading || disabled}
+      disabled={showLoading || disabled}
+      activeOpacity={0.8}
+      accessibilityRole="button"
     >
-      {isLoading ? (
-        <ActivityIndicator color={getButtonTextStyles().color} />
+      {showLoading ? (
+        <ActivityIndicator color={getButtonTextStyles().color} size="small" />
       ) : (
         <>
           {icon && <>{icon}</>}
           {title && (
-            <Text style={[
-              styles.buttonTextBase,
-              getButtonTextStyles(),
-              textStyle,
-              icon ? styles.buttonTextWithIcon : null,
-            ]}>
+            <Text
+              style={[
+                styles.buttonTextBase,
+                { fontFamily: TOKENS.typography.families.arabic },
+                getButtonTextStyles(),
+                icon ? styles.buttonTextWithIcon : null,
+                textStyle,
+              ]}
+            >
               {title}
             </Text>
           )}
@@ -122,22 +165,21 @@ const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   buttonBase: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.small,
+    minWidth: TOKENS.touchTarget.minWidth,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row-reverse', // RTL support
+    flexDirection: 'row-reverse',
   },
   buttonTextBase: {
-    ...typography.button,
+    fontSize: TOKENS.typography.sizes.base,
+    fontWeight: '600',
     textAlign: 'center',
   },
   buttonTextWithIcon: {
-    marginRight: spacing.sm, // Space between icon and text in RTL
+    marginRight: TOKENS.spacing.sm,
   },
   disabledButton: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
 });
 

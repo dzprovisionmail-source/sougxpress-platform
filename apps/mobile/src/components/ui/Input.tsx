@@ -1,72 +1,138 @@
-
 import React from 'react';
-import { TextInput, StyleSheet, View, Text, TextInputProps, I18nManager } from 'react-native';
-import { useAppTheme } from '@/contexts/ThemeContext';
-import { spacing } from '@/design/spacing';
-import { radius } from '@/design/radius';
-import { typography } from '@/design/typography';
+import {
+  TextInput,
+  StyleSheet,
+  View,
+  Text,
+  TextInputProps,
+  I18nManager,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
+import { useAppTheme } from '../../contexts/ThemeContext';
+import { TOKENS } from '../../constants/tokens';
 
-interface InputProps extends TextInputProps {
+export interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   icon?: React.ReactNode;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
-const Input: React.FC<InputProps> = ({ label, error, icon, style, ...rest }) => {
+const Input: React.FC<InputProps> = ({
+  label,
+  error,
+  icon,
+  style,
+  containerStyle,
+  placeholderTextColor,
+  ...rest
+}) => {
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
+  const defaultPlaceholderColor = placeholderTextColor || colors.placeholder;
+
   return (
-    <View style={styles.container}>
-      {label && <Text style={[styles.label, { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>}
-      <View style={[styles.inputWrapper, error && styles.inputErrorWrapper, { backgroundColor: colors.bgElevated, borderColor: error ? colors.error : colors.borderSubtle }]}>
-        {icon && <View style={isRTL ? styles.iconContainerRTL : styles.iconContainerLTR}>{icon}</View>}
+    <View style={[styles.container, containerStyle]}>
+      {label && (
+        <Text
+          style={[
+            styles.label,
+            {
+              color: colors.textPrimary,
+              textAlign: isRTL ? 'right' : 'left',
+              fontFamily: TOKENS.typography.families.arabic,
+            },
+          ]}
+        >
+          {label}
+        </Text>
+      )}
+      <View
+        style={[
+          styles.inputWrapper,
+          {
+            backgroundColor: colors.bgElevated,
+            borderColor: error ? colors.error : colors.borderSubtle,
+          },
+          error ? styles.inputErrorWrapper : null,
+        ]}
+      >
+        {icon && (
+          <View style={isRTL ? styles.iconContainerRTL : styles.iconContainerLTR}>
+            {icon}
+          </View>
+        )}
         <TextInput
-          style={[styles.input, { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' }, style]}
-          placeholderTextColor={colors.textDisabled}
+          style={[
+            styles.input,
+            {
+              color: colors.textPrimary,
+              textAlign: isRTL ? 'right' : 'left',
+              fontFamily: TOKENS.typography.families.arabic,
+            },
+            style,
+          ]}
+          placeholderTextColor={defaultPlaceholderColor}
           {...rest}
         />
       </View>
-      {error && <Text style={[styles.errorText, { color: colors.error, textAlign: isRTL ? 'right' : 'left' }]}>{error}</Text>}
+      {error && (
+        <Text
+          style={[
+            styles.errorText,
+            {
+              color: colors.error,
+              textAlign: isRTL ? 'right' : 'left',
+              fontFamily: TOKENS.typography.families.secondary,
+            },
+          ]}
+        >
+          {error}
+        </Text>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.md,
+    marginBottom: TOKENS.spacing.md,
     width: '100%',
   },
   label: {
-    ...typography.subtitle,
-    marginBottom: spacing.xs,
+    fontSize: TOKENS.typography.sizes.sm,
+    fontWeight: '600',
+    marginBottom: TOKENS.spacing.xs,
   },
   inputWrapper: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    borderRadius: radius.small,
+    borderRadius: TOKENS.radius.md,
     borderWidth: 1,
-    paddingHorizontal: spacing.sm,
-    height: 52,
+    paddingHorizontal: TOKENS.spacing.md,
+    minHeight: TOKENS.touchTarget.minHeight,
+    height: 48,
   },
   inputErrorWrapper: {
-    borderWidth: 1,
+    borderWidth: 1.5,
   },
   iconContainerRTL: {
-    marginLeft: spacing.sm, // Space between icon and text in RTL
+    marginRight: TOKENS.spacing.sm,
   },
   iconContainerLTR: {
-    marginRight: spacing.sm, // Space between icon and text in LTR
+    marginLeft: TOKENS.spacing.sm,
   },
   input: {
     flex: 1,
-    ...typography.body,
-    paddingVertical: spacing.sm,
+    fontSize: TOKENS.typography.sizes.base,
+    paddingVertical: TOKENS.spacing.sm,
     height: '100%',
   },
   errorText: {
-    ...typography.caption,
-    marginTop: spacing.xs,
+    fontSize: TOKENS.typography.sizes.xs,
+    marginTop: TOKENS.spacing.xs,
   },
 });
 

@@ -1,16 +1,13 @@
-
 import React from 'react';
 import { View, StyleSheet, ViewStyle, TouchableOpacity, StyleProp } from 'react-native';
-import { useAppTheme } from '@/contexts/ThemeContext';
-import { radius } from '@/design/radius';
-import { spacing } from '@/design/spacing';
-import { shadows } from '@/design/shadows';
+import { useAppTheme } from '../../contexts/ThemeContext';
+import { TOKENS } from '../../constants/tokens';
 
-interface CardProps {
+export interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
-  variant?: 'elevated' | 'flat'; // Simplified variants
+  variant?: 'elevated' | 'flat' | 'outlined';
 }
 
 const Card: React.FC<CardProps> = ({
@@ -22,17 +19,26 @@ const Card: React.FC<CardProps> = ({
   const { colors } = useAppTheme();
   const Container = onPress ? TouchableOpacity : View;
 
-  const getVariantStyles = () => {
+  const getVariantStyles = (): ViewStyle => {
     switch (variant) {
       case 'flat':
         return {
           backgroundColor: colors.bgSurface,
+          borderWidth: 0,
+        };
+      case 'outlined':
+        return {
+          backgroundColor: colors.bgSurface,
+          borderWidth: 1,
+          borderColor: colors.borderSubtle,
         };
       case 'elevated':
       default:
         return {
           backgroundColor: colors.bgElevated,
-          ...shadows.medium,
+          borderColor: colors.borderSubtle,
+          borderWidth: 1,
+          ...TOKENS.shadows.medium,
         };
     }
   };
@@ -41,11 +47,7 @@ const Card: React.FC<CardProps> = ({
     <Container
       onPress={onPress}
       activeOpacity={onPress ? 0.9 : 1}
-      style={[
-        styles.baseCard,
-        getVariantStyles(),
-        style
-      ]}
+      style={[styles.baseCard, getVariantStyles(), style]}
     >
       {children}
     </Container>
@@ -54,10 +56,9 @@ const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   baseCard: {
-    borderRadius: radius.medium,
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.sm,
-    padding: spacing.md,
+    borderRadius: TOKENS.radius.md,
+    padding: TOKENS.spacing.md,
+    marginVertical: TOKENS.spacing.xs,
     overflow: 'hidden',
   },
 });

@@ -1,7 +1,9 @@
+import { TOKENS } from '../constants/tokens';
 
 export const radius = {
-  small: 12,
-  medium: 18,
-  large: 24,
-  avatar: 999,
+  ...TOKENS.radius,
+  small: TOKENS.radius.sm,
+  medium: TOKENS.radius.md,
+  large: TOKENS.radius.lg,
+  avatar: TOKENS.radius.full,
 };

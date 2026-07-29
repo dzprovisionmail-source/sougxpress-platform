@@ -1,44 +1,43 @@
-import React from "react";
-import { View, StyleSheet, ViewStyle } from "react-native";
-import { Typography } from "./Typography";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
+import React from 'react';
+import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { Typography } from './Typography';
+import { TOKENS } from '../../constants/tokens';
+import { useAppTheme, ThemeType } from '../../contexts/ThemeContext';
 
-interface BadgeProps {
+export interface BadgeProps {
   label?: string;
   children?: React.ReactNode;
-  variant?: "primary" | "secondary" | "accent" | "success" | "error" | "warning" | "info" | "default";
-  style?: ViewStyle;
+  variant?: 'primary' | 'secondary' | 'accent' | 'success' | 'error' | 'warning' | 'info' | 'default';
+  style?: StyleProp<ViewStyle>;
   theme?: ThemeType;
 }
 
 export const Badge: React.FC<BadgeProps> = ({
   label,
   children,
-  variant = "primary",
+  variant = 'primary',
   style,
-  theme = DEFAULT_THEME
 }) => {
-  const colors = getThemeColors(theme);
+  const { colors } = useAppTheme();
 
   const getVariantStyles = () => {
     switch (variant) {
-      case "secondary":
-      case "default":
-        return { backgroundColor: "rgba(158, 158, 158, 0.1)", color: colors.textSecondary };
-      case "accent":
-        return { backgroundColor: "rgba(255, 171, 64, 0.1)", color: colors.accent };
-      case "success":
-        return { backgroundColor: "rgba(76, 175, 80, 0.1)", color: "#4CAF50" };
-      case "error":
-        return { backgroundColor: "rgba(244, 67, 54, 0.1)", color: colors.error };
-      case "warning":
-        return { backgroundColor: "rgba(255, 152, 0, 0.1)", color: "#FF9800" };
-      case "info":
-        return { backgroundColor: "rgba(33, 150, 243, 0.1)", color: "#2196F3" };
-      case "primary":
+      case 'secondary':
+      case 'default':
+        return { backgroundColor: 'rgba(156, 163, 175, 0.15)', color: colors.textSecondary };
+      case 'accent':
+        return { backgroundColor: 'rgba(255, 138, 0, 0.15)', color: colors.primary };
+      case 'success':
+        return { backgroundColor: 'rgba(34, 197, 94, 0.15)', color: colors.success };
+      case 'error':
+        return { backgroundColor: 'rgba(239, 68, 68, 0.15)', color: colors.error };
+      case 'warning':
+        return { backgroundColor: 'rgba(245, 158, 11, 0.15)', color: colors.warning };
+      case 'info':
+        return { backgroundColor: 'rgba(21, 101, 192, 0.15)', color: colors.secondary };
+      case 'primary':
       default:
-        return { backgroundColor: "rgba(255, 138, 0, 0.1)", color: colors.primary };
+        return { backgroundColor: 'rgba(255, 138, 0, 0.15)', color: colors.primary };
     }
   };
 
@@ -49,8 +48,8 @@ export const Badge: React.FC<BadgeProps> = ({
       {children ? (
         children
       ) : (
-        <Typography 
-          variant="caption" 
+        <Typography
+          variant="caption"
           style={[styles.text, { color: variantStyles.color }]}
         >
           {label}
@@ -63,15 +62,17 @@ export const Badge: React.FC<BadgeProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: TOKENS.spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: TOKENS.radius.sm,
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   text: {
-    fontWeight: "700",
-    fontSize: 10,
-    textTransform: "uppercase",
-  }
+    fontWeight: '700',
+    fontSize: TOKENS.typography.sizes.xs,
+  },
 });
+
+export default Badge;
