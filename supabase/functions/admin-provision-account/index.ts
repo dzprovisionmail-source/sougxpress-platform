@@ -187,17 +187,17 @@ serve(async (req) => {
 
     // Audit log — best-effort
     try {
-      await adminClient.from("audit_logs").insert({
-        actor_id: caller.id,
+      await adminClient.from("admin_audit_logs").insert({
+        admin_user_id: caller.id,
         action: "admin_provision_account",
-        target_type: role,
-        target_id: userId,
-        details: JSON.stringify({
+        entity_type: role,
+        entity_id: userId,
+        details: {
           role,
           email: normalEmail,
           phone: normalPhone,
           full_name: full_name.trim(),
-        }),
+        },
       });
     } catch (_) {
       // ignore

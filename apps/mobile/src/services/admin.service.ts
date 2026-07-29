@@ -350,12 +350,11 @@ async function writeAdminAuditLog(
       data: { session },
     } = await supabase.auth.getSession();
     if (!session?.user) return;
-    await supabase.from("admin_audit_logs").insert({
-      admin_user_id: session.user.id,
-      action,
-      entity_type: targetType,
-      entity_id: targetId,
-      details: details ?? null,
+    await supabase.rpc("log_admin_audit_event", {
+      p_action: action,
+      p_entity_type: targetType,
+      p_entity_id: targetId,
+      p_details: details ?? null,
     });
   } catch (_) {
     // best-effort
