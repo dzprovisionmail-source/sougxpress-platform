@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Typography } from './Typography';
-import { TOKENS } from '../../constants/tokens';
-import { useAppTheme, ThemeType } from '../../contexts/ThemeContext';
+import { TOKENS } from '@/constants/tokens';
+import { useAppTheme, ThemeType } from '@/contexts/ThemeContext';
 
 export interface BadgeProps {
   label?: string;

@@ -9,8 +9,8 @@ import {
   TextStyle,
   StyleProp,
 } from "react-native";
-import { useAppTheme } from "../../contexts/ThemeContext";
-import { ThemeType } from "../../constants/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
+import { ThemeType } from "@/constants/theme";
 
 /**
  * Theme-aware primitives for the Merchant and Driver workspaces.

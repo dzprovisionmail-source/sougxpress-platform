@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp, Image } from 'react-native';
 import { Store, ShoppingBag, Video as VideoIcon, ImageIcon, Sparkles } from 'lucide-react-native';
-import { useAppTheme } from '../../contexts/ThemeContext';
-import { TOKENS } from '../../constants/tokens';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { TOKENS } from '@/constants/tokens';
 
 export interface ImageFallbackProps {
   /** Optional image URL to try rendering first */

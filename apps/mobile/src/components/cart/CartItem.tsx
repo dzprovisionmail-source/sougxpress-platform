@@ -6,7 +6,7 @@ import { spacing } from '@/design/spacing';
 import { radius } from '@/design/radius';
 import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
-import { CartItem as CartItemType } from '../../services/cart.service';
+import { CartItem as CartItemType } from '@/services/cart.service';
 import IconButton from '@/components/ui/IconButton';
 
 interface CartItemProps {

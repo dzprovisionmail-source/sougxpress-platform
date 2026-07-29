@@ -6,8 +6,8 @@ import {
   I18nManager 
 } from "react-native";
 import { Typography } from "./Typography";
-import { TOKENS } from "../../constants/tokens";
-import { ThemeType, DEFAULT_THEME } from "../../constants/theme";
+import { TOKENS } from "@/constants/tokens";
+import { ThemeType, DEFAULT_THEME } from "@/constants/theme";
 
 interface SectionHeaderProps {
   title: string;

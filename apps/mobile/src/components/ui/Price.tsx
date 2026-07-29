@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle, StyleProp, I18nManager } from 'react-native';
-import { useAppTheme } from '../../contexts/ThemeContext';
-import { TOKENS } from '../../constants/tokens';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { TOKENS } from '@/constants/tokens';
 
 export interface PriceProps {
   /** Amount in major currency units (e.g., 1500 DZD) OR minor units if isMinor=true */

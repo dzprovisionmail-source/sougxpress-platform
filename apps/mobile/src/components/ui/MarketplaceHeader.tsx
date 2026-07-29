@@ -7,9 +7,9 @@ import {
   I18nManager,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { BRAND_NAME_AR, LOGO_WORDMARK } from "../../constants/brand";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
+import { BRAND_NAME_AR, LOGO_WORDMARK } from "@/constants/brand";
+import { TOKENS } from "@/constants/tokens";
+import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { Typography } from "./Typography";
 
 interface MarketplaceHeaderProps {

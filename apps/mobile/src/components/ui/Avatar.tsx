@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { User, Store as StoreIcon } from 'lucide-react-native';
-import { useAppTheme } from '../../contexts/ThemeContext';
-import { TOKENS } from '../../constants/tokens';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { TOKENS } from '@/constants/tokens';
 
 export interface AvatarProps {
   uri?: string | null;

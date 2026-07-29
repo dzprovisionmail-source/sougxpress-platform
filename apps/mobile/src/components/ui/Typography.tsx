@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, TextProps, TextStyle, StyleProp, I18nManager } from 'react-native';
-import { TOKENS } from '../../constants/tokens';
-import { useAppTheme } from '../../contexts/ThemeContext';
+import { TOKENS } from '@/constants/tokens';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 export interface TypographyProps extends TextProps {
   children: React.ReactNode;

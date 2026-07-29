@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp, I18nManager } from 'react-native';
 import { Star } from 'lucide-react-native';
-import { useAppTheme } from '../../contexts/ThemeContext';
-import { TOKENS } from '../../constants/tokens';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { TOKENS } from '@/constants/tokens';
 
 export interface RatingProps {
   /** Numeric rating score e.g. 4.8 or string "4.5" */

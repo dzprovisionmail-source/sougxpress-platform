@@ -12,8 +12,8 @@ import {
   I18nManager,
 } from 'react-native';
 import { X } from 'lucide-react-native';
-import { useAppTheme } from '../../contexts/ThemeContext';
-import { TOKENS } from '../../constants/tokens';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { TOKENS } from '@/constants/tokens';
 
 export interface BottomSheetProps {
   visible: boolean;

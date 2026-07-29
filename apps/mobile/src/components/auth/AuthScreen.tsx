@@ -12,10 +12,10 @@ import {
 import { useRouter } from "expo-router";
 import { Typography, Input, Button, AinSefraZoneSelect, SimpleSelect } from "../ui";
 import type { SelectOption } from "../ui";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
-import { supabase } from "../../lib/supabase";
-import { AIN_SEFRA_ZONES } from "../../constants/ain-sefra-zones";
+import { TOKENS } from "@/constants/tokens";
+import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { supabase } from "@/lib/supabase";
+import { AIN_SEFRA_ZONES } from "@/constants/ain-sefra-zones";
 
 type Role = "customer" | "merchant" | "driver";
 

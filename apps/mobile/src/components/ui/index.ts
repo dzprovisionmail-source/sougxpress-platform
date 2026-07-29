@@ -1,4 +1,4 @@
-export type { ThemeType } from "../../contexts/ThemeContext";
+export type { ThemeType } from "@/contexts/ThemeContext";
 export { default as Button } from "./Button";
 export { default as Card } from "./Card";
 export { default as Input } from "./Input";

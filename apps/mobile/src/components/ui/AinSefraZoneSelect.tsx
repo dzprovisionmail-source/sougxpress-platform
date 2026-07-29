@@ -10,8 +10,8 @@ import {
   Platform,
 } from "react-native";
 import { Typography } from "./Typography";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "../../constants/theme";
+import { TOKENS } from "@/constants/tokens";
+import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 
 interface Zone {
   id: string;

@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { AlertTriangle, Info, CheckCircle2 } from 'lucide-react-native';
 import { Button } from './Button';
-import { useAppTheme } from '../../contexts/ThemeContext';
-import { TOKENS } from '../../constants/tokens';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { TOKENS } from '@/constants/tokens';
 
 export interface DialogProps {
   visible: boolean;

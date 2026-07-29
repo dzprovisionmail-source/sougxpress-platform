@@ -1,8 +1,8 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity, I18nManager } from "react-native";
 import { Typography } from "./Typography";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
+import { TOKENS } from "@/constants/tokens";
+import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 
 interface QuantitySelectorProps {

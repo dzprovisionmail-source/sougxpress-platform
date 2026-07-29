@@ -9,8 +9,8 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { useAppTheme } from '../../contexts/ThemeContext';
-import { TOKENS } from '../../constants/tokens';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { TOKENS } from '@/constants/tokens';
 
 export interface InputProps extends TextInputProps {
   label?: string;

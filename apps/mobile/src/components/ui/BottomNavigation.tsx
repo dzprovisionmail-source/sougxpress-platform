@@ -7,8 +7,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Typography } from "./Typography";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
+import { TOKENS } from "@/constants/tokens";
+import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface NavItem {
