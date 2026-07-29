@@ -21,3 +21,14 @@ export { AinSefraZoneSelect } from "./AinSefraZoneSelect";
 export { SimpleSelect } from "./SimpleSelect";
 export type { SelectOption } from "./SimpleSelect";
 export { ImageOptimizerModal } from "./ImageOptimizerModal";
+
+// Phase 1 Design System Additions
+export { CategoryIcon } from "./CategoryIcon";
+export type { CategoryKey } from "./CategoryIcon";
+export { Price } from "./Price";
+export { Rating } from "./Rating";
+export { ImageFallback } from "./ImageFallback";
+export { EmptyState } from "./EmptyState";
+export type { EmptyStateType } from "./EmptyState";
+export { BottomSheet } from "./BottomSheet";
+export { Dialog } from "./Dialog";

@@ -1,156 +1,292 @@
-import type { StyleProp, ViewStyle } from "react-native";
-import React from "react";
-import { 
-  View, 
-  StyleSheet, 
-  Image, 
-  TouchableOpacity, 
-  I18nManager 
-} from "react-native";
-import { Typography } from "./Typography";
-import Card from "./Card";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
-import { Ionicons } from "@expo/vector-icons";
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ViewStyle,
+  StyleProp,
+  I18nManager,
+} from 'react-native';
+import { Plus, ShoppingCart, Heart } from 'lucide-react-native';
+import { Card } from './Card';
+import { Price } from './Price';
+import { Rating } from './Rating';
+import { ImageFallback } from './ImageFallback';
+import { useAppTheme } from '../../contexts/ThemeContext';
+import { TOKENS } from '../../constants/tokens';
 
-interface ProductCardProps {
-  title: string;
-  price: string;
-  image: string;
+export interface ProductCardProps {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  image?: string | null;
+  unit?: string;
+  category?: string;
   storeName?: string;
+  rating?: number | string;
+  inStock?: boolean;
+  isFavorite?: boolean;
+  onAddToCart?: () => void;
+  onToggleFavorite?: () => void;
   onPress?: () => void;
+  variant?: 'grid' | 'horizontal' | 'compact';
   style?: StyleProp<ViewStyle>;
-  theme?: ThemeType;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
-  title,
+  id,
+  name,
   price,
+  originalPrice,
   image,
+  unit,
+  category,
   storeName,
+  rating,
+  inStock = true,
+  isFavorite = false,
+  onAddToCart,
+  onToggleFavorite,
   onPress,
+  variant = 'grid',
   style,
-  theme = DEFAULT_THEME
 }) => {
-  const colors = getThemeColors(theme);
+  const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
-  return (
-    <Card 
-      onPress={onPress} 
-      style={[styles.container, style, { backgroundColor: colors.bgElevated }]}
-    >
-      <View style={styles.imageContainer}>
-        {image ? (
-          <Image 
-            source={{ uri: image }} 
-            style={[styles.image, { backgroundColor: colors.bgSurface }]}
-            resizeMode="cover"
+  if (variant === 'horizontal') {
+    return (
+      <Card onPress={onPress} style={[styles.horizontalCard, style]}>
+        <View style={styles.horizontalImageWrapper}>
+          <ImageFallback
+            uri={image}
+            type="product"
+            title={name}
+            category={category}
+            width={90}
+            height={90}
+            borderRadius={TOKENS.radius.md}
           />
-        ) : (
-          <View style={[styles.image, styles.placeholderContainer, { backgroundColor: colors.bgElevated }]}>
-            <Ionicons name="cube-outline" size={32} color={colors.textDisabled} />
+        </View>
+
+        <View style={styles.horizontalDetails}>
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.productTitle,
+              { color: colors.textPrimary, fontFamily: TOKENS.typography.families.arabic },
+            ]}
+          >
+            {name}
+          </Text>
+
+          {storeName ? (
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.storeSubtitle,
+                { color: colors.textSecondary, fontFamily: TOKENS.typography.families.arabic },
+              ]}
+            >
+              {storeName}
+            </Text>
+          ) : null}
+
+          <View style={[styles.priceRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Price amount={price} originalAmount={originalPrice} size="sm" variant="brand" />
+            {unit && (
+              <Text style={[styles.unitText, { color: colors.textDisabled }]}> / {unit}</Text>
+            )}
+          </View>
+        </View>
+
+        {onAddToCart && inStock && (
+          <TouchableOpacity
+            onPress={onAddToCart}
+            style={[styles.quickAddBtn, { backgroundColor: colors.primary }]}
+            activeOpacity={0.8}
+          >
+            <Plus size={18} color={colors.textOnBrand} />
+          </TouchableOpacity>
+        )}
+      </Card>
+    );
+  }
+
+  // Standard Grid Variant
+  return (
+    <Card onPress={onPress} style={[styles.gridCard, style]}>
+      {/* Top Image + Favorite Overlay */}
+      <View style={styles.imageContainer}>
+        <ImageFallback
+          uri={image}
+          type="product"
+          title={name}
+          category={category}
+          width="100%"
+          height={125}
+          borderRadius={TOKENS.radius.sm}
+        />
+
+        {/* Favorite Button */}
+        {onToggleFavorite && (
+          <TouchableOpacity
+            onPress={onToggleFavorite}
+            style={[styles.favoriteBtn, { backgroundColor: colors.bgElevated }]}
+            activeOpacity={0.8}
+          >
+            <Heart
+              size={16}
+              color={isFavorite ? colors.error : colors.textSecondary}
+              fill={isFavorite ? colors.error : 'transparent'}
+            />
+          </TouchableOpacity>
+        )}
+
+        {/* Out of Stock Overlay */}
+        {!inStock && (
+          <View style={[styles.outOfStockBadge, { backgroundColor: colors.textDisabled }]}>
+            <Text style={[styles.outOfStockText, { color: colors.textOnBrand }]}>نفذت الكمية</Text>
           </View>
         )}
-        <TouchableOpacity 
-          style={[styles.favoriteButton, { backgroundColor: "rgba(255,255,255,0.9)" }]}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="heart-outline" size={18} color={colors.primary} />
-        </TouchableOpacity>
       </View>
-      
+
+      {/* Body Content */}
       <View style={styles.content}>
-        <Typography 
-          variant="h3" 
-          numberOfLines={1} 
-          align="right" 
-          style={[styles.title, { color: colors.textPrimary }]}
+        <Text
+          numberOfLines={2}
+          style={[
+            styles.productTitleGrid,
+            { color: colors.textPrimary, fontFamily: TOKENS.typography.families.arabic },
+          ]}
         >
-          {title}
-        </Typography>
-        
-        {storeName && (
-          <Typography 
-            variant="caption" 
-            color="secondary" 
-            numberOfLines={1} 
-            align="right"
-            style={{ color: colors.textSecondary }}
-          >
-            {storeName}
-          </Typography>
-        )}
-        
-        <View style={[styles.footer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          <Typography variant="h3" color="primary" align="right" style={{ fontWeight: "700" }}>
-            {price}
-          </Typography>
-          <TouchableOpacity style={styles.addButton} activeOpacity={0.7}>
-            <Ionicons name="add-circle" size={28} color={colors.primary} />
-          </TouchableOpacity>
+          {name}
+        </Text>
+
+        {rating ? (
+          <View style={{ marginTop: 2 }}>
+            <Rating rating={rating} size="sm" />
+          </View>
+        ) : null}
+
+        {/* Price & Add Action */}
+        <View style={[styles.footerRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <Price amount={price} originalAmount={originalPrice} size="sm" variant="brand" />
+
+          {onAddToCart && inStock ? (
+            <TouchableOpacity
+              onPress={onAddToCart}
+              style={[styles.addCircle, { backgroundColor: colors.primary }]}
+              activeOpacity={0.85}
+            >
+              <Plus size={18} color={colors.textOnBrand} />
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
     </Card>
   );
 };
 
-const CARD_WIDTH = 160;
-const IMAGE_HEIGHT = 120;
-const ICON_BUTTON_SIZE = 40;
-
 const styles = StyleSheet.create({
-  container: {
-    width: CARD_WIDTH,
-    padding: 0,
-    marginRight: TOKENS.spacing.md,
-    marginBottom: TOKENS.spacing.sm,
-    overflow: "hidden",
+  gridCard: {
+    width: '100%',
+    padding: TOKENS.spacing.xs,
+    marginVertical: TOKENS.spacing.xs,
   },
   imageContainer: {
-    width: "100%",
-    height: IMAGE_HEIGHT,
-    position: "relative",
+    width: '100%',
+    height: 125,
+    borderRadius: TOKENS.radius.sm,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  image: {
-    width: "100%",
-    height: "100%",
+  favoriteBtn: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...TOKENS.shadows.small,
   },
-  placeholderContainer: {
-    justifyContent: "center",
-    alignItems: "center",
+  outOfStockBadge: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    paddingVertical: 4,
+    alignItems: 'center',
   },
-  favoriteButton: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    borderRadius: 12,
-    width: 28,
-    height: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+  outOfStockText: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: TOKENS.typography.families.arabic,
   },
   content: {
+    padding: TOKENS.spacing.xs,
+    justifyContent: 'space-between',
+  },
+  productTitleGrid: {
+    fontSize: TOKENS.typography.sizes.sm,
+    fontWeight: '600',
+    lineHeight: 18,
+    minHeight: 36,
+  },
+  footerRow: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: TOKENS.spacing.xs,
+  },
+  addCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Horizontal Variant
+  horizontalCard: {
+    flexDirection: 'row-reverse',
     padding: TOKENS.spacing.sm,
+    alignItems: 'center',
+    marginVertical: TOKENS.spacing.xs,
   },
-  title: {
-    marginBottom: 2,
-    fontWeight: "600",
+  horizontalImageWrapper: {
+    width: 90,
+    height: 90,
   },
-  footer: {
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 4,
+  horizontalDetails: {
+    flex: 1,
+    paddingHorizontal: TOKENS.spacing.md,
+    justifyContent: 'center',
   },
-  addButton: {
-    width: ICON_BUTTON_SIZE,
-    height: ICON_BUTTON_SIZE,
-    alignItems: "center",
-    justifyContent: "center",
-  }
+  productTitle: {
+    fontSize: TOKENS.typography.sizes.base,
+    fontWeight: '700',
+  },
+  storeSubtitle: {
+    fontSize: TOKENS.typography.sizes.xs,
+    marginTop: 2,
+  },
+  priceRow: {
+    alignItems: 'baseline',
+    marginTop: 6,
+  },
+  unitText: {
+    fontSize: 11,
+  },
+  quickAddBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
+
+export default ProductCard;

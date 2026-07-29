@@ -1,182 +1,168 @@
-import type { StyleProp, ViewStyle } from "react-native";
-import React from "react";
-import { 
-  View, 
-  StyleSheet, 
-  Image, 
-  I18nManager 
-} from "react-native";
-import { Typography } from "./Typography";
-import Card from "./Card";
-import { TOKENS } from "../../constants/tokens";
-import { getThemeColors, DEFAULT_THEME, ThemeType } from "../../constants/theme";
-import { Ionicons } from "@expo/vector-icons";
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  StyleProp,
+  ViewStyle,
+  I18nManager,
+} from 'react-native';
+import { Clock, MapPin, Tag } from 'lucide-react-native';
+import { Card } from './Card';
+import { Rating } from './Rating';
+import { ImageFallback } from './ImageFallback';
+import { CategoryIcon } from './CategoryIcon';
+import { useAppTheme } from '../../contexts/ThemeContext';
+import { TOKENS } from '../../constants/tokens';
 
-interface StoreCardProps {
+export interface StoreCardProps {
   id: string;
   name: string;
-  category: string;
-  rating: string;
+  category?: string;
+  coverImage?: string | null;
+  logoImage?: string | null;
+  rating?: number | string;
+  reviewCount?: number | string;
   deliveryTime?: string;
-  coverImage?: string;
-  logoImage?: string;
+  deliveryFee?: number | string;
   isOpen?: boolean;
   isFeatured?: boolean;
+  address?: string;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
-  theme?: ThemeType;
-  address?: string;
 }
 
 export const StoreCard: React.FC<StoreCardProps> = ({
+  id,
   name,
-  category,
-  rating,
-  deliveryTime = "20-30 دقيقة",
+  category = 'متجر',
   coverImage,
   logoImage,
+  rating = 4.8,
+  reviewCount,
+  deliveryTime = '20-35 دقيقة',
+  deliveryFee = '200 د.ج',
   isOpen = true,
   isFeatured = false,
+  address,
   onPress,
   style,
-  theme = DEFAULT_THEME,
-  address,
 }) => {
-  const colors = getThemeColors(theme);
+  const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
   return (
-    <Card 
-      onPress={onPress} 
-      style={[styles.container, style, { backgroundColor: colors.bgElevated }]}
-    >
-      <View style={styles.imageContainer}>
-        {coverImage ? (
-          <Image 
-            source={{ uri: coverImage }} 
-            style={[styles.image, { backgroundColor: colors.bgSurface }]}
-            resizeMode="cover"
-          />
-        ) : logoImage ? (
-          <View style={[styles.image, styles.logoFallbackContainer, { backgroundColor: colors.primary + "12" }]}>
-            <Image source={{ uri: logoImage }} style={styles.fallbackLogo} resizeMode="cover" />
-          </View>
-        ) : (
-          <View style={[styles.image, styles.placeholderContainer, { backgroundColor: colors.primary + "12" }]}>
-            <Ionicons name="storefront" size={32} color={colors.primary} />
-            <Typography variant="caption" color="primary" style={{ marginTop: 4, fontWeight: "600" }}>{name}</Typography>
-          </View>
-        )}
-        
-        <View style={[styles.badgesContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          <View 
+    <Card onPress={onPress} style={[styles.card, style]}>
+      {/* Cover Image with Fallback */}
+      <View style={styles.coverWrapper}>
+        <ImageFallback
+          uri={coverImage}
+          type="cover"
+          title={name}
+          category={category}
+          width="100%"
+          height={140}
+          borderRadius={0}
+        />
+
+        {/* Status Badges Header */}
+        <View style={[styles.badgesRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <View
             style={[
-              styles.badge,
-              { 
-                backgroundColor: isOpen ? colors.success : colors.error,
-              }
+              styles.statusBadge,
+              { backgroundColor: isOpen ? colors.success : colors.error },
             ]}
           >
-            <Typography 
-              variant="caption" 
-              align="center"
-              style={{ color: colors.textOnBrand, fontWeight: "700" }}
-            >
-              {isOpen ? "مفتوح" : "مغلق"}
-            </Typography>
+            <Text style={[styles.statusBadgeText, { color: colors.textOnBrand }]}>
+              {isOpen ? 'مفتوح' : 'مغلق'}
+            </Text>
           </View>
-          
+
           {isFeatured && (
-            <View 
-              style={[
-                styles.badge,
-                { backgroundColor: colors.primary }
-              ]}
-            >
-              <Typography 
-                variant="caption" 
-                align="center"
-                style={{ color: colors.textOnBrand, fontWeight: "700" }}
-              >
-                مميز
-              </Typography>
+            <View style={[styles.statusBadge, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.statusBadgeText, { color: colors.textOnBrand }]}>مميز</Text>
             </View>
           )}
         </View>
+
+        {/* Floating Store Logo */}
+        <View
+          style={[
+            styles.logoContainer,
+            {
+              backgroundColor: colors.bgElevated,
+              borderColor: colors.borderSubtle,
+              right: isRTL ? TOKENS.spacing.md : undefined,
+              left: isRTL ? undefined : TOKENS.spacing.md,
+            },
+          ]}
+        >
+          <ImageFallback
+            uri={logoImage}
+            type="logo"
+            title={name}
+            category={category}
+            width={48}
+            height={48}
+            borderRadius={24}
+          />
+        </View>
       </View>
-      
+
+      {/* Content Area */}
       <View style={styles.content}>
-        <Typography 
-          variant="h3" 
-          numberOfLines={1} 
-          align="right"
-          style={[styles.storeName, { color: colors.textPrimary }]}
-        >
-          {name}
-        </Typography>
-        
-        <Typography 
-          variant="caption" 
-          color="secondary" 
-          numberOfLines={1}
-          align="right"
-          style={[styles.category, { color: colors.textSecondary }]}
-        >
-          {category}
-        </Typography>
-        
-        {address ? (
-          <View style={[styles.addressRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <Ionicons 
-              name="location-outline" 
-              size={12} 
-              color={colors.textSecondary}
-              style={{ marginRight: isRTL ? 0 : 4, marginLeft: isRTL ? 4 : 0 }}
-            />
-            <Typography 
-              variant="caption" 
-              color="secondary"
-              align="right"
+        <View style={[styles.titleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.storeName,
+              { color: colors.textPrimary, fontFamily: TOKENS.typography.families.arabic },
+            ]}
+          >
+            {name}
+          </Text>
+          <Rating rating={rating} count={reviewCount} size="sm" showBadge />
+        </View>
+
+        {/* Category & Address */}
+        <View style={[styles.metaRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <CategoryIcon category={category} size="xs" variant="plain" />
+          <Text
+            style={[
+              styles.categoryText,
+              { color: colors.textSecondary, fontFamily: TOKENS.typography.families.arabic },
+            ]}
+          >
+            {category}
+          </Text>
+          {address ? (
+            <Text
               numberOfLines={1}
-              style={{ color: colors.textSecondary, fontSize: 11 }}
+              style={[
+                styles.addressText,
+                { color: colors.textDisabled, fontFamily: TOKENS.typography.families.arabic },
+              ]}
             >
-              {address}
-            </Typography>
-          </View>
-        ) : null}
-        
-        <View style={[styles.footer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          <View style={[styles.ratingContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <Ionicons 
-              name="star" 
-              size={14} 
-              color={colors.primary}
-              style={{ marginRight: isRTL ? 0 : 4, marginLeft: isRTL ? 4 : 0 }}
-            />
-            <Typography 
-              variant="caption" 
-              align="right"
-              style={{ fontWeight: "700", color: colors.textPrimary }}
-            >
-              {rating}
-            </Typography>
-          </View>
-          
-          <View style={[styles.deliveryContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <Ionicons 
-              name="time-outline" 
-              size={14} 
-              color={colors.textSecondary}
-              style={{ marginRight: isRTL ? 0 : 4, marginLeft: isRTL ? 4 : 0 }}
-            />
-            <Typography 
-              variant="caption" 
-              color="secondary"
-              align="right"
-              style={{ color: colors.textSecondary }}
-            >
+              • {address}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Delivery Details Footer */}
+        <View style={[styles.footerRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <View style={[styles.infoPill, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Clock size={13} color={colors.textSecondary} />
+            <Text style={[styles.infoPillText, { color: colors.textSecondary }]}>
               {deliveryTime}
-            </Typography>
+            </Text>
+          </View>
+
+          <View style={[styles.infoPill, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Tag size={13} color={colors.primary} />
+            <Text style={[styles.infoPillText, { color: colors.primary, fontWeight: '700' }]}>
+              التوصيل: {typeof deliveryFee === 'number' ? `${deliveryFee} د.ج` : deliveryFee}
+            </Text>
           </View>
         </View>
       </View>
@@ -184,74 +170,87 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   );
 };
 
-const IMAGE_HEIGHT = 140;
-
 const styles = StyleSheet.create({
-  container: {
-    width: "100%",
+  card: {
     padding: 0,
     marginVertical: TOKENS.spacing.xs,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
-  imageContainer: {
-    width: "100%",
-    height: IMAGE_HEIGHT,
-    position: "relative",
+  coverWrapper: {
+    width: '100%',
+    height: 140,
+    position: 'relative',
   },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  placeholderContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  logoFallbackContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  fallbackLogo: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
-  badgesContainer: {
-    position: "absolute",
+  badgesRow: {
+    position: 'absolute',
     top: TOKENS.spacing.sm,
     right: TOKENS.spacing.sm,
     gap: TOKENS.spacing.xs,
   },
-  badge: {
-    paddingHorizontal: TOKENS.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: TOKENS.radius.sm,
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: TOKENS.radius.xs,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: TOKENS.typography.families.arabic,
+  },
+  logoContainer: {
+    position: 'absolute',
+    bottom: -18,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    padding: 2,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...TOKENS.shadows.small,
   },
   content: {
-    padding: TOKENS.spacing.md,
+    paddingTop: TOKENS.spacing.lg,
+    paddingHorizontal: TOKENS.spacing.md,
+    paddingBottom: TOKENS.spacing.md,
   },
-  storeName: {
-    marginBottom: 2,
-    fontWeight: "700",
-  },
-  category: {
+  titleRow: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
-  addressRow: {
-    alignItems: "center",
-    gap: 4,
-    marginBottom: 8,
+  storeName: {
+    fontSize: TOKENS.typography.sizes.lg,
+    fontWeight: '800',
+    flex: 1,
+    marginRight: 8,
   },
-  footer: {
-    justifyContent: "space-between",
-    alignItems: "center",
+  metaRow: {
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: TOKENS.spacing.sm,
+  },
+  categoryText: {
+    fontSize: TOKENS.typography.sizes.xs,
+    fontWeight: '600',
+  },
+  addressText: {
+    fontSize: TOKENS.typography.sizes.xs,
+    flex: 1,
+  },
+  footerRow: {
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: 4,
   },
-  ratingContainer: {
-    alignItems: "center",
+  infoPill: {
+    alignItems: 'center',
     gap: 4,
   },
-  deliveryContainer: {
-    alignItems: "center",
-    gap: 4,
+  infoPillText: {
+    fontSize: TOKENS.typography.sizes.xs,
+    fontFamily: TOKENS.typography.families.arabic,
   },
 });
+
+export default StoreCard;
