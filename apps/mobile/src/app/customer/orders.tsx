@@ -8,41 +8,67 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  I18nManager,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Typography, Card, Badge } from "@/components/ui";
-import { ClipboardList, Phone, MessageCircle, MapPin } from "lucide-react-native";
+import {
+  Typography,
+  Card,
+  Badge,
+  Header,
+  Price,
+  EmptyState,
+  Button,
+  BottomSheet,
+} from "@/components/ui";
+import {
+  Phone,
+  Clock,
+  Store,
+  MapPin,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  ShieldCheck,
+} from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
-import { I18nManager } from "react-native";
 
 interface OrderItem {
   id: string;
   status: string;
   order_total_minor: number;
   created_at: string;
-  stores?: { name: string };
+  stores?: { name: string; id?: string };
   delivery_address_id?: string;
   notes?: string;
 }
 
 export default function CustomerOrdersScreen() {
   const router = useRouter();
-  const colors = getThemeColors(DEFAULT_THEME);
+  const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
 
       const { data, error: fetchError } = await supabase
         .from("orders")
@@ -51,7 +77,7 @@ export default function CustomerOrdersScreen() {
           status,
           order_total_minor,
           created_at,
-          stores ( name ),
+          stores ( id, name ),
           delivery_address_id,
           notes
         `)
@@ -63,27 +89,19 @@ export default function CustomerOrdersScreen() {
     } catch (err) {
       console.error("Error fetching orders:", err);
       setError("حدث خطأ أثناء تحميل الطلبات");
-    } finally {
-      setLoading(false);
+    } finally {      setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
     fetchOrders();
-
     const channel = supabase
       .channel("customer_orders")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "orders",
-        },
-        () => {
-          fetchOrders();
-        }
+        { event: "*", schema: "public", table: "orders" },
+        () => fetchOrders()
       )
       .subscribe();
 
@@ -97,74 +115,103 @@ export default function CustomerOrdersScreen() {
     fetchOrders();
   }, [fetchOrders]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <Badge variant="warning" label="قيد الانتظار" />;
+  const getStatusBadgeVariant = (status: string): "warning" | "info" | "success" | "error" | "default" => {
+    switch (status) {      case "pending":
+        return "warning";
       case "confirmed":
       case "accepted":
-        return <Badge variant="info" label="مؤكد" />;
       case "preparing":
-        return <Badge variant="info" label="قيد التحضير" />;
       case "ready_for_pickup":
-        return <Badge variant="info" label="جاهز للاستلام" />;
       case "out_for_delivery":
       case "picked_up":
-        return <Badge variant="info" label="في الطريق" />;
+        return "info";
       case "delivered":
-        return <Badge variant="success" label="تم التوصيل" />;
+        return "success";
       case "cancelled":
       case "rejected":
-        return <Badge variant="error" label="ملغي" />;
+        return "error";
       default:
-        return <Badge variant="default" label={status} />;
+        return "default";
     }
   };
 
-  const handleDetailsPress = (item: OrderItem) => {
-    Alert.alert(
-      `تفاصيل الطلب #${item.id.slice(0, 8)}`,
-      `المتجر: ${item.stores?.name || "—"}\nالحالة: ${item.status}\nالإجمالي: ${((item.order_total_minor ?? 0) / 100).toFixed(2)} د.ج\nالتاريخ: ${new Date(item.created_at).toLocaleString("ar-DZ")}${item.notes ? `\nملاحظات: ${item.notes}` : ""}`,
-      [
-        { text: "إغلاق", style: "cancel" },
-        {
-          text: "اتصال بالتوصيل",
-          onPress: () => {
-            Alert.alert("قريباً", "ميزة الاتصال بالتوصيل ستكون متاحة قريباً.");
-          },
-        },
-      ]
-    );
+  const getStatusLabel = (status: string) => {
+    switch (status) {      case "pending":
+        return "قيد الانتظار";
+      case "confirmed":
+      case "accepted":
+        return "طلب مؤكد";
+      case "preparing":
+        return "جاري التحضير";
+      case "ready_for_pickup":
+        return "جاهز للاستلام";
+      case "out_for_delivery":
+      case "picked_up":
+        return "في الطريق إليك";
+      case "delivered":
+        return "تم التسليم";
+      case "cancelled":
+        return "تم الإلغاء";
+      case "rejected":
+        return "مرفوض من المتجر";
+      default:
+        return status;
+    }
   };
 
-  const renderOrderItem = ({ item }: { item: OrderItem }) => (
-    <Card style={styles.orderCard}>
-      <View style={[styles.orderHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-        <View style={[styles.storeInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-          <Typography variant="h3">{item.stores?.name || "متجر"}</Typography>
-          <Typography variant="caption" color="secondary">
-            {new Date(item.created_at).toLocaleDateString("ar-DZ")}
-          </Typography>
-        </View>
-        {getStatusBadge(item.status)}
-      </View>
+  const renderOrderItem = ({ item }: { item: OrderItem }) => {
+    return (
+      <Card key={item.id} style={styles.orderCard}>
+        {/* Order Header */}
+        <View style={[styles.orderHeaderRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+          <View style={styles.storeInfoCol}>
+            <View style={[styles.storeTitleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <Store size={18} color={colors.primary} />
+              <Typography variant="h3">{item.stores?.name || "متجر محلي"}</Typography>
+            </View>
+            <Typography variant="caption" color="secondary" style={{ marginTop: 2 }}>
+              رقم الطلب #{item.id.slice(0, 8)} • {new Date(item.created_at).toLocaleDateString("ar-DZ")}
+            </Typography>
+          </View>
 
-      <View style={[styles.orderFooter, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-        <View style={[styles.priceInfo, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-          <Typography variant="caption" color="secondary">إجمالي الطلب</Typography>
-          <Typography variant="h3" color="primary">
-            {((item.order_total_minor ?? 0) / 100).toFixed(2)} د.ج
-          </Typography>
+          <Badge
+            text={getStatusLabel(item.status)}
+            variant={getStatusBadgeVariant(item.status)}
+          />
         </View>
-        <TouchableOpacity
-          style={[styles.detailsBtn, { backgroundColor: colors.bgElevated }]}
-          onPress={() => handleDetailsPress(item)}
-        >
-          <Typography variant="caption" style={{ fontWeight: "600" }}>التفاصيل</Typography>
-        </TouchableOpacity>
-      </View>
-    </Card>
-  );
+
+        <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
+
+        {/* Order Details & Actions */}
+        <View style={[styles.orderFooterRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+          <View>
+            <Typography variant="caption" color="secondary">الإجمالي</Typography>
+            <Price amount={item.order_total_minor || 0} isMinor size="lg" variant="brand" />
+          </View>
+
+          <View style={[styles.actionsRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            <Button
+              title="التفاصيل"
+              onPress={() => setSelectedOrder(item)}
+              variant="outline"
+              size="sm"
+            />
+            {item.stores?.id && (
+              <Button
+                title="إعادة الطلب"
+                onPress={() =>
+                  router.push({ pathname: "/store-details", params: { id: item.stores?.id } })
+                }
+                variant="subtle"
+                size="sm"
+                icon={<RotateCcw size={14} color={colors.primary} />}
+              />
+            )}
+          </View>
+        </View>
+      </Card>
+    );
+  };
 
   if (loading && !refreshing) {
     return (
@@ -176,16 +223,12 @@ export default function CustomerOrdersScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
-      <View style={styles.header}>
-        <Typography variant="h1" align="right" style={styles.headerTitle}>طلباتي</Typography>
-      </View>
+      <Header title="طلباتي" showBack={false} />
 
       {error ? (
-        <View style={styles.emptyContainer}>
+        <View style={styles.centered}>
           <Typography variant="body" color="error">{error}</Typography>
-          <TouchableOpacity onPress={fetchOrders} style={{ marginTop: 16 }}>
-            <Typography variant="caption" color="primary">إعادة المحاولة</Typography>
-          </TouchableOpacity>
+          <Button title="إعادة المحاولة" onPress={fetchOrders} style={{ marginTop: 16 }} />
         </View>
       ) : (
         <FlatList
@@ -197,15 +240,66 @@ export default function CustomerOrdersScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <ClipboardList color={colors.textDisabled} size={64} />
-              <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
-                لا توجد طلبات حالياً
-              </Typography>
-            </View>
+            <EmptyState
+              type="empty-orders"
+              onAction={() => router.push("/customer/home")}
+            />
           }
         />
       )}
+
+      {/* Order Details Bottom Sheet */}
+      <BottomSheet
+        visible={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        title={`تفاصيل الطلب #${selectedOrder?.id.slice(0, 8)}`}
+      >
+        {selectedOrder && (
+          <View style={styles.sheetContent}>
+            <View style={[styles.sheetRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <Typography variant="body" color="secondary">المتجر</Typography>
+              <Typography variant="h3">{selectedOrder.stores?.name || "متجر"}</Typography>
+            </View>
+
+            <View style={[styles.sheetRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <Typography variant="body" color="secondary">الحالة الحالية</Typography>
+              <Badge
+                text={getStatusLabel(selectedOrder.status)}
+                variant={getStatusBadgeVariant(selectedOrder.status)}
+              />
+            </View>
+
+            <View style={[styles.sheetRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <Typography variant="body" color="secondary">تاريخ الطلب</Typography>
+              <Typography variant="body">
+                {new Date(selectedOrder.created_at).toLocaleString("ar-DZ")}
+              </Typography>
+            </View>
+
+            <View style={[styles.sheetRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <Typography variant="body" color="secondary">المبلغ الإجمالي</Typography>
+              <Price amount={selectedOrder.order_total_minor || 0} isMinor size="md" variant="brand" />
+            </View>
+
+            {selectedOrder.notes ? (
+              <View style={styles.notesBox}>
+                <Typography variant="caption" color="secondary" align="right">
+                  ملاحظات الطلب: {selectedOrder.notes}
+                </Typography>
+              </View>
+            ) : null}
+
+            <View style={{ marginTop: TOKENS.spacing.lg }}>
+              <Button
+                title="الاتصال بخدمة العملاء"
+                onPress={() => Linking.openURL("tel:0550000000")}
+                variant="outline"
+                icon={<Phone size={18} color={colors.primary} />}
+              />
+            </View>
+          </View>
+        )}
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -213,39 +307,48 @@ export default function CustomerOrdersScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: {
-    padding: TOKENS.spacing.lg,
-    paddingTop: TOKENS.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-  },
-  headerTitle: { color: TOKENS.colors.brandPrimary },
   listContent: {
-    padding: TOKENS.spacing.lg,
+    padding: TOKENS.spacing.md,
     gap: TOKENS.spacing.md,
     flexGrow: 1,
   },
-  orderCard: { padding: TOKENS.spacing.md },
-  orderHeader: {
+  orderCard: {
+    padding: TOKENS.spacing.md,
+  },
+  orderHeaderRow: {
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: TOKENS.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-    paddingBottom: TOKENS.spacing.sm,
   },
-  storeInfo: { flex: 1 },
-  orderFooter: { justifyContent: "space-between", alignItems: "center" },
-  priceInfo: { flex: 1 },
-  detailsBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: TOKENS.radius.full,
-  },
-  emptyContainer: {
+  storeInfoCol: {
     flex: 1,
-    justifyContent: "center",
+  },
+  storeTitleRow: {
     alignItems: "center",
-    paddingTop: 100,
+    gap: TOKENS.spacing.xs,
+  },
+  divider: {
+    height: 1,
+    marginVertical: TOKENS.spacing.sm,
+  },
+  orderFooterRow: {
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  actionsRow: {
+    gap: TOKENS.spacing.xs,
+  },
+  sheetContent: {
+    gap: TOKENS.spacing.md,
+    paddingVertical: TOKENS.spacing.md,
+  },
+  sheetRow: {
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  notesBox: {
+    padding: TOKENS.spacing.sm,
+    backgroundColor: "rgba(0,0,0,0.03)",
+    borderRadius: TOKENS.radius.sm,
+    marginTop: TOKENS.spacing.xs,
   },
 });
