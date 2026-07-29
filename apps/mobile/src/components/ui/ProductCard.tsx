@@ -17,9 +17,10 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 import { TOKENS } from '@/constants/tokens';
 
 export interface ProductCardProps {
-  id: string;
-  name: string;
-  price: number;
+  id?: string;
+  name?: string;
+  price?: number;
+  product?: any;
   originalPrice?: number;
   image?: string | null;
   unit?: string;
@@ -28,9 +29,9 @@ export interface ProductCardProps {
   rating?: number | string;
   inStock?: boolean;
   isFavorite?: boolean;
-  onAddToCart?: () => void;
+  onAddToCart?: (product?: any) => void;
   onToggleFavorite?: () => void;
-  onPress?: () => void;
+  onPress?: (id?: string) => void;
   variant?: 'grid' | 'horizontal' | 'compact';
   style?: StyleProp<ViewStyle>;
 }
@@ -39,6 +40,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   id,
   name,
   price,
+  product,
   originalPrice,
   image,
   unit,
@@ -56,14 +58,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
+  const actualId = id || product?.id || '';
+  const actualName = name || product?.name || '';
+  const actualPrice = price ?? (product?.price_minor ? product.price_minor / 100 : product?.price ?? 0);
+  const actualImage = image || product?.image_url || product?.image || null;
+  const actualInStock = inStock && (product?.is_available !== false);
+
+  const handlePress = () => {
+    if (onPress) {
+      onPress(actualId);
+    }
+  };
+
+  const handleAddToCart = () => {
+    if (onAddToCart) {
+      onAddToCart(product || { id: actualId, name: actualName, price: actualPrice });
+    }
+  };
+
   if (variant === 'horizontal') {
     return (
-      <Card onPress={onPress} style={[styles.horizontalCard, style]}>
+      <Card onPress={handlePress} style={[styles.horizontalCard, style]}>
         <View style={styles.horizontalImageWrapper}>
           <ImageFallback
-            uri={image}
+            uri={actualImage}
             type="product"
-            title={name}
+            title={actualName}
             category={category}
             width={90}
             height={90}
@@ -79,7 +99,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               { color: colors.textPrimary, fontFamily: TOKENS.typography.families.arabic },
             ]}
           >
-            {name}
+            {actualName}
           </Text>
 
           {storeName ? (
@@ -95,16 +115,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           ) : null}
 
           <View style={[styles.priceRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Price amount={price} originalAmount={originalPrice} size="sm" variant="brand" />
+            <Price amount={actualPrice} originalAmount={originalPrice} size="sm" variant="brand" />
             {unit && (
               <Text style={[styles.unitText, { color: colors.textDisabled }]}> / {unit}</Text>
             )}
           </View>
         </View>
 
-        {onAddToCart && inStock && (
+        {onAddToCart && actualInStock && (
           <TouchableOpacity
-            onPress={onAddToCart}
+            onPress={handleAddToCart}
             style={[styles.quickAddBtn, { backgroundColor: colors.primary }]}
             activeOpacity={0.8}
           >
@@ -117,13 +137,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   // Standard Grid Variant
   return (
-    <Card onPress={onPress} style={[styles.gridCard, style]}>
+    <Card onPress={handlePress} style={[styles.gridCard, style]}>
       {/* Top Image + Favorite Overlay */}
       <View style={styles.imageContainer}>
         <ImageFallback
-          uri={image}
+          uri={actualImage}
           type="product"
-          title={name}
+          title={actualName}
           category={category}
           width="100%"
           height={125}
@@ -146,7 +166,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
 
         {/* Out of Stock Overlay */}
-        {!inStock && (
+        {!actualInStock && (
           <View style={[styles.outOfStockBadge, { backgroundColor: colors.textDisabled }]}>
             <Text style={[styles.outOfStockText, { color: colors.textOnBrand }]}>نفذت الكمية</Text>
           </View>
@@ -162,7 +182,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             { color: colors.textPrimary, fontFamily: TOKENS.typography.families.arabic },
           ]}
         >
-          {name}
+          {actualName}
         </Text>
 
         {rating ? (
@@ -173,11 +193,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Price & Add Action */}
         <View style={[styles.footerRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <Price amount={price} originalAmount={originalPrice} size="sm" variant="brand" />
+          <Price amount={actualPrice} originalAmount={originalPrice} size="sm" variant="brand" />
 
-          {onAddToCart && inStock ? (
+          {onAddToCart && actualInStock ? (
             <TouchableOpacity
-              onPress={onAddToCart}
+              onPress={handleAddToCart}
               style={[styles.addCircle, { backgroundColor: colors.primary }]}
               activeOpacity={0.85}
             >

@@ -6,6 +6,7 @@ import {
 import { router } from "expo-router";
 import { CheckCircle, XCircle, Clock, ChevronRight, Users, Truck, Search, Filter } from "lucide-react-native";
 
+import { SearchBar } from "@/components/ui";
 import { AdminPageShell, AdminListItem, AdminLoadingState, AdminEmptyState, AdminErrorState } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import {
@@ -239,24 +240,18 @@ export default function FounderApprovalsScreen() {
       {/* Search + filter bar */}
       {tab === "merchants" && (
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
-          <View style={[styles.searchWrap, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-            <TextInput
-              value={mSearch}
-              onChangeText={setMSearch}
-              onSubmitEditing={() => loadMerchants(mSearch, mStatus)}
-              placeholder="بحث باسم التجارة..."
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              returnKeyType="search"
-              style={[styles.searchInput, { color: colors.textPrimary, fontSize: tokens.typography.sizes.base }]}
-            />
-            <TouchableOpacity onPress={() => loadMerchants(mSearch, mStatus)}>
-              <Search size={18} color={colors.textDisabled} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity onPress={() => setMShowFilters(true)} style={[styles.iconBtn, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-            <Filter size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <SearchBar
+            value={mSearch}
+            onChangeText={setMSearch}
+            placeholder="بحث باسم التجارة..."
+            onSubmitEditing={() => loadMerchants(mSearch, mStatus)}
+            onClear={() => {
+              setMSearch("");
+              loadMerchants("", mStatus);
+            }}
+            onFilterPress={() => setMShowFilters(true)}
+            style={{ flex: 1 }}
+          />
           <TouchableOpacity onPress={() => router.push("/founder/users/create?role=merchant" as never)} style={[styles.iconBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
             <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>+</Text>
           </TouchableOpacity>
@@ -265,24 +260,18 @@ export default function FounderApprovalsScreen() {
 
       {tab === "drivers" && (
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
-          <View style={[styles.searchWrap, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-            <TextInput
-              value={dSearch}
-              onChangeText={setDSearch}
-              onSubmitEditing={() => loadDrivers(dSearch, dStatus)}
-              placeholder="بحث بالاسم..."
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              returnKeyType="search"
-              style={[styles.searchInput, { color: colors.textPrimary, fontSize: tokens.typography.sizes.base }]}
-            />
-            <TouchableOpacity onPress={() => loadDrivers(dSearch, dStatus)}>
-              <Search size={18} color={colors.textDisabled} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity onPress={() => setDFilters(true)} style={[styles.iconBtn, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-            <Filter size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <SearchBar
+            value={dSearch}
+            onChangeText={setDSearch}
+            placeholder="بحث بالاسم..."
+            onSubmitEditing={() => loadDrivers(dSearch, dStatus)}
+            onClear={() => {
+              setDSearch("");
+              loadDrivers("", dStatus);
+            }}
+            onFilterPress={() => setDFilters(true)}
+            style={{ flex: 1 }}
+          />
           <TouchableOpacity onPress={() => router.push("/founder/users/create?role=driver" as never)} style={[styles.iconBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
             <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>+</Text>
           </TouchableOpacity>

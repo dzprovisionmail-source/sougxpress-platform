@@ -7,6 +7,7 @@ import { router } from "expo-router";
 import { Plus, Filter, Search, Star, MapPin, Clock, Store, X, Check, Image as ImageIcon, Upload, Trash2, Eye, EyeOff, Video, Package } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
+import { SearchBar } from "@/components/ui";
 import {
   AdminPageShell, AdminListItem, AdminStatCard,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
@@ -431,24 +432,18 @@ export default function FounderStoresScreen() {
       <View style={{ flex: 1 }}>
         {/* Search + filter bar */}
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
-          <View style={[styles.searchWrap, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              onSubmitEditing={handleSearch}
-              placeholder="بحث باسم المتجر..."
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              returnKeyType="search"
-              style={[styles.searchInput, { color: colors.textPrimary, fontSize: tokens.typography.sizes.base }]}
-            />
-            <TouchableOpacity onPress={handleSearch}>
-              <Search size={18} color={colors.textDisabled} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity onPress={() => setShowFilters(true)} style={[styles.iconBtn, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-            <Filter size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder="بحث باسم المتجر..."
+            onSubmitEditing={handleSearch}
+            onClear={() => {
+              setSearch("");
+              loadStores("", catFilter, statusFilter);
+            }}
+            onFilterPress={() => setShowFilters(true)}
+            style={{ flex: 1 }}
+          />
           <TouchableOpacity onPress={() => router.push("/founder/add-store" as never)} style={[styles.iconBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
             <Plus size={18} color="#fff" />
           </TouchableOpacity>

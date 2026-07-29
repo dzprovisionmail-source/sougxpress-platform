@@ -17,8 +17,9 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 import { TOKENS } from '@/constants/tokens';
 
 export interface StoreCardProps {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
+  store?: any;
   category?: string;
   coverImage?: string | null;
   logoImage?: string | null;
@@ -29,13 +30,14 @@ export interface StoreCardProps {
   isOpen?: boolean;
   isFeatured?: boolean;
   address?: string;
-  onPress?: () => void;
+  onPress?: (id?: string) => void;
   style?: StyleProp<ViewStyle>;
 }
 
 export const StoreCard: React.FC<StoreCardProps> = ({
   id,
   name,
+  store,
   category = 'متجر',
   coverImage,
   logoImage,
@@ -43,7 +45,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   reviewCount,
   deliveryTime = '20-35 دقيقة',
   deliveryFee = '200 د.ج',
-  isOpen = true,
+  isOpen,
   isFeatured = false,
   address,
   onPress,
@@ -52,15 +54,31 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
+  const actualId = id || store?.id || '';
+  const actualName = name || store?.name || '';
+  const actualCategory = category !== 'متجر' ? category : (store?.category || 'متجر');
+  const actualCover = coverImage || store?.cover_url || store?.coverImage || null;
+  const actualLogo = logoImage || store?.logo_url || store?.logoImage || null;
+  const actualRating = rating !== 4.8 ? rating : (store?.rating || 4.8);
+  const actualIsOpen = isOpen ?? store?.is_open ?? (store?.status === 'active');
+  const actualIsFeatured = isFeatured || store?.is_featured || false;
+  const actualAddress = address || store?.address_line1 || store?.city || '';
+
+  const handlePress = () => {
+    if (onPress) {
+      onPress(actualId);
+    }
+  };
+
   return (
-    <Card onPress={onPress} style={[styles.card, style]}>
+    <Card onPress={handlePress} style={[styles.card, style]}>
       {/* Cover Image with Fallback */}
       <View style={styles.coverWrapper}>
         <ImageFallback
-          uri={coverImage}
+          uri={actualCover}
           type="cover"
-          title={name}
-          category={category}
+          title={actualName}
+          category={actualCategory}
           width="100%"
           height={140}
           borderRadius={0}
@@ -71,15 +89,15 @@ export const StoreCard: React.FC<StoreCardProps> = ({
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: isOpen ? colors.success : colors.error },
+              { backgroundColor: actualIsOpen ? colors.success : colors.error },
             ]}
           >
             <Text style={[styles.statusBadgeText, { color: colors.textOnBrand }]}>
-              {isOpen ? 'مفتوح' : 'مغلق'}
+              {actualIsOpen ? 'مفتوح' : 'مغلق'}
             </Text>
           </View>
 
-          {isFeatured && (
+          {actualIsFeatured && (
             <View style={[styles.statusBadge, { backgroundColor: colors.primary }]}>
               <Text style={[styles.statusBadgeText, { color: colors.textOnBrand }]}>مميز</Text>
             </View>
@@ -99,10 +117,10 @@ export const StoreCard: React.FC<StoreCardProps> = ({
           ]}
         >
           <ImageFallback
-            uri={logoImage}
+            uri={actualLogo}
             type="logo"
-            title={name}
-            category={category}
+            title={actualName}
+            category={actualCategory}
             width={48}
             height={48}
             borderRadius={24}
@@ -120,23 +138,23 @@ export const StoreCard: React.FC<StoreCardProps> = ({
               { color: colors.textPrimary, fontFamily: TOKENS.typography.families.arabic },
             ]}
           >
-            {name}
+            {actualName}
           </Text>
-          <Rating rating={rating} count={reviewCount} size="sm" showBadge />
+          <Rating rating={actualRating} count={reviewCount} size="sm" showBadge />
         </View>
 
         {/* Category & Address */}
         <View style={[styles.metaRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <CategoryIcon category={category} size="xs" variant="plain" />
+          <CategoryIcon category={actualCategory} size="xs" variant="plain" />
           <Text
             style={[
               styles.categoryText,
               { color: colors.textSecondary, fontFamily: TOKENS.typography.families.arabic },
             ]}
           >
-            {category}
+            {actualCategory}
           </Text>
-          {address ? (
+          {actualAddress ? (
             <Text
               numberOfLines={1}
               style={[
@@ -144,7 +162,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
                 { color: colors.textDisabled, fontFamily: TOKENS.typography.families.arabic },
               ]}
             >
-              • {address}
+              • {actualAddress}
             </Text>
           ) : null}
         </View>

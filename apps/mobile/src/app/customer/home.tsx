@@ -307,45 +307,13 @@ export default function CustomerHomeScreen() {
       >
         {/* Search Section */}
         <View style={styles.section}>
-          <View
-            style={[
-              {
-                flexDirection: isRTL ? "row-reverse" : "row",
-                alignItems: "center",
-                marginHorizontal: TOKENS.spacing.lg,
-                borderRadius: TOKENS.radius.full,
-                borderWidth: 1,
-                paddingHorizontal: TOKENS.spacing.md,
-                height: 48,
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
-              },
-            ]}
-          >
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="بحث عن متاجر أو منتجات..."
-              placeholderTextColor={colors.textDisabled}
-              style={[
-                {
-                  flex: 1,
-                  fontSize: 15,
-                  paddingVertical: 0,
-                  color: colors.textPrimary,
-                  fontFamily: TOKENS.typography?.families?.arabic || undefined,
-                  textAlign: isRTL ? "right" : "left",
-                },
-              ]}
-            />
-            {search.length > 0 && (
-              <TouchableOpacity onPress={() => setSearch("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Typography variant="caption" color="secondary">
-                  ✕
-                </Typography>
-              </TouchableOpacity>
-            )}
-          </View>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder="بحث عن متاجر أو منتجات في عين صفراء..."
+            onClear={() => setSearch("")}
+            style={{ marginHorizontal: TOKENS.spacing.lg }}
+          />
         </View>
 
         {/* Hero Slider */}

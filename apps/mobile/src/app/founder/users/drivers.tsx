@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Plus, Filter, Search } from "lucide-react-native";
+import { SearchBar } from "@/components/ui";
 import {
   AdminPageShell, AdminListItem,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
@@ -76,27 +77,18 @@ export default function FounderDriversScreen() {
     <AdminPageShell showLogout title="الموصلون" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
-          <View style={[styles.searchWrap, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              onSubmitEditing={() => load(search, statusFilter, false, showDeleted)}
-              placeholder="بحث بالاسم..."
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              returnKeyType="search"
-              style={[styles.searchInput, { color: colors.textPrimary, fontSize: tokens.typography.sizes.base }]}
-            />
-            <TouchableOpacity onPress={() => load(search, statusFilter, false, showDeleted)}>
-              <Search size={18} color={colors.textDisabled} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            onPress={() => setShowFilters(true)}
-            style={[styles.iconBtn, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
-          >
-            <Filter size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder="بحث بالاسم..."
+            onSubmitEditing={() => load(search, statusFilter, false, showDeleted)}
+            onClear={() => {
+              setSearch("");
+              load("", statusFilter, false, showDeleted);
+            }}
+            onFilterPress={() => setShowFilters(true)}
+            style={{ flex: 1 }}
+          />
           <TouchableOpacity
             onPress={() => router.push("/founder/users/create?role=driver" as never)}
             style={[styles.iconBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}

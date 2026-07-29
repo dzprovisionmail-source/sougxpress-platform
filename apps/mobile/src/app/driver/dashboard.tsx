@@ -8,6 +8,7 @@ import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import useDriver from "@/hooks/useDriver";
 import useDriverOrders, { DriverOrder } from "@/hooks/useDriverOrders";
 import { computeEarningsSplit, formatCurrency } from "@/constants/earnings";
+import { SearchBar } from "@/components/ui";
 import {
   WorkspaceScreen,
   SectionCard,
@@ -201,40 +202,13 @@ export default function DriverDashboardScreen() {
             ))}
           </View>
 
-          <View
-            style={{
-              flexDirection: "row-reverse",
-              alignItems: "center",
-              backgroundColor: colors.bgSurface,
-              borderRadius: tokens.radius.sm,
-              borderWidth: 1,
-              borderColor: colors.borderSubtle,
-              paddingHorizontal: tokens.spacing.md,
-              marginBottom: tokens.spacing.sm,
-            }}
-          >
-            <Search size={18} color={colors.textSecondary} />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="بحث في الطلبات..."
-              placeholderTextColor={colors.textDisabled}
-              style={{
-                flex: 1,
-                paddingVertical: tokens.spacing.sm,
-                paddingHorizontal: tokens.spacing.sm,
-                color: colors.textPrimary,
-                fontFamily: tokens.typography.families.arabic,
-                fontSize: tokens.typography.sizes.base,
-                textAlign: "right",
-              }}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <X size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            )}
-          </View>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="بحث في الطلبات..."
+            onClear={() => setSearchQuery("")}
+            style={{ marginBottom: tokens.spacing.sm }}
+          />
 
           {filteredOrders.length === 0 ? (
             <EmptyState message="لا توجد طلبات مطابقة للفلتر المحدد." />

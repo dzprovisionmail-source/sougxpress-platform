@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Search, Filter, Clock, MapPin, User, Truck, XCircle, CheckCircle, RotateCcw, ChevronLeft, X } from "lucide-react-native";
+import { SearchBar } from "@/components/ui";
 import {
   AdminPageShell, AdminListItem, AdminStatCard,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
@@ -166,24 +167,15 @@ export default function FounderOrdersScreen() {
 
         {/* Search + filter bar */}
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
-          <View style={[styles.searchWrap, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              onSubmitEditing={() => loadOrders(search, statusFilter)}
-              placeholder="بحث برقم الطلب..."
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              returnKeyType="search"
-              style={[styles.searchInput, { color: colors.textPrimary, fontSize: tokens.typography.sizes.base }]}
-            />
-            <TouchableOpacity onPress={() => loadOrders(search, statusFilter)}>
-              <Search size={18} color={colors.textDisabled} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity onPress={() => setShowFilters(true)} style={[styles.iconBtn, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-            <Filter size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder="بحث برقم الطلب..."
+            onSubmitEditing={() => loadOrders(search, statusFilter)}
+            onClear={() => loadOrders("", statusFilter)}
+            onFilterPress={() => setShowFilters(true)}
+            style={{ flex: 1 }}
+          />
         </View>
 
         {/* Stats */}

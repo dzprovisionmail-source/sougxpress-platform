@@ -21,6 +21,8 @@ export interface SearchBarProps {
   onClear?: () => void;
   style?: StyleProp<ViewStyle>;
   autoFocus?: boolean;
+  onSubmitEditing?: () => void;
+  returnKeyType?: 'done' | 'go' | 'next' | 'search' | 'send';
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -32,6 +34,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onClear,
   style,
   autoFocus = false,
+  onSubmitEditing,
+  returnKeyType,
 }) => {
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -62,6 +66,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         placeholderTextColor={colors.textDisabled}
         textAlign={isRTL ? 'right' : 'left'}
         autoFocus={autoFocus}
+        onSubmitEditing={onSubmitEditing}
+        returnKeyType={returnKeyType}
         style={[
           styles.input,
           {

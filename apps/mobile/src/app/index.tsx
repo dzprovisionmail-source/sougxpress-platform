@@ -20,16 +20,16 @@ import {
   Text,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Typography } from "../components/ui";
+import { Typography } from "@/components/ui";
 import {
   BRAND_NAME_AR,
   BRAND_SLOGAN,
   BRAND_CITY_LABEL,
   LOGO_DARK,
-} from "../constants/brand";
-import { TOKENS } from "../constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
-import { supabase } from "../lib/supabase";
+} from "@/constants/brand";
+import { TOKENS } from "@/constants/tokens";
+import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { supabase } from "@/lib/supabase";
 
 /**
  * Soug-XPRESS Entry Screen — Brand Logo Integration

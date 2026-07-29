@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Plus, Filter, Search } from "lucide-react-native";
+import { SearchBar } from "@/components/ui";
 import {
   AdminPageShell, AdminListItem,
   AdminLoadingState, AdminEmptyState, AdminErrorState,
@@ -79,21 +80,18 @@ export default function FounderCustomersScreen() {
       <View style={{ flex: 1 }}>
         {/* Search + filter bar */}
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
-          <View style={[styles.searchWrap, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              onSubmitEditing={handleSearch}
-              placeholder="بحث بالاسم..."
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              returnKeyType="search"
-              style={[styles.searchInput, { color: colors.textPrimary, fontSize: tokens.typography.sizes.base }]}
-            />
-            <TouchableOpacity onPress={handleSearch}>
-              <Search size={18} color={colors.textDisabled} />
-            </TouchableOpacity>
-          </View>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder="بحث بالاسم..."
+            onSubmitEditing={handleSearch}
+            onClear={() => {
+              setSearch("");
+              loadData("", statusFilter);
+            }}
+            onFilterPress={() => setShowFilters(true)}
+            style={{ flex: 1 }}
+          />
           <TouchableOpacity
             onPress={() => setShowFilters(true)}
             style={[
