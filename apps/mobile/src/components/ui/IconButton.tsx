@@ -10,7 +10,7 @@ interface IconButtonProps {
   disabled?: boolean;
 }
 
-const IconButton: React.FC<IconButtonProps> = ({ icon, ...props }) => {
+export const IconButton: React.FC<IconButtonProps> = ({ icon, ...props }) => {
   return <Button variant="ghost" icon={icon} {...props} />;
 };
 

@@ -15,7 +15,7 @@ interface HeaderProps {
   subtitleStyle?: TextStyle;
 }
 
-const Header: React.FC<HeaderProps> = ({
+export const Header: React.FC<HeaderProps> = ({
   title,
   subtitle,
   leftContent,

@@ -13,7 +13,7 @@ interface SecondaryButtonProps {
   disabled?: boolean;
 }
 
-const SecondaryButton: React.FC<SecondaryButtonProps> = (props) => {
+export const SecondaryButton: React.FC<SecondaryButtonProps> = (props) => {
   return <Button variant="secondary" {...props} />;
 };
 

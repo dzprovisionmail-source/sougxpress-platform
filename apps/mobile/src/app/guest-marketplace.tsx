@@ -170,11 +170,11 @@ export default function GuestMarketplaceScreen() {
               </Typography>
             </TouchableOpacity>
 
-            {MAIN_CATEGORIES.map((cat) => {
+            {MAIN_CATEGORIES.map((cat, index) => {
               const active = selectedCategory === cat.key;
               return (
                 <TouchableOpacity
-                  key={cat.key}
+                  key={cat.key || (cat as any).id || index}
                   onPress={() => setSelectedCategory(cat.key)}
                   style={[
                     styles.categoryCard,
@@ -213,9 +213,9 @@ export default function GuestMarketplaceScreen() {
               description="حاول البحث بكلمة مختلفة أو اختر تصنيفاً آخر"
             />
           ) : (
-            filteredStores.map((store) => (
+            filteredStores.map((store, index) => (
               <StoreCard
-                key={store.id}
+                key={store.id || store.key || index}
                 id={store.id}
                 name={store.name}
                 category={store.category || "متجر"}
@@ -240,8 +240,8 @@ export default function GuestMarketplaceScreen() {
             </Typography>
 
             <View style={styles.productsGrid}>
-              {products.map((product) => (
-                <View key={product.id} style={styles.productCol}>
+              {products.map((product, index) => (
+                <View key={product.id || product.key || index} style={styles.productCol}>
                   <ProductCard
                     id={product.id}
                     name={product.name}

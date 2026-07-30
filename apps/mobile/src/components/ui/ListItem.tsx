@@ -19,7 +19,7 @@ interface ListItemProps {
   valueStyle?: TextStyle;
 }
 
-const ListItem: React.FC<ListItemProps> = ({
+export const ListItem: React.FC<ListItemProps> = ({
   icon,
   title,
   value,

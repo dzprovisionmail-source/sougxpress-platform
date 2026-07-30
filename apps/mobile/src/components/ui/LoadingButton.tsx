@@ -12,7 +12,7 @@ interface LoadingButtonProps {
   disabled?: boolean;
 }
 
-const LoadingButton: React.FC<LoadingButtonProps> = (props) => {
+export const LoadingButton: React.FC<LoadingButtonProps> = (props) => {
   return <Button {...props} />;
 };
 

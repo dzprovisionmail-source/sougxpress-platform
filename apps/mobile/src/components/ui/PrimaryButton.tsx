@@ -13,7 +13,7 @@ interface PrimaryButtonProps {
   disabled?: boolean;
 }
 
-const PrimaryButton: React.FC<PrimaryButtonProps> = (props) => {
+export const PrimaryButton: React.FC<PrimaryButtonProps> = (props) => {
   return <Button variant="primary" {...props} />;
 };
 

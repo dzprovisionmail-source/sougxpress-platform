@@ -10,7 +10,7 @@ export interface CardProps {
   variant?: 'elevated' | 'flat' | 'outlined';
 }
 
-const Card: React.FC<CardProps> = ({
+export const Card: React.FC<CardProps> = ({
   children,
   onPress,
   style,

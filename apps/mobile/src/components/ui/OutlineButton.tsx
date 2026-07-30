@@ -12,7 +12,7 @@ interface OutlineButtonProps {
   disabled?: boolean;
 }
 
-const OutlineButton: React.FC<OutlineButtonProps> = (props) => {
+export const OutlineButton: React.FC<OutlineButtonProps> = (props) => {
   return <Button variant="outline" {...props} />;
 };
 

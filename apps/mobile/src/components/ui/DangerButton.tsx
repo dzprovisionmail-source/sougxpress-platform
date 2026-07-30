@@ -13,7 +13,7 @@ interface DangerButtonProps {
   disabled?: boolean;
 }
 
-const DangerButton: React.FC<DangerButtonProps> = (props) => {
+export const DangerButton: React.FC<DangerButtonProps> = (props) => {
   return <Button variant="danger" {...props} />;
 };
 
