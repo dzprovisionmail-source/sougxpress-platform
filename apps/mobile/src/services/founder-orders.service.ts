@@ -13,7 +13,6 @@ export interface FounderOrder {
   order_total_minor: number;
   total_minor?: number;
   delivery_address_id: string;
-  placed_at: string;
   delivered_at: string | null;
   cancelled_reason: string | null;
   created_at: string;
@@ -77,7 +76,7 @@ export async function getFounderOrders(
   let q = supabase
     .from("orders")
     .select("*, customer:customers(first_name,last_name,phone_number), store:stores(name,category)")
-    .order("placed_at", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(limit);
 
   if (status && status !== "all") q = q.eq("status", status);

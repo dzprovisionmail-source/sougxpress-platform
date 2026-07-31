@@ -61,8 +61,8 @@ export async function getFounderDeliveryPerformance(): Promise<{
 }> {
   const { data, error } = await supabase
     .from("orders")
-    .select("status, placed_at, delivered_at")
-    .gte("placed_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+    .select("status, created_at, delivered_at")
+    .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
   if (error || !data) {
     return { total: 0, delivered: 0, cancelled: 0, avgDeliveryTimeMin: null, completionRate: 0, error: error?.message ?? null };
@@ -76,7 +76,7 @@ export async function getFounderDeliveryPerformance(): Promise<{
   const times: number[] = [];
   for (const o of delivered) {
     if (o.delivered_at) {
-      const diff = new Date(o.delivered_at).getTime() - new Date(o.placed_at).getTime();
+      const diff = new Date(o.delivered_at).getTime() - new Date(o.created_at).getTime();
       times.push(diff / 60000);
     }
   }

@@ -30,7 +30,6 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
       platform_commission_minor: data.platform_commission_minor,
       total_minor: data.total_minor,
       delivery_address_id: data.delivery_address_id,
-      placed_at: new Date().toISOString(),
       delivered_at: null,
       cancelled_reason: null,
       // Add notes if available in schema, otherwise handle separately

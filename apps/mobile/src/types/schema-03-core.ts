@@ -220,7 +220,6 @@ export interface Order {
   platform_commission_minor: number;
   total_minor: number;
   delivery_address_id: string;
-  placed_at: string;
   delivered_at: string | null;
   cancelled_reason: string | null;
   created_at: string;
