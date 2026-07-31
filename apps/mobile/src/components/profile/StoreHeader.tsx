@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { Camera, Star } from 'lucide-react-native';
 import AvatarUploader from './AvatarUploader';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface StoreHeaderProps {
   storeName: string;
@@ -26,9 +27,10 @@ const StoreHeader: React.FC<StoreHeaderProps> = ({
   onCoverUpload = () => {},
   isMerchantView,
 }) => {
+  const { colors } = useAppTheme();
   return (
-    <View style={styles.container}>
-      <View style={styles.coverImageContainer}>
+    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
+      <View style={[styles.coverImageContainer, { backgroundColor: colors.bgSurface }]}>
         {coverImageUrl ? (
           <Image source={{ uri: coverImageUrl }} style={styles.coverImage as ImageStyle} />
         ) : (
@@ -42,16 +44,16 @@ const StoreHeader: React.FC<StoreHeaderProps> = ({
       </View>
 
       <View style={styles.logoAndInfoContainer}>
-        <View style={styles.logoContainer}>
+        <View style={[styles.logoContainer, { backgroundColor: colors.bgSurface, borderColor: colors.bgBase }]}>
           <AvatarUploader avatarUrl={storeLogoUrl} onUpload={onLogoUpload} />
         </View>
         
         <View style={styles.infoContainer}>
-          <Text style={styles.storeName}>{storeName}</Text>
-          <Text style={styles.category}>{category}</Text>
+          <Text style={[styles.storeName, { color: colors.textPrimary }]}>{storeName}</Text>
+          <Text style={[styles.category, { color: colors.textSecondary }]}>{category}</Text>
           <View style={styles.ratingContainer}>
             <Star size={16} color="#FFA500" fill="#FFA500" />
-            <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+            <Text style={[styles.ratingText, { color: colors.textPrimary }]}>{rating.toFixed(1)}</Text>
             <Text style={[styles.statusTextBase, { color: isOpen ? '#28A745' : '#DC3545' }]}>
               {isOpen ? 'مفتوح' : 'مغلق'}
             </Text>
@@ -64,7 +66,6 @@ const StoreHeader: React.FC<StoreHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFF',
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     shadowColor: '#000',
@@ -77,7 +78,6 @@ const styles = StyleSheet.create({
   coverImageContainer: {
     height: 150,
     width: '100%',
-    backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -90,7 +90,6 @@ const styles = StyleSheet.create({
   coverImagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#E0E0E0',
   },
   editCoverButton: {
     position: 'absolute',
@@ -111,8 +110,6 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: '#FFF',
-    backgroundColor: '#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 15,
@@ -125,12 +122,10 @@ const styles = StyleSheet.create({
   storeName: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 5,
   },
   category: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 5,
   },
   ratingContainer: {
@@ -139,7 +134,6 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 16,
-    color: '#FFA500',
     marginRight: 5,
   },
   statusTextBase: {

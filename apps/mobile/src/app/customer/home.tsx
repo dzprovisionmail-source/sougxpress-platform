@@ -30,6 +30,7 @@ import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
 import { MAIN_CATEGORIES, mapLegacyCategoryToMain, getArabicCategoryName } from "@/config/storeCategories";
+import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -49,6 +50,8 @@ interface StoreRow {
   category: string;
   main_category?: string | null;
   sub_category?: string | null;
+  category_id?: string | null;
+  subcategory_id?: string | null;
   rating?: string;
   status: string;
   cover_url?: string;
@@ -88,21 +91,15 @@ const HERO_SLIDES_TEMPLATES: Omit<HeroSlide, "storeId" | "storeName">[] = [
 
 const HERO_STORE_TITLES = ["سوبر ماركت الوفاء", "مخبزة السعادة", "واحة عين صفراء"];
 
-const CATEGORIES = [
-  { id: "all", name: "الكل", icon: "apps-outline" as const },
-  ...MAIN_CATEGORIES.map((c) => ({
-    id: c.value,
-    name: c.label,
-    icon: (c.icon || "storefront-outline") as any,
-  })),
-];
-
 export default function CustomerHomeScreen() {
   const router = useRouter();
   const [theme, setTheme] = useState<ThemeType>(DEFAULT_THEME);
   const [search, setSearch] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [activeSubcategory, setActiveSubcategory] = useState<string>("all");
+  const [categories, setCategories] = useState<Array<{ id: string; name_ar: string; icon?: string }>>([]);
+  const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
   const [stores, setStores] = useState<StoreRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -115,7 +112,24 @@ export default function CustomerHomeScreen() {
 
   useEffect(() => {
     fetchStores();
+    loadCategories();
   }, []);
+
+  const loadCategories = async () => {
+    const cats = await getActiveCategories();
+    setCategories(cats);
+  };
+
+  const handleCategoryPress = async (catId: string) => {
+    setActiveCategory(catId);
+    setActiveSubcategory("all");
+    if (catId === "all") {
+      setSubcategories([]);
+    } else {
+      const subs = await getActiveSubcategories(catId);
+      setSubcategories(subs);
+    }
+  };
 
   const fetchStores = useCallback(async () => {
     try {
@@ -165,7 +179,13 @@ export default function CustomerHomeScreen() {
 
     if (activeCategory !== "all") {
       result = result.filter(
-        (store) => store.main_category === activeCategory || store.category === activeCategory
+        (store) => store.main_category === activeCategory || store.category === activeCategory || store.category_id === activeCategory
+      );
+    }
+
+    if (activeSubcategory !== "all") {
+      result = result.filter(
+        (store) => store.subcategory_id === activeSubcategory || store.sub_category === activeSubcategory
       );
     }
 
@@ -179,7 +199,7 @@ export default function CustomerHomeScreen() {
     }
 
     return result;
-  }, [stores, activeCategory, search]);
+  }, [stores, activeCategory, activeSubcategory, search]);
 
   const handleHeroScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -279,17 +299,17 @@ export default function CustomerHomeScreen() {
         id={store.id}
         name={store.name}
         category={getArabicCategoryName(store.category)}
+        subcategory={store.sub_category}
         rating={store.rating?.toString() || "0.0"}
         coverImage={store.cover_url}
         logoImage={store.logo_url}
         isOpen={store.is_open ?? store.status === "active"}
         isFeatured={store.is_featured}
         address={store.address_line1 ?? store.city ?? ""}
-        theme={theme}
         onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
       />
     ),
-    [router, theme]
+    [router]
   );
 
   return (
@@ -360,18 +380,59 @@ export default function CustomerHomeScreen() {
               { flexDirection: isRTL ? "row-reverse" : "row" },
             ]}
           >
-            {CATEGORIES.map((cat) => (
+            <CategoryItem
+              key="all"
+              name="الكل"
+              icon="apps-outline"
+              theme={theme}
+              isActive={activeCategory === "all"}
+              onPress={() => handleCategoryPress("all")}
+            />
+            {categories.map((cat) => (
               <CategoryItem
                 key={cat.id}
-                name={cat.name}
-                icon={cat.icon}
+                name={cat.name_ar}
+                icon={(cat.icon || "storefront-outline") as any}
                 theme={theme}
                 isActive={activeCategory === cat.id}
-                onPress={() => setActiveCategory(cat.id)}
+                onPress={() => handleCategoryPress(cat.id)}
               />
             ))}
           </ScrollView>
         </View>
+
+        {/* Subcategories */}
+        {subcategories.length > 0 && (
+          <View style={styles.section}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[
+                styles.categoriesScroll,
+                { flexDirection: isRTL ? "row-reverse" : "row" },
+              ]}
+            >
+              <CategoryItem
+                key="all-sub"
+                name="الكل"
+                icon="apps-outline"
+                theme={theme}
+                isActive={activeSubcategory === "all"}
+                onPress={() => setActiveSubcategory("all")}
+              />
+              {subcategories.map((sub) => (
+                <CategoryItem
+                  key={sub.id}
+                  name={sub.name_ar}
+                  icon="storefront-outline"
+                  theme={theme}
+                  isActive={activeSubcategory === sub.id}
+                  onPress={() => setActiveSubcategory(sub.id)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Featured Stores */}
         <View style={styles.section}>

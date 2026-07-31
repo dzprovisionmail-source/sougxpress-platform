@@ -123,12 +123,17 @@ export const MAIN_CATEGORIES: MainCategoryConfig[] = [
       { value: "misc_services", label: "خدمات متنوعة" },
     ],
   },
+  {
+    value: "other",
+    label: "أخرى",
+    subcategories: [],
+  },
 ];
 
 export function mapLegacyCategoryToMain(legacyCategory?: string | null): string {
   if (!legacyCategory) return "groceries";
   const lower = legacyCategory.toLowerCase().trim();
-  if (lower === "other" || lower === "أخرى") return "groceries";
+  if (lower === "other" || lower === "أخرى") return "other";
   const found = MAIN_CATEGORIES.find(
     (c) => c.value === lower || c.label === legacyCategory || c.subcategories.some((s) => s.value === lower || s.label === legacyCategory)
   );
@@ -182,7 +187,8 @@ export function mapLegacyCategoryToMain(legacyCategory?: string | null): string 
 }
 
 export function getArabicCategoryName(mainCat?: string | null, subCat?: string | null, legacyCat?: string | null): string {
-  if (mainCat && mainCat !== "other") {
+  if (mainCat) {
+    if (mainCat === "other") return "أخرى";
     const main = MAIN_CATEGORIES.find((c) => c.value === mainCat);
     if (main) {
       if (subCat) {
@@ -201,5 +207,5 @@ export function getArabicCategoryName(mainCat?: string | null, subCat?: string |
     return legacyToUse;
   }
 
-  return "سوبر ماركت";
+  return "أخرى";
 }

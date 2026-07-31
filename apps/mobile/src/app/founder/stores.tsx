@@ -554,7 +554,7 @@ export default function FounderStoresScreen() {
                   </View>
                   <View style={styles.infoRow}>
                     <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "right", flex: 1 }}>الموقع</Text>
-                    <Text style={{ color: colors.textPrimary, fontSize: 14, textAlign: "right", flex: 2, fontWeight: "500" }}>{selectedStore.address_line1 ?? "—"} {selectedStore.city ? `· ${selectedStore.city}` : ""}</Text>
+                    <Text style={{ color: colors.textPrimary, fontSize: 14, textAlign: "right", flex: 2, fontWeight: "500" }}>{selectedStore.address_line1 ?? "—"}{selectedStore.city && selectedStore.city !== (selectedStore.address_line1 ?? "") ? ` · ${selectedStore.city}` : ""}</Text>
                   </View>
                   <View style={styles.infoRow}>
                     <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "right", flex: 1 }}>مميز</Text>

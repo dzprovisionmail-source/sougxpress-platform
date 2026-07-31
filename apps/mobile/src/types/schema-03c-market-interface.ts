@@ -78,5 +78,5 @@ export interface OrderSummary {
   driver_id: string | null;
   total_minor: number;
   item_count: number;
-  placed_at: string;
+  created_at: string;
 }

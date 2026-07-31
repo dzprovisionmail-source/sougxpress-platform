@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator,
   Image,
+  Text,
 } from "react-native";
 import {
   Store as StoreIcon,
@@ -35,6 +36,7 @@ import StoreProductManagement from "@/components/profile/StoreProductManagement"
 import { supabase } from "@/lib/supabase";
 import { ImageOptimizerModal } from "@/components/ui";
 import { ImageType } from "@/utils/imageOptimizer";
+import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
 import {
   WorkspaceScreen,
   SectionCard,
@@ -49,6 +51,8 @@ import {
 interface StoreFormValues {
   name: string;
   category: string;
+  category_id?: string;
+  subcategory_id?: string;
   description: string;
   phone_number: string;
   address_line1: string;
@@ -61,6 +65,8 @@ function buildForm(s: Store): StoreFormValues {
   return {
     name: s.name ?? "",
     category: s.category ?? "",
+    category_id: s.category_id ?? undefined,
+    subcategory_id: s.subcategory_id ?? undefined,
     description: s.description ?? "",
     phone_number: s.phone_number ?? "",
     address_line1: s.address_line1 ?? "",
@@ -74,6 +80,8 @@ function buildForm(s: Store): StoreFormValues {
 interface CreateFormValues {
   name: string;
   category: string;
+  category_id?: string;
+  subcategory_id?: string;
   address_line1: string;
   city: string;
   latitude: string;
@@ -83,6 +91,8 @@ interface CreateFormValues {
 const EMPTY_CREATE_FORM: CreateFormValues = {
   name: "",
   category: "",
+  category_id: undefined,
+  subcategory_id: undefined,
   address_line1: "",
   city: "عين الصفراء",
   latitude: "",
@@ -129,6 +139,11 @@ export default function MerchantStoreScreen() {
   const [createForm, setCreateForm] = useState<CreateFormValues>(EMPTY_CREATE_FORM);
   const [creating, setCreating] = useState(false);
 
+  // Category/subcategory state
+  const [categories, setCategories] = useState<Array<{ id: string; name_ar: string; icon?: string }>>([]);
+  const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
   // Logo / cover upload state
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -143,12 +158,38 @@ export default function MerchantStoreScreen() {
       if (s?.id) {
         setStoreId(s.id);
       } else {
-        // No store yet — auto-open the create form
         setShowCreateForm(true);
       }
       setResolving(false);
     });
+    loadCategories();
   }, [userId]);
+
+  useEffect(() => {
+    if (editModalOpen && categories.length === 0 && !loadingCategories) {
+      loadCategories();
+    }
+  }, [editModalOpen]);
+
+  const loadCategories = async () => {
+    setLoadingCategories(true);
+    const cats = await getActiveCategories();
+    setCategories(cats);
+    setLoadingCategories(false);
+  };
+
+  const handleCategoryChange = async (categoryId: string) => {
+    setCreateForm((prev) => ({ ...prev, category_id: categoryId, subcategory_id: undefined }));
+    const subs = await getActiveSubcategories(categoryId);
+    setSubcategories(subs);
+  };
+
+  const handleEditCategoryChange = async (categoryId: string) => {
+    if (!form) return;
+    const subs = await getActiveSubcategories(categoryId);
+    setSubcategories(subs);
+    setForm((prev) => prev ? { ...prev, category_id: categoryId, subcategory_id: undefined } : prev);
+  };
 
   const { store, galleryImages, loading, updateStore: updateStoreHook, handleImageUpload, handleImageDelete } =
     useStore(storeId);
@@ -169,7 +210,7 @@ export default function MerchantStoreScreen() {
       Alert.alert("خطأ", "اسم المتجر مطلوب");
       return;
     }
-    if (!createForm.category.trim()) {
+    if (!createForm.category.trim() && !createForm.category_id) {
       Alert.alert("خطأ", "فئة المتجر مطلوبة");
       return;
     }
@@ -183,6 +224,8 @@ export default function MerchantStoreScreen() {
     const created = await createStore(userId, {
       name: createForm.name.trim(),
       category: createForm.category.trim(),
+      category_id: createForm.category_id,
+      subcategory_id: createForm.subcategory_id,
       address_line1: createForm.address_line1.trim(),
       city: createForm.city.trim() || "عين الصفراء",
       country: "Algeria",
@@ -213,6 +256,11 @@ export default function MerchantStoreScreen() {
   const openEditModal = () => {
     if (!store) return;
     setForm(buildForm(store));
+    if (store.category_id) {
+      handleEditCategoryChange(store.category_id);
+    } else {
+      setSubcategories([]);
+    }
     setEditModalOpen(true);
   };
 
@@ -233,6 +281,8 @@ export default function MerchantStoreScreen() {
       opens_at: form.opens_at || undefined,
       closes_at: form.closes_at || undefined,
     };
+    if (form.category_id) updates.category_id = form.category_id;
+    if (form.subcategory_id !== undefined) updates.subcategory_id = form.subcategory_id;
     const ok = await updateStoreHook(updates);
     setSaving(false);
     if (ok !== undefined) {
@@ -328,7 +378,6 @@ export default function MerchantStoreScreen() {
               {(
                 [
                   { key: "name", label: "اسم المتجر *", placeholder: "مثال: متجر العائلة" },
-                  { key: "category", label: "الفئة *", placeholder: "مثال: بقالة، مطعم..." },
                   { key: "address_line1", label: "عنوان المتجر *", placeholder: "الشارع أو الحي" },
                   { key: "city", label: "المدينة", placeholder: "عين الصفراء" },
                   { key: "latitude", label: "خط العرض (اختياري)", placeholder: "مثال: 32.7490", keyboardType: "decimal-pad" },
@@ -369,6 +418,68 @@ export default function MerchantStoreScreen() {
                   />
                 </View>
               ))}
+
+              <View style={{ marginBottom: tokens.spacing.md }}>
+                <WorkspaceText color="secondary" style={{ fontSize: tokens.typography.sizes.sm, marginBottom: 4 }}>
+                  الفئة الرئيسية *
+                </WorkspaceText>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+                  <View style={{ flexDirection: "row-reverse", gap: 8 }}>
+                    {categories.map((cat) => (
+                      <TouchableOpacity
+                        key={cat.id}
+                        onPress={() => handleCategoryChange(cat.id)}
+                        style={[
+                          {
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                            borderRadius: tokens.radius.sm,
+                            borderWidth: 1,
+                            borderColor: createForm.category_id === cat.id ? colors.primary : colors.borderSubtle,
+                            backgroundColor: createForm.category_id === cat.id ? colors.primary + "18" : colors.bgElevated,
+                          },
+                        ]}
+                      >
+                        <Text style={{ color: createForm.category_id === cat.id ? colors.primary : colors.textPrimary, fontSize: 13, fontWeight: "600" }}>
+                          {cat.name_ar}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+
+              {subcategories.length > 0 && (
+                <View style={{ marginBottom: tokens.spacing.md }}>
+                  <WorkspaceText color="secondary" style={{ fontSize: tokens.typography.sizes.sm, marginBottom: 4 }}>
+                    الفئة الفرعية
+                  </WorkspaceText>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View style={{ flexDirection: "row-reverse", gap: 8 }}>
+                      {subcategories.map((sub) => (
+                        <TouchableOpacity
+                          key={sub.id}
+                          onPress={() => setCreateForm((prev) => ({ ...prev, subcategory_id: sub.id }))}
+                          style={[
+                            {
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              borderRadius: tokens.radius.sm,
+                              borderWidth: 1,
+                              borderColor: createForm.subcategory_id === sub.id ? colors.primary : colors.borderSubtle,
+                              backgroundColor: createForm.subcategory_id === sub.id ? colors.primary + "18" : colors.bgElevated,
+                            },
+                          ]}
+                        >
+                          <Text style={{ color: createForm.subcategory_id === sub.id ? colors.primary : colors.textPrimary, fontSize: 13 }}>
+                            {sub.name_ar}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </ScrollView>
+                </View>
+              )}
 
               <WorkspaceButton
                 title={creating ? "جاري الإنشاء..." : "إنشاء المتجر"}
@@ -483,6 +594,12 @@ export default function MerchantStoreScreen() {
 
           <WorkspaceRow label="اسم المتجر" value={store.name} />
           <WorkspaceRow label="الفئة" value={store.category} />
+          {store.main_category && store.main_category !== store.category && (
+            <WorkspaceRow label="الفئة الرئيسية" value={store.main_category} />
+          )}
+          {store.sub_category && (
+            <WorkspaceRow label="الفئة الفرعية" value={store.sub_category} />
+          )}
           {store.description ? (
             <WorkspaceRow label="الوصف" value={store.description} />
           ) : null}
@@ -679,7 +796,6 @@ export default function MerchantStoreScreen() {
                   (
                     [
                       { key: "name", label: "اسم المتجر *", placeholder: "مثال: متجر العائلة" },
-                      { key: "category", label: "الفئة", placeholder: "مثال: بقالة، مطعم..." },
                       { key: "description", label: "الوصف", placeholder: "وصف مختصر للمتجر", multiline: true },
                       { key: "phone_number", label: "رقم الهاتف", placeholder: "0555 000 000", keyboardType: "phone-pad" },
                       { key: "address_line1", label: "العنوان", placeholder: "الشارع أو الحي" },
@@ -731,6 +847,68 @@ export default function MerchantStoreScreen() {
                       />
                     </View>
                   ))}
+
+                <View style={{ marginBottom: tokens.spacing.md }}>
+                  <WorkspaceText color="secondary" style={{ fontSize: tokens.typography.sizes.sm, marginBottom: 4 }}>
+                    الفئة الرئيسية
+                  </WorkspaceText>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View style={{ flexDirection: "row-reverse", gap: 8 }}>
+                      {categories.map((cat) => (
+                        <TouchableOpacity
+                          key={cat.id}
+                          onPress={() => handleEditCategoryChange(cat.id)}
+                          style={[
+                            {
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              borderRadius: tokens.radius.sm,
+                              borderWidth: 1,
+                              borderColor: form?.category_id === cat.id ? colors.primary : colors.borderSubtle,
+                              backgroundColor: form?.category_id === cat.id ? colors.primary + "18" : colors.bgElevated,
+                            },
+                          ]}
+                        >
+                          <Text style={{ color: form?.category_id === cat.id ? colors.primary : colors.textPrimary, fontSize: 13, fontWeight: "600" }}>
+                            {cat.name_ar}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </ScrollView>
+                </View>
+
+                {subcategories.length > 0 && (
+                  <View style={{ marginBottom: tokens.spacing.md }}>
+                    <WorkspaceText color="secondary" style={{ fontSize: tokens.typography.sizes.sm, marginBottom: 4 }}>
+                      الفئة الفرعية
+                    </WorkspaceText>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      <View style={{ flexDirection: "row-reverse", gap: 8 }}>
+                        {subcategories.map((sub) => (
+                          <TouchableOpacity
+                            key={sub.id}
+                            onPress={() => setForm((prev) => prev ? { ...prev, subcategory_id: sub.id } : prev)}
+                            style={[
+                              {
+                                paddingHorizontal: 12,
+                                paddingVertical: 8,
+                                borderRadius: tokens.radius.sm,
+                                borderWidth: 1,
+                                borderColor: form?.subcategory_id === sub.id ? colors.primary : colors.borderSubtle,
+                                backgroundColor: form?.subcategory_id === sub.id ? colors.primary + "18" : colors.bgElevated,
+                              },
+                            ]}
+                          >
+                            <Text style={{ color: form?.subcategory_id === sub.id ? colors.primary : colors.textPrimary, fontSize: 13 }}>
+                              {sub.name_ar}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </ScrollView>
+                  </View>
+                )}
 
                 <WorkspaceButton
                   title={saving ? "جاري الحفظ..." : "حفظ التعديلات"}
