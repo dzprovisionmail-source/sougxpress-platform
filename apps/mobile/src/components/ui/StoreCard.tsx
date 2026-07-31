@@ -15,12 +15,14 @@ import { ImageFallback } from './ImageFallback';
 import { CategoryIcon } from './CategoryIcon';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { TOKENS } from '@/constants/tokens';
+import { getArabicCategoryName } from '@/config/storeCategories';
 
 export interface StoreCardProps {
   id?: string;
   name?: string;
   store?: any;
   category?: string;
+  subcategory?: string;
   coverImage?: string | null;
   logoImage?: string | null;
   rating?: number | string;
@@ -39,6 +41,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   name,
   store,
   category = 'متجر',
+  subcategory,
   coverImage,
   logoImage,
   rating = 4.8,
@@ -57,6 +60,8 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   const actualId = id || store?.id || '';
   const actualName = name || store?.name || '';
   const actualCategory = category !== 'متجر' ? category : (store?.category || 'متجر');
+  const actualSubcategory = subcategory || store?.sub_category || '';
+  const displayCategory = getArabicCategoryName(actualCategory, actualSubcategory || undefined);
   const actualCover = coverImage || store?.cover_url || store?.coverImage || null;
   const actualLogo = logoImage || store?.logo_url || store?.logoImage || null;
   const actualRating = rating !== 4.8 ? rating : (store?.rating || 4.8);
@@ -152,7 +157,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
               { color: colors.textSecondary, fontFamily: TOKENS.typography.families.arabic },
             ]}
           >
-            {actualCategory}
+            {displayCategory}
           </Text>
           {actualAddress ? (
             <Text

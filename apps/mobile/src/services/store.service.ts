@@ -110,13 +110,13 @@ export const searchStores = async (query: string): Promise<Store[]> => {
   return data as Store[];
 };
 
-export const updateStore = async (storeId: string, updates: Partial<Store> & { category?: string }): Promise<Store | null> => {
+export const updateStore = async (storeId: string, updates: Partial<Store> & { category?: string; category_id?: string; subcategory_id?: string }): Promise<Store | null> => {
   if (!storeId || !isValidUUID(storeId)) {
     return null;
   }
 
   const payload: any = { ...updates };
-  if (payload.category && !payload.main_category) {
+  if (payload.category && !payload.main_category && !payload.category_id) {
     payload.main_category = mapLegacyCategoryToMain(payload.category);
   }
 
@@ -141,6 +141,8 @@ export const createStore = async (
     category: string;
     main_category?: string;
     sub_category?: string;
+    category_id?: string;
+    subcategory_id?: string;
     tags?: string[];
     badges?: string[];
     address_line1: string;
@@ -152,25 +154,28 @@ export const createStore = async (
 ): Promise<Store | null> => {
   if (!merchantId || !isValidUUID(merchantId)) return null;
 
+  const payload: any = {
+    merchant_id: merchantId,
+    name: data.name,
+    category: data.category,
+    main_category: data.main_category || mapLegacyCategoryToMain(data.category),
+    sub_category: data.sub_category || null,
+    tags: data.tags || [],
+    badges: data.badges || [],
+    address_line1: data.address_line1,
+    city: data.city || "عين الصفراء",
+    country: data.country || "Algeria",
+    latitude: data.latitude ?? null,
+    longitude: data.longitude ?? null,
+    status: "pending",
+    is_open: false,
+  };
+  if (data.category_id) payload.category_id = data.category_id;
+  if (data.subcategory_id) payload.subcategory_id = data.subcategory_id;
+
   const { data: created, error } = await supabase
     .from("stores")
-    .insert({
-      merchant_id: merchantId,
-      name: data.name,
-      category: data.category,
-      main_category: data.main_category || mapLegacyCategoryToMain(data.category),
-      sub_category: data.sub_category || null,
-      tags: data.tags || [],
-      badges: data.badges || [],
-      address_line1: data.address_line1,
-      city: data.city || "عين الصفراء",
-      country: data.country || "Algeria",
-      latitude: data.latitude ?? null,
-      longitude: data.longitude ?? null,
-      // RLS requires status = 'pending' for merchant self-insert
-      status: "pending",
-      is_open: false,
-    })
+    .insert(payload)
     .select()
     .single();
 

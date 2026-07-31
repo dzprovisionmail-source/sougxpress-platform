@@ -67,6 +67,7 @@ export default function FounderLayout() {
       {/* add-demo-store is aliased to add-store (same screen) */}
       <Stack.Screen name="add-demo-driver" />
       <Stack.Screen name="add-demo-customer" />
+      <Stack.Screen name="categories" />
     </Stack>
   );
 }

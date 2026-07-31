@@ -24,7 +24,8 @@ import { LogIn, Sparkles, ShoppingBag } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
-import { MAIN_CATEGORIES } from "@/config/storeCategories";
+import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
+import { getArabicCategoryName } from "@/config/storeCategories";
 
 export default function GuestMarketplaceScreen() {
   const router = useRouter();
@@ -33,6 +34,9 @@ export default function GuestMarketplaceScreen() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");
+  const [categories, setCategories] = useState<Array<{ id: string; name_ar: string; icon?: string }>>([]);
+  const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
   const [stores, setStores] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,13 +44,29 @@ export default function GuestMarketplaceScreen() {
 
   useEffect(() => {
     fetchGuestData();
+    loadCategories();
   }, []);
+
+  const loadCategories = async () => {
+    const cats = await getActiveCategories();
+    setCategories(cats);
+  };
+
+  const handleCategoryPress = async (catId: string) => {
+    setSelectedCategory(catId);
+    setSelectedSubcategory("all");
+    if (catId === "all") {
+      setSubcategories([]);
+    } else {
+      const subs = await getActiveSubcategories(catId);
+      setSubcategories(subs);
+    }
+  };
 
   const fetchGuestData = async () => {
     try {
       setLoading(true);
 
-      // Fetch active stores
       const { data: storeData } = await supabase
         .from("stores")
         .select("*")
@@ -54,7 +74,6 @@ export default function GuestMarketplaceScreen() {
 
       setStores(storeData || []);
 
-      // Fetch featured products
       const { data: prodData } = await supabase
         .from("products")
         .select(`
@@ -76,17 +95,14 @@ export default function GuestMarketplaceScreen() {
     fetchGuestData();
   };
 
-  // Filter stores
   const filteredStores = useMemo(() => {
     return stores.filter((s) => {
-      const matchesCat =
-        selectedCategory === "all" ||
-        s.category?.toLowerCase() === selectedCategory.toLowerCase();
-      const matchesSearch =
-        !searchQuery || s.name?.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCat && matchesSearch;
+      const matchesCat = selectedCategory === "all" || s.category_id === selectedCategory || s.main_category === selectedCategory || s.category === selectedCategory;
+      const matchesSub = selectedSubcategory === "all" || s.subcategory_id === selectedSubcategory || s.sub_category === selectedSubcategory;
+      const matchesSearch = !searchQuery || s.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCat && matchesSub && matchesSearch;
     });
-  }, [stores, selectedCategory, searchQuery]);
+  }, [stores, selectedCategory, selectedSubcategory, searchQuery]);
 
   if (loading && !refreshing) {
     return (
@@ -149,7 +165,7 @@ export default function GuestMarketplaceScreen() {
             contentContainerStyle={[styles.categoryScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
           >
             <TouchableOpacity
-              onPress={() => setSelectedCategory("all")}
+              onPress={() => handleCategoryPress("all")}
               style={[
                 styles.categoryCard,
                 {
@@ -170,12 +186,12 @@ export default function GuestMarketplaceScreen() {
               </Typography>
             </TouchableOpacity>
 
-            {MAIN_CATEGORIES.map((cat, index) => {
-              const active = selectedCategory === cat.key;
+            {categories.map((cat) => {
+              const active = selectedCategory === cat.id;
               return (
                 <TouchableOpacity
-                  key={cat.key || (cat as any).id || index}
-                  onPress={() => setSelectedCategory(cat.key)}
+                  key={cat.id}
+                  onPress={() => handleCategoryPress(cat.id)}
                   style={[
                     styles.categoryCard,
                     {
@@ -184,7 +200,7 @@ export default function GuestMarketplaceScreen() {
                     },
                   ]}
                 >
-                  <CategoryIcon category={cat.arabicName} size="sm" variant={active ? "filled" : "subtle"} />
+                  <CategoryIcon category={cat.name_ar} size="sm" variant={active ? "filled" : "subtle"} />
                   <Typography
                     variant="caption"
                     style={{
@@ -192,13 +208,55 @@ export default function GuestMarketplaceScreen() {
                       fontWeight: active ? "700" : "500",
                     }}
                   >
-                    {cat.arabicName}
+                    {cat.name_ar}
                   </Typography>
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
         </View>
+
+        {/* Subcategory chips */}
+        {subcategories.length > 0 && (
+          <View style={styles.categoriesSection}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.categoryScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <TouchableOpacity
+                onPress={() => setSelectedSubcategory("all")}
+                style={[
+                  styles.categoryCard,
+                  {
+                    backgroundColor: selectedSubcategory === "all" ? colors.primary : colors.bgElevated,
+                    borderColor: selectedSubcategory === "all" ? colors.primary : colors.borderSubtle,
+                  },
+                ]}
+              >
+                <Typography variant="caption" style={{ color: selectedSubcategory === "all" ? colors.textOnBrand : colors.textPrimary, fontWeight: selectedSubcategory === "all" ? "700" : "500" }}>
+                  الكل
+                </Typography>
+              </TouchableOpacity>
+              {subcategories.map((sub) => {
+                const active = selectedSubcategory === sub.id;
+                return (
+                  <TouchableOpacity
+                    key={sub.id}
+                    onPress={() => setSelectedSubcategory(sub.id)}
+                    style={[
+                      styles.categoryCard,
+                      {
+                        backgroundColor: active ? colors.primary : colors.bgElevated,
+                        borderColor: active ? colors.primary : colors.borderSubtle,
+                      },
+                    ]}
+                  >
+                    <Typography variant="caption" style={{ color: active ? colors.textOnBrand : colors.textPrimary, fontWeight: active ? "700" : "500" }}>
+                      {sub.name_ar}
+                    </Typography>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Featured Stores */}
         <View style={styles.sectionContainer}>
@@ -218,7 +276,8 @@ export default function GuestMarketplaceScreen() {
                 key={store.id || store.key || index}
                 id={store.id}
                 name={store.name}
-                category={store.category || "متجر"}
+                category={getArabicCategoryName(store.main_category || store.category, store.sub_category)}
+                subcategory={store.sub_category}
                 coverImage={store.cover_url}
                 logoImage={store.logo_url}
                 rating={store.rating || 4.8}

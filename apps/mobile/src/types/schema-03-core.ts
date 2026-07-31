@@ -73,12 +73,12 @@ export type StoreStatus = "draft" | "active" | "paused" | "suspended";
 
 export interface Store {
   id: string;
-  merchant_id: string;
-  zone_id: string;
   name: string;
   category: string;
   main_category?: string | null;
   sub_category?: string | null;
+  category_id?: string | null;
+  subcategory_id?: string | null;
   tags?: string[];
   badges?: string[];
   description?: string;
@@ -109,6 +109,25 @@ export interface Store {
   admin_notes?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// --- Taxonomy ---------------------------------------------------------------
+export interface Category {
+  id: string;
+  name_ar: string;
+  icon?: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Subcategory {
+  id: string;
+  category_id: string;
+  name_ar: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
 }
 
 // --- Products ---------------------------------------------------------------
