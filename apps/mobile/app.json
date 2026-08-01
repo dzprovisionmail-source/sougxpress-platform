@@ -3,10 +3,44 @@
     "name": "SougXpress Founder OS",
     "slug": "sougxpress-founder-os",
     "scheme": "sougxpress",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "assets/brand/logo-icon-1024.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "assets/brand/logo-icon-1024.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#121212"
+    },
+    "notification": {
+      "icon": "assets/brand/logo-icon.png",
+      "iosDisplayInForeground": true,
+      "color": "#FF8A00"
+    },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-font"
-    ]
+    ],
+    "ios": {
+      "bundleIdentifier": "com.sougxpress.founder",
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "com.sougxpress.founder"
+        }
+      }
+    },
+    "android": {
+      "package": "com.sougxpress.founder",
+      "adaptiveIcon": {
+        "foreground": "assets/brand/logo-icon.png",
+        "background": {
+          "color": "#FF8A00"
+        }
+      },
+      "permissions": [
+        "NOTIFICATIONS"
+      ]
+    }
   }
 }

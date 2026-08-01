@@ -3,10 +3,15 @@
  *
  * Single source of truth for all brand identity values.
  * Logo assets are stored in assets/brand/ and assets/images/.
+ * SVG source files are kept alongside PNGs for editing and scaling.
  *
- * IMPORTANT: The official logo is designed for DARK backgrounds only.
- * Do NOT use logo-horizontal-dark.png on light/ivory surfaces.
- * For light surfaces, use text-based wordmark "سوق إكسبريس" instead.
+ * Brand Mascot: Octavia the Octopus — friendly octopus mascot holding
+ * an orange shopping cart in one tentacle and an orange delivery box in another.
+ * Designed in Material Design 3 flat vector style with high contrast.
+ *
+ * IMPORTANT: The logo-wordmark.png is designed for LIGHT backgrounds only.
+ * The logo-icon.png (orange circular background) works on any background.
+ * logo-horizontal-dark.png is designed for DARK backgrounds (#121212).
  */
 
 // ─── Brand Names ─────────────────────────────────────────────────────────────────
@@ -23,11 +28,16 @@ export const BRAND_SLOGAN = "سوقك يوصلك لبابك";
 /** City / location label */
 export const BRAND_CITY_LABEL = "سوق عين الصفراء";
 
-// ─── Brand Colors ──────────────────────────────────────────────────────────────────
+// ─── Brand Colors ─────────────────────────────────────────────────────────────────
 
+/**
+ * Official brand palette.
+ * - Orange (#FF8A00): warm, energetic primary accent
+ * - Royal Blue (#1565C0): premium, trustworthy secondary
+ */
 export const BRAND_COLORS = {
   orange: "#FF8A00",
-  blue: "#0D47A1",
+  blue: "#1565C0",
   darkNavy: "#0A1B33",
   black: "#121212",
   darkGray: "#2A2A2A",
@@ -38,32 +48,38 @@ export const BRAND_COLORS = {
 // ─── Logo Asset Paths ─────────────────────────────────────────────────────────────
 
 /**
- * Main horizontal logo — designed for DARK backgrounds.
- * Contains mascot character + "SougXpress" wordmark + slogan.
- * DO NOT use on light/white/ivory surfaces.
- */
-export const LOGO_DARK = require("../../assets/brand/logo-horizontal-dark.png");
-
-/**
- * Compact mascot icon — suitable for small spaces (headers, badges).
- * Contains the ninja mascot character.
- * Designed for DARK backgrounds.
+ * Compact mascot icon — orange circular background with Octavia the Octopus.
+ * Suitable for app icon, badges, and small spaces.
+ * SVG source: assets/brand/logo-icon.svg
  */
 export const LOGO_ICON = require("../../assets/brand/logo-icon.png");
 
 /**
- * Horizontal wordmark logo — suitable for marketplace/store headers.
- * Clean, readable wordmark with brand colors (orange + blue).
- * Designed for light/white backgrounds.
- * Use in MarketplaceHeader and store headers where horizontal space is available.
+ * Horizontal wordmark logo — "سوق إكسبريس" + "SougXpress" in brand colors.
+ * Designed for light/white/ivory backgrounds (MarketplaceHeader).
+ * SVG source: assets/brand/logo-wordmark.svg
  */
 export const LOGO_WORDMARK = require("../../assets/brand/logo-wordmark.png");
 
 /**
- * Compatibility path — same as LOGO_DARK, stored in the default images directory
- * for apps that import from assets/images/.
+ * Full horizontal logo — mascot + wordmark + slogan, on dark background.
+ * Designed for DARK backgrounds (#121212).
+ * SVG source: assets/brand/logo-horizontal-dark.svg
+ */
+export const LOGO_DARK = require("../../assets/brand/logo-horizontal-dark.png");
+
+/**
+ * Compatibility path — mascot icon stored in the default images directory.
  */
 export const LOGO_COMPAT = require("../../assets/images/logo.png");
+
+/**
+ * SVG source paths for runtime rendering or web contexts.
+ */
+export const LOGO_ICON_SVG = require("../../assets/brand/logo-icon.svg");
+export const LOGO_WORDMARK_SVG = require("../../assets/brand/logo-wordmark.svg");
+export const LOGO_DARK_SVG = require("../../assets/brand/logo-horizontal-dark.svg");
+export const MASCOT_SVG = require("../../assets/brand/mascot.svg");
 
 // ─── Role Illustration Icons ──────────────────────────────────────────────────────
 
@@ -94,7 +110,7 @@ export const ICON_ADMIN = require("../../assets/brand/icons/icon-admin.png");
 // ─── Brand Usage Rules ────────────────────────────────────────────────────────────
 
 /**
- * Logo is designed for dark backgrounds only.
- * On light or ivory backgrounds, use the text wordmark "سوق إكسبريس" instead.
+ * Wordmark logo is designed for light backgrounds.
+ * On dark or ivory backgrounds, use LOGO_DARK instead.
  */
-export const LOGO_BACKGROUND = "dark-only" as const;
+export const LOGO_BACKGROUND = "dual" as const;

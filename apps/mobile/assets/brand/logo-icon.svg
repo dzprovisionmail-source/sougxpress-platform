@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Orange circular background -->
+  <rect width="1024" height="1024" fill="#FF8A00" rx="200" ry="200"/>
+
+  <!-- Mascot (scaled 2x, centered) -->
+  <g transform="translate(256, 96) scale(2)">
+
+    <!-- Delivery Box (left side, held by tentacle) -->
+    <g transform="translate(95, 340)">
+      <rect x="0" y="0" width="55" height="45" rx="8" fill="#FF8A00" stroke="#1565C0" stroke-width="2"/>
+      <polygon points="0,0 27.5,-18 55,0" fill="#FF8A00" stroke="#1565C0" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="12" y="14" width="30" height="2" fill="#1565C0" rx="1"/>
+      <rect x="12" y="24" width="15" height="2" fill="#1565C0" rx="1"/>
+    </g>
+
+    <!-- Shopping Cart (right side, held by tentacle) -->
+    <g transform="translate(370, 320)">
+      <path d="M50 50 L5 55 L15 5 L55 5 L62 50 Z" fill="#FF8A00" stroke="#1565C0" stroke-width="2"/>
+      <circle cx="20" cy="60" r="7" fill="#1565C0"/>
+      <circle cx="45" cy="60" r="7" fill="#1565C0"/>
+      <path d="M5 28 Q30 -8 55 28" stroke="#1565C0" stroke-width="5" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- Tentacles (5) -->
+    <path d="M140 288 C125 320, 128 360, 145 372 C162 384, 175 360, 180 340 C190 300, 175 295, 165 300" fill="#1565C0"/>
+    <path d="M185 294 C175 324, 180 354, 195 364 C210 374, 220 354, 225 339 C235 300, 220 298, 210 305" fill="#1565C0"/>
+    <path d="M230 298 C225 328, 235 358, 250 368 C265 378, 275 358, 280 348 C290 308, 275 302, 265 312" fill="#1565C0"/>
+    <path d="M285 298 C295 328, 288 358, 300 370 C312 382, 325 368, 330 353 C345 313, 325 308, 315 318" fill="#1565C0"/>
+    <path d="M335 294 C350 324, 380 354, 370 378 C360 402, 380 406, 400 385 C410 340, 375 325, 365 320" fill="#1565C0"/>
+
+    <!-- Head -->
+    <circle cx="256" cy="175" r="105" fill="#1565C0"/>
+
+    <!-- Left Eye -->
+    <circle cx="215" cy="165" r="32" fill="#FFFFFF"/>
+    <circle cx="215" cy="170" r="14" fill="#1565C0"/>
+    <circle cx="208" cy="158" r="5" fill="#FFFFFF"/>
+
+    <!-- Right Eye -->
+    <circle cx="295" cy="165" r="32" fill="#FFFFFF"/>
+    <circle cx="295" cy="170" r="14" fill="#1565C0"/>
+    <circle cx="288" cy="158" r="5" fill="#FFFFFF"/>
+
+    <!-- Smile -->
+    <path d="M220 238 Q256 256 292 238" stroke="#FFFFFF" stroke-width="8" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

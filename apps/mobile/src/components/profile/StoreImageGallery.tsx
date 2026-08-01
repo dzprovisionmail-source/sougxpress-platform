@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Images, Camera, CirclePlus } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';

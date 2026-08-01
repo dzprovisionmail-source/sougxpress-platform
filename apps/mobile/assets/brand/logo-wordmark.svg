@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="256" viewBox="0 0 1024 256">
+  <rect width="1024" height="256" fill="#FFFFFF"/>
+
+  <!-- Arabic wordmark: سوق إكسبريس -->
+  <text x="512" y="95" text-anchor="middle" font-family="Arial, Cairo, sans-serif" font-size="72" font-weight="700" fill="#1565C0" direction="rtl" text-rendering="optimizeLegibility">سوق إكسبريس</text>
+
+  <!-- English tagline: SougXpress -->
+  <text x="512" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="600" fill="#1565C0" letter-spacing="-0.5" text-rendering="optimizeLegibility">SougXpress</text>
+
+  <!-- Separator dot -->
+  <circle cx="512" cy="110" r="3" fill="#FF8A00"/>
+</svg>
