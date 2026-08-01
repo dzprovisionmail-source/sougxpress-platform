@@ -294,50 +294,59 @@ export const deleteStoreVideo = async (id: string): Promise<void> => {
 // ============================================================================
 
 export const getGalleryLikeCount = async (imageId: string): Promise<number> => {
-  const { count, error } = await supabase
-    .from("store_gallery_likes")
-    .select("*", { count: "exact", head: true })
-    .eq("gallery_image_id", imageId);
-  if (error) {
-    console.error("Error fetching like count:", error);
+  try {
+    const { count, error } = await supabase
+      .from("store_gallery_likes")
+      .select("*", { count: "exact", head: true })
+      .eq("gallery_image_id", imageId);
+    if (error) return 0;
+    return count ?? 0;
+  } catch {
     return 0;
   }
-  return count ?? 0;
 };
 
 export const getUserGalleryLike = async (
   imageId: string,
   userId: string
 ): Promise<StoreGalleryLike | null> => {
-  const { data, error } = await supabase
-    .from("store_gallery_likes")
-    .select("*")
-    .eq("gallery_image_id", imageId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) {
-    console.error("Error checking user like:", error);
+  try {
+    const { data, error } = await supabase
+      .from("store_gallery_likes")
+      .select("*")
+      .eq("gallery_image_id", imageId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) return null;
+    return (data ?? null) as StoreGalleryLike | null;
+  } catch {
     return null;
   }
-  return data as StoreGalleryLike | null;
 };
 
 export const toggleGalleryLike = async (
   imageId: string,
   userId: string
 ): Promise<boolean> => {
-  const existing = await getUserGalleryLike(imageId, userId);
-  if (existing) {
-    const { error } = await supabase.from("store_gallery_likes").delete().eq("id", existing.id);
-    if (error) throw new Error(error.message || "فشل إلغاء الإعجاب");
+  try {
+    const existing = await getUserGalleryLike(imageId, userId);
+    if (existing) {
+      const { error } = await supabase
+        .from("store_gallery_likes")
+        .delete()
+        .eq("id", existing.id);
+      if (error) return false;
+      return false;
+    } else {
+      const { error } = await supabase.from("store_gallery_likes").insert({
+        gallery_image_id: imageId,
+        user_id: userId,
+      });
+      if (error) return false;
+      return true;
+    }
+  } catch {
     return false;
-  } else {
-    const { error } = await supabase.from("store_gallery_likes").insert({
-      gallery_image_id: imageId,
-      user_id: userId,
-    });
-    if (error) throw new Error(error.message || "فشل الإعجاب");
-    return true;
   }
 };
 
@@ -347,16 +356,17 @@ export interface GalleryCommentWithAuthor extends StoreGalleryComment {
 }
 
 export const getGalleryComments = async (imageId: string): Promise<GalleryCommentWithAuthor[]> => {
-  const { data, error } = await supabase
-    .from("store_gallery_comments")
-    .select("*")
-    .eq("gallery_image_id", imageId)
-    .order("created_at", { ascending: true });
-  if (error) {
-    console.error("Error fetching comments:", error);
+  try {
+    const { data, error } = await supabase
+      .from("store_gallery_comments")
+      .select("*")
+      .eq("gallery_image_id", imageId)
+      .order("created_at", { ascending: true });
+    if (error) return [];
+    return (data ?? []) as GalleryCommentWithAuthor[];
+  } catch {
     return [];
   }
-  return (data ?? []) as GalleryCommentWithAuthor[];
 };
 
 export const addGalleryComment = async (
@@ -365,60 +375,74 @@ export const addGalleryComment = async (
   userName: string,
   userAvatarUrl: string | null,
   content: string
-): Promise<GalleryCommentWithAuthor> => {
-  const { data, error } = await supabase
-    .from("store_gallery_comments")
-    .insert({
-      gallery_image_id: imageId,
-      user_id: userId,
-      user_name: userName,
-      user_avatar_url: userAvatarUrl,
-      content: content.trim(),
-    })
-    .select()
-    .single();
-  if (error) throw new Error(error.message || "فشل إضافة التعليق");
-  return data as GalleryCommentWithAuthor;
+): Promise<GalleryCommentWithAuthor | null> => {
+  try {
+    const { data, error } = await supabase
+      .from("store_gallery_comments")
+      .insert({
+        gallery_image_id: imageId,
+        user_id: userId,
+        user_name: userName,
+        user_avatar_url: userAvatarUrl,
+        content: content.trim(),
+      })
+      .select()
+      .single();
+    if (error) return null;
+    return data as GalleryCommentWithAuthor;
+  } catch {
+    return null;
+  }
 };
 
-export const deleteGalleryComment = async (commentId: string): Promise<void> => {
-  const { error } = await supabase.from("store_gallery_comments").delete().eq("id", commentId);
-  if (error) throw new Error(error.message || "فشل حذف التعليق");
+export const deleteGalleryComment = async (commentId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase.from("store_gallery_comments").delete().eq("id", commentId);
+    return !error;
+  } catch {
+    return false;
+  }
 };
 
 export const getGalleryRating = async (imageId: string): Promise<{ average: number; count: number }> => {
-  const { data, error } = await supabase
-    .from("store_gallery_ratings")
-    .select("rating")
-    .eq("gallery_image_id", imageId);
-  if (error) {
-    console.error("Error fetching rating:", error);
+  try {
+    const { data, error } = await supabase
+      .from("store_gallery_ratings")
+      .select("rating")
+      .eq("gallery_image_id", imageId);
+    if (error || !data) return { average: 0, count: 0 };
+    const ratings = (data ?? []) as Pick<StoreGalleryRating, "rating">[];
+    if (ratings.length === 0) return { average: 0, count: 0 };
+    const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
+    return { average: sum / ratings.length, count: ratings.length };
+  } catch {
     return { average: 0, count: 0 };
   }
-  const ratings = (data ?? []) as Pick<StoreGalleryRating, "rating">[];
-  if (ratings.length === 0) return { average: 0, count: 0 };
-  const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
-  return { average: sum / ratings.length, count: ratings.length };
 };
 
 export const getUserGalleryRating = async (imageId: string, userId: string): Promise<number | null> => {
-  const { data, error } = await supabase
-    .from("store_gallery_ratings")
-    .select("rating")
-    .eq("gallery_image_id", imageId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) {
-    console.error("Error fetching user rating:", error);
+  try {
+    const { data, error } = await supabase
+      .from("store_gallery_ratings")
+      .select("rating")
+      .eq("gallery_image_id", imageId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) return null;
+    return data?.rating ?? null;
+  } catch {
     return null;
   }
-  return data?.rating ?? null;
 };
 
-export const rateGalleryItem = async (imageId: string, userId: string, rating: number): Promise<void> => {
-  const { error } = await supabase.from("store_gallery_ratings").upsert(
-    { gallery_image_id: imageId, user_id: userId, rating },
-    { onConflict: "gallery_image_id,user_id" }
-  );
-  if (error) throw new Error(error.message || "فشل حفظ التقييم");
+export const rateGalleryItem = async (imageId: string, userId: string, rating: number): Promise<boolean> => {
+  try {
+    const { error } = await supabase.from("store_gallery_ratings").upsert(
+      { gallery_image_id: imageId, user_id: userId, rating },
+      { onConflict: "gallery_image_id,user_id" }
+    );
+    return !error;
+  } catch {
+    return false;
+  }
 };

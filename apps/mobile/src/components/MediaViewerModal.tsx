@@ -16,6 +16,7 @@ import {
   Platform,
   ViewStyle,
   TextStyle,
+  useWindowDimensions,
 } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { X, Heart, Star, Send, Trash2, MessageCircle } from "lucide-react-native";
@@ -53,6 +54,8 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   onLikeUpdate,
 }) => {
   const { colors, tokens } = useAppTheme();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const imageHeight = Math.round(screenHeight * 0.65);
   const [likeCount, setLikeCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [liking, setLiking] = useState(false);
@@ -174,15 +177,17 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     if (!currentUserId || !commentText.trim()) return;
     setPostingComment(true);
     try {
-      await addGalleryComment(
+      const result = await addGalleryComment(
         mediaItemId,
         currentUserId,
         currentUserRole ?? "guest",
         null,
         commentText
       );
-      setCommentText("");
-      await fetchComments();
+      if (result) {
+        setCommentText("");
+        await fetchComments();
+      }
     } catch (err: any) {
       Alert.alert("خطأ", err.message);
     } finally {
@@ -199,8 +204,10 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
         style: "destructive",
         onPress: async () => {
           try {
-            await deleteGalleryComment(commentId);
-            setComments((prev) => prev.filter((c) => c.id !== commentId));
+            const success = await deleteGalleryComment(commentId);
+            if (success) {
+              setComments((prev) => prev.filter((c) => c.id !== commentId));
+            }
           } catch (err: any) {
             Alert.alert("خطأ", err.message);
           }
@@ -273,14 +280,14 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
           {mediaType === "photo" ? (
             <Image
               source={{ uri: mediaItem.image_url }}
-              style={styles.fullImage}
-              resizeMode="contain"
+              style={{ width: "100%", height: imageHeight }}
+              resizeMode="cover"
             />
           ) : (
             <View
               style={[
                 styles.videoPlaceholder,
-                { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle },
+                { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, height: imageHeight },
               ]}
             >
               <Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: "center" }}>
