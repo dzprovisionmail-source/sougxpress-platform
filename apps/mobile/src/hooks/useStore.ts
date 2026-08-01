@@ -54,7 +54,7 @@ const useStore = (storeId: string) => {
     setLoading(false);
   };
 
-  const handleImageUpload = (newImageUrl: string, _caption?: string | null) => {
+  const handleImageUpload = (newImageUrl: string, _title?: string | null, _caption?: string | null) => {
     setGalleryImages((prevImages) => [...prevImages, newImageUrl]);
   };
 

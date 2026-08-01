@@ -109,6 +109,7 @@ export default function FounderStoresScreen() {
   const [videoSubmitError, setVideoSubmitError] = useState<string | null>(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [galleryImageUri, setGalleryImageUri] = useState<string | null>(null);
+  const [galleryImageTitle, setGalleryImageTitle] = useState("");
   const [galleryCaption, setGalleryCaption] = useState("");
 
   const [newProductImageUri, setNewProductImageUri] = useState<string | null>(null);
@@ -347,10 +348,11 @@ export default function FounderStoresScreen() {
       const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, arrayBuffer, { contentType });
       if (uploadError) throw uploadError;
       const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
-      const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl, null, galleryCaption.trim() || null);
+      const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl, galleryImageTitle.trim() || null, galleryCaption.trim() || null);
       if (image) {
         setGallery((g) => [...g, image]);
         setGalleryImageUri(null);
+        setGalleryImageTitle("");
         setGalleryCaption("");
       }
       else if (err) Alert.alert("خطأ", err);
@@ -713,38 +715,57 @@ export default function FounderStoresScreen() {
                             {!img.is_visible && <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.5)", paddingVertical: 2, alignItems: "center" }}><Text style={{ color: "#fff", fontSize: 10 }}>مخفي</Text></View>}
                           </View>
                         ))}
-                        {galleryImageUri ? (
-                          <View style={{ position: "relative", alignSelf: "center", width: 120, height: 120, borderRadius: 8, overflow: "hidden", borderWidth: 1, borderColor: colors.borderSubtle }}>
-                            <Image source={{ uri: galleryImageUri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
-                            <TouchableOpacity onPress={() => setGalleryImageUri(null)} style={{ position: "absolute", top: 4, right: 4, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 10, padding: 4 }}>
-                              <X size={12} color="#fff" />
-                            </TouchableOpacity>
-                          </View>
-                        ) : (
-                          <TouchableOpacity onPress={pickGalleryImage} style={{ width: 120, height: 120, borderRadius: 8, borderWidth: 1, borderStyle: "dashed", borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated, alignItems: "center", justifyContent: "center" }}>
-                            <Upload size={24} color={colors.textSecondary} />
-                            <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>إضافة صورة</Text>
-                          </TouchableOpacity>
-                        )}
                       </ScrollView>
-                      <View style={{ marginTop: 8, marginBottom: 4 }}>
-                        <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" }}>
-                          <Text style={{ color: colors.textDisabled, fontSize: 12 }}>{galleryCaption.length}/50</Text>
-                          <TextInput
-                            value={galleryCaption}
-                            onChangeText={(text) => setGalleryCaption(text.slice(0, 50))}
-                            placeholder="وصف الصورة (اختياري)"
-                            placeholderTextColor={colors.textDisabled}
-                            textAlign="right"
-                            maxLength={50}
-                            style={[styles.modalInput, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                          />
+
+                      {/* Photo Selector */}
+                      {galleryImageUri ? (
+                        <View style={{ position: "relative", alignSelf: "flex-end", width: 80, height: 80, borderRadius: 8, overflow: "hidden", borderWidth: 1, borderColor: colors.borderSubtle, marginTop: 8 }}>
+                          <Image source={{ uri: galleryImageUri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+                          <TouchableOpacity onPress={() => setGalleryImageUri(null)} style={{ position: "absolute", top: 2, right: 2, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 8, padding: 2 }}>
+                            <X size={12} color="#fff" />
+                          </TouchableOpacity>
                         </View>
+                      ) : (
+                        <TouchableOpacity onPress={pickGalleryImage} style={{ width: "100%", height: 60, borderRadius: 8, borderWidth: 1, borderStyle: "dashed", borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated, alignItems: "center", justifyContent: "center", marginTop: 8, flexDirection: "row-reverse" }}>
+                          <Upload size={20} color={colors.textSecondary} />
+                          <Text style={{ color: colors.textSecondary, fontSize: 12, marginRight: 6 }}>إضافة صورة</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {/* Title Input */}
+                      <View style={{ marginBottom: 8, marginTop: 8 }}>
+                        <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 4 }}>عنوان الصورة (اختياري)</Text>
+                        <TextInput
+                          value={galleryImageTitle}
+                          onChangeText={setGalleryImageTitle}
+                          placeholder="مثال: أثاث المطبخ"
+                          placeholderTextColor={colors.textDisabled}
+                          textAlign="right"
+                          style={[styles.modalInput, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
+                        />
                       </View>
-                      <TouchableOpacity onPress={handleGalleryUpload} disabled={uploadingGallery || !galleryImageUri} style={[styles.saveBtn, { backgroundColor: colors.primary, marginTop: 8, opacity: uploadingGallery || !galleryImageUri ? 0.5 : 1 }]}>
-                        {uploadingGallery ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12, textAlign: "center" }}>رفع</Text>}
+
+                      {/* Caption Input */}
+                      <View style={{ marginBottom: 8 }}>
+                        <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                          <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right" }}>وصف قصير (اختياري)</Text>
+                          <Text style={{ color: colors.textDisabled, fontSize: 12 }}>{galleryCaption.length}/50</Text>
+                        </View>
+                        <TextInput
+                          value={galleryCaption}
+                          onChangeText={(text) => setGalleryCaption(text.slice(0, 50))}
+                          placeholder="وصف قصير للصورة"
+                          placeholderTextColor={colors.textDisabled}
+                          textAlign="right"
+                          maxLength={50}
+                          style={[styles.modalInput, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
+                        />
+                      </View>
+
+                      {/* Upload Button */}
+                      <TouchableOpacity onPress={handleGalleryUpload} disabled={uploadingGallery || !galleryImageUri} style={[styles.saveBtn, { backgroundColor: colors.primary, marginTop: 4, opacity: uploadingGallery || !galleryImageUri ? 0.5 : 1, paddingVertical: 10, borderRadius: 8 }]}>
+                        {uploadingGallery ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12, textAlign: "center" }}>رفع إلى المعرض</Text>}
                       </TouchableOpacity>
-                      {uploadingGallery && <ActivityIndicator color={colors.primary} style={{ padding: 8 }} />}
                       {gallery.length === 0 && !uploadingGallery && <Text style={{ color: colors.textDisabled, textAlign: "center", padding: 16, fontSize: 13 }}>لا توجد صور في المعرض</Text>}
                     </View>
                   )}

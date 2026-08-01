@@ -37,6 +37,7 @@ export default function StoreDetailsScreen() {
   const [store, setStore] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [gallery, setGallery] = useState<any[]>([]);
+  const [mediaTab, setMediaTab] = useState<"photos" | "videos">("photos");
   const [categories, setCategories] = useState<string[]>(["الكل"]);
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [searchQuery, setSearchQuery] = useState("");
@@ -180,6 +181,98 @@ export default function StoreDetailsScreen() {
           ) : null}
         </View>
 
+        {/* Media Section: Photos / Videos Tabs (above products) */}
+        <View style={{ marginTop: TOKENS.spacing.lg, paddingHorizontal: TOKENS.spacing.md }}>
+          <View style={{ flexDirection: "row-reverse", gap: TOKENS.spacing.sm, marginBottom: TOKENS.spacing.sm }}>
+            <TouchableOpacity
+              onPress={() => setMediaTab("photos")}
+              style={{
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                borderBottomWidth: mediaTab === "photos" ? 2 : 1,
+                borderBottomColor: mediaTab === "photos" ? colors.primary : colors.borderSubtle,
+              }}
+            >
+              <Typography
+                variant="subtitle"
+                style={{
+                  fontWeight: mediaTab === "photos" ? "700" : "500",
+                  color: mediaTab === "photos" ? colors.primary : colors.textSecondary,
+                }}
+              >
+                صور
+              </Typography>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setMediaTab("videos")}
+              style={{
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                borderBottomWidth: mediaTab === "videos" ? 2 : 1,
+                borderBottomColor: mediaTab === "videos" ? colors.primary : colors.borderSubtle,
+              }}
+            >
+              <Typography
+                variant="subtitle"
+                style={{
+                  fontWeight: mediaTab === "videos" ? "700" : "500",
+                  color: mediaTab === "videos" ? colors.primary : colors.textSecondary,
+                }}
+              >
+                فيديو
+              </Typography>
+            </TouchableOpacity>
+          </View>
+
+          {/* Photos Tab Content */}
+          {mediaTab === "photos" && (
+            gallery.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 8 }}
+              >
+                {gallery.map((img) => (
+                  <View key={img.id} style={{ alignItems: "center" }}>
+                    <Image
+                      source={{ uri: img.image_url }}
+                      style={{ width: 100, height: 100, borderRadius: TOKENS.radius.sm, borderWidth: 1, borderColor: colors.borderSubtle }}
+                      resizeMode="cover"
+                    />
+                    {img.caption ? (
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "center", marginTop: 4, maxWidth: 100 }}>{img.caption}</Text>
+                    ) : null}
+                  </View>
+                ))}
+              </ScrollView>
+            ) : (
+              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "center", padding: 16 }}>
+                لا توجد صور في المعرض.
+              </Text>
+            )
+          )}
+
+          {/* Videos Tab Content */}
+          {mediaTab === "videos" && (
+            <View
+              style={{
+                width: "100%",
+                height: 160,
+                borderRadius: TOKENS.radius.md,
+                borderWidth: 1,
+                borderColor: colors.borderSubtle,
+                backgroundColor: colors.bgElevated,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "center" }}>
+                لا توجد فيديوهات متاحة حالياً
+              </Text>
+            </View>
+          )}
+        </View>
+
         {/* Search Bar in Store */}
         <View style={styles.searchSection}>
           <SearchBar
@@ -249,33 +342,6 @@ export default function StoreDetailsScreen() {
                 />
               </View>
             ))}
-          </View>
-        )}
-
-        {/* Photo Gallery Album */}
-        {gallery.length > 0 && (
-          <View style={{ marginTop: TOKENS.spacing.lg, paddingHorizontal: TOKENS.spacing.md }}>
-            <Typography variant="subtitle" style={{ textAlign: "right", marginBottom: TOKENS.spacing.sm, fontWeight: "600" }}>
-              معرض الصور
-            </Typography>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 8 }}
-            >
-              {gallery.map((img) => (
-                <View key={img.id} style={{ alignItems: "center" }}>
-                  <Image
-                    source={{ uri: img.image_url }}
-                    style={{ width: 100, height: 100, borderRadius: TOKENS.radius.sm, borderWidth: 1, borderColor: colors.borderSubtle }}
-                    resizeMode="cover"
-                  />
-                  {img.caption ? (
-                    <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "center", marginTop: 4, maxWidth: 100 }}>{img.caption}</Text>
-                  ) : null}
-                </View>
-              ))}
-            </ScrollView>
           </View>
         )}
       </ScrollView>

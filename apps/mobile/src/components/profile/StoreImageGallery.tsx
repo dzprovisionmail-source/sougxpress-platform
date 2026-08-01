@@ -2,16 +2,16 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Images, Camera, CirclePlus } from 'lucide-react-native';
+import { Images, Upload, X } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { addStoreGalleryImage, deleteStoreGalleryImage } from '@/services/store.service';
 
 interface StoreImageGalleryProps {
   storeId: string;
-  images: string[]; // Array of image URLs
+  images: string[];
   isMerchantView: boolean;
-  onImageUpload: (newImageUrl: string, caption?: string | null) => void;
+  onImageUpload: (newImageUrl: string, title?: string | null, caption?: string | null) => void;
   onImageDelete: (imageUrl: string) => void;
 }
 
@@ -24,35 +24,37 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
 }) => {
   const { colors, tokens } = useAppTheme();
   const [uploading, setUploading] = useState(false);
+  const [galleryImageUri, setGalleryImageUri] = useState<string | null>(null);
+  const [galleryImageTitle, setGalleryImageTitle] = useState('');
   const [caption, setCaption] = useState('');
 
-  const pickImage = async () => {
+  const pickGalleryImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission requise', 'Nous avons besoin de la permission d\'accéder à votre galerie pour choisir une photo.');
+      Alert.alert('إذن مطلوب', 'يجب السماح بالوصول إلى المعرض لاختيار صورة.');
       return;
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true, // Allow multiple image selection
       quality: 1,
     });
 
     if (!result.canceled) {
-      setUploading(true);
-      for (const asset of result.assets) {
-        await uploadImage(asset.uri);
-      }
-      setUploading(false);
+      setGalleryImageUri(result.assets[0].uri);
     }
   };
 
-  const uploadImage = async (uri: string) => {
+  const handleUpload = async () => {
+    if (!galleryImageUri) {
+      Alert.alert('خطأ', 'الرجاء اختيار صورة أولاً');
+      return;
+    }
+    setUploading(true);
     try {
-      const response = await fetch(uri);
+      const response = await fetch(galleryImageUri);
       const blob = await response.blob();
-      const fileExt = uri.split('.').pop();
+      const fileExt = galleryImageUri.split('.').pop();
       const fileName = `${storeId}-${Date.now()}.${fileExt}`;
       const filePath = `store_gallery/${fileName}`;
 
@@ -60,23 +62,23 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
         .from('store_images')
         .upload(filePath, blob, { contentType: blob.type });
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
       const { data: publicUrlData } = supabase.storage.from('store_images').getPublicUrl(filePath);
-      onImageUpload(publicUrlData.publicUrl, caption.trim() || null);
-      setCaption('');
-      try {
-        await addStoreGalleryImage(storeId, publicUrlData.publicUrl, null, caption.trim() || null);
-      } catch (dbErr: any) {
-        Alert.alert('خطأ', `تم رفع الصورة لكن فشل حفظها في المعرض: ${dbErr.message}`);
-      }
 
+      await addStoreGalleryImage(storeId, publicUrlData.publicUrl, galleryImageTitle.trim() || null, caption.trim() || null);
+      onImageUpload(publicUrlData.publicUrl, galleryImageTitle.trim() || null, caption.trim() || null);
+      setGalleryImageUri(null);
+      setGalleryImageTitle('');
+      setCaption('');
     } catch (error: any) {
-      Alert.alert('Erreur d\'upload', error.message);
+      Alert.alert('خطأ', error.message);
+    } finally {
+      setUploading(false);
     }
   };
+
+  
 
   const deleteStoreGalleryImageByUrl = async (currentStoreId: string, imageUrl: string) => {
     const { data } = await supabase
@@ -155,36 +157,97 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
         >
           معرض الصور
         </Text>
-        {isMerchantView && (
-          <TouchableOpacity
-            onPress={pickImage}
-            style={[styles.addButton, { backgroundColor: colors.primary, borderRadius: tokens.radius.full }]}
-            disabled={uploading}
-          >
-            {uploading ? (
-              <ActivityIndicator size="small" color={colors.textOnBrand} />
-            ) : (
-              <CirclePlus size={20} color={colors.textOnBrand} />
-            )}
-          </TouchableOpacity>
-        )}
-        {isMerchantView && (
-          <View style={{ flex: 1, marginRight: tokens.spacing.sm }}>
+      </View>
+
+      {isMerchantView && (
+        <>
+          {/* Photo Selector */}
+          {galleryImageUri ? (
+            <View style={styles.imagePickerPreview}>
+              <Image source={{ uri: galleryImageUri }} style={styles.imagePickerThumb} resizeMode="cover" />
+              <TouchableOpacity
+                onPress={() => setGalleryImageUri(null)}
+                style={[styles.imagePickerRemove, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+              >
+                <X size={12} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={pickGalleryImage}
+              style={[styles.imagePickerButton, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
+              disabled={uploading}
+            >
+              <Upload size={20} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginRight: 6, textAlign: 'right' }}>إضافة صورة</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Title Input */}
+          <View style={{ marginBottom: tokens.spacing.sm }}>
+            <Text style={{ color: colors.textDisabled, fontSize: 12, textAlign: 'right', marginBottom: 2 }}>عنوان الصورة (اختياري)</Text>
+            <TextInput
+              value={galleryImageTitle}
+              onChangeText={setGalleryImageTitle}
+              placeholder="مثال: أثاث المطبخ"
+              placeholderTextColor={colors.textDisabled}
+              textAlign="right"
+              style={{
+                borderWidth: 1,
+                borderColor: colors.borderSubtle,
+                borderRadius: tokens.radius.sm,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                color: colors.textPrimary,
+                fontFamily: tokens.typography.families.arabic,
+                fontSize: tokens.typography.sizes.sm,
+                backgroundColor: colors.bgElevated,
+              }}
+            />
+          </View>
+
+          {/* Caption Input */}
+          <View style={{ marginBottom: tokens.spacing.sm }}>
+            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'right' }}>وصف قصير (اختياري)</Text>
+              <Text style={{ color: colors.textDisabled, fontSize: 10 }}>{caption.length}/50</Text>
+            </View>
             <TextInput
               value={caption}
-              onChangeText={setCaption}
-              placeholder="وصف الصورة (اختياري)"
+              onChangeText={(text) => setCaption(text.slice(0, 50))}
+              placeholder="وصف قصير للصورة"
               placeholderTextColor={colors.textDisabled}
               maxLength={50}
               textAlign="right"
-              style={{ borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: tokens.radius.sm, paddingHorizontal: 10, paddingVertical: 6, color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, fontSize: tokens.typography.sizes.sm }}
+              style={{
+                borderWidth: 1,
+                borderColor: colors.borderSubtle,
+                borderRadius: tokens.radius.sm,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                color: colors.textPrimary,
+                fontFamily: tokens.typography.families.arabic,
+                fontSize: tokens.typography.sizes.sm,
+                backgroundColor: colors.bgElevated,
+              }}
             />
-            <Text style={{ color: colors.textDisabled, fontSize: 10, textAlign: 'right', marginTop: 2 }}>
-              {caption.length}/50
-            </Text>
           </View>
-        )}
-      </View>
+
+          {/* Upload Button */}
+          <TouchableOpacity
+            onPress={handleUpload}
+            disabled={uploading || !galleryImageUri}
+            style={[styles.uploadButton, { backgroundColor: colors.primary, opacity: uploading || !galleryImageUri ? 0.5 : 1 }]}
+          >
+            {uploading ? (
+              <ActivityIndicator color={colors.textOnBrand} />
+            ) : (
+              <Text style={{ color: colors.textOnBrand, fontWeight: '700', fontSize: 12, textAlign: 'center' }}>رفع إلى المعرض</Text>
+            )}
+          </TouchableOpacity>
+        </>
+      )}
+
       <FlatList
         data={images}
         renderItem={renderItem}
@@ -217,13 +280,48 @@ const styles = StyleSheet.create({
     padding: 15,
     borderWidth: 1,
   },
-  header: {
-    flexDirection: 'row-reverse', // RTL
+   header: {
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  addButton: {
-    padding: 8,
+  imagePickerButton: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: 56,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    marginBottom: 8,
+  },
+  imagePickerPreview: {
+    alignSelf: 'flex-end',
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  imagePickerThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  imagePickerRemove: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    borderRadius: 6,
+    padding: 2,
+  },
+  uploadButton: {
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   galleryList: {
     marginTop: 10,
