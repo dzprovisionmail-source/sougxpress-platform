@@ -216,6 +216,48 @@ export interface StoreVideo {
 
 export type StoreContentItem = StoreGalleryImage | StoreVideo;
 
+// --- Gallery Social Features --------------------------------------------------
+
+export type MediaType = "photo" | "video";
+
+export interface GalleryMediaItem {
+  id: string;
+  store_id: string;
+  image_url: string;
+  title: string | null;
+  caption: string | null;
+  is_visible: boolean;
+  sort_order: number;
+  media_type: MediaType;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoreGalleryLike {
+  id: string;
+  gallery_image_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface StoreGalleryComment {
+  id: string;
+  gallery_image_id: string;
+  user_id: string;
+  user_name: string;
+  user_avatar_url: string | null;
+  content: string;
+  created_at: string;
+}
+
+export interface StoreGalleryRating {
+  id: string;
+  gallery_image_id: string;
+  user_id: string;
+  rating: number;
+  created_at: string;
+}
+
 // --- Orders -------------------------------------------------------------------
 
 export type OrderStatus =

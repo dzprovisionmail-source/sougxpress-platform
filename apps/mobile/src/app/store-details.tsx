@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import MediaViewerModal from "@/components/MediaViewerModal";
 import {
   Typography,
   Header,
@@ -43,6 +44,25 @@ export default function StoreDetailsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
+  const [currentUserRole, setCurrentUserRole] = useState<string | undefined>(undefined);
+  const [viewingMediaItem, setViewingMediaItem] = useState<any>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+        setCurrentUserRole(profileData?.role ?? undefined);
+      }
+    };
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     if (id) {
@@ -147,7 +167,7 @@ export default function StoreDetailsScreen() {
             title={store.name}
             category={store.category}
             width="100%"
-            height={160}
+             height={220}
             borderRadius={TOKENS.radius.md}
           />
         </View>
@@ -230,19 +250,22 @@ export default function StoreDetailsScreen() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 8 }}
+                contentContainerStyle={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 12 }}
               >
                 {gallery.map((img) => (
-                  <View key={img.id} style={{ alignItems: "center" }}>
+                  <TouchableOpacity key={img.id} onPress={() => setViewingMediaItem(img)} style={{ alignItems: "center" }}>
                     <Image
                       source={{ uri: img.image_url }}
-                      style={{ width: 100, height: 100, borderRadius: TOKENS.radius.sm, borderWidth: 1, borderColor: colors.borderSubtle }}
+                      style={{ width: 140, height: 140, borderRadius: TOKENS.radius.sm, borderWidth: 1, borderColor: colors.borderSubtle }}
                       resizeMode="cover"
                     />
-                    {img.caption ? (
-                      <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "center", marginTop: 4, maxWidth: 100 }}>{img.caption}</Text>
+                    {img.title ? (
+                      <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: "700", textAlign: "center", marginTop: 4, maxWidth: 140 }}>{img.title}</Text>
                     ) : null}
-                  </View>
+                    {img.caption ? (
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "center", marginTop: 2, maxWidth: 140 }}>{img.caption}</Text>
+                    ) : null}
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             ) : (
@@ -257,7 +280,7 @@ export default function StoreDetailsScreen() {
             <View
               style={{
                 width: "100%",
-                height: 160,
+                height: 220,
                 borderRadius: TOKENS.radius.md,
                 borderWidth: 1,
                 borderColor: colors.borderSubtle,
@@ -345,6 +368,16 @@ export default function StoreDetailsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <MediaViewerModal
+        visible={!!viewingMediaItem}
+        onClose={() => setViewingMediaItem(null)}
+        mediaItem={viewingMediaItem}
+        store={store}
+        currentUserId={currentUserId}
+        currentUserRole={currentUserRole}
+        onLikeUpdate={fetchStoreData}
+      />
     </SafeAreaView>
   );
 }
@@ -361,9 +394,9 @@ const styles = StyleSheet.create({
   },
   storeCardInfo: {
     marginHorizontal: TOKENS.spacing.md,
-    marginTop: -30,
+    marginTop: -50,
     borderRadius: TOKENS.radius.lg,
-    padding: TOKENS.spacing.lg,
+    padding: TOKENS.spacing.sm,
     borderWidth: 1,
     alignItems: "center",
     ...TOKENS.shadows.small,
