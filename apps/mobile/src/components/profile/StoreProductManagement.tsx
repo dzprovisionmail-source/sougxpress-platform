@@ -143,6 +143,7 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
     if (!form.name.trim()) { Alert.alert('خطأ', 'يرجى إدخال اسم المنتج'); return; }
     const priceValue = parseFloat(form.price);
     if (isNaN(priceValue) || priceValue < 0) { Alert.alert('خطأ', 'يرجى إدخال سعر صحيح'); return; }
+    if (!form.imageUri && !form.existingImageUrl) { Alert.alert('خطأ', 'يرجى اختيار صورة للمنتج'); return; }
 
     const stockValue = form.stock_quantity.trim() === '' ? null : parseInt(form.stock_quantity, 10);
     const priceMinor = Math.round(priceValue * 100);

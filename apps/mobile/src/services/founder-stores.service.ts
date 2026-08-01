@@ -10,6 +10,8 @@ export interface FounderStore {
   category: string;
   main_category: string | null;
   sub_category: string | null;
+  category_id: string | null;
+  subcategory_id: string | null;
   tags: string[];
   badges: string[];
   description: string | null;

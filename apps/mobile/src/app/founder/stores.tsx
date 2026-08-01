@@ -26,6 +26,10 @@ import {
 import { StoreGalleryImage, StoreVideo, Product } from "@/types/schema-03-core";
 import { supabase } from "@/lib/supabase";
 import { useRealtimeStoreList } from "@/hooks/useRealtimeStoreList";
+import { ImageOptimizerModal } from "@/components/ui";
+import { ImageType } from "@/utils/imageOptimizer";
+import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
+import { SimpleSelect } from "@/components/ui";
 
 type StoreStatus = "all" | "draft" | "active" | "paused" | "suspended";
 type StoreCategory = "all" | "grocery" | "restaurant" | "pharmacy" | "bakery" | "butcher" | "electronics" | "household" | "other";
@@ -104,6 +108,12 @@ export default function FounderStoresScreen() {
   const [newVideoTitle, setNewVideoTitle] = useState("");
   const [videoSubmitError, setVideoSubmitError] = useState<string | null>(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+
+  const [categories, setCategories] = useState<Array<{ id: string; name_ar: string }>>([]);
+  const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
+  const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
+  const [editSubcategoryId, setEditSubcategoryId] = useState<string | null>(null);
+  const [loadingCategories, setLoadingCategories] = useState(false);
 
   const load = useCallback(
     async (q?: string, status?: StoreStatus, refresh = false) => {
@@ -185,7 +195,7 @@ export default function FounderStoresScreen() {
     load(search, statusFilter, true);
   };
 
-  const openEdit = () => {
+  const openEdit = async () => {
     if (!selectedStore) return;
     setEditName(selectedStore.name);
     setEditDesc(selectedStore.description ?? "");
@@ -198,7 +208,22 @@ export default function FounderStoresScreen() {
     setEditHome(selectedStore.show_on_home);
     setEditNotes("");
     setSaveError(null);
+    setEditCategoryId(selectedStore.category_id ?? null);
+    setEditSubcategoryId(selectedStore.subcategory_id ?? null);
     setShowEditModal(true);
+    if (categories.length === 0) {
+      setLoadingCategories(true);
+      const cats = await getActiveCategories();
+      setCategories(cats);
+      setLoadingCategories(false);
+    }
+  };
+
+  const handleCategoryChange = async (categoryId: string) => {
+    setEditCategoryId(categoryId);
+    setEditSubcategoryId(null);
+    const subs = await getActiveSubcategories(categoryId);
+    setSubcategories(subs);
   };
 
   const handleSaveEdit = async () => {
@@ -215,6 +240,8 @@ export default function FounderStoresScreen() {
       closes_at: editClose,
       is_featured: editFeatured,
       show_on_home: editHome,
+      category_id: editCategoryId ?? undefined,
+      subcategory_id: editSubcategoryId ?? undefined,
     });
     setActionLoading(false);
     if (err) setSaveError(err);
@@ -354,8 +381,16 @@ export default function FounderStoresScreen() {
   };
 
   const handleAddProduct = async () => {
-    if (!selectedStore || !newProductName.trim()) return;
-    const priceMinor = newProductPrice.trim() ? Math.round(parseFloat(newProductPrice) * 100) : 0;
+    if (!selectedStore || !newProductName.trim()) {
+      Alert.alert("خطأ", "يرجى إدخال اسم المنتج");
+      return;
+    }
+    const priceValue = parseFloat(newProductPrice);
+    if (isNaN(priceValue) || priceValue < 0) {
+      Alert.alert("خطأ", "يرجى إدخال سعر صحيح");
+      return;
+    }
+    const priceMinor = Math.round(priceValue * 100);
     const { product, error: err } = await addFounderProduct(selectedStore.id, {
       name: newProductName.trim(),
       price_minor: priceMinor,
@@ -658,7 +693,30 @@ export default function FounderStoresScreen() {
                                 <Trash2 size={14} color={colors.error} />
                               </TouchableOpacity>
                             </View>
-                          ))}
+              ))}
+
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 4 }}>الفئة الرئيسية</Text>
+                <SimpleSelect
+                  options={categories.map(c => ({ value: c.id, label: c.name_ar }))}
+                  value={editCategoryId ?? ""}
+                  onChange={handleCategoryChange}
+                  placeholder="اختر الفئة الرئيسية"
+                />
+              </View>
+
+              {subcategories.length > 0 && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 4 }}>الفئة الفرعية</Text>
+                  <SimpleSelect
+                    options={subcategories.map(s => ({ value: s.id, label: s.name_ar }))}
+                    value={editSubcategoryId ?? ""}
+                    onChange={setEditSubcategoryId}
+                    placeholder="اختر الفئة الفرعية"
+                  />
+                </View>
+              )}
+
                           <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 8 }}>
                             <TextInput value={newVideoUrl} onChangeText={setNewVideoUrl} placeholder="رابط الفيديو" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 2, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
                             <TextInput value={newVideoTitle} onChangeText={setNewVideoTitle} placeholder="العنوان (اختياري)" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 1, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />

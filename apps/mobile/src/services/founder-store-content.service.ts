@@ -29,10 +29,11 @@ export async function getFounderStoreGallery(storeId: string): Promise<StoreGall
 export async function addFounderGalleryImage(
   storeId: string,
   imageUrl: string,
-  title?: string | null
+  title?: string | null,
+  caption?: string | null
 ): Promise<{ image: StoreGalleryImage | null; error: string | null }> {
   try {
-    const image = await addStoreGalleryImage(storeId, imageUrl, title);
+    const image = await addStoreGalleryImage(storeId, imageUrl, title, caption);
     return { image, error: null };
   } catch (e: any) {
     return { image: null, error: e.message || "فشل إضافة الصورة" };
@@ -41,7 +42,7 @@ export async function addFounderGalleryImage(
 
 export async function updateFounderGalleryImage(
   id: string,
-  data: { title?: string | null; is_visible?: boolean; sort_order?: number }
+  data: { title?: string | null; caption?: string | null; is_visible?: boolean; sort_order?: number }
 ): Promise<{ image: StoreGalleryImage | null; error: string | null }> {
   try {
     const image = await updateStoreGalleryImage(id, data);
