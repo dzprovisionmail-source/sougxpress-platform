@@ -108,6 +108,7 @@ export default function FounderStoresScreen() {
   const [newVideoTitle, setNewVideoTitle] = useState("");
   const [videoSubmitError, setVideoSubmitError] = useState<string | null>(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [galleryImageUri, setGalleryImageUri] = useState<string | null>(null);
   const [galleryCaption, setGalleryCaption] = useState("");
 
   const [newProductImageUri, setNewProductImageUri] = useState<string | null>(null);
@@ -323,8 +324,7 @@ export default function FounderStoresScreen() {
     load(search, statusFilter, true);
   };
 
-  const handleGalleryUpload = async () => {
-    if (!selectedStore) return;
+  const pickGalleryImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert("خطأ", "يجب منح صلاحية الوصول للصور");
@@ -332,11 +332,15 @@ export default function FounderStoresScreen() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
     if (result.canceled) return;
+    setGalleryImageUri(result.assets[0].uri);
+  };
+
+  const handleGalleryUpload = async () => {
+    if (!selectedStore || !galleryImageUri) return;
     setUploadingGallery(true);
-    const asset = result.assets[0];
     try {
-      const arrayBuffer = await new File(asset.uri).arrayBuffer();
-      const fileExt = asset.uri.split(".").pop() || "jpg";
+      const arrayBuffer = await new File(galleryImageUri).arrayBuffer();
+      const fileExt = galleryImageUri.split(".").pop() || "jpg";
       const fileName = `${selectedStore.id}-${Date.now()}.${fileExt}`;
       const filePath = `store_gallery/${fileName}`;
       const contentType = `image/${fileExt === "jpg" ? "jpeg" : fileExt}`;
@@ -346,6 +350,7 @@ export default function FounderStoresScreen() {
       const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl, null, galleryCaption.trim() || null);
       if (image) {
         setGallery((g) => [...g, image]);
+        setGalleryImageUri(null);
         setGalleryCaption("");
       }
       else if (err) Alert.alert("خطأ", err);
@@ -708,10 +713,19 @@ export default function FounderStoresScreen() {
                             {!img.is_visible && <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.5)", paddingVertical: 2, alignItems: "center" }}><Text style={{ color: "#fff", fontSize: 10 }}>مخفي</Text></View>}
                           </View>
                         ))}
-                        <TouchableOpacity onPress={handleGalleryUpload} style={{ width: 120, height: 120, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated, alignItems: "center", justifyContent: "center" }}>
-                          <Upload size={24} color={colors.textSecondary} />
-                          <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>إضافة صورة</Text>
-                        </TouchableOpacity>
+                        {galleryImageUri ? (
+                          <View style={{ position: "relative", alignSelf: "center", width: 120, height: 120, borderRadius: 8, overflow: "hidden", borderWidth: 1, borderColor: colors.borderSubtle }}>
+                            <Image source={{ uri: galleryImageUri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+                            <TouchableOpacity onPress={() => setGalleryImageUri(null)} style={{ position: "absolute", top: 4, right: 4, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 10, padding: 4 }}>
+                              <X size={12} color="#fff" />
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <TouchableOpacity onPress={pickGalleryImage} style={{ width: 120, height: 120, borderRadius: 8, borderWidth: 1, borderStyle: "dashed", borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated, alignItems: "center", justifyContent: "center" }}>
+                            <Upload size={24} color={colors.textSecondary} />
+                            <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>إضافة صورة</Text>
+                          </TouchableOpacity>
+                        )}
                       </ScrollView>
                       <View style={{ marginTop: 8, marginBottom: 4 }}>
                         <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" }}>
@@ -727,6 +741,9 @@ export default function FounderStoresScreen() {
                           />
                         </View>
                       </View>
+                      <TouchableOpacity onPress={handleGalleryUpload} disabled={uploadingGallery || !galleryImageUri} style={[styles.saveBtn, { backgroundColor: colors.primary, marginTop: 8, opacity: uploadingGallery || !galleryImageUri ? 0.5 : 1 }]}>
+                        {uploadingGallery ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12, textAlign: "center" }}>رفع</Text>}
+                      </TouchableOpacity>
                       {uploadingGallery && <ActivityIndicator color={colors.primary} style={{ padding: 8 }} />}
                       {gallery.length === 0 && !uploadingGallery && <Text style={{ color: colors.textDisabled, textAlign: "center", padding: 16, fontSize: 13 }}>لا توجد صور في المعرض</Text>}
                     </View>

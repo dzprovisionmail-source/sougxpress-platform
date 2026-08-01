@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   I18nManager,
   RefreshControl,
+  Image,
+  Text,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -34,6 +36,7 @@ export default function StoreDetailsScreen() {
 
   const [store, setStore] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
+  const [gallery, setGallery] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>(["الكل"]);
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,8 +68,18 @@ export default function StoreDetailsScreen() {
         .select("*")
         .eq("store_id", id);
 
-      if (prodsErr) throw prodsErr;
+       if (prodsErr) throw prodsErr;
       setProducts(prodsData || []);
+
+      // Fetch gallery (active images only)
+      const { data: galleryData, error: galleryErr } = await supabase
+        .from("store_gallery")
+        .select("*")
+        .eq("store_id", id)
+        .eq("is_visible", true);
+
+      if (galleryErr) console.error("Gallery fetch error:", galleryErr);
+      setGallery(galleryData || []);
 
       // Extract unique categories
       const catsSet = new Set<string>();
@@ -236,6 +249,33 @@ export default function StoreDetailsScreen() {
                 />
               </View>
             ))}
+          </View>
+        )}
+
+        {/* Photo Gallery Album */}
+        {gallery.length > 0 && (
+          <View style={{ marginTop: TOKENS.spacing.lg, paddingHorizontal: TOKENS.spacing.md }}>
+            <Typography variant="subtitle" style={{ textAlign: "right", marginBottom: TOKENS.spacing.sm, fontWeight: "600" }}>
+              معرض الصور
+            </Typography>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 8 }}
+            >
+              {gallery.map((img) => (
+                <View key={img.id} style={{ alignItems: "center" }}>
+                  <Image
+                    source={{ uri: img.image_url }}
+                    style={{ width: 100, height: 100, borderRadius: TOKENS.radius.sm, borderWidth: 1, borderColor: colors.borderSubtle }}
+                    resizeMode="cover"
+                  />
+                  {img.caption ? (
+                    <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "center", marginTop: 4, maxWidth: 100 }}>{img.caption}</Text>
+                  ) : null}
+                </View>
+              ))}
+            </ScrollView>
           </View>
         )}
       </ScrollView>
