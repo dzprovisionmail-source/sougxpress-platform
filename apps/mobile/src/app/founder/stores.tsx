@@ -5,7 +5,7 @@ import {
   FlatList, RefreshControl, Modal, ScrollView, ActivityIndicator, Image, Alert, Linking,
 } from "react-native";
 import { router } from "expo-router";
-import { Plus, Filter, Search, Star, MapPin, Clock, Store, X, Check, Image as ImageIcon, Upload, Trash2, Eye, EyeOff, Video, Package } from "lucide-react-native";
+import { Plus, Filter, Search, Star, MapPin, Clock, Store, X, Check, Image as ImageIcon, Upload, Trash2, Eye, EyeOff, Video, Package, ImagePlus } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import {
   AdminPageShell, AdminListItem, AdminStatCard,
@@ -108,6 +108,10 @@ export default function FounderStoresScreen() {
   const [newVideoTitle, setNewVideoTitle] = useState("");
   const [videoSubmitError, setVideoSubmitError] = useState<string | null>(null);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [galleryCaption, setGalleryCaption] = useState("");
+
+  const [newProductImageUri, setNewProductImageUri] = useState<string | null>(null);
+  const [uploadingProductImage, setUploadingProductImage] = useState(false);
 
   const [categories, setCategories] = useState<Array<{ id: string; name_ar: string }>>([]);
   const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
@@ -216,6 +220,12 @@ export default function FounderStoresScreen() {
       const cats = await getActiveCategories();
       setCategories(cats);
       setLoadingCategories(false);
+    }
+    if (selectedStore.category_id) {
+      const subs = await getActiveSubcategories(selectedStore.category_id);
+      setSubcategories(subs);
+    } else {
+      setSubcategories([]);
     }
   };
 
@@ -333,8 +343,11 @@ export default function FounderStoresScreen() {
       const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, arrayBuffer, { contentType });
       if (uploadError) throw uploadError;
       const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
-      const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl);
-      if (image) setGallery((g) => [...g, image]);
+      const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl, null, galleryCaption.trim() || null);
+      if (image) {
+        setGallery((g) => [...g, image]);
+        setGalleryCaption("");
+      }
       else if (err) Alert.alert("خطأ", err);
     } catch (e: any) {
       Alert.alert("خطأ", e.message);
@@ -380,6 +393,17 @@ export default function FounderStoresScreen() {
     else setVideos((v) => v.filter((vid) => vid.id !== id));
   };
 
+  const pickProductImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("خطأ", "يجب منح صلاحية الوصول للصور");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (result.canceled) return;
+    setNewProductImageUri(result.assets[0].uri);
+  };
+
   const handleAddProduct = async () => {
     if (!selectedStore || !newProductName.trim()) {
       Alert.alert("خطأ", "يرجى إدخال اسم المنتج");
@@ -390,16 +414,41 @@ export default function FounderStoresScreen() {
       Alert.alert("خطأ", "يرجى إدخال سعر صحيح");
       return;
     }
+    if (!newProductImageUri) {
+      Alert.alert("خطأ", "يرجى إضافة صورة للمنتج");
+      return;
+    }
     const priceMinor = Math.round(priceValue * 100);
+    setUploadingProductImage(true);
+    let imageUrl: string | null = null;
+    try {
+      const arrayBuffer = await new File(newProductImageUri).arrayBuffer();
+      const fileExt = newProductImageUri.split(".").pop() || "jpg";
+      const fileName = `${selectedStore.id}-product-${Date.now()}.${fileExt}`;
+      const filePath = `store_products/${fileName}`;
+      const contentType = `image/${fileExt === "jpg" ? "jpeg" : fileExt}`;
+      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, arrayBuffer, { contentType });
+      if (uploadError) throw uploadError;
+      const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
+      imageUrl = publicUrlData.publicUrl;
+    } catch (e: any) {
+      Alert.alert("خطأ", e.message);
+      setUploadingProductImage(false);
+      return;
+    } finally {
+      setUploadingProductImage(false);
+    }
     const { product, error: err } = await addFounderProduct(selectedStore.id, {
       name: newProductName.trim(),
       price_minor: priceMinor,
+      image_url: imageUrl,
       is_demo: true,
     });
     if (product) {
       setProducts((p) => [...p, product as Product]);
       setNewProductName("");
       setNewProductPrice("");
+      setNewProductImageUri(null);
     } else if (err) {
       Alert.alert("خطأ", err);
     }
@@ -664,6 +713,20 @@ export default function FounderStoresScreen() {
                           <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>إضافة صورة</Text>
                         </TouchableOpacity>
                       </ScrollView>
+                      <View style={{ marginTop: 8, marginBottom: 4 }}>
+                        <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" }}>
+                          <Text style={{ color: colors.textDisabled, fontSize: 12 }}>{galleryCaption.length}/50</Text>
+                          <TextInput
+                            value={galleryCaption}
+                            onChangeText={(text) => setGalleryCaption(text.slice(0, 50))}
+                            placeholder="وصف الصورة (اختياري)"
+                            placeholderTextColor={colors.textDisabled}
+                            textAlign="right"
+                            maxLength={50}
+                            style={[styles.modalInput, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
+                          />
+                        </View>
+                      </View>
                       {uploadingGallery && <ActivityIndicator color={colors.primary} style={{ padding: 8 }} />}
                       {gallery.length === 0 && !uploadingGallery && <Text style={{ color: colors.textDisabled, textAlign: "center", padding: 16, fontSize: 13 }}>لا توجد صور في المعرض</Text>}
                     </View>
@@ -694,28 +757,6 @@ export default function FounderStoresScreen() {
                               </TouchableOpacity>
                             </View>
               ))}
-
-              <View style={{ marginBottom: 12 }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 4 }}>الفئة الرئيسية</Text>
-                <SimpleSelect
-                  options={categories.map(c => ({ value: c.id, label: c.name_ar }))}
-                  value={editCategoryId ?? ""}
-                  onChange={handleCategoryChange}
-                  placeholder="اختر الفئة الرئيسية"
-                />
-              </View>
-
-              {subcategories.length > 0 && (
-                <View style={{ marginBottom: 12 }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 4 }}>الفئة الفرعية</Text>
-                  <SimpleSelect
-                    options={subcategories.map(s => ({ value: s.id, label: s.name_ar }))}
-                    value={editSubcategoryId ?? ""}
-                    onChange={setEditSubcategoryId}
-                    placeholder="اختر الفئة الفرعية"
-                  />
-                </View>
-              )}
 
                           <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 8 }}>
                             <TextInput value={newVideoUrl} onChangeText={setNewVideoUrl} placeholder="رابط الفيديو" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 2, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
@@ -748,6 +789,22 @@ export default function FounderStoresScreen() {
                           </TouchableOpacity>
                         </View>
                       ))}
+                      <View style={{ marginBottom: 8 }}>
+                        <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 4 }}>إضافة صورة للمنتج</Text>
+                        {newProductImageUri ? (
+                          <View style={{ position: "relative", alignSelf: "flex-end", width: 80, height: 80, borderRadius: 8, overflow: "hidden", borderWidth: 1, borderColor: colors.borderSubtle }}>
+                            <Image source={{ uri: newProductImageUri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+                            <TouchableOpacity onPress={() => setNewProductImageUri(null)} style={{ position: "absolute", top: 2, right: 2, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 8, padding: 2 }}>
+                              <X size={12} color="#fff" />
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <TouchableOpacity onPress={pickProductImage} style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderWidth: 1, borderStyle: "dashed", borderColor: colors.borderSubtle, borderRadius: 8, backgroundColor: colors.bgElevated }}>
+                            <ImagePlus size={20} color={colors.textSecondary} />
+                            <Text style={{ color: colors.textSecondary, fontSize: 12, marginRight: 6 }}>إضافة صورة للمنتج</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
                       <View style={{ flexDirection: "row-reverse", gap: 8, marginTop: 8 }}>
                         <TextInput value={newProductName} onChangeText={setNewProductName} placeholder="اسم المنتج" placeholderTextColor={colors.textDisabled} textAlign="right" style={[styles.modalInput, { flex: 2, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
                         <TextInput value={newProductPrice} onChangeText={setNewProductPrice} placeholder="السعر (د.ج)" placeholderTextColor={colors.textDisabled} keyboardType="decimal-pad" textAlign="right" style={[styles.modalInput, { flex: 1, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} />
@@ -801,6 +858,30 @@ export default function FounderStoresScreen() {
                   <Text style={{ color: editHome ? colors.success : colors.textSecondary, textAlign: "center", fontWeight: "600" }}>{editHome ? "في الرئيسية" : "ليس في الرئيسية"}</Text>
                 </TouchableOpacity>
               </View>
+              {loadingCategories ? <ActivityIndicator color={colors.primary} style={{ padding: 8 }} /> : (
+                <>
+                  <View style={{ marginBottom: 12 }}>
+                    <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 4 }}>الفئة الرئيسية</Text>
+                    <SimpleSelect
+                      options={categories.map(c => ({ value: c.id, label: c.name_ar }))}
+                      value={editCategoryId ?? ""}
+                      onChange={handleCategoryChange}
+                      placeholder="اختر الفئة الرئيسية"
+                    />
+                  </View>
+                  {subcategories.length > 0 && (
+                    <View style={{ marginBottom: 12 }}>
+                      <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 4 }}>الفئة الفرعية</Text>
+                      <SimpleSelect
+                        options={subcategories.map(s => ({ value: s.id, label: s.name_ar }))}
+                        value={editSubcategoryId ?? ""}
+                        onChange={setEditSubcategoryId}
+                        placeholder="اختر الفئة الفرعية"
+                      />
+                    </View>
+                  )}
+                </>
+              )}
               {saveError && <Text style={{ color: colors.error, textAlign: "right", marginTop: 8, fontSize: 13 }}>{saveError}</Text>}
               <View style={{ flexDirection: "row-reverse", gap: 10, marginTop: 16 }}>
                 <TouchableOpacity onPress={handleSaveEdit} disabled={actionLoading} style={[styles.saveBtn, { backgroundColor: colors.primary, flex: 1 }]}>
