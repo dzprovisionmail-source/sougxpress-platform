@@ -11,7 +11,7 @@ interface StoreImageGalleryProps {
   storeId: string;
   images: string[]; // Array of image URLs
   isMerchantView: boolean;
-  onImageUpload: (newImageUrl: string) => void;
+  onImageUpload: (newImageUrl: string, caption?: string | null) => void;
   onImageDelete: (imageUrl: string) => void;
 }
 
@@ -24,6 +24,7 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
 }) => {
   const { colors, tokens } = useAppTheme();
   const [uploading, setUploading] = useState(false);
+  const [caption, setCaption] = useState('');
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -56,7 +57,7 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
       const filePath = `store_gallery/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('store_images') // Assuming a 'store_images' bucket
+        .from('store_images')
         .upload(filePath, blob, { contentType: blob.type });
 
       if (uploadError) {
@@ -64,9 +65,10 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
       }
 
       const { data: publicUrlData } = supabase.storage.from('store_images').getPublicUrl(filePath);
-      onImageUpload(publicUrlData.publicUrl);
+      onImageUpload(publicUrlData.publicUrl, caption.trim() || null);
+      setCaption('');
       try {
-        await addStoreGalleryImage(storeId, publicUrlData.publicUrl);
+        await addStoreGalleryImage(storeId, publicUrlData.publicUrl, null, caption.trim() || null);
       } catch (dbErr: any) {
         Alert.alert('خطأ', `تم رفع الصورة لكن فشل حفظها في المعرض: ${dbErr.message}`);
       }
@@ -165,6 +167,22 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
               <CirclePlus size={20} color={colors.textOnBrand} />
             )}
           </TouchableOpacity>
+        )}
+        {isMerchantView && (
+          <View style={{ flex: 1, marginRight: tokens.spacing.sm }}>
+            <TextInput
+              value={caption}
+              onChangeText={setCaption}
+              placeholder="وصف الصورة (اختياري)"
+              placeholderTextColor={colors.textDisabled}
+              maxLength={50}
+              textAlign="right"
+              style={{ borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: tokens.radius.sm, paddingHorizontal: 10, paddingVertical: 6, color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, fontSize: tokens.typography.sizes.sm }}
+            />
+            <Text style={{ color: colors.textDisabled, fontSize: 10, textAlign: 'right', marginTop: 2 }}>
+              {caption.length}/50
+            </Text>
+          </View>
         )}
       </View>
       <FlatList

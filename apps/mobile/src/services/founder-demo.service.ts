@@ -85,7 +85,7 @@ export async function createDemoStore(
   };
 
   if (input.zone_id?.trim()) storePayload.zone_id = input.zone_id.trim();
-  if (input.description?.trim()) storePayload.description = input.description.trim();
+  storePayload.description = input.description?.trim() || null;
   if (input.logo_url) storePayload.logo_url = input.logo_url;
 
   const { data: storeData, error: storeErr } = await supabase

@@ -222,17 +222,17 @@ export const getStoreGallery = async (storeId: string): Promise<StoreGalleryImag
   return data as StoreGalleryImage[];
 };
 
-export const addStoreGalleryImage = async (storeId: string, imageUrl: string, title?: string | null): Promise<StoreGalleryImage> => {
+export const addStoreGalleryImage = async (storeId: string, imageUrl: string, title?: string | null, caption?: string | null): Promise<StoreGalleryImage> => {
   const { data, error } = await supabase
     .from("store_gallery")
-    .insert({ store_id: storeId, image_url: imageUrl, title: title ?? null })
+    .insert({ store_id: storeId, image_url: imageUrl, title: title ?? null, caption: caption ?? null })
     .select()
     .single();
   if (error) throw new Error(error.message || "فشل إضافة الصورة");
   return data as StoreGalleryImage;
 };
 
-export const updateStoreGalleryImage = async (id: string, updates: { title?: string | null; is_visible?: boolean; sort_order?: number }): Promise<StoreGalleryImage> => {
+export const updateStoreGalleryImage = async (id: string, updates: { title?: string | null; caption?: string | null; is_visible?: boolean; sort_order?: number }): Promise<StoreGalleryImage> => {
   const { data, error } = await supabase
     .from("store_gallery")
     .update({ ...updates, updated_at: new Date().toISOString() })
