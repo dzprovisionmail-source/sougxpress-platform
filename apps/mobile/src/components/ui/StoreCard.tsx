@@ -25,6 +25,7 @@ export interface StoreCardProps {
   subcategory?: string;
   coverImage?: string | null;
   logoImage?: string | null;
+  galleryImages?: string[];
   rating?: number | string;
   reviewCount?: number | string;
   deliveryTime?: string;
@@ -44,6 +45,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   subcategory,
   coverImage,
   logoImage,
+  galleryImages,
   rating = 4.8,
   reviewCount,
   deliveryTime = '20-35 دقيقة',
@@ -64,6 +66,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   const displayCategory = getArabicCategoryName(actualCategory, actualSubcategory || undefined);
   const actualCover = coverImage || store?.cover_url || store?.coverImage || null;
   const actualLogo = logoImage || store?.logo_url || store?.logoImage || null;
+  const actualGallery = galleryImages || store?.gallery_images || [];
   const actualRating = rating !== 4.8 ? rating : (store?.rating || 4.8);
   const actualIsOpen = isOpen ?? store?.is_open ?? (store?.status === 'active');
   const actualIsFeatured = isFeatured || store?.is_featured || false;
@@ -132,6 +135,24 @@ export const StoreCard: React.FC<StoreCardProps> = ({
           />
         </View>
       </View>
+
+      {/* Gallery Preview */}
+      {actualGallery.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: TOKENS.spacing.sm, paddingHorizontal: TOKENS.spacing.md, paddingVertical: TOKENS.spacing.sm }}
+        >
+          {actualGallery.slice(0, 4).map((img: string, idx: number) => (
+            <Image
+              key={idx}
+              source={{ uri: img }}
+              style={{ width: 100, height: 100, borderRadius: TOKENS.radius.sm }}
+              resizeMode="cover"
+            />
+          ))}
+        </ScrollView>
+      )}
 
       {/* Content Area */}
       <View style={styles.content}>

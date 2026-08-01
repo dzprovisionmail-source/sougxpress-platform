@@ -165,6 +165,7 @@ export interface StoreGalleryImage {
   store_id: string;
   image_url: string;
   title: string | null;
+  caption: string | null;
   is_visible: boolean;
   sort_order: number;
   created_at: string;

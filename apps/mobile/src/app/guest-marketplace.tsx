@@ -39,6 +39,7 @@ export default function GuestMarketplaceScreen() {
   const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
   const [stores, setStores] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [galleryMap, setGalleryMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -83,6 +84,22 @@ export default function GuestMarketplaceScreen() {
         .limit(10);
 
       setProducts(prodData || []);
+
+      if (storeData && storeData.length > 0) {
+        const map: Record<string, string[]> = {};
+        for (const s of storeData) {
+          const { data: gallery } = await supabase
+            .from("store_gallery")
+            .select("image_url")
+            .eq("store_id", s.id)
+            .order("sort_order", { ascending: true })
+            .limit(4);
+          if (gallery && gallery.length > 0) {
+            map[s.id] = gallery.map((g: any) => g.image_url);
+          }
+        }
+        setGalleryMap(map);
+      }
     } catch (err) {
       console.error("Error fetching guest marketplace data:", err);
     } finally {      setLoading(false);
@@ -280,8 +297,9 @@ export default function GuestMarketplaceScreen() {
                 subcategory={store.sub_category}
                 coverImage={store.cover_url}
                 logoImage={store.logo_url}
+                galleryImages={galleryMap[store.id]}
                 rating={store.rating || 4.8}
-                address={store.city || "عين صفراء"}
+                address={store.city || "عين الصفراء"}
                 isOpen={store.is_open !== false}
                 onPress={() =>
                   router.push({ pathname: "/store-details", params: { id: store.id } })

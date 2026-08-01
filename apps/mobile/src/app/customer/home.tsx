@@ -106,6 +106,7 @@ export default function CustomerHomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
   const [heroStores, setHeroStores] = useState<StoreRow[]>([]);
+  const [galleryMap, setGalleryMap] = useState<Record<string, string[]>>({});
 
   const colors = getThemeColors(theme);
   const isRTL = I18nManager.isRTL;
@@ -160,6 +161,20 @@ export default function CustomerHomeScreen() {
       }));
       setStores(storesData);
       setHeroStores(storesData.slice(0, 3));
+
+      const galleryPromises = storesData.slice(0, 20).map(async (s) => {
+        const { data: gallery } = await supabase
+          .from("store_gallery")
+          .select("image_url")
+          .eq("store_id", s.id)
+          .order("sort_order", { ascending: true })
+          .limit(4);
+        return { storeId: s.id, urls: (gallery || []).map((g: any) => g.image_url) };
+      });
+      const galleryResults = await Promise.all(galleryPromises);
+      const map: Record<string, string[]> = {};
+      galleryResults.forEach((r) => { if (r.urls.length > 0) map[r.storeId] = r.urls; });
+      setGalleryMap(map);
     } catch (err) {
       console.error("Error fetching stores:", err);
       setError("حدث خطأ أثناء تحميل المتاجر");
@@ -303,13 +318,14 @@ export default function CustomerHomeScreen() {
         rating={store.rating?.toString() || "0.0"}
         coverImage={store.cover_url}
         logoImage={store.logo_url}
+        galleryImages={galleryMap[store.id]}
         isOpen={store.is_open ?? store.status === "active"}
         isFeatured={store.is_featured}
         address={store.address_line1 ?? store.city ?? ""}
         onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
       />
     ),
-    [router]
+    [router, galleryMap]
   );
 
   return (

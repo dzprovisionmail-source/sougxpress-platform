@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   I18nManager,
   RefreshControl,
+  FlatList,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -21,10 +23,12 @@ import {
   Rating,
   Badge,
 } from "@/components/ui";
-import { Clock, MapPin, Tag, ShoppingBag, Store as StoreIcon } from "lucide-react-native";
+import { Clock, MapPin, Tag, ShoppingBag, Store as StoreIcon, CommentDrawer } from "@/components/ui";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
+import { getStoreGallery } from "@/services/store.service";
+import { StoreGalleryImage } from "@/types/schema-03-core";
 
 export default function StoreDetailsScreen() {
   const router = useRouter();
@@ -34,11 +38,15 @@ export default function StoreDetailsScreen() {
 
   const [store, setStore] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
+  const [gallery, setGallery] = useState<StoreGalleryImage[]>([]);
   const [categories, setCategories] = useState<string[]>(["الكل"]);
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [commentDrawerVisible, setCommentDrawerVisible] = useState(false);
+  const [commentTargetId, setCommentTargetId] = useState<string>("");
+  const [commentTargetType, setCommentTargetType] = useState<"gallery_image" | "product">("gallery_image");
 
   useEffect(() => {
     if (id) {
@@ -67,6 +75,10 @@ export default function StoreDetailsScreen() {
 
       if (prodsErr) throw prodsErr;
       setProducts(prodsData || []);
+
+      // Fetch gallery
+      const galleryData = await getStoreGallery(id as string);
+      setGallery(galleryData);
 
       // Extract unique categories
       const catsSet = new Set<string>();
@@ -167,6 +179,44 @@ export default function StoreDetailsScreen() {
           ) : null}
         </View>
 
+        {/* Store Gallery Carousel */}
+        {gallery.length > 0 && (
+          <View style={styles.gallerySection}>
+            <Typography variant="h3" align="right" style={{ marginBottom: TOKENS.spacing.sm }}>
+              معرض الصور
+            </Typography>
+            <FlatList
+              data={gallery}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ gap: TOKENS.spacing.sm }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setCommentTargetType("gallery_image");
+                    setCommentTargetId(item.id);
+                    setCommentDrawerVisible(true);
+                  }}
+                >
+                  <View style={[styles.galleryItem, { borderColor: colors.borderSubtle }]}>
+                    <Image
+                      source={{ uri: item.image_url }}
+                      style={[styles.galleryImage, { borderRadius: TOKENS.radius.sm }]}
+                      resizeMode="cover"
+                    />
+                    {item.caption ? (
+                      <Text style={[styles.galleryCaption, { color: colors.textSecondary }]} numberOfLines={1}>
+                        {item.caption}
+                      </Text>
+                    ) : null}
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        )}
+
         {/* Search Bar in Store */}
         <View style={styles.searchSection}>
           <SearchBar
@@ -239,6 +289,15 @@ export default function StoreDetailsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <CommentDrawer
+        visible={commentDrawerVisible}
+        targetType={commentTargetType}
+        targetId={commentTargetId}
+        currentUserId={store?.merchant_id}
+        currentUserRole="merchant"
+        onClose={() => setCommentDrawerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -297,5 +356,25 @@ const styles = StyleSheet.create({
   },
   productCardCol: {
     width: "48%",
+  },
+  gallerySection: {
+    marginHorizontal: TOKENS.spacing.md,
+    marginTop: TOKENS.spacing.lg,
+  },
+  galleryItem: {
+    width: 160,
+    borderWidth: 1,
+    borderRadius: TOKENS.radius.sm,
+    overflow: "hidden",
+  },
+  galleryImage: {
+    width: "100%",
+    height: 160,
+  },
+  galleryCaption: {
+    paddingHorizontal: TOKENS.spacing.sm,
+    paddingVertical: TOKENS.spacing.xs,
+    fontSize: 12,
+    textAlign: "right",
   },
 });
