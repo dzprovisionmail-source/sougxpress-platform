@@ -369,15 +369,17 @@ export default function StoreDetailsScreen() {
         )}
       </ScrollView>
 
-      <MediaViewerModal
-        visible={!!viewingMediaItem}
-        onClose={() => setViewingMediaItem(null)}
-        mediaItem={viewingMediaItem}
-        store={store}
-        currentUserId={currentUserId}
-        currentUserRole={currentUserRole}
-        onLikeUpdate={fetchStoreData}
-      />
+      {viewingMediaItem ? (
+        <MediaViewerModal
+          visible={!!viewingMediaItem}
+          onClose={() => setViewingMediaItem(null)}
+          mediaItem={viewingMediaItem}
+          store={store}
+          currentUserId={currentUserId}
+          currentUserRole={currentUserRole}
+          onLikeUpdate={fetchStoreData}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

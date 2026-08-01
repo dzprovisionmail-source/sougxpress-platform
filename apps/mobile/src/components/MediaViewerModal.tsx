@@ -36,7 +36,7 @@ import {
 interface MediaViewerModalProps {
   visible: boolean;
   onClose: () => void;
-  mediaItem: Partial<StoreGalleryImage> & { media_type?: MediaType };
+  mediaItem: (Partial<StoreGalleryImage> & { media_type?: MediaType }) | null;
   store: Store | null;
   currentUserId: string | undefined;
   currentUserRole: string | undefined;
@@ -65,8 +65,11 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   const [ratingMode, setRatingMode] = useState(false);
   const [tempRating, setTempRating] = useState(0);
 
-  const mediaType: MediaType = mediaItem.media_type ?? "photo";
+  const mediaType: MediaType = mediaItem?.media_type ?? "photo";
   const ownerId = store?.created_by ?? null;
+  const mediaItemId = mediaItem?.id ?? "";
+
+  if (!visible || !mediaItem) return null;
 
   const canDeleteComment = (commentUserId: string): boolean => {
     if (currentUserId && currentUserId === commentUserId) return true;
@@ -76,42 +79,42 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   };
 
   const fetchLikeData = useCallback(async () => {
-    if (!mediaItem.id) return;
-    const count = await getGalleryLikeCount(mediaItem.id);
+    if (!mediaItemId) return;
+    const count = await getGalleryLikeCount(mediaItemId);
     setLikeCount(count);
     if (currentUserId) {
-      const liked = await getUserGalleryLike(mediaItem.id, currentUserId);
+      const liked = await getUserGalleryLike(mediaItemId, currentUserId);
       setIsLiked(!!liked);
     } else {
       setIsLiked(false);
     }
-  }, [mediaItem.id, currentUserId]);
+  }, [mediaItemId, currentUserId]);
 
   const fetchComments = useCallback(async () => {
-    if (!mediaItem.id) return;
+    if (!mediaItemId) return;
     setLoadingComments(true);
-    const data = await getGalleryComments(mediaItem.id);
+    const data = await getGalleryComments(mediaItemId);
     setComments(data);
     setLoadingComments(false);
-  }, [mediaItem.id]);
+  }, [mediaItemId]);
 
   const fetchRating = useCallback(async () => {
-    if (!mediaItem.id) return;
-    const r = await getGalleryRating(mediaItem.id);
+    if (!mediaItemId) return;
+    const r = await getGalleryRating(mediaItemId);
     setRating(r);
     if (currentUserId) {
-      const ur = await getUserGalleryRating(mediaItem.id, currentUserId);
+      const ur = await getUserGalleryRating(mediaItemId, currentUserId);
       setUserRating(ur);
     }
-  }, [mediaItem.id, currentUserId]);
+  }, [mediaItemId, currentUserId]);
 
   useEffect(() => {
-    if (visible && mediaItem.id) {
+    if (visible && mediaItemId) {
       fetchLikeData();
       fetchComments();
       fetchRating();
     }
-  }, [visible, mediaItem.id, fetchLikeData, fetchComments, fetchRating]);
+  }, [visible, mediaItemId, fetchLikeData, fetchComments, fetchRating]);
 
   const handleLikePress = async () => {
     if (!currentUserId) {
@@ -123,7 +126,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     }
     setLiking(true);
     try {
-      const nowLiked = await toggleGalleryLike(mediaItem.id!, currentUserId);
+      const nowLiked = await toggleGalleryLike(mediaItemId, currentUserId);
       setIsLiked(nowLiked);
       setLikeCount((prev) => (nowLiked ? prev + 1 : prev - 1));
       onLikeUpdate?.();
@@ -144,9 +147,9 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     }
     setLiking(true);
     try {
-      await rateGalleryItem(mediaItem.id!, currentUserId, star);
-      const r = await getGalleryRating(mediaItem.id!);
-      const ur = await getUserGalleryRating(mediaItem.id!, currentUserId);
+      await rateGalleryItem(mediaItemId, currentUserId, star);
+      const r = await getGalleryRating(mediaItemId);
+      const ur = await getUserGalleryRating(mediaItemId, currentUserId);
       setRating(r);
       setUserRating(ur);
       setRatingMode(false);
@@ -172,7 +175,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     setPostingComment(true);
     try {
       await addGalleryComment(
-        mediaItem.id!,
+        mediaItemId,
         currentUserId,
         currentUserRole ?? "guest",
         null,
