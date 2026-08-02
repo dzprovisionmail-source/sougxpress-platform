@@ -25,7 +25,9 @@ const isRTL = I18nManager.isRTL;
 
 function CourierCard({ courier, onPress }) {
   const { colors } = useAppTheme();
-  const Icon = VEHICLE_ICONS[courier.vehicle_type] || Motorcycle;
+  const name = courier.full_name || courier.name || "موصل";
+  const vehicle = courier.vehicle_type || "motorcycle";
+  const Icon = VEHICLE_ICONS[vehicle] || Motorcycle;
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -39,18 +41,18 @@ function CourierCard({ courier, onPress }) {
       ]}
     >
       <View style={[styles.cardInner, isRTL && { flexDirection: "row-reverse" }]}>
-        <Avatar uri={courier.avatar_url} name={courier.full_name} size="lg" />
+        <Avatar uri={courier.avatar_url || null} name={name} size="lg" />
         <View style={isRTL ? styles.infoRTL : styles.info}>
           <Typography variant="h2" numberOfLines={1}>
-            {courier.full_name}
+            {name}
           </Typography>
           <View style={[styles.row, isRTL && { flexDirection: "row-reverse" }]}>
             <Icon color={colors.primary} size={14} />
             <Typography color="secondary" variant="caption">
-              {vehicleLabel(courier.vehicle_type)}
+              {vehicleLabel(vehicle)}
             </Typography>
           </View>
-          <Rating rating={courier.rating} size="sm" showBadge />
+          <Rating rating={courier.rating ?? 0} size="sm" showBadge />
         </View>
       </View>
     </TouchableOpacity>
