@@ -54,8 +54,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   onLikeUpdate,
 }) => {
   const { colors, tokens } = useAppTheme();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const imageHeight = Math.round(screenHeight * 0.65);
+  const { height: screenHeight } = useWindowDimensions();
   const [likeCount, setLikeCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [liking, setLiking] = useState(false);
@@ -133,8 +132,6 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
       setIsLiked(nowLiked);
       setLikeCount((prev) => (nowLiked ? prev + 1 : prev - 1));
       onLikeUpdate?.();
-    } catch (err: any) {
-      Alert.alert("خطأ", err.message);
     } finally {
       setLiking(false);
     }
@@ -156,8 +153,6 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
       setRating(r);
       setUserRating(ur);
       setRatingMode(false);
-    } catch (err: any) {
-      Alert.alert("خطأ", err.message);
     } finally {
       setLiking(false);
     }
@@ -188,8 +183,6 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
         setCommentText("");
         await fetchComments();
       }
-    } catch (err: any) {
-      Alert.alert("خطأ", err.message);
     } finally {
       setPostingComment(false);
     }
@@ -203,13 +196,9 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
         text: "حذف",
         style: "destructive",
         onPress: async () => {
-          try {
-            const success = await deleteGalleryComment(commentId);
-            if (success) {
-              setComments((prev) => prev.filter((c) => c.id !== commentId));
-            }
-          } catch (err: any) {
-            Alert.alert("خطأ", err.message);
+          const success = await deleteGalleryComment(commentId);
+          if (success) {
+            setComments((prev) => prev.filter((c) => c.id !== commentId));
           }
         },
       },
@@ -280,15 +269,12 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
           {mediaType === "photo" ? (
             <Image
               source={{ uri: mediaItem.image_url }}
-              style={{ width: "100%", height: imageHeight }}
+              style={{ width: "100%", alignSelf: "stretch", height: screenHeight * 0.65 }}
               resizeMode="cover"
             />
           ) : (
             <View
-              style={[
-                styles.videoPlaceholder,
-                { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, height: imageHeight },
-              ]}
+              style={{ backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, width: "100%", alignSelf: "stretch", height: screenHeight * 0.65 }}
             >
               <Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: "center" }}>
                 [فيديو] {mediaItem.title || ""}
