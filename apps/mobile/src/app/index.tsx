@@ -1,4 +1,4 @@
-import { CouriersHorizontalBar } from "@/components/courier/CouriersHorizontalBar";
+import CouriersHorizontalBar from "@/components/courier/CouriersHorizontalBar";
 import React, { useState, useRef, useCallback } from "react";
 import { Link, router } from "expo-router";
 import {
