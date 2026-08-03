@@ -7,7 +7,7 @@ import {
   I18nManager,
   ActivityIndicator,
 } from "react-native";
-import { Bike, Car, Truck, Bike, Warehouse } from "lucide-react-native";
+import { Bike, Car, Truck, Warehouse } from "lucide-react-native";
 import { Avatar, Rating, Typography } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
