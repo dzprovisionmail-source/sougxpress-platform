@@ -1,6 +1,21 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { Bike, Car, Truck, Star, User } from "lucide-react-native";
+import { getAvailableCouriers } from "@/services/courierService";
+
+const mapVehicleType = (type) => {
+  if (type === "car" || type === "van") return "car";
+  if (type === "truck") return "truck";
+  return "bike";
+};
+
+const toUiItem = (c) => ({
+  id: c.id,
+  name: c.full_name,
+  vehicleType: mapVehicleType(c.vehicle_type),
+  rating: c.rating,
+  status: c.is_available ? "متاح" : "غير متاح",
+});
 
 export default function CouriersHorizontalBar({ couriers, onCourierPress = () => {}, onPress = () => {} }) {
   const defaultCouriers = [
@@ -9,7 +24,28 @@ export default function CouriersHorizontalBar({ couriers, onCourierPress = () =>
     { id: "3", name: "محمد علي", vehicleType: "truck", rating: 5.0, status: "متاح" }
   ];
 
-  const list = (couriers && couriers.length > 0) ? couriers : defaultCouriers;
+  const [liveCouriers, setLiveCouriers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchCouriers = async () => {
+      try {
+        const res = await getAvailableCouriers();
+        if (!cancelled && res.data && res.data.length > 0) {
+          setLiveCouriers(res.data.map(toUiItem));
+        }
+      } catch (e) {
+        console.warn("CouriersHorizontalBar fetch failed, using fallback:", e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchCouriers();
+    return () => { cancelled = true; };
+  }, []);
+
+  const list = (couriers && couriers.length > 0) ? couriers : (loading ? defaultCouriers : (liveCouriers.length > 0 ? liveCouriers : defaultCouriers));
   const handlePress = onCourierPress || onPress;
 
   const getIcon = (type) => {
