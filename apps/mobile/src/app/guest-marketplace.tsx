@@ -1,3 +1,4 @@
+import CouriersHorizontalBar from "@/components/courier/CouriersHorizontalBar";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   StyleSheet,
@@ -107,6 +108,7 @@ export default function GuestMarketplaceScreen() {
   if (loading && !refreshing) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
+      <CouriersHorizontalBar />
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
