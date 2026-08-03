@@ -1,175 +1,94 @@
-import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  I18nManager,
-  ActivityIndicator,
-} from "react-native";
-import { Bike, Car, Truck, Warehouse } from "lucide-react-native";
-import { Avatar, Rating, Typography } from "@/components/ui";
-import { useAppTheme } from "@/contexts/ThemeContext";
-import { TOKENS } from "@/constants/tokens";
-import { getAvailableCouriers } from "@/services/courierService";
+import React from "react";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { Bike, Car, Truck, Star } from "lucide-react-native";
 
-const VEHICLE_ICONS = {
-  motorcycle: Bike,
-  car: Car,
-  van: Warehouse,
-  bicycle: Bike,
-  truck: Truck,
-};
+export default function CouriersHorizontalBar({ couriers, onCourierPress, onPress }) {
+  const defaultCouriers = [
+    { id: "1", name: "أحمد السعيد", vehicleType: "bike", rating: 4.9, status: "متاح" },
+    { id: "2", name: "ياسين بلقاسم", vehicleType: "car", rating: 4.8, status: "متاح" },
+    { id: "3", name: "محمد علي", vehicleType: "truck", rating: 5.0, status: "متاح" }
+  ];
 
-const isRTL = I18nManager.isRTL;
+  const list = (couriers && couriers.length > 0) ? couriers : defaultCouriers;
+  const handlePress = onCourierPress || onPress;
 
-function CourierCard({ courier, onPress }) {
-  const { colors } = useAppTheme();
-  const Icon = VEHICLE_ICONS[courier.vehicle_type] || Bike;
-  return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={() => onPress(courier)}
-      style={[
-        styles.card,
-        {
-          backgroundColor: colors.bgElevated,
-          borderColor: colors.borderSubtle,
-        },
-      ]}
-    >
-      <View style={[styles.cardInner, isRTL && { flexDirection: "row-reverse" }]}>
-        <Avatar uri={courier.avatar_url} name={courier.full_name} size="lg" />
-        <View style={isRTL ? styles.infoRTL : styles.info}>
-          <Typography variant="h2" numberOfLines={1}>
-            {courier.full_name}
-          </Typography>
-          <View style={[styles.row, isRTL && { flexDirection: "row-reverse" }]}>
-            <Icon color={colors.primary} size={14} />
-            <Typography color="secondary" variant="caption">
-              {vehicleLabel(courier.vehicle_type)}
-            </Typography>
-          </View>
-          <Rating rating={courier.rating} size="sm" showBadge />
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-const vehicleLabel = (type) => {
-  const labels = {
-    motorcycle: "دراجة نارية",
-    car: "سيارة",
-    van: "شاح نصف نقل",
-    bicycle: "دراجة",
-    truck: "شاح تركتويل",
+  const getIcon = (type) => {
+    if (type === "car") return <Car size={13} color="#FF9500" />;
+    if (type === "truck") return <Truck size={13} color="#FF9500" />;
+    return <Bike size={13} color="#FF9500" />;
   };
-  return labels[type] || type;
-};
-
-export default function CouriersHorizontalBar({
-  onCourierPress,
-  title = "الموصلين المتاحين",
-  excludeMock = false,
-}) {
-  const { colors } = useAppTheme();
-  const [couriers, setCouriers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { data, error: err } = await getAvailableCouriers();
-    if (err) setError(err);
-    else setCouriers(excludeMock ? data.filter((c) => !c.is_mock) : data || []);
-    setLoading(false);
-  }, [excludeMock]);
-
-  useEffect(() => {
-    load();
-    const unsub = () => {};
-    return unsub;
-  }, [load]);
-
-  const keyExtractor = (item) => item.id;
-
-  const renderItem = ({ item }) => (
-    <CourierCard courier={item} onPress={onCourierPress} />
-  );
 
   return (
-    <View style={styles.container}>
-      {title ? (
-        <Typography variant="h3" style={{ marginHorizontal: TOKENS.spacing.lg }}>
-          {title}
-        </Typography>
-      ) : null}
-
-      {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      ) : error ? (
-        <Typography color="error" style={{ marginHorizontal: TOKENS.spacing.lg }}>
-          {error}
-        </Typography>
-      ) : couriers.length === 0 ? (
-        <Typography color="secondary" style={{ marginHorizontal: TOKENS.spacing.lg }}>
-          لا يوجد موصلون متاحون حالياً
-        </Typography>
-      ) : (
-        <FlatList
-          data={couriers}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: TOKENS.spacing.lg,
-            paddingVertical: TOKENS.spacing.sm,
-            gap: TOKENS.spacing.sm,
-          }}
-          ItemSeparatorComponent={() => <View style={{ width: TOKENS.spacing.sm }} />}
-        />
-      )}
+    <View style={s.container}>
+      <View style={s.header}>
+        <Text style={s.title}>الموصلين المتاحين</Text>
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.scroll}>
+        {list.map((item) => (
+          <TouchableOpacity
+            key={item.id || item.name}
+            activeOpacity={0.8}
+            onPress={() => {
+              if (typeof handlePress === "function") {
+                handlePress(item);
+              }
+            }}
+            style={s.card}
+          >
+            <View style={s.avatarContainer}>
+              <Text style={s.initials}>{(item.name || "م").substring(0, 2)}</Text>
+              <View style={s.badge}>{getIcon(item.vehicleType)}</View>
+            </View>
+            <Text style={s.name} numberOfLines={1}>{item.name}</Text>
+            <View style={s.meta}>
+              <Star size={11} color="#FFD700" fill="#FFD700" />
+              <Text style={s.rating}>{item.rating || "4.8"}</Text>
+              <Text style={s.status}>• {item.status || "متاح"}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    marginVertical: TOKENS.spacing.xs,
-  },
+const s = StyleSheet.create({
+  container: { marginVertical: 12 },
+  header: { paddingHorizontal: 16, marginBottom: 8 },
+  title: { fontSize: 15, fontWeight: "bold", color: "#FFFFFF", textAlign: "right" },
+  scroll: { paddingHorizontal: 12, gap: 10, flexDirection: "row-reverse" },
   card: {
-    width: 160,
-    borderRadius: TOKENS.radius.lg,
+    width: 120,
+    backgroundColor: "#1C1C1E",
+    borderRadius: 12,
+    padding: 10,
+    alignItems: "center",
     borderWidth: 1,
-    padding: TOKENS.spacing.sm,
-    ...TOKENS.shadows.small,
+    borderColor: "#2C2C2E"
   },
-  cardInner: {
-    alignItems: "center",
-    gap: TOKENS.spacing.xs,
-  },
-  info: {
-    flex: 1,
-    alignItems: "flex-start",
-  },
-  infoRTL: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 2,
-  },
-  loader: {
-    height: 120,
-    alignItems: "center",
+  avatarContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#2C2C2E",
     justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
+    position: "relative"
   },
+  initials: { color: "#FF9500", fontWeight: "bold", fontSize: 13 },
+  badge: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    backgroundColor: "#1C1C1E",
+    borderRadius: 10,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: "#2C2C2E"
+  },
+  name: { color: "#FFFFFF", fontSize: 12, fontWeight: "600", marginBottom: 4, textAlign: "center" },
+  meta: { flexDirection: "row", alignItems: "center", gap: 3 },
+  rating: { color: "#FFD700", fontSize: 10, fontWeight: "bold" },
+  status: { color: "#34C759", fontSize: 10 }
 });
