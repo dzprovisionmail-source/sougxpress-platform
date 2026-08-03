@@ -1,4 +1,3 @@
-import CouriersHorizontalBar from "@/components/courier/CouriersHorizontalBar";
 import React, { useState, useRef, useCallback } from "react";
 import { Link, router } from "expo-router";
 import {
@@ -137,8 +136,7 @@ export default function EntryScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-      <CouriersHorizontalBar />
-        {/* Official Logo */}
+              {/* Official Logo */}
         <View style={styles.logoArea}>
           <Image
             source={LOGO_DARK}

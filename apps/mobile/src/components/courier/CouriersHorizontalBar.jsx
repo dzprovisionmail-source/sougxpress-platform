@@ -7,14 +7,14 @@ import {
   I18nManager,
   ActivityIndicator,
 } from "react-native";
-import { Motorcycle, Car, Truck, Bike, Warehouse } from "lucide-react-native";
+import { Bike, Car, Truck, Bike, Warehouse } from "lucide-react-native";
 import { Avatar, Rating, Typography } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
 import { getAvailableCouriers } from "@/services/courierService";
 
 const VEHICLE_ICONS = {
-  motorcycle: Motorcycle,
+  motorcycle: Bike,
   car: Car,
   van: Warehouse,
   bicycle: Bike,
@@ -25,7 +25,7 @@ const isRTL = I18nManager.isRTL;
 
 function CourierCard({ courier, onPress }) {
   const { colors } = useAppTheme();
-  const Icon = VEHICLE_ICONS[courier.vehicle_type] || Motorcycle;
+  const Icon = VEHICLE_ICONS[courier.vehicle_type] || Bike;
   return (
     <TouchableOpacity
       activeOpacity={0.85}
