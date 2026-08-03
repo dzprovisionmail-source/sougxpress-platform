@@ -1,3 +1,5 @@
+import { LogBox } from "react-native";
+LogBox.ignoreLogs(["Unable to activate keep awake"]);
 import { useEffect } from "react";
 import { I18nManager } from "react-native";
 import { Stack } from "expo-router";

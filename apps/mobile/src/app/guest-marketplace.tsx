@@ -108,8 +108,7 @@ export default function GuestMarketplaceScreen() {
   if (loading && !refreshing) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
-      <CouriersHorizontalBar />
-        <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -158,6 +157,7 @@ export default function GuestMarketplaceScreen() {
         {/* Horizontal Category List */}
         <View style={styles.categoriesSection}>
           <Typography variant="h3" align="right" style={{ marginBottom: TOKENS.spacing.sm }}>
+      <CouriersHorizontalBar />
             التصنيفات المتاحة
           </Typography>
 

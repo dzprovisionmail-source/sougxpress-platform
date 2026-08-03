@@ -1,3 +1,4 @@
+import CouriersHorizontalBar from "@/components/courier/CouriersHorizontalBar";
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
@@ -60,6 +61,7 @@ const HomeScreen = () => {
       />
 
       <ScrollView style={styles.container}>
+      <CouriersHorizontalBar />
         {/* Search Bar */}
         <View style={[styles.searchContainer, { backgroundColor: colors.bgSurface }]}>
           <Input
