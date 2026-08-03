@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import { Bike, Car, Truck, Star, User } from "lucide-react-native";
 import { getAvailableCouriers } from "@/services/courierService";
 
@@ -17,7 +18,8 @@ const toUiItem = (c) => ({
   status: c.is_available ? "متاح" : "غير متاح",
 });
 
-export default function CouriersHorizontalBar({ couriers, onCourierPress = () => {}, onPress = () => {} }) {
+export default function CouriersHorizontalBar({ couriers, onCourierPress, onPress }) {
+  const router = useRouter();
   const defaultCouriers = [
     { id: "1", name: "أحمد السعيد", vehicleType: "bike", rating: 4.9, status: "متاح" },
     { id: "2", name: "ياسين بلقاسم", vehicleType: "car", rating: 4.8, status: "متاح" },
@@ -67,6 +69,8 @@ export default function CouriersHorizontalBar({ couriers, onCourierPress = () =>
             onPress={() => {
               if (typeof handlePress === "function") {
                 handlePress(item);
+              } else {
+                router.push(`/courier/${item.id}`);
               }
             }}
             style={s.card}
