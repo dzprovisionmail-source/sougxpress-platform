@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
-import { Bike, Car, Truck, Star } from "lucide-react-native";
+import { Bike, Car, Truck, Star, User } from "lucide-react-native";
 
-export default function CouriersHorizontalBar({ couriers, onCourierPress, onPress }) {
+export default function CouriersHorizontalBar({ couriers, onCourierPress = () => {}, onPress = () => {} }) {
   const defaultCouriers = [
     { id: "1", name: "أحمد السعيد", vehicleType: "bike", rating: 4.9, status: "متاح" },
     { id: "2", name: "ياسين بلقاسم", vehicleType: "car", rating: 4.8, status: "متاح" },
@@ -36,7 +36,7 @@ export default function CouriersHorizontalBar({ couriers, onCourierPress, onPres
             style={s.card}
           >
             <View style={s.avatarContainer}>
-              <Text style={s.initials}>{(item.name || "م").substring(0, 2)}</Text>
+              <User size={22} color="#FFFFFF" />
               <View style={s.badge}>{getIcon(item.vehicleType)}</View>
             </View>
             <Text style={s.name} numberOfLines={1}>{item.name}</Text>
@@ -58,9 +58,9 @@ const s = StyleSheet.create({
   title: { fontSize: 15, fontWeight: "bold", color: "#FFFFFF", textAlign: "right" },
   scroll: { paddingHorizontal: 12, gap: 10, flexDirection: "row-reverse" },
   card: {
-    width: 120,
+    width: 115,
     backgroundColor: "#1C1C1E",
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 10,
     alignItems: "center",
     borderWidth: 1,
@@ -76,7 +76,6 @@ const s = StyleSheet.create({
     marginBottom: 6,
     position: "relative"
   },
-  initials: { color: "#FF9500", fontWeight: "bold", fontSize: 13 },
   badge: {
     position: "absolute",
     bottom: -2,

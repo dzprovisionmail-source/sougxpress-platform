@@ -61,7 +61,6 @@ const HomeScreen = () => {
       />
 
       <ScrollView style={styles.container}>
-      <CouriersHorizontalBar />
         {/* Search Bar */}
         <View style={[styles.searchContainer, { backgroundColor: colors.bgSurface }]}>
           <Input
@@ -112,10 +111,13 @@ const HomeScreen = () => {
                   <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>لا توجد نتائج للبحث.</Text>
                 )}
               </View>
-             ) : (
-               <>
-                 {/* Categories */}
-                 <View style={styles.section}>
+              ) : (
+                <>
+                  {/* Couriers Horizontal Bar */}
+                  <CouriersHorizontalBar />
+
+                  {/* Categories */}
+                  <View style={styles.section}>
                    <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>الفئات</Text>
                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
                      <TouchableOpacity key="all" onPress={() => setActiveCategory("all")} style={[styles.categoryItem, { backgroundColor: activeCategory === "all" ? colors.primary + "18" : colors.bgSurface }]}>

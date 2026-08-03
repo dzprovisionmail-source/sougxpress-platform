@@ -154,10 +154,12 @@ export default function GuestMarketplaceScreen() {
           />
         </View>
 
+        {/* Couriers Horizontal Bar */}
+        <CouriersHorizontalBar />
+
         {/* Horizontal Category List */}
         <View style={styles.categoriesSection}>
           <Typography variant="h3" align="right" style={{ marginBottom: TOKENS.spacing.sm }}>
-      <CouriersHorizontalBar />
             التصنيفات المتاحة
           </Typography>
 
