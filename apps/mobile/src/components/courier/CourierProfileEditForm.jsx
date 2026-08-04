@@ -16,16 +16,14 @@ import {
   updateCourierProfile,
   uploadCourierImage,
 } from "@/services/courierService";
+import { VEHICLE_LABELS } from "@/utils/courier.utils";
 
 const isRTL = I18nManager.isRTL;
 
-const VEHICLE_OPTIONS = [
-  { value: "motorcycle", label: "دراجة نارية" },
-  { value: "car", label: "سيارة" },
-  { value: "van", label: "شاح نصف نقل" },
-  { value: "bicycle", label: "دراجة" },
-  { value: "truck", label: "شاح تركتويل" },
-];
+const VEHICLE_OPTIONS = Object.entries(VEHICLE_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 export default function CourierProfileEditForm({ courier, userId, onSave, onCancel }) {
   const { colors } = useAppTheme();

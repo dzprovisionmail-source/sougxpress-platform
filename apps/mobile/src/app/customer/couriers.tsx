@@ -10,11 +10,10 @@ import {
   Share,
   RefreshControl,
   Image,
-  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Bike, Car, Truck, Star, Share2, Heart } from "lucide-react-native";
+import { ArrowLeft, Star, Share2, Heart, Truck, Bike, Car } from "lucide-react-native";
 import {
   Typography,
   Avatar,
@@ -28,18 +27,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
 import { getAvailableCouriers, toggleFavoriteCourier, getCourierById } from "@/services/courierService";
 import { supabase } from "@/lib/supabase";
-
-const mapVehicleType = (type: string) => {
-  if (type === "car" || type === "van") return "car";
-  if (type === "truck") return "truck";
-  return "bike";
-};
-
-const getVehicleIcon = (type: string, iconColor: string) => {
-  if (type === "car") return <Car size={18} color={iconColor} />;
-  if (type === "truck") return <Truck size={18} color={iconColor} />;
-  return <Bike size={18} color={iconColor} />;
-};
+import { getVehicleIcon, isCourierAvailable, vehicleLabel } from "@/utils/courier.utils";
 
 export default function CouriersDirectoryScreen() {
   const router = useRouter();
@@ -137,48 +125,81 @@ export default function CouriersDirectoryScreen() {
   };
 
   const renderCourierCard = (courier: any) => {
-    const vehicleType = mapVehicleType(courier.vehicle_type);
-    const isAvailable = courier.is_available || courier.is_mock;
+    const available = isCourierAvailable(courier);
+    const vehicleType = vehicleLabel(courier.vehicle_type);
 
     return (
       <Card variant="elevated" style={styles.card}>
-        <View style={[styles.cardHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          <Avatar uri={courier.avatar_url} name={courier.full_name} size="lg" />
-          <View style={styles.cardHeaderInfo}>
-            <View style={[styles.cardHeaderTextRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-              <View style={styles.cardHeaderText}>
-                <Typography variant="h3" align="right" numberOfLines={1}>
-                  {courier.full_name}
+        <View style={[styles.cardTopRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+          <View style={styles.avatarCol}>
+            <Avatar uri={courier.avatar_url} name={courier.full_name} size="xl" />
+            {courier.is_mock && (
+              <Badge variant="accent" label="تجريبي" style={styles.mockBadge} />
+            )}
+          </View>
+          <View style={styles.cardTopInfo}>
+            <View style={[styles.nameRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <Typography variant="h3" align="right" numberOfLines={1} style={{ flex: 1 }}>
+                {courier.full_name}
+              </Typography>
+              {userId && (
+                <TouchableOpacity
+                  onPress={() => handleToggleFavorite(courier.id)}
+                  style={styles.favoriteBtn}
+                  accessibilityLabel={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+                >
+                  <Heart
+                    size={20}
+                    color={courier.is_favorite ? colors.error : colors.textSecondary}
+                    fill={courier.is_favorite ? colors.error : "none"}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={[styles.metaRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <View style={styles.vehicleChip}>
+                {getVehicleIcon(courier.vehicle_type, colors.primary, 16)}
+                <Typography variant="caption" color="secondary" style={{ marginHorizontal: TOKENS.spacing.xs }}>
+                  {vehicleType}
                 </Typography>
-                <View style={[styles.vehicleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                  {getVehicleIcon(vehicleType, colors.primary)}
-                  <Typography variant="caption" color="secondary" style={{ marginHorizontal: TOKENS.spacing.xs }}>
-                    {courier.vehicle_type}
-                  </Typography>
-                </View>
               </View>
-              <Badge variant={isAvailable ? "success" : "error"} label={isAvailable ? "متاح" : "غير متاح"} />
+              <Badge variant={available ? "success" : "error"} label={available ? "متاح" : "غير متاح"} />
             </View>
           </View>
         </View>
 
-        <View style={styles.cardBody}>
-          <Rating rating={courier.rating} size="sm" />
-          <Typography variant="body" color="secondary" numberOfLines={2} style={{ marginTop: TOKENS.spacing.xs }}>
+        <View style={styles.statsRow}>
+          <View style={[styles.statItem, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            <Star size={16} color="#FFD700" fill="#FFD700" />
+            <Typography variant="body" style={{ marginHorizontal: TOKENS.spacing.xs }}>
+              {typeof courier.rating === "number" ? courier.rating.toFixed(1) : courier.rating}
+            </Typography>
+          </View>
+          <View style={[styles.statItem, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            <Truck size={16} color={colors.textSecondary} />
+            <Typography variant="caption" color="secondary">
+              {courier.delivery_count ?? 0} توصيل
+            </Typography>
+          </View>
+        </View>
+
+        <View style={styles.bioRow}>
+          <Typography variant="body" color="secondary" numberOfLines={2}>
             {courier.bio || "لا توجد نبذة"}
           </Typography>
-          {courier.vehicle_photo_url ? (
-            <View style={styles.vehiclePhotoWrapper}>
-              <Image
-                source={{ uri: courier.vehicle_photo_url }}
-                style={styles.vehiclePhoto}
-                resizeMode="cover"
-                onError={() => {}}
-                accessibilityLabel="صورة المركبة"
-              />
-            </View>
-          ) : null}
         </View>
+
+        {courier.vehicle_photo_url ? (
+          <View style={styles.vehiclePhotoWrapper}>
+            <Image
+              source={{ uri: courier.vehicle_photo_url }}
+              style={styles.vehiclePhoto}
+              resizeMode="cover"
+              onError={() => {}}
+              accessibilityLabel="صورة المركبة"
+            />
+          </View>
+        ) : null}
 
         <View style={[styles.cardActions, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <Button
@@ -186,18 +207,16 @@ export default function CouriersDirectoryScreen() {
             size="sm"
             onPress={() => handleViewProfile(courier.id)}
             style={styles.actionBtn}
+            icon={<ArrowLeft size={16} color={colors.textOnBrand} />}
           />
-          {userId && (
-            <Button
-              title={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
-              variant="outline"
-              size="sm"
-              icon={<Heart size={16} color={colors.primary} />}
-              onPress={() => handleToggleFavorite(courier.id)}
-              style={styles.actionBtn}
-              accessibilityLabel={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
-            />
-          )}
+          <Button
+            title="مشاركة"
+            variant="outline"
+            size="sm"
+            icon={<Share2 size={16} color={colors.primary} />}
+            onPress={() => handleShare(courier)}
+            style={styles.actionBtn}
+          />
         </View>
       </Card>
     );
@@ -212,11 +231,12 @@ export default function CouriersDirectoryScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <TouchableOpacity
             onPress={() => router.back()}
             activeOpacity={0.7}
             accessibilityLabel="رجوع"
+            style={styles.backBtn}
           >
             <ArrowLeft size={24} color={colors.textPrimary} />
           </TouchableOpacity>
@@ -267,10 +287,12 @@ const styles = StyleSheet.create({
     paddingVertical: TOKENS.spacing.xl,
   },
   header: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: TOKENS.spacing.lg,
+  },
+  backBtn: {
+    padding: TOKENS.spacing.xs,
   },
   headerText: {
     alignItems: "center",
@@ -283,27 +305,59 @@ const styles = StyleSheet.create({
     borderRadius: TOKENS.radius.lg,
     borderWidth: 1,
     padding: TOKENS.spacing.md,
-    gap: TOKENS.spacing.sm,
-  },
-  cardHeader: {
-    alignItems: "center",
     gap: TOKENS.spacing.md,
   },
-  cardHeaderInfo: {
+  cardTopRow: {
+    alignItems: "flex-start",
+    gap: TOKENS.spacing.md,
+  },
+  avatarCol: {
+    position: "relative",
+  },
+  mockBadge: {
+    position: "absolute",
+    bottom: -4,
+    left: -4,
+  },
+  cardTopInfo: {
     flex: 1,
   },
-  cardHeaderTextRow: {
+  nameRow: {
     alignItems: "center",
     justifyContent: "space-between",
+    gap: TOKENS.spacing.sm,
   },
-  cardHeaderText: {
-    flex: 1,
+  favoriteBtn: {
+    padding: TOKENS.spacing.xs,
   },
-  vehicleRow: {
+  metaRow: {
     alignItems: "center",
-    marginTop: 2,
+    justifyContent: "space-between",
+    marginTop: TOKENS.spacing.sm,
+    gap: TOKENS.spacing.sm,
   },
-  cardBody: {
+  vehicleChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: `${TOKENS.colors.brandPrimary}12`,
+    paddingHorizontal: TOKENS.spacing.sm,
+    paddingVertical: TOKENS.spacing.xs,
+    borderRadius: TOKENS.radius.full,
+  },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: TOKENS.spacing.lg,
+    paddingVertical: TOKENS.spacing.sm,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: `${TOKENS.colors.brandPrimary}12`,
+  },
+  statItem: {
+    alignItems: "center",
+    gap: TOKENS.spacing.xs,
+  },
+  bioRow: {
     marginTop: TOKENS.spacing.xs,
   },
   vehiclePhotoWrapper: {

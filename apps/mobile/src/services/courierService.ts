@@ -5,6 +5,7 @@ import {
   CourierServiceResponse,
   VehicleType,
 } from "@/types/schema-04-couriers";
+import { VEHICLE_LABELS, mapVehicleType } from "@/utils/courier.utils";
 
 const VALID_VEHICLE_TYPES: VehicleType[] = [
   "motorcycle",
@@ -286,3 +287,5 @@ function inferExtension(file: File | Blob): string {
   };
   return map[mime] ?? "jpg";
 }
+
+export { mapVehicleType, vehicleLabel } from "@/utils/courier.utils";

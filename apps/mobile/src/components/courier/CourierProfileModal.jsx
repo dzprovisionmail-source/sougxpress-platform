@@ -8,20 +8,15 @@ import {
   I18nManager,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import {
   Heart,
   Phone,
-  MapPin,
   Edit3,
   X,
-  Motorcycle,
-  Car,
-  Warehouse,
-  Bike,
-  Truck,
 } from "lucide-react-native";
-import { Avatar, Rating, Typography, Button } from "@/components/ui";
+import { Avatar, Rating, Typography, Button, Badge } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
 import { supabase } from "@/lib/supabase";
@@ -29,16 +24,9 @@ import {
   getCourierById,
   toggleFavoriteCourier,
 } from "@/services/courierService";
+import { getVehicleIcon, isCourierAvailable, vehicleLabel } from "@/utils/courier.utils";
 
 const isRTL = I18nManager.isRTL;
-
-const VEHICLE_ICONS = {
-  motorcycle: Motorcycle,
-  car: Car,
-  van: Warehouse,
-  bicycle: Bike,
-  truck: Truck,
-};
 
 function FavoriteButton({ pressed, onPress, disabled }) {
   const { colors } = useAppTheme();
@@ -72,7 +60,7 @@ export default function CourierProfileModal({
   onRequestEdit,
 }) {
   const { colors } = useAppTheme();
-  const [courier, setCourier] = useState(null);
+  const [courier, setCourier] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -132,7 +120,7 @@ export default function CourierProfileModal({
     }
     if (!courier) return null;
 
-    const VehicleIcon = VEHICLE_ICONS[courier.vehicle_type] || Motorcycle;
+    const available = isCourierAvailable(courier);
 
     return (
       <ScrollView
@@ -145,16 +133,21 @@ export default function CourierProfileModal({
             <Typography variant="h1" numberOfLines={1}>
               {courier.full_name}
             </Typography>
-            <Rating rating={courier.rating} size="md" count={99} showBadge />
+            <Rating rating={courier.rating} size="md" showBadge />
             <View
               style={[styles.row, isRTL && { flexDirection: "row-reverse" }]}
             >
-              <MapPin size={14} color={colors.textSecondary} />
-              <Typography color="secondary" variant="caption">
+              {getVehicleIcon(courier.vehicle_type, colors.primary, 16)}
+              <Typography color="secondary" variant="caption" style={{ marginHorizontal: TOKENS.spacing.xs }}>
                 {vehicleLabel(courier.vehicle_type)}
               </Typography>
             </View>
           </View>
+        </View>
+
+        <View style={[styles.badgeRow, isRTL && { flexDirection: "row-reverse" }]}>
+          <Badge variant={available ? "success" : "error"} label={available ? "متاح" : "غير متاح"} />
+          {courier.is_mock && <Badge variant="accent" label="تجريبي" />}
         </View>
 
         {courier.bio ? (
@@ -171,17 +164,18 @@ export default function CourierProfileModal({
             {"وسيلة النقل"}
           </Typography>
           <View style={[styles.row, isRTL && { flexDirection: "row-reverse" }]}>
-            <VehicleIcon size={22} color={colors.primary} />
-            <Typography style={{ marginTop: 2 }}>
+            {getVehicleIcon(courier.vehicle_type, colors.primary, 22)}
+            <Typography style={{ marginTop: 2, marginHorizontal: TOKENS.spacing.sm }}>
               {vehicleLabel(courier.vehicle_type)}
             </Typography>
           </View>
           {courier.vehicle_photo_url ? (
-            <Avatar
-              uri={courier.vehicle_photo_url}
-              name={courier.full_name}
-              size="md"
-              type="store"
+            <Image
+              source={{ uri: courier.vehicle_photo_url }}
+              style={styles.vehiclePhoto}
+              resizeMode="cover"
+              onError={() => {}}
+              accessibilityLabel="صورة المركبة"
             />
           ) : null}
         </View>
@@ -249,13 +243,88 @@ export default function CourierProfileModal({
   );
 }
 
-function vehicleLabel(type) {
-  const labels = {
-    motorcycle: "دراجة نارية",
-    car: "سيارة",
-    van: "شاح نصف نقل",
-    bicycle: "دراجة",
-    truck: "شاح تركتويل",
-  };
-  return labels[type] || type;
-}
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: TOKENS.spacing.lg,
+    paddingBottom: 36,
+    maxHeight: "90%",
+    borderTopWidth: 1,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: TOKENS.spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: TOKENS.spacing.lg,
+  },
+  scrollContent: {
+    paddingBottom: TOKENS.spacing.xl,
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: TOKENS.spacing.xl,
+  },
+  profileHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: TOKENS.spacing.md,
+    marginBottom: TOKENS.spacing.md,
+  },
+  nameCol: {
+    flex: 1,
+    gap: TOKENS.spacing.xs,
+  },
+  row: {
+    alignItems: "center",
+    gap: TOKENS.spacing.sm,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: TOKENS.spacing.sm,
+    marginBottom: TOKENS.spacing.md,
+    flexWrap: "wrap",
+  },
+  section: {
+    marginBottom: TOKENS.spacing.lg,
+  },
+  bio: {
+    lineHeight: 22,
+    color: TOKENS.colors.light.textPrimary,
+  },
+  vehiclePhoto: {
+    width: "100%",
+    height: 180,
+    borderRadius: TOKENS.radius.lg,
+    marginTop: TOKENS.spacing.sm,
+  },
+  editBtn: {
+    marginTop: TOKENS.spacing.md,
+  },
+  fab: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    ...TOKENS.shadows.medium,
+  },
+});

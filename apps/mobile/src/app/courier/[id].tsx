@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Phone, MessageCircle, Star, Share2, Heart, Bike, Car, Truck } from "lucide-react-native";
+import { ArrowLeft, Phone, Star, Share2, Heart, Image as ImageIcon, ClipboardList, TrendingUp } from "lucide-react-native";
 import {
   Typography,
   Avatar,
@@ -21,23 +21,14 @@ import {
   Button,
   EmptyState,
   Badge,
+  SectionHeader,
+  Card,
 } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
 import { getCourierById, toggleFavoriteCourier } from "@/services/courierService";
 import { supabase } from "@/lib/supabase";
-
-const mapVehicleType = (type: string) => {
-  if (type === "car" || type === "van") return "car";
-  if (type === "truck") return "truck";
-  return "bike";
-};
-
-const getVehicleIcon = (type: string, iconColor: string) => {
-  if (type === "car") return <Car size={20} color={iconColor} />;
-  if (type === "truck") return <Truck size={20} color={iconColor} />;
-  return <Bike size={20} color={iconColor} />;
-};
+import { getVehicleIcon, isCourierAvailable, vehicleLabel } from "@/utils/courier.utils";
 
 const isRTL = I18nManager.isRTL;
 
@@ -60,30 +51,49 @@ const getStyles = (colors: ReturnType<typeof useAppTheme>["colors"]) =>
       justifyContent: "space-between",
       marginBottom: TOKENS.spacing.lg,
     },
-    profileSection: {
+    profileHero: {
       alignItems: "center",
       marginBottom: TOKENS.spacing.xl,
+      position: "relative",
     },
-    vehicleRow: {
+    avatarRing: {
+      padding: 4,
+      borderRadius: TOKENS.radius.full,
+      borderWidth: 3,
+      borderColor: colors.primary,
+    },
+    badgeRow: {
+      flexDirection: "row",
       alignItems: "center",
+      gap: TOKENS.spacing.sm,
       marginTop: TOKENS.spacing.sm,
-    },
-    badge: {
-      marginTop: TOKENS.spacing.sm,
+      flexWrap: "wrap",
+      justifyContent: "center",
     },
     section: {
-      marginBottom: TOKENS.spacing.lg,
+      marginBottom: TOKENS.spacing.xl,
+    },
+    sectionHeader: {
+      marginBottom: TOKENS.spacing.sm,
     },
     bio: {
-      lineHeight: 22,
+      lineHeight: 24,
     },
     vehiclePhoto: {
       width: "100%",
       height: 200,
       borderRadius: TOKENS.radius.lg,
     },
-    row: {
+    contactRow: {
+      flexDirection: "row",
       alignItems: "center",
+      gap: TOKENS.spacing.sm,
+      paddingVertical: TOKENS.spacing.sm,
+      paddingHorizontal: TOKENS.spacing.md,
+      borderRadius: TOKENS.radius.md,
+      backgroundColor: `${colors.primary}08`,
+      borderWidth: 1,
+      borderColor: `${colors.primary}18`,
     },
     actions: {
       flexDirection: "row",
@@ -91,6 +101,45 @@ const getStyles = (colors: ReturnType<typeof useAppTheme>["colors"]) =>
       marginTop: TOKENS.spacing.lg,
     },
     actionBtn: {
+      flex: 1,
+    },
+    futureSection: {
+      padding: TOKENS.spacing.lg,
+      borderRadius: TOKENS.radius.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgElevated,
+      alignItems: "center",
+      gap: TOKENS.spacing.sm,
+    },
+    futureIcon: {
+      opacity: 0.4,
+    },
+    futureLabel: {
+      opacity: 0.5,
+    },
+    vehicleChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: `${TOKENS.colors.brandPrimary}12`,
+      paddingHorizontal: TOKENS.spacing.sm,
+      paddingVertical: TOKENS.spacing.xs,
+      borderRadius: TOKENS.radius.full,
+    },
+    statsCard: {
+      padding: TOKENS.spacing.md,
+    },
+    statsGrid: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      gap: TOKENS.spacing.md,
+    },
+    statBox: {
+      alignItems: "center",
+      gap: TOKENS.spacing.xs,
+      padding: TOKENS.spacing.sm,
+      borderRadius: TOKENS.radius.md,
+      backgroundColor: `${colors.primary}08`,
       flex: 1,
     },
   });
@@ -201,8 +250,8 @@ export default function CourierProfile() {
     );
   }
 
-  const vehicleType = mapVehicleType(courier.vehicle_type);
-  const isAvailable = courier.is_available || courier.is_mock;
+  const vehicleType = vehicleLabel(courier.vehicle_type);
+  const available = isCourierAvailable(courier);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
@@ -224,35 +273,56 @@ export default function CourierProfile() {
           <View style={{ width: 24 }} />
         </View>
 
-        <View style={styles.profileSection}>
-          <Avatar uri={courier.avatar_url} name={courier.full_name} size="xl" />
+        <View style={styles.profileHero}>
+          <View style={styles.avatarRing}>
+            <Avatar uri={courier.avatar_url} name={courier.full_name} size="xl" />
+          </View>
           <Typography variant="h1" align="center" style={{ marginTop: TOKENS.spacing.md }}>
             {courier.full_name}
           </Typography>
-          <View style={[styles.vehicleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            {getVehicleIcon(vehicleType, colors.primary)}
-            <Typography variant="body" color="secondary" style={{ marginHorizontal: TOKENS.spacing.sm }}>
-              {courier.vehicle_type}
-            </Typography>
+          <View style={styles.badgeRow}>
+            <Badge variant={available ? "success" : "error"} label={available ? "متاح" : "غير متاح"} />
+            {courier.is_mock && <Badge variant="accent" label="تجريبي" />}
+            <View style={[styles.vehicleChip, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              {getVehicleIcon(courier.vehicle_type, colors.primary, 16)}
+              <Typography variant="caption" color="secondary" style={{ marginHorizontal: TOKENS.spacing.xs }}>
+                {vehicleType}
+              </Typography>
+            </View>
           </View>
-          <Rating rating={courier.rating} size="md" showBadge />
-          <View style={styles.badge}>
-            <Badge variant={isAvailable ? "success" : "error"} label={isAvailable ? "متاح" : "غير متاح"} />
-          </View>
+          <Rating rating={courier.rating} size="md" showBadge style={{ marginTop: TOKENS.spacing.sm }} />
         </View>
 
         <View style={styles.section}>
-          <Typography variant="h3" color="secondary" style={{ marginBottom: TOKENS.spacing.sm }}>
-            نبذة
-          </Typography>
+          <SectionHeader title="الإحصائيات" icon={<TrendingUp size={18} color={colors.primary} />} />
+          <Card variant="outlined" style={styles.statsCard}>
+            <View style={styles.statsGrid}>
+              <View style={[styles.statBox, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <Star size={18} color="#FFD700" fill="#FFD700" />
+                <View style={{ marginRight: TOKENS.spacing.sm }}>
+                  <Typography variant="h3">{typeof courier.rating === "number" ? courier.rating.toFixed(1) : courier.rating}</Typography>
+                  <Typography variant="caption" color="secondary">التقييم</Typography>
+                </View>
+              </View>
+              <View style={[styles.statBox, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <ClipboardList size={18} color={colors.primary} />
+                <View style={{ marginRight: TOKENS.spacing.sm }}>
+                  <Typography variant="h3">{courier.delivery_count ?? 0}</Typography>
+                  <Typography variant="caption" color="secondary">توصيلات</Typography>
+                </View>
+              </View>
+            </View>
+          </Card>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="نبذة" />
           <Typography style={[styles.bio, { color: colors.textPrimary }]}>{courier.bio || "لا توجد نبذة"}</Typography>
         </View>
 
         {courier.vehicle_photo_url ? (
           <View style={styles.section}>
-            <Typography variant="h3" color="secondary" style={{ marginBottom: TOKENS.spacing.sm }}>
-              صورة المركبة
-            </Typography>
+            <SectionHeader title="صورة المركبة" />
             <Image
               source={{ uri: courier.vehicle_photo_url }}
               style={styles.vehiclePhoto}
@@ -264,15 +334,53 @@ export default function CourierProfile() {
         ) : null}
 
         <View style={styles.section}>
-          <Typography variant="h3" color="secondary" style={{ marginBottom: TOKENS.spacing.sm }}>
-            جهة الاتصال
-          </Typography>
-          <View style={[styles.row, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <Phone size={18} color={colors.primary} />
-            <Typography style={{ marginHorizontal: TOKENS.spacing.sm }}>
-              {courier.phone_number}
+          <SectionHeader title="جهة الاتصال" />
+          <TouchableOpacity onPress={handleCall} activeOpacity={0.8}>
+            <View style={styles.contactRow}>
+              <Phone size={18} color={colors.primary} />
+              <Typography style={{ flex: 1, textAlign: isRTL ? "right" : "left" }}>{courier.phone_number}</Typography>
+              <Badge variant="accent" label="اتصال" />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="آراء العملاء" icon={<Star size={18} color={colors.primary} />} />
+          <Card variant="outlined" style={styles.futureSection}>
+            <Star size={32} color={colors.textDisabled} />
+            <Typography variant="body" color="secondary" align="center">
+              ستظهر آراء العملاء هنا
             </Typography>
-          </View>
+            <Typography variant="caption" color="secondary" align="center">
+              قريباً
+            </Typography>
+          </Card>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="معرض الصور" icon={<ImageIcon size={18} color={colors.primary} />} />
+          <Card variant="outlined" style={styles.futureSection}>
+            <ImageIcon size={32} color={colors.textDisabled} />
+            <Typography variant="body" color="secondary" align="center">
+              ستظهر معرض الصور هنا
+            </Typography>
+            <Typography variant="caption" color="secondary" align="center">
+              قريباً
+            </Typography>
+          </Card>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="سجل التوصيلات" icon={<ClipboardList size={18} color={colors.primary} />} />
+          <Card variant="outlined" style={styles.futureSection}>
+            <ClipboardList size={32} color={colors.textDisabled} />
+            <Typography variant="body" color="secondary" align="center">
+              ستظهر سجل التوصيلات هنا
+            </Typography>
+            <Typography variant="caption" color="secondary" align="center">
+              قريباً
+            </Typography>
+          </Card>
         </View>
 
         <View style={[styles.actions, { flexDirection: isRTL ? "row-reverse" : "row" }]}>

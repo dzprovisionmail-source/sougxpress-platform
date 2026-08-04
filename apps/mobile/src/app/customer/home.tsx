@@ -31,7 +31,7 @@ import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
 import { MAIN_CATEGORIES, mapLegacyCategoryToMain, getArabicCategoryName } from "@/config/storeCategories";
 import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
-import { getAvailableCouriers } from "@/services/courierService";
+import { getAvailableCouriers, vehicleLabel } from "@/services/courierService";
 import { Ionicons } from "@expo/vector-icons";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -203,7 +203,7 @@ export default function CustomerHomeScreen() {
     try {
       const now = new Date().toISOString();
 
-      const [alertsRes, promotionsRes, newStoresRes, newProductsRes, couriersRes] = await Promise.all([
+      const [alertsRes, promotionsRes, newStoresRes, newProductsRes] = await Promise.all([
         supabase
           .from("founder_alerts")
           .select("*")
@@ -231,13 +231,9 @@ export default function CustomerHomeScreen() {
           .eq("status", "active")
           .order("created_at", { ascending: false })
           .limit(3),
-        supabase
-          .from("couriers")
-          .select("id, full_name, rating, vehicle_type, avatar_url")
-          .or("is_available.eq.true,is_mock.eq.true")
-          .order("rating", { ascending: false })
-          .limit(3),
       ]);
+
+      const couriersRes = await getAvailableCouriers();
 
       let slides: HeroSlide[] = [];
 
@@ -295,11 +291,11 @@ export default function CustomerHomeScreen() {
             kind: "product",
           }));
         } else if (!couriersRes.error && couriersRes.data && couriersRes.data.length > 0) {
-          slides = couriersRes.data.map((c) => ({
+          slides = couriersRes.data.slice(0, 3).map((c) => ({
             id: `courier-${c.id}`,
             image: c.avatar_url || "",
             title: c.full_name,
-            description: `⭐ ${c.rating} • ${c.vehicle_type}`,
+            description: `⭐ ${c.rating} • ${vehicleLabel(c.vehicle_type)}`,
             buttonLabel: "عرض الملف",
             kind: "courier",
           }));
