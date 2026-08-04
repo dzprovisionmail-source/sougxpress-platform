@@ -355,7 +355,7 @@ export default function CustomerHomeScreen() {
     const handlePress = () => {
       if (item.kind === "courier") {
         const courierId = item.id.replace("courier-", "");
-        router.push(`/courier/${courierId}`);
+        router.push({ pathname: "/courier/[id]", params: { id: courierId } });
       } else if (item.kind === "product") {
         const productId = item.id.replace("product-", "");
         router.push({ pathname: "/product-details", params: { id: productId } });
