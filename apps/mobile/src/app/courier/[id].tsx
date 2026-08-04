@@ -39,6 +39,8 @@ const getVehicleIcon = (type: string, iconColor: string) => {
   return <Bike size={20} color={iconColor} />;
 };
 
+const isRTL = I18nManager.isRTL;
+
 const getStyles = (colors: ReturnType<typeof useAppTheme>["colors"]) =>
   StyleSheet.create({
     safeArea: {
@@ -222,7 +224,7 @@ export default function CourierProfile() {
           <Typography variant="h1" align="center" style={{ marginTop: TOKENS.spacing.md }}>
             {courier.full_name}
           </Typography>
-          <View style={[styles.vehicleRow, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
+          <View style={[styles.vehicleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             {getVehicleIcon(vehicleType, colors.primary)}
             <Typography variant="body" color="secondary" style={{ marginHorizontal: TOKENS.spacing.sm }}>
               {courier.vehicle_type}
@@ -260,7 +262,7 @@ export default function CourierProfile() {
           <Typography variant="h3" color="secondary" style={{ marginBottom: TOKENS.spacing.sm }}>
             جهة الاتصال
           </Typography>
-          <View style={[styles.row, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
+          <View style={[styles.row, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <Phone size={18} color={colors.primary} />
             <Typography style={{ marginHorizontal: TOKENS.spacing.sm }}>
               {courier.phone_number}
@@ -268,7 +270,7 @@ export default function CourierProfile() {
           </View>
         </View>
 
-        <View style={[styles.actions, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
+        <View style={[styles.actions, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <Button
             title="اتصال"
             icon={<Phone size={18} color={colors.textOnBrand} />}
