@@ -141,9 +141,13 @@ export default function CustomerHomeScreen() {
   };
 
   const handleCategoryPress = async (catId: string) => {
+    if (catId === "couriers") {
+      router.push("/customer/couriers");
+      return;
+    }
     setActiveCategory(catId);
     setActiveSubcategory("all");
-    if (catId === "all" || catId === "couriers") {
+    if (catId === "all") {
       setSubcategories([]);
     } else {
       const subs = await getActiveSubcategories(catId);
