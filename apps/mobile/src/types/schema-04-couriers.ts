@@ -17,6 +17,10 @@ export interface Courier {
   rating: number;
   is_available: boolean;
   is_mock: boolean;
+  is_verified: boolean;
+  is_pinned: boolean;
+  display_order: number;
+  show_on_home: boolean;
   created_at: string;
 }
 

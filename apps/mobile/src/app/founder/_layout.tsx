@@ -55,6 +55,8 @@ export default function FounderLayout() {
       <Stack.Screen name="stores" />
       <Stack.Screen name="orders" />
       <Stack.Screen name="drivers" />
+      <Stack.Screen name="couriers" />
+      <Stack.Screen name="courier-form" />
       <Stack.Screen name="finance" />
       <Stack.Screen name="content" />
       <Stack.Screen name="settings" />
