@@ -60,7 +60,7 @@ export default function CourierProfileModal({
   onRequestEdit,
 }) {
   const { colors } = useAppTheme();
-  const [courier, setCourier] = useState<any>(null);
+  const [courier, setCourier] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [toggling, setToggling] = useState(false);
