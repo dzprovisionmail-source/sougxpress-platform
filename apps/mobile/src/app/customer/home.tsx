@@ -31,6 +31,8 @@ import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
 import { MAIN_CATEGORIES, mapLegacyCategoryToMain, getArabicCategoryName } from "@/config/storeCategories";
 import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
+import { getAvailableCouriers } from "@/services/courierService";
+import { Ionicons } from "@expo/vector-icons";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -42,6 +44,7 @@ interface HeroSlide {
   buttonLabel: string;
   storeId?: string;
   storeName?: string;
+  kind?: "alert" | "promotion" | "flash" | "store" | "product" | "courier";
 }
 
 interface StoreRow {
@@ -98,7 +101,7 @@ export default function CustomerHomeScreen() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeSubcategory, setActiveSubcategory] = useState<string>("all");
-  const [categories, setCategories] = useState<Array<{ id: string; name_ar: string; icon?: string }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name_ar: string; icon?: string; subtitle?: string }>>([]);
   const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
   const [stores, setStores] = useState<StoreRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,24 +109,41 @@ export default function CustomerHomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
   const [heroStores, setHeroStores] = useState<StoreRow[]>([]);
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(HERO_SLIDES_TEMPLATES);
+  const [heroLoading, setHeroLoading] = useState(false);
 
   const colors = getThemeColors(theme);
   const isRTL = I18nManager.isRTL;
 
+  const storesMap = useMemo(() => {
+    const map = new Map<string, StoreRow>();
+    stores.forEach((s) => map.set(s.id, s));
+    return map;
+  }, [stores]);
+
   useEffect(() => {
     fetchStores();
     loadCategories();
+    fetchHeroContent();
   }, []);
 
   const loadCategories = async () => {
     const cats = await getActiveCategories();
-    setCategories(cats);
+    setCategories([
+      ...cats,
+      {
+        id: "couriers",
+        name_ar: "🛵 الموصلون",
+        icon: "bicycle-outline",
+        subtitle: "الموصلون المتاحون",
+      },
+    ]);
   };
 
   const handleCategoryPress = async (catId: string) => {
     setActiveCategory(catId);
     setActiveSubcategory("all");
-    if (catId === "all") {
+    if (catId === "all" || catId === "couriers") {
       setSubcategories([]);
     } else {
       const subs = await getActiveSubcategories(catId);
@@ -174,6 +194,123 @@ export default function CustomerHomeScreen() {
     fetchStores();
   }, [fetchStores]);
 
+  const fetchHeroContent = useCallback(async () => {
+    setHeroLoading(true);
+    try {
+      const now = new Date().toISOString();
+
+      const [alertsRes, promotionsRes, newStoresRes, newProductsRes, couriersRes] = await Promise.all([
+        supabase
+          .from("founder_alerts")
+          .select("*")
+          .eq("status", "open")
+          .order("created_at", { ascending: false })
+          .limit(3),
+        supabase
+          .from("store_promotions")
+          .select("*")
+          .eq("is_active", true)
+          .gte("starts_at", now)
+          .lte("ends_at", now)
+          .order("created_at", { ascending: false })
+          .limit(10),
+        supabase
+          .from("stores")
+          .select("id, name, description, cover_url")
+          .eq("status", "active")
+          .eq("is_new", true)
+          .order("created_at", { ascending: false })
+          .limit(3),
+        supabase
+          .from("products")
+          .select("id, name, description, image_url, store_id, stores(name)")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(3),
+        supabase
+          .from("couriers")
+          .select("id, full_name, rating, vehicle_type, avatar_url")
+          .or("is_available.eq.true,is_mock.eq.true")
+          .order("rating", { ascending: false })
+          .limit(3),
+      ]);
+
+      let slides: HeroSlide[] = [];
+
+      if (!alertsRes.error && alertsRes.data && alertsRes.data.length > 0) {
+        slides = alertsRes.data.map((alert) => ({
+          id: `alert-${alert.id}`,
+          image: "",
+          title: alert.message,
+          description: alert.category,
+          buttonLabel: "عرض التفاصيل",
+          kind: "alert",
+        }));
+      } else {
+        const allPromotions = promotionsRes.data || [];
+        const flashOffers = allPromotions.filter(
+          (p) => p.discount_type === "percentage" && p.discount_value >= 20
+        );
+        const otherPromotions = allPromotions.filter(
+          (p) => !(p.discount_type === "percentage" && p.discount_value >= 20)
+        );
+
+        const candidatePromotions =
+          flashOffers.length > 0 ? flashOffers : otherPromotions;
+
+        if (candidatePromotions.length > 0 && !promotionsRes.error) {
+          slides = candidatePromotions.map((p) => ({
+            id: `promo-${p.id}`,
+            image: p.image_url || "",
+            title: flashOffers.length > 0 ? `🔥 ${p.title}` : p.title,
+            description: p.description || `خصم ${p.discount_value}${p.discount_type === "percentage" ? "%" : p.discount_type === "free_delivery" ? " توصيل مجاني" : " د.ج"}`,
+            buttonLabel: flashOffers.length > 0 ? "استفد الآن" : "تسوق الآن",
+            storeId: p.store_id,
+            kind: flashOffers.length > 0 ? "flash" : "promotion",
+          }));
+        } else if (!newStoresRes.error && newStoresRes.data && newStoresRes.data.length > 0) {
+          slides = newStoresRes.data.map((s) => ({
+            id: `store-${s.id}`,
+            image: s.cover_url || "",
+            title: `متجر جديد: ${s.name}`,
+            description: s.description || "اكتشف منتجاتنا الجديدة",
+            buttonLabel: "زرّار المتجر",
+            storeId: s.id,
+            storeName: s.name,
+            kind: "store",
+          }));
+        } else if (!newProductsRes.error && newProductsRes.data && newProductsRes.data.length > 0) {
+          slides = newProductsRes.data.map((p) => ({
+            id: `product-${p.id}`,
+            image: p.image_url || "",
+            title: p.name,
+            description: p.description || "منتج جديد",
+            buttonLabel: "عرض المنتج",
+            storeId: p.store_id,
+            storeName: p.stores?.name,
+            kind: "product",
+          }));
+        } else if (!couriersRes.error && couriersRes.data && couriersRes.data.length > 0) {
+          slides = couriersRes.data.map((c) => ({
+            id: `courier-${c.id}`,
+            image: c.avatar_url || "",
+            title: c.full_name,
+            description: `⭐ ${c.rating} • ${c.vehicle_type}`,
+            buttonLabel: "عرض الملف",
+            kind: "courier",
+          }));
+        }
+      }
+
+      setHeroSlides(slides.length > 0 ? slides : HERO_SLIDES_TEMPLATES);
+    } catch (e) {
+      console.error("Error fetching hero content:", e);
+      setHeroSlides(HERO_SLIDES_TEMPLATES);
+    } finally {
+      setHeroLoading(false);
+    }
+  }, []);
+
   const filteredStores = useMemo(() => {
     let result = stores;
 
@@ -208,17 +345,28 @@ export default function CustomerHomeScreen() {
   };
 
   const renderHeroSlide = ({ item, index }: { item: HeroSlide; index: number }) => {
-    const heroStore = heroStores[index];
-    const hasStore = !!heroStore;
+    const heroStore = item.storeId ? storesMap.get(item.storeId) : heroStores[index];
+    const hasStore = !!heroStore || !!item.storeId;
+
+    const handlePress = () => {
+      if (item.kind === "courier") {
+        const courierId = item.id.replace("courier-", "");
+        router.push(`/courier/${courierId}`);
+      } else if (item.kind === "product") {
+        const productId = item.id.replace("product-", "");
+        router.push({ pathname: "/product-details", params: { id: productId } });
+      } else if (item.storeId) {
+        router.push({ pathname: "/store-details", params: { id: item.storeId } });
+      } else if (heroStore) {
+        router.push({ pathname: "/store-details", params: { id: heroStore.id } });
+      }
+    };
+
     return (
       <TouchableOpacity
         style={[styles.heroSlide, { backgroundColor: colors.bgElevated }]}
         activeOpacity={hasStore ? 0.8 : 1}
-        onPress={() => {
-          if (hasStore) {
-            router.push({ pathname: "/store-details", params: { id: heroStore.id } });
-          }
-        }}
+        onPress={handlePress}
       >
       <View style={styles.heroImageContainer}>
         {item.image ? (
@@ -340,7 +488,7 @@ export default function CustomerHomeScreen() {
         <View style={styles.section}>
           <FlatList
             ref={heroScrollRef}
-            data={HERO_SLIDES_TEMPLATES}
+            data={heroSlides}
             renderItem={renderHeroSlide}
             keyExtractor={(item) => item.id}
             horizontal
@@ -352,7 +500,7 @@ export default function CustomerHomeScreen() {
             bounces={false}
           />
           <View style={[styles.dotsContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            {HERO_SLIDES_TEMPLATES.map((_, index) => (
+            {heroSlides.map((_, index) => (
               <TouchableOpacity
                 key={index}
                 style={[
@@ -388,16 +536,64 @@ export default function CustomerHomeScreen() {
               isActive={activeCategory === "all"}
               onPress={() => handleCategoryPress("all")}
             />
-            {categories.map((cat) => (
-              <CategoryItem
-                key={cat.id}
-                name={cat.name_ar}
-                icon={(cat.icon || "storefront-outline") as any}
-                theme={theme}
-                isActive={activeCategory === cat.id}
-                onPress={() => handleCategoryPress(cat.id)}
-              />
-            ))}
+            {categories.map((cat) => {
+              if (cat.id === "couriers") {
+                return (
+                  <TouchableOpacity
+                    key={cat.id}
+                    onPress={() => handleCategoryPress("couriers")}
+                    style={[
+                      styles.courierCategoryItem,
+                      {
+                        backgroundColor: activeCategory === cat.id ? colors.primary : colors.bgSurface,
+                        borderColor: activeCategory === cat.id ? colors.primary : colors.borderSubtle,
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={(cat.icon as any) || "bicycle-outline"}
+                      size={18}
+                      color={activeCategory === cat.id ? colors.textOnBrand : colors.primary}
+                    />
+                    <View style={styles.courierCategoryText}>
+                      <Typography
+                        variant="caption"
+                        align="center"
+                        style={{
+                          color: activeCategory === cat.id ? colors.textOnBrand : colors.textPrimary,
+                          fontWeight: "600",
+                        }}
+                      >
+                        {cat.name_ar}
+                      </Typography>
+                      {(cat as any).subtitle ? (
+                        <Typography
+                          variant="caption"
+                          align="center"
+                          style={{
+                            color: activeCategory === cat.id ? colors.textOnBrand : colors.textSecondary,
+                            fontSize: 10,
+                          }}
+                        >
+                          {(cat as any).subtitle}
+                        </Typography>
+                      ) : null}
+                    </View>
+                  </TouchableOpacity>
+                );
+              }
+              return (
+                <CategoryItem
+                  key={cat.id}
+                  name={cat.name_ar}
+                  icon={(cat.icon || "storefront-outline") as any}
+                  theme={theme}
+                  isActive={activeCategory === cat.id}
+                  onPress={() => handleCategoryPress(cat.id)}
+                />
+              );
+            })}
           </ScrollView>
         </View>
 
@@ -500,6 +696,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: TOKENS.spacing.lg,
     paddingBottom: TOKENS.spacing.sm,
     gap: TOKENS.spacing.sm,
+  },
+  courierCategoryItem: {
+    paddingHorizontal: TOKENS.spacing.md,
+    paddingVertical: TOKENS.spacing.sm,
+    borderRadius: TOKENS.radius.full,
+    borderWidth: 1,
+    marginRight: TOKENS.spacing.md,
+    marginBottom: TOKENS.spacing.md,
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 80,
+  },
+  courierCategoryText: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
   },
   storesScroll: {
     paddingHorizontal: TOKENS.spacing.lg,

@@ -7,6 +7,7 @@ export interface MainCategoryConfig {
   value: string; // Stable lowercase slug
   label: string; // Arabic display label
   icon?: string;
+  subtitle?: string; // Optional subtitle for category display
   subcategories: SubCategoryConfig[];
 }
 
@@ -128,12 +129,20 @@ export const MAIN_CATEGORIES: MainCategoryConfig[] = [
     label: "أخرى",
     subcategories: [],
   },
+  {
+    value: "couriers",
+    label: "الموصلون",
+    icon: "bicycle-outline",
+    subtitle: "الموصلون المتاحون",
+    subcategories: [],
+  },
 ];
 
 export function mapLegacyCategoryToMain(legacyCategory?: string | null): string {
   if (!legacyCategory) return "groceries";
   const lower = legacyCategory.toLowerCase().trim();
   if (lower === "other" || lower === "أخرى") return "other";
+  if (lower === "couriers" || lower === "الموصلون") return "couriers";
   const found = MAIN_CATEGORIES.find(
     (c) => c.value === lower || c.label === legacyCategory || c.subcategories.some((s) => s.value === lower || s.label === legacyCategory)
   );
@@ -189,6 +198,7 @@ export function mapLegacyCategoryToMain(legacyCategory?: string | null): string 
 export function getArabicCategoryName(mainCat?: string | null, subCat?: string | null, legacyCat?: string | null): string {
   if (mainCat) {
     if (mainCat === "other") return "أخرى";
+    if (mainCat === "couriers") return "الموصلون";
     const main = MAIN_CATEGORIES.find((c) => c.value === mainCat);
     if (main) {
       if (subCat) {
