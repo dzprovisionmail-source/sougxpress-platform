@@ -9,6 +9,7 @@ import {
   Alert,
   Share,
   Image,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -19,6 +20,7 @@ import {
   Rating,
   Button,
   EmptyState,
+  Badge,
 } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
@@ -31,10 +33,10 @@ const mapVehicleType = (type: string) => {
   return "bike";
 };
 
-const getVehicleIcon = (type: string) => {
-  if (type === "car") return <Car size={20} color="#FF9500" />;
-  if (type === "truck") return <Truck size={20} color="#FF9500" />;
-  return <Bike size={20} color="#FF9500" />;
+const getVehicleIcon = (type: string, iconColor: string) => {
+  if (type === "car") return <Car size={20} color={iconColor} />;
+  if (type === "truck") return <Truck size={20} color={iconColor} />;
+  return <Bike size={20} color={iconColor} />;
 };
 
 const isRTL = I18nManager.isRTL;
@@ -70,7 +72,9 @@ export default function CourierDetailScreen() {
 
   const handleCall = () => {
     if (courier?.phone_number) {
-      Alert.alert("اتصال", `هل تريد الاتصال بـ ${courier.phone_number}؟`);
+      Linking.openURL(`tel:${courier.phone_number}`).catch(() => {
+        Alert.alert("خطأ", "لا يمكن فتح تطبيق الاتصال");
+      });
     }
   };
 
@@ -85,21 +89,24 @@ export default function CourierDetailScreen() {
       Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لإضافة الموصل إلى المفضلة");
       return;
     }
+    const previousIsFavorite = courier.is_favorite;
+    setCourier((prev: any) => ({ ...prev, is_favorite: !prev.is_favorite }));
     try {
       const { data: userData } = await supabase.auth.getUser();
       const currentUserId = userData?.user?.id;
       if (!currentUserId) {
         Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لإضافة الموصل إلى المفضلة");
+        setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));
         return;
       }
       const { error } = await toggleFavoriteCourier(currentUserId, courier.id);
       if (error) {
         Alert.alert("خطأ", error);
-        return;
+        setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));
       }
-      setCourier((prev: any) => ({ ...prev, is_favorite: !prev.is_favorite }));
     } catch (e) {
       console.error("toggleFavorite failed:", e);
+      setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));
     }
   };
 
@@ -107,6 +114,7 @@ export default function CourierDetailScreen() {
     try {
       await Share.share({
         message: `تحقق من ${courier?.full_name} على SougXPRESS!`,
+        title: courier?.full_name,
       });
     } catch (e) {
       console.error("Share failed:", e);
@@ -143,7 +151,11 @@ export default function CourierDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+            accessibilityLabel="رجوع"
+          >
             <ArrowLeft size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <Typography variant="h2" align="center">
@@ -158,16 +170,14 @@ export default function CourierDetailScreen() {
             {courier.full_name}
           </Typography>
           <View style={[styles.vehicleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            {getVehicleIcon(vehicleType)}
+            {getVehicleIcon(vehicleType, colors.primary)}
             <Typography variant="body" color="secondary" style={{ marginHorizontal: TOKENS.spacing.sm }}>
               {courier.vehicle_type}
             </Typography>
           </View>
-          <Rating rating={courier.rating} size="md" count={99} showBadge />
-          <View style={[styles.badge, { backgroundColor: isAvailable ? "#34C75920" : "#FF3B3020" }]}>
-            <Typography variant="caption" style={{ color: isAvailable ? "#34C759" : "#FF3B30" }}>
-              {isAvailable ? "متاح" : "غير متاح"}
-            </Typography>
+          <Rating rating={courier.rating} size="md" showBadge />
+          <View style={styles.badge}>
+            <Badge variant={isAvailable ? "success" : "error"} label={isAvailable ? "متاح" : "غير متاح"} />
           </View>
         </View>
 
@@ -187,6 +197,8 @@ export default function CourierDetailScreen() {
               source={{ uri: courier.vehicle_photo_url }}
               style={styles.vehiclePhoto}
               resizeMode="cover"
+              onError={() => {}}
+              accessibilityLabel="صورة المركبة"
             />
           </View>
         ) : null}
@@ -259,9 +271,6 @@ const styles = StyleSheet.create({
   },
   badge: {
     marginTop: TOKENS.spacing.sm,
-    paddingHorizontal: TOKENS.spacing.md,
-    paddingVertical: 4,
-    borderRadius: TOKENS.radius.full,
   },
   section: {
     marginBottom: TOKENS.spacing.lg,

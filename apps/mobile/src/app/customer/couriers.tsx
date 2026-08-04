@@ -10,6 +10,7 @@ import {
   Share,
   RefreshControl,
   Image,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -20,6 +21,8 @@ import {
   Rating,
   Button,
   EmptyState,
+  Badge,
+  Card,
 } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
@@ -32,10 +35,10 @@ const mapVehicleType = (type: string) => {
   return "bike";
 };
 
-const getVehicleIcon = (type: string) => {
-  if (type === "car") return <Car size={18} color="#FF9500" />;
-  if (type === "truck") return <Truck size={18} color="#FF9500" />;
-  return <Bike size={18} color="#FF9500" />;
+const getVehicleIcon = (type: string, iconColor: string) => {
+  if (type === "car") return <Car size={18} color={iconColor} />;
+  if (type === "truck") return <Truck size={18} color={iconColor} />;
+  return <Bike size={18} color={iconColor} />;
 };
 
 export default function CouriersDirectoryScreen() {
@@ -45,6 +48,7 @@ export default function CouriersDirectoryScreen() {
 
   const [couriers, setCouriers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -57,7 +61,6 @@ export default function CouriersDirectoryScreen() {
 
   const fetchCouriers = useCallback(async () => {
     try {
-      setLoading(true);
       const { data, error } = await getAvailableCouriers();
       if (error || !data) {
         Alert.alert("خطأ", error || "فشل جلب قائمة الموصلين");
@@ -68,8 +71,14 @@ export default function CouriersDirectoryScreen() {
       console.error("fetchCouriers failed:", e);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchCouriers();
+  }, [fetchCouriers]);
 
   useEffect(() => {
     fetchCouriers();
@@ -84,25 +93,28 @@ export default function CouriersDirectoryScreen() {
       Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لإضافة الموصل إلى المفضلة");
       return;
     }
+    const previousCouriers = couriers;
+    setCouriers((prev) =>
+      prev.map((c) =>
+        c.id === courierId ? { ...c, is_favorite: !c.is_favorite } : c
+      )
+    );
     try {
       const { data: userData } = await supabase.auth.getUser();
       const currentUserId = userData?.user?.id;
       if (!currentUserId) {
         Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لإضافة الموصل إلى المفضلة");
+        setCouriers(previousCouriers);
         return;
       }
       const { error } = await toggleFavoriteCourier(currentUserId, courierId);
       if (error) {
         Alert.alert("خطأ", error);
-        return;
+        setCouriers(previousCouriers);
       }
-      setCouriers((prev) =>
-        prev.map((c) =>
-          c.id === courierId ? { ...c, is_favorite: !c.is_favorite } : c
-        )
-      );
     } catch (e) {
       console.error("toggleFavorite failed:", e);
+      setCouriers(previousCouriers);
     }
   };
 
@@ -110,6 +122,7 @@ export default function CouriersDirectoryScreen() {
     try {
       await Share.share({
         message: `تحقق من ${courier.full_name} على SougXPRESS!`,
+        title: courier.full_name,
       });
     } catch (e) {
       console.error("Share failed:", e);
@@ -121,30 +134,23 @@ export default function CouriersDirectoryScreen() {
     const isAvailable = courier.is_available || courier.is_mock;
 
     return (
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle },
-        ]}
-      >
-        <View style={styles.cardHeader}>
+      <Card variant="elevated" style={styles.card}>
+        <View style={[styles.cardHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <Avatar uri={courier.avatar_url} name={courier.full_name} size="lg" />
-          <View style={[styles.cardHeaderInfo, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <View style={styles.cardHeaderText}>
-              <Typography variant="h3" align={isRTL ? "right" : "left"} numberOfLines={1}>
-                {courier.full_name}
-              </Typography>
-              <View style={[styles.vehicleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                {getVehicleIcon(vehicleType)}
-                <Typography variant="caption" color="secondary" style={{ marginHorizontal: TOKENS.spacing.xs }}>
-                  {courier.vehicle_type}
+          <View style={styles.cardHeaderInfo}>
+            <View style={[styles.cardHeaderTextRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <View style={styles.cardHeaderText}>
+                <Typography variant="h3" align="right" numberOfLines={1}>
+                  {courier.full_name}
                 </Typography>
+                <View style={[styles.vehicleRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                  {getVehicleIcon(vehicleType, colors.primary)}
+                  <Typography variant="caption" color="secondary" style={{ marginHorizontal: TOKENS.spacing.xs }}>
+                    {courier.vehicle_type}
+                  </Typography>
+                </View>
               </View>
-            </View>
-            <View style={[styles.badge, { backgroundColor: isAvailable ? "#34C75920" : "#FF3B3020" }]}>
-              <Typography variant="caption" style={{ color: isAvailable ? "#34C759" : "#FF3B30" }}>
-                {isAvailable ? "متاح" : "غير متاح"}
-              </Typography>
+              <Badge variant={isAvailable ? "success" : "error"} label={isAvailable ? "متاح" : "غير متاح"} />
             </View>
           </View>
         </View>
@@ -155,16 +161,14 @@ export default function CouriersDirectoryScreen() {
             {courier.bio || "لا توجد نبذة"}
           </Typography>
           {courier.vehicle_photo_url ? (
-            <TouchableOpacity
-              onPress={() => Alert.alert("صورة المركبة", courier.vehicle_photo_url)}
-              activeOpacity={0.7}
-            >
+            <View style={styles.vehiclePhotoWrapper}>
               <Image
                 source={{ uri: courier.vehicle_photo_url }}
                 style={styles.vehiclePhoto}
                 resizeMode="cover"
+                onError={() => {}}
               />
-            </TouchableOpacity>
+            </View>
           ) : null}
         </View>
 
@@ -185,16 +189,8 @@ export default function CouriersDirectoryScreen() {
               style={styles.actionBtn}
             />
           )}
-          <Button
-            title="مشاركة"
-            variant="ghost"
-            size="sm"
-            icon={<Share2 size={16} color={colors.primary} />}
-            onPress={() => handleShare(courier)}
-            style={styles.actionBtn}
-          />
         </View>
-      </View>
+      </Card>
     );
   };
 
@@ -204,11 +200,15 @@ export default function CouriersDirectoryScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={fetchCouriers} tintColor={colors.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+            accessibilityLabel="رجوع"
+          >
             <ArrowLeft size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerText}>
@@ -277,12 +277,13 @@ const styles = StyleSheet.create({
     gap: TOKENS.spacing.sm,
   },
   cardHeader: {
-    flexDirection: isRTL ? "row-reverse" : "row",
     alignItems: "center",
     gap: TOKENS.spacing.md,
   },
   cardHeaderInfo: {
     flex: 1,
+  },
+  cardHeaderTextRow: {
     alignItems: "center",
     justifyContent: "space-between",
   },
@@ -293,19 +294,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 2,
   },
-  badge: {
-    paddingHorizontal: TOKENS.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: TOKENS.radius.full,
-  },
   cardBody: {
     marginTop: TOKENS.spacing.xs,
+  },
+  vehiclePhotoWrapper: {
+    marginTop: TOKENS.spacing.sm,
   },
   vehiclePhoto: {
     width: "100%",
     height: 160,
     borderRadius: TOKENS.radius.md,
-    marginTop: TOKENS.spacing.sm,
   },
   cardActions: {
     flexDirection: "row",
