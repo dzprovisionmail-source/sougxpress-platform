@@ -28,10 +28,14 @@ export interface CourierProfileUpdate {
 /**
  * Fetches all couriers that are publicly available for delivery
  * (active OR mock), ordered by rating descending.
+ *
+ * If userId is provided, each courier will include `is_favorite`
+ * reflecting whether that user has favorited the courier.
+ * Guests receive `is_favorite = false`.
  */
-export const getAvailableCouriers = async (): Promise<
-  CourierServiceResponse<Courier[]>
-> => {
+export const getAvailableCouriers = async (
+  userId?: string
+): Promise<CourierServiceResponse<CourierWithFavorite[]>> => {
   try {
     const { data, error } = await supabase
       .from("couriers")
@@ -41,7 +45,33 @@ export const getAvailableCouriers = async (): Promise<
 
     if (error) throw error;
 
-    return { data: (data as Courier[]) ?? null, error: null };
+    const couriers = (data as Courier[]) ?? [];
+
+    if (!userId) {
+      return { data: couriers.map((c) => ({ ...c, is_favorite: false })), error: null };
+    }
+
+    const courierIds = couriers.map((c) => c.id);
+    if (courierIds.length === 0) {
+      return { data: [], error: null };
+    }
+
+    const { data: favRows, error: favError } = await supabase
+      .from("favorite_couriers")
+      .select("courier_id")
+      .eq("user_id", userId)
+      .in("courier_id", courierIds);
+
+    if (favError && favError.code !== "PGRST116") {
+      console.warn("getAvailableCouriers favorite lookup failed:", favError);
+    }
+
+    const favoriteIds = new Set((favRows ?? []).map((r) => r.courier_id));
+
+    return {
+      data: couriers.map((c) => ({ ...c, is_favorite: favoriteIds.has(c.id) })),
+      error: null,
+    };
   } catch (err: any) {
     console.error("getAvailableCouriers failed:", err);
     return { data: null, error: err?.message ?? "فشل جلب قائمة الموصلين" };

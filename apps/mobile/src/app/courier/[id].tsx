@@ -158,6 +158,11 @@ export default function CourierProfile() {
       if (error) {
         Alert.alert("خطأ", error);
         setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));
+        return;
+      }
+      const { data: updatedCourier } = await getCourierById(courier.id);
+      if (updatedCourier) {
+        setCourier((prev: any) => ({ ...prev, is_favorite: updatedCourier.is_favorite }));
       }
     } catch (e) {
       console.error("toggleFavorite failed:", e);

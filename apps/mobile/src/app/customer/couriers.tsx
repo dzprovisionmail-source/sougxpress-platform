@@ -26,7 +26,7 @@ import {
 } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
-import { getAvailableCouriers, toggleFavoriteCourier } from "@/services/courierService";
+import { getAvailableCouriers, toggleFavoriteCourier, getCourierById } from "@/services/courierService";
 import { supabase } from "@/lib/supabase";
 
 const mapVehicleType = (type: string) => {
@@ -61,7 +61,7 @@ export default function CouriersDirectoryScreen() {
 
   const fetchCouriers = useCallback(async () => {
     try {
-      const { data, error } = await getAvailableCouriers();
+      const { data, error } = await getAvailableCouriers(userId);
       if (error || !data) {
         Alert.alert("خطأ", error || "فشل جلب قائمة الموصلين");
         return;
@@ -73,7 +73,7 @@ export default function CouriersDirectoryScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [userId]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -111,6 +111,13 @@ export default function CouriersDirectoryScreen() {
       if (error) {
         Alert.alert("خطأ", error);
         setCouriers(previousCouriers);
+        return;
+      }
+      const { data: updatedCourier } = await getCourierById(courierId);
+      if (updatedCourier) {
+        setCouriers((prev) =>
+          prev.map((c) => (c.id === courierId ? { ...c, is_favorite: updatedCourier.is_favorite } : c))
+        );
       }
     } catch (e) {
       console.error("toggleFavorite failed:", e);
