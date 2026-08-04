@@ -74,7 +74,6 @@ const getStyles = (colors: ReturnType<typeof useAppTheme>["colors"]) =>
     },
     bio: {
       lineHeight: 22,
-      color: colors.textPrimary,
     },
     vehiclePhoto: {
       width: "100%",
@@ -239,7 +238,7 @@ export default function CourierProfile() {
           <Typography variant="h3" color="secondary" style={{ marginBottom: TOKENS.spacing.sm }}>
             نبذة
           </Typography>
-          <Typography style={styles.bio}>{courier.bio || "لا توجد نبذة"}</Typography>
+          <Typography style={[styles.bio, { color: colors.textPrimary }]}>{courier.bio || "لا توجد نبذة"}</Typography>
         </View>
 
         {courier.vehicle_photo_url ? (
