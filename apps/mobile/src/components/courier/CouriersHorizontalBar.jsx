@@ -70,7 +70,7 @@ export default function CouriersHorizontalBar({ couriers, onCourierPress, onPres
               if (typeof handlePress === "function") {
                 handlePress(item);
               } else {
-                router.push(`/courier/${item.id}`);
+                router.push({ pathname: "/courier/[id]", params: { id: item.id } });
               }
             }}
             style={s.card}
