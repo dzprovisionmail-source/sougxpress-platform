@@ -39,7 +39,9 @@ const getVehicleIcon = (type: string, iconColor: string) => {
   return <Bike size={20} color={iconColor} />;
 };
 
-const getStyles = (textPrimaryColor: string) =>
+const isRTL = I18nManager.isRTL;
+
+const getStyles = (colors: ReturnType<typeof useAppTheme>["colors"]) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -74,7 +76,6 @@ const getStyles = (textPrimaryColor: string) =>
     },
     bio: {
       lineHeight: 22,
-      color: textPrimaryColor,
     },
     vehiclePhoto: {
       width: "100%",
@@ -94,11 +95,11 @@ const getStyles = (textPrimaryColor: string) =>
     },
   });
 
-export default function CourierDetailScreen() {
+export default function CourierProfile() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useAppTheme();
-  const styles = getStyles(colors.textPrimary);
+  const styles = getStyles(colors);
 
   const [courier, setCourier] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -239,7 +240,7 @@ export default function CourierDetailScreen() {
           <Typography variant="h3" color="secondary" style={{ marginBottom: TOKENS.spacing.sm }}>
             نبذة
           </Typography>
-          <Typography style={styles.bio}>{courier.bio || "لا توجد نبذة"}</Typography>
+          <Typography style={[styles.bio, { color: colors.textPrimary }]}>{courier.bio || "لا توجد نبذة"}</Typography>
         </View>
 
         {courier.vehicle_photo_url ? (
