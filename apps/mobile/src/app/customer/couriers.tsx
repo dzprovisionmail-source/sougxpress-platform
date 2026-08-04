@@ -167,6 +167,7 @@ export default function CouriersDirectoryScreen() {
                 style={styles.vehiclePhoto}
                 resizeMode="cover"
                 onError={() => {}}
+                accessibilityLabel="صورة المركبة"
               />
             </View>
           ) : null}
@@ -187,6 +188,7 @@ export default function CouriersDirectoryScreen() {
               icon={<Heart size={16} color={colors.primary} />}
               onPress={() => handleToggleFavorite(courier.id)}
               style={styles.actionBtn}
+              accessibilityLabel={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
             />
           )}
         </View>

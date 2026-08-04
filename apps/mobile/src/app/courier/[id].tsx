@@ -221,6 +221,7 @@ export default function CourierDetailScreen() {
             icon={<Phone size={18} color={colors.textOnBrand} />}
             onPress={handleCall}
             style={styles.actionBtn}
+            accessibilityLabel="اتصال بالموصل"
           />
           <Button
             title={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
@@ -229,6 +230,7 @@ export default function CourierDetailScreen() {
             onPress={handleToggleFavorite}
             style={styles.actionBtn}
             disabled={!userId}
+            accessibilityLabel={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
           />
           <Button
             title="مشاركة"
@@ -236,6 +238,7 @@ export default function CourierDetailScreen() {
             icon={<Share2 size={18} color={colors.primary} />}
             onPress={handleShare}
             style={styles.actionBtn}
+            accessibilityLabel="مشاركة الملف"
           />
         </View>
       </ScrollView>
