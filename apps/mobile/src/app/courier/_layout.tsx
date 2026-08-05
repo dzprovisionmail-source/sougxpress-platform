@@ -1,6 +1,6 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { LayoutGrid, CircleUserRound, Heart, Bell, Settings } from "lucide-react-native";
+import { LayoutGrid, Heart, Bell, Settings } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
 export default function CourierLayout() {

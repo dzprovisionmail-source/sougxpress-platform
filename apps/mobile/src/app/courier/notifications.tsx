@@ -15,6 +15,7 @@ import { WorkspaceScreen, SectionCard, SectionTitle, WorkspaceText, WorkspaceBut
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import { supabase } from "@/lib/supabase";
+import { TOKENS } from "@/constants/tokens";
 
 const isRTL = I18nManager.isRTL;
 
@@ -138,3 +139,7 @@ export default function CourierNotificationsScreen() {
     </WorkspaceScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: TOKENS.spacing.xl },
+});

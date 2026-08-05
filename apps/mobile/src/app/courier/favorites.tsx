@@ -147,3 +147,27 @@ export default function CourierFavoritesScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: TOKENS.spacing.xl },
+  scrollContent: { padding: TOKENS.spacing.lg, paddingBottom: TOKENS.spacing["3xl"] },
+  tabRow: { gap: TOKENS.spacing.sm, marginBottom: TOKENS.spacing.lg },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: TOKENS.spacing.sm,
+    borderRadius: TOKENS.radius.md,
+    borderWidth: 1,
+  },
+  card: {
+    borderRadius: TOKENS.radius.lg,
+    borderWidth: 1,
+    padding: TOKENS.spacing.md,
+  },
+  cardRow: { alignItems: "center", gap: TOKENS.spacing.md },
+  favBtn: { padding: TOKENS.spacing.xs },
+});

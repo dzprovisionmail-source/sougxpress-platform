@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, RefreshControl, Switch, View, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { Bike, Wallet, PackageCheck, Bell, User, Settings, Share2 } from "lucide-react-native";
+import { Bike, Wallet, PackageCheck, Bell, Settings, Share2 } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";

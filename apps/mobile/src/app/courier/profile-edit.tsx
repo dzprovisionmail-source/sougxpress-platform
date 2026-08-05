@@ -7,6 +7,7 @@ import {
   Alert,
   Switch,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -267,3 +268,16 @@ export default function CourierProfileEditScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  scrollContent: { padding: TOKENS.spacing.lg, paddingBottom: TOKENS.spacing["3xl"] },
+  header: { alignItems: "center", justifyContent: "space-between", marginBottom: TOKENS.spacing.lg },
+  backBtn: { padding: TOKENS.spacing.xs },
+  avatarRow: { alignItems: "center", justifyContent: "space-between", marginBottom: TOKENS.spacing.lg, gap: TOKENS.spacing.md },
+  counterRow: { alignItems: "center", justifyContent: "flex-end", marginTop: -TOKENS.spacing.sm, marginBottom: TOKENS.spacing.md },
+  switchRow: { alignItems: "center", gap: TOKENS.spacing.sm, marginBottom: TOKENS.spacing.md },
+  actionsRow: { flexDirection: "row", gap: TOKENS.spacing.md, marginTop: TOKENS.spacing.lg },
+  actionBtn: { flex: 1 },
+});
