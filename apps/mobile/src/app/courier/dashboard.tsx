@@ -20,7 +20,12 @@ import {
 
 const QUICK_ACTIONS = [
   { id: "edit", label: "تعديل الملف", icon: <Settings size={18} />, route: "/courier/profile-edit" },
-  { id: "preview", label: "معاينة الملف", icon: <Share2 size={18} />, route: "/courier/[id]" },
+  {
+    id: "preview",
+    label: "معاينة الملف",
+    icon: <Share2 size={18} />,
+    route: courier?.id ? `/courier/${courier.id}` : "/courier/profile-edit",
+  },
 ];
 
 export default function CourierDashboardScreen() {
