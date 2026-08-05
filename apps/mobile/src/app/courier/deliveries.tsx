@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ScrollView, RefreshControl, View } from "react-native";
 import { useRouter } from "expo-router";
-import { MapPin, Clock, CheckCircle2, XCircle, Truck, AlertCircle } from "lucide-react-native";
+import { Clock, CheckCircle2, XCircle, Truck } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
