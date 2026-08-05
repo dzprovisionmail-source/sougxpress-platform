@@ -1,6 +1,6 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { LayoutGrid, Heart, Bell, Settings } from "lucide-react-native";
+import { LayoutGrid, Truck, Wallet, Clock, MapPin, Heart, Bell, Settings } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 
 export default function CourierLayout() {
@@ -21,6 +21,34 @@ export default function CourierLayout() {
         options={{
           title: "الرئيسية",
           tabBarIcon: ({ color, size }) => <LayoutGrid color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="deliveries"
+        options={{
+          title: "التوصيلات",
+          tabBarIcon: ({ color, size }) => <Truck color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="earnings"
+        options={{
+          title: "الأرباح",
+          tabBarIcon: ({ color, size }) => <Wallet color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="delivery-history"
+        options={{
+          title: "السجل",
+          tabBarIcon: ({ color, size }) => <Clock color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="customer-tracking"
+        options={{
+          title: "التتبع",
+          tabBarIcon: ({ color, size }) => <MapPin color={color} size={size} />,
         }}
       />
       <Tabs.Screen

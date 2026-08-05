@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, RefreshControl, Switch, View, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { Bike, Wallet, PackageCheck, Bell, Settings, Share2 } from "lucide-react-native";
+import { Bike, Wallet, PackageCheck, Bell, Settings, Share2, MapPin, Clock } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import useCourier from "@/hooks/useCourier";
+import useCourierOrders from "@/hooks/useCourierOrders";
 import {
   WorkspaceScreen,
   SectionCard,
@@ -18,21 +19,12 @@ import {
   EmptyState,
 } from "@/features/workspace/ui";
 
-const QUICK_ACTIONS = [
-  { id: "edit", label: "تعديل الملف", icon: <Settings size={18} />, route: "/courier/profile-edit" },
-  {
-    id: "preview",
-    label: "معاينة الملف",
-    icon: <Share2 size={18} />,
-    route: courier?.id ? `/courier/${courier.id}` : "/courier/profile-edit",
-  },
-];
-
 export default function CourierDashboardScreen() {
   const router = useRouter();
   const { colors, tokens } = useAppTheme();
   const { userId, loading: userLoading } = useCurrentUserId();
   const { courier, loading: courierLoading, updateCourier } = useCourier(userId || "");
+  const { pendingDeliveries, activeDeliveries, completedDeliveries, earnings } = useCourierOrders(courier?.id || "");
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -78,9 +70,9 @@ export default function CourierDashboardScreen() {
     return {
       totalDeliveries: courier.delivery_count ?? 0,
       rating: courier.rating ?? 5.0,
-      earnings: "0",
+      earnings: earnings ? `${((earnings.total / 100)).toFixed(2)} دج` : "0",
     };
-  }, [courier]);
+  }, [courier, earnings]);
 
   return (
     <WorkspaceScreen>
@@ -136,7 +128,7 @@ export default function CourierDashboardScreen() {
           <WorkspaceButton
             title="عرض تفاصيل الأرباح"
             variant="outline"
-            onPress={() => {}}
+            onPress={() => router.push("/courier/earnings" as never)}
             style={{ marginTop: tokens.spacing.sm }}
           />
         </SectionCard>
@@ -152,20 +144,55 @@ export default function CourierDashboardScreen() {
         </SectionCard>
 
         <SectionCard>
-          <SectionTitle icon={<User color={colors.primary} size={tokens.spacing.lg} />}>
+          <SectionTitle icon={<Clock color={colors.primary} size={tokens.spacing.lg} />}>
+            التوصيلات الحالية
+          </SectionTitle>
+          <StatGrid>
+            <StatCard label="بانتظار القبول" value={String(pendingDeliveries.length)} accent="secondary" />
+            <StatCard label="نشطة" value={String(activeDeliveries.length)} accent={colors.primary} />
+            <StatCard label="مكتملة" value={String(completedDeliveries.length)} accent={colors.success} />
+          </StatGrid>
+          <WorkspaceButton
+            title="عرض جميع التوصيلات"
+            variant="outline"
+            onPress={() => router.push("/courier/deliveries" as never)}
+            style={{ marginTop: tokens.spacing.sm }}
+          />
+        </SectionCard>
+
+        <SectionCard>
+          <SectionTitle icon={<MapPin color={colors.primary} size={tokens.spacing.lg} />}>
             إجراءات سريعة
           </SectionTitle>
           <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.sm, flexWrap: "wrap" }}>
-            {QUICK_ACTIONS.map((action) => (
-              <WorkspaceButton
-                key={action.id}
-                title={action.label}
-                variant="outline"
-                onPress={() => router.push(action.route as never)}
-                style={{ flex: 1, minWidth: 140 }}
-                icon={action.icon}
-              />
-            ))}
+            <WorkspaceButton
+              title="التوصيلات"
+              variant="outline"
+              onPress={() => router.push("/courier/deliveries" as never)}
+              style={{ flex: 1, minWidth: 140 }}
+              icon={<Clock size={18} />}
+            />
+            <WorkspaceButton
+              title="الأرباح"
+              variant="outline"
+              onPress={() => router.push("/courier/earnings" as never)}
+              style={{ flex: 1, minWidth: 140 }}
+              icon={<Wallet size={18} />}
+            />
+            <WorkspaceButton
+              title="السجل"
+              variant="outline"
+              onPress={() => router.push("/courier/delivery-history" as never)}
+              style={{ flex: 1, minWidth: 140 }}
+              icon={<Clock size={18} />}
+            />
+            <WorkspaceButton
+              title="تعديل الملف"
+              variant="outline"
+              onPress={() => router.push("/courier/profile-edit" as never)}
+              style={{ flex: 1, minWidth: 140 }}
+              icon={<Settings size={18} />}
+            />
           </View>
         </SectionCard>
 
