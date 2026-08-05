@@ -1,10 +1,8 @@
 import { LogBox } from "react-native";
-LogBox.ignoreLogs(["Unable to activate keep awake"]);
 import { useEffect } from "react";
 import { I18nManager } from "react-native";
 import { Stack } from "expo-router";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { activateKeepAwakeAsync } from "expo-keep-awake";
 
 // SougXpress is Arabic-only — force RTL layout direction app-wide.
 if (!I18nManager.isRTL) {
@@ -14,12 +12,16 @@ if (!I18nManager.isRTL) {
 
 export default function RootLayout() {
   useEffect(() => {
-    try {
-      activateKeepAwakeAsync().catch(() => {
-        // Silently catch unhandled promise rejections on web or unsupported devices
-      });
-    } catch (e) {
-      // Ignore synchronous keep-awake errors
+    if (__DEV__) {
+      import("expo-keep-awake")
+        .then(({ activateKeepAwakeAsync }) => {
+          activateKeepAwakeAsync().catch(() => {
+            // Silently ignore keep-awake failures in development
+          });
+        })
+        .catch(() => {
+          // Silently ignore if expo-keep-awake is not installed
+        });
     }
   }, []);
 
