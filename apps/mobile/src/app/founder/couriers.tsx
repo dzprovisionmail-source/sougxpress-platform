@@ -299,55 +299,62 @@ export default function FounderCouriersScreen() {
                 </Text>
 
                 <View style={{ gap: 8, marginTop: 8 }}>
-                  <ActionRow
-                    label={selected.is_available ? "تعطيل" : "تفعيل"}
-                    color={selected.is_available ? colors.warning : colors.success}
-                    onPress={() => handleToggle(selected.id, () => toggleFounderCourierAvailability(selected.id))}
-                    tokens={tokens}
-                    icon={selected.is_available ? <XCircle size={16} color={selected.is_available ? colors.warning : colors.success} /> : <Check size={16} color={selected.is_available ? colors.warning : colors.success} />}
-                  />
-                  <ActionRow
-                    label={selected.is_verified ? "إزالة التوثيق" : "توثيق"}
-                    color={colors.success}
-                    onPress={() => handleToggle(selected.id, () => toggleFounderCourierVerified(selected.id))}
-                    tokens={tokens}
-                    icon={<Star size={16} color={colors.success} />}
-                  />
-                  <ActionRow
-                    label={selected.is_mock ? "إزالة وضع التجربة" : "وضع تجربة"}
-                    color={colors.warning}
-                    onPress={() => handleToggle(selected.id, () => toggleFounderCourierDemo(selected.id))}
-                    tokens={tokens}
-                    icon={<Truck size={16} color={colors.warning} />}
-                  />
-                  <ActionRow
-                    label={selected.is_pinned ? "إلغاء التثبيت" : "تثبيت"}
-                    color={colors.primary}
-                    onPress={() => handleToggle(selected.id, () => toggleFounderCourierPinned(selected.id))}
-                    tokens={tokens}
-                    icon={<Pin size={16} color={colors.primary} />}
-                  />
-                  <ActionRow
-                    label={selected.show_on_home ? "إخفاء من الصفحة" : "إظهار على الصفحة"}
-                    color={colors.info}
-                    onPress={() => handleToggle(selected.id, () => toggleFounderCourierHomeVisibility(selected.id))}
-                    tokens={tokens}
-                    icon={selected.show_on_home ? <EyeOff size={16} color={colors.info} /> : <Eye size={16} color={colors.info} />}
-                  />
-                  <ActionRow
-                    label="تعديل"
-                    color={colors.secondary}
-                    onPress={() => { setSelected(null); router.push(`/founder/courier-form?id=${selected.id}` as never); }}
-                    tokens={tokens}
-                    icon={<Edit3 size={16} color={colors.secondary} />}
-                  />
-                  <ActionRow
-                    label="حذف"
-                    color={colors.error}
-                    onPress={() => handleDelete(selected.id)}
-                    tokens={tokens}
-                    icon={<Trash2 size={16} color={colors.error} />}
-                  />
+<ActionRow
+                     label={selected.is_available ? "تعطيل" : "تفعيل"}
+                     color={selected.is_available ? colors.warning : colors.success}
+                     onPress={() => handleToggle(selected.id, () => toggleFounderCourierAvailability(selected.id))}
+                     tokens={tokens}
+                     icon={selected.is_available ? <XCircle size={16} color={selected.is_available ? colors.warning : colors.success} /> : <Check size={16} color={selected.is_available ? colors.warning : colors.success} />}
+                     actionLoading={actionLoading}
+                   />
+                   <ActionRow
+                     label={selected.is_verified ? "إزالة التوثيق" : "توثيق"}
+                     color={colors.success}
+                     onPress={() => handleToggle(selected.id, () => toggleFounderCourierVerified(selected.id))}
+                     tokens={tokens}
+                     icon={<Star size={16} color={colors.success} />}
+                     actionLoading={actionLoading}
+                   />
+                   <ActionRow
+                     label={selected.is_mock ? "إزالة وضع التجربة" : "وضع تجربة"}
+                     color={colors.warning}
+                     onPress={() => handleToggle(selected.id, () => toggleFounderCourierDemo(selected.id))}
+                     tokens={tokens}
+                     icon={<Truck size={16} color={colors.warning} />}
+                     actionLoading={actionLoading}
+                   />
+                   <ActionRow
+                     label={selected.is_pinned ? "إلغاء التثبيت" : "تثبيت"}
+                     color={colors.primary}
+                     onPress={() => handleToggle(selected.id, () => toggleFounderCourierPinned(selected.id))}
+                     tokens={tokens}
+                     icon={<Pin size={16} color={colors.primary} />}
+                     actionLoading={actionLoading}
+                   />
+                   <ActionRow
+                     label={selected.show_on_home ? "إخفاء من الصفحة" : "إظهار على الصفحة"}
+                     color={colors.info}
+                     onPress={() => handleToggle(selected.id, () => toggleFounderCourierHomeVisibility(selected.id))}
+                     tokens={tokens}
+                     icon={selected.show_on_home ? <EyeOff size={16} color={colors.info} /> : <Eye size={16} color={colors.info} />}
+                     actionLoading={actionLoading}
+                   />
+                   <ActionRow
+                     label="تعديل"
+                     color={colors.secondary}
+                     onPress={() => { setSelected(null); router.push(`/founder/courier-form?id=${selected.id}` as never); }}
+                     tokens={tokens}
+                     icon={<Edit3 size={16} color={colors.secondary} />}
+                     actionLoading={actionLoading}
+                   />
+                   <ActionRow
+                     label="حذف"
+                     color={colors.error}
+                     onPress={() => handleDelete(selected.id)}
+                     tokens={tokens}
+                     icon={<Trash2 size={16} color={colors.error} />}
+                     actionLoading={actionLoading}
+                   />
                 </View>
               </View>
             )}
@@ -374,12 +381,14 @@ function ActionRow({
   onPress,
   tokens,
   icon,
+  actionLoading,
 }: {
   label: string;
   color: string;
   onPress: () => void;
   tokens: ReturnType<typeof useAppTheme>["tokens"];
   icon: React.ReactNode;
+  actionLoading: boolean;
 }) {
   return (
     <TouchableOpacity
