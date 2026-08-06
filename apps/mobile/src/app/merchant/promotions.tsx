@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -40,7 +40,6 @@ import {
   LoadingState,
   EmptyState,
 } from "@/features/workspace/ui";
-import { useEffect } from "react";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 

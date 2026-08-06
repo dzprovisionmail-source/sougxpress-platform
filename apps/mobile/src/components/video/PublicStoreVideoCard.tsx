@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { TOKENS } from '@/constants/tokens';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, Dimensions } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { Play } from "lucide-react-native";
@@ -52,13 +53,13 @@ export default function PublicStoreVideoCard(props: PublicVideoCardProps) {
           {props.thumbnail_url ? (
             <Image source={{ uri: props.thumbnail_url }} style={styles.thumbnail} resizeMode="cover" />
           ) : (
-            <View style={[styles.placeholder, { backgroundColor: "#1a1a2e" }]}>
+            <View style={[styles.placeholder, { backgroundColor: TOKENS.colors.light.bgBase }]}>
               <Play size={32} color={colors.primary} fill={colors.primary} />
             </View>
           )}
           <View style={styles.playOverlay}>
             <View style={[styles.playCircle, { backgroundColor: "rgba(0,0,0,0.55)" }]}>
-              <Play size={22} color="#fff" fill="#fff" />
+              <Play size={22} color=TOKENS.colors.light.background fill=TOKENS.colors.light.background />
             </View>
           </View>
           <View style={[styles.providerBadge, { backgroundColor: providerColor }]}>
@@ -151,7 +152,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   providerText: {
-    color: "#fff",
+    color: TOKENS.colors.light.background,
     fontSize: 10,
     fontWeight: "700",
   },

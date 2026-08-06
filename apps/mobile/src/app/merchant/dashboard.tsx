@@ -13,9 +13,7 @@ import {
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import useMerchantOrders from "@/hooks/useMerchantOrders";
-import { getMerchant } from "@/services/merchant.service";
-import { getStoreByMerchantId } from "@/services/store.service";
-import { updateStore } from "@/services/store.service";
+import { getMerchant, getStoreByMerchantId, updateStore } from "@/services/store.service";
 import { Merchant, Store } from "@/types/schema-03-core";
 import {
   WorkspaceScreen,

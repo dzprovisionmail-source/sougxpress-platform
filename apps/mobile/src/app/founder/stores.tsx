@@ -26,10 +26,9 @@ import {
 import { StoreGalleryImage, StoreVideo, Product } from "@/types/schema-03-core";
 import { supabase } from "@/lib/supabase";
 import { useRealtimeStoreList } from "@/hooks/useRealtimeStoreList";
-import { ImageOptimizerModal } from "@/components/ui";
+import { ImageOptimizerModal, SimpleSelect } from "@/components/ui";
 import { ImageType } from "@/utils/imageOptimizer";
 import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
-import { SimpleSelect } from "@/components/ui";
 
 type StoreStatus = "all" | "draft" | "active" | "paused" | "suspended";
 type StoreCategory = "all" | "grocery" | "restaurant" | "pharmacy" | "bakery" | "butcher" | "electronics" | "household" | "other";
