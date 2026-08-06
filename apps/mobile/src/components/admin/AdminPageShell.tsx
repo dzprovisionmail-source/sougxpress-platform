@@ -204,11 +204,14 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     flex: 1,
-    alignItems: "center",
+    justifyContent: "center",
+    alignItems: "flex-start",
+    paddingHorizontal: TOKENS.spacing.sm,
   },
   headerTitle: {
     fontWeight: "700",
-    textAlign: "center",
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   iconBtn: {
     width: 36,

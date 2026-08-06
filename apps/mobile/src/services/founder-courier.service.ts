@@ -45,7 +45,27 @@ async function invokeCourierManagement(
   }
 }
 
-// ─── List ─────────────────────────────────────────────────────────────────────
+// ─── Get by ID ────────────────────────────────────────────────────────
+
+export async function getCourierById(
+  id: string
+): Promise<CourierServiceResponse<FounderCourier>> {
+  try {
+    const { data, error } = await supabase
+      .from("couriers")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+
+    return { data: data as FounderCourier, error: null };
+  } catch (err: any) {
+    return { data: null, error: err?.message ?? "فشل جلب بيانات الموصل" };
+  }
+}
+
+// ─── List ─────────────────────────────────────────────────────────────
 
 export async function getFounderCouriers(
   params: FounderCourierListParams = {}

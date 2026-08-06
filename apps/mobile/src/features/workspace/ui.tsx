@@ -9,6 +9,7 @@ import {
   TextStyle,
   StyleProp,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { ThemeType } from "@/constants/theme";
 

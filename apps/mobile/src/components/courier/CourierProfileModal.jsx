@@ -60,7 +60,7 @@ export default function CourierProfileModal({
   onRequestEdit,
 }) {
   const { colors } = useAppTheme();
-  const [courier, setCourier] = useState<any>(null);
+  const [courier, setCourier] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -302,10 +302,9 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: TOKENS.spacing.lg,
   },
-  bio: {
-    lineHeight: 22,
-    color: TOKENS.colors.light.textPrimary,
-  },
+   bio: {
+     lineHeight: 22,
+   },
   vehiclePhoto: {
     width: "100%",
     height: 180,

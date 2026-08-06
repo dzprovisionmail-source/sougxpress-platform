@@ -32,7 +32,7 @@ const FACEBOOK_VIDEO_PATTERNS = [
   // facebook.com/{username}/videos/{videoId}/
   /^(https?:\/\/)?(www\.|m\.|web\.)?facebook\.com\/.+\/videos\/[^\s/]+\/?$/i,
   // fb.watch/{videoId}
-  /^(https?:\/\/)?(www\.)?fb\.watch\/[^\s/]+/?$/i,
+  /^(https?:\/\/)?(www\.)?fb\.watch\/[^\s/]+\/?$/i
 ];
 
 // Must start with http:// or https:// — reject partial paths
