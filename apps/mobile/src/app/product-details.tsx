@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { StyleSheet } from 'react-native';
 import {
   StyleSheet,
   View,
@@ -146,7 +147,7 @@ export default function ProductDetailsScreen() {
       <Header
         title={product.name}
         rightElement={
-          <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)} style={{ padding: 4 }}>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => setIsFavorite(!isFavorite)} style={{ padding: 4 }}>
             <Heart size={22} color={isFavorite ? colors.error : colors.textPrimary} fill={isFavorite ? colors.error : "transparent"} />
           </TouchableOpacity>
         }
@@ -197,7 +198,7 @@ export default function ProductDetailsScreen() {
 
         {/* Store Card Link */}
         {store && (
-          <TouchableOpacity
+          <TouchableOpacity activeOpacity={0.8}
             onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
             style={[
               styles.storeCardLink,
