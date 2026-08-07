@@ -140,3 +140,11 @@ export async function deleteFounderProduct(productId: string): Promise<{ error: 
   const ok = await deleteProduct(productId);
   return { error: ok ? null : "فشل حذف المنتج" };
 }
+
+export async function getFounderStoreFacebookVideos(storeId: string): Promise<any[]> {
+  return [];
+}
+
+export async function addFounderFacebookVideo(storeId: string, url: string, title?: string | null): Promise<any> {
+  return null;
+}

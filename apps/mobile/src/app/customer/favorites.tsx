@@ -103,7 +103,7 @@ export default function CustomerFavoritesScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
-      <Header title="المفضلة" showBack={false} />
+      <Header title="المفضلة" leftContent={null} />
 
       {/* Tabs Switcher */}
       <View style={[styles.tabBar, { borderBottomColor: colors.borderSubtle, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>

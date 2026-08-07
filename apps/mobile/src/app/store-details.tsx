@@ -189,7 +189,7 @@ export default function StoreDetailsScreen() {
           <View style={[styles.metaBadgesRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Rating rating={store.rating || 4.8} size="sm" showBadge />
             <Badge
-              text={store.is_open !== false ? "مفتوح الآن" : "مغلق"}
+              label={store.is_open !== false ? "مفتوح الآن" : "مغلق"}
               variant={store.is_open !== false ? "success" : "error"}
             />
           </View>

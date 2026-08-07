@@ -87,7 +87,7 @@ export default function FounderCustomersScreen() {
             onSubmitEditing={handleSearch}
             onClear={() => {
               setSearch("");
-              loadData("", statusFilter);
+              load("", statusFilter, false, showDeleted);
             }}
             onFilterPress={() => setShowFilters(true)}
             style={{ flex: 1 }}

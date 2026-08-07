@@ -287,7 +287,7 @@ export default function CustomerHomeScreen() {
             description: p.description || "منتج جديد",
             buttonLabel: "عرض المنتج",
             storeId: p.store_id,
-            storeName: p.stores?.name,
+            storeName: (p.stores as any[])?.[0]?.name,
             kind: "product",
           }));
         } else if (!couriersRes.error && couriersRes.data && couriersRes.data.length > 0) {

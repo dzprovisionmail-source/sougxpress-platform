@@ -1,6 +1,6 @@
 
 import { supabase } from "../lib/supabase";
-import { Store, StoreGalleryImage, StoreVideo, StoreGalleryLike, StoreGalleryComment, StoreGalleryRating } from "../types/schema-03-core";
+import { Store, StoreGalleryImage, StoreVideo, StoreGalleryLike, StoreGalleryComment, StoreGalleryRating, Merchant } from "../types/schema-03-core";
 import { mapLegacyCategoryToMain } from "../config/storeCategories";
 
 const isValidUUID = (uuid: string): boolean => {
@@ -42,6 +42,24 @@ export const getStoreByMerchantId = async (merchantId: string): Promise<Store | 
     return null;
   }
   return data as Store | null;
+};
+
+export const getMerchant = async (merchantId: string): Promise<Merchant | null> => {
+  if (!merchantId || !isValidUUID(merchantId)) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("merchants")
+    .select("*")
+    .eq("id", merchantId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching merchant:", error);
+    return null;
+  }
+  return data as Merchant | null;
 };
 
 export const getAllStores = async (): Promise<Store[]> => {

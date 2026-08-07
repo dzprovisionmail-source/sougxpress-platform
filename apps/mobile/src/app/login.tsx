@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "expo-router";
-import { View, ScrollView, StyleSheet, SafeAreaView, I18nManager } from "react-native";
+import { View, ScrollView, StyleSheet, SafeAreaView, I18nManager, Image as RNImage } from "react-native";
 import { Typography, Card } from "../components/ui";
 import { BRAND_NAME_AR, LOGO_ICON, ICON_SHOPPING, ICON_STORE, ICON_DELIVERY } from "../constants/brand";
 import { TOKENS } from "../constants/tokens";
@@ -72,7 +72,7 @@ export default function RoleSelectionScreen() {
       >
         {/* Header with official logo */}
         <View style={styles.header}>
-          <Image
+          <RNImage
             source={LOGO_ICON}
             style={styles.headerLogo}
             resizeMode="contain"
@@ -93,7 +93,7 @@ export default function RoleSelectionScreen() {
                 <View style={[styles.cardContent, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                   {option.icon && (
                     <View style={[styles.iconWrapper, { backgroundColor: colors.bgSurface }]}>
-                      <Image
+                      <RNImage
                         source={option.icon}
                         style={styles.roleIcon}
                         resizeMode="contain"

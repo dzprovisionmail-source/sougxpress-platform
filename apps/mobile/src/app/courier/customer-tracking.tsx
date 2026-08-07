@@ -68,7 +68,7 @@ export default function CustomerTrackingScreen() {
         }
       >
         {activeDeliveries.map((delivery) => {
-          const currentStepIndex = STATUS_FLOW.indexOf(delivery.status);
+          const currentStepIndex = STATUS_FLOW.indexOf(delivery.status as DeliveryStatus);
 
           return (
             <SectionCard key={delivery.id} style={{ marginBottom: tokens.spacing.md }}>

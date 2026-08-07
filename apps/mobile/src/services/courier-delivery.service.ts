@@ -78,6 +78,7 @@ export const getCourierDeliveries = async (
     const deliveries: CourierDelivery[] = (data as any[] ?? []).map((order: any) => ({
       id: order.id,
       order_id: order.id,
+      courier_id: courierId,
       driver_id: courierId,
       status: order.status as DeliveryStatus,
       customer_id: order.customer_id,

@@ -1,4 +1,4 @@
-import { Bike, Car, Truck, Motorcycle, Warehouse } from "lucide-react-native";
+import { Bike, Car, Truck, Motorbike, Warehouse } from "lucide-react-native";
 import { VehicleType } from "@/types/schema-04-couriers";
 
 type VehicleIconComponent = React.ComponentType<{ size: number; color: string }>;
@@ -12,7 +12,7 @@ export const VEHICLE_LABELS: Record<VehicleType, string> = {
 };
 
 export const VEHICLE_ICONS: Record<VehicleType, VehicleIconComponent> = {
-  motorcycle: Motorcycle,
+  motorcycle: Motorbike,
   car: Car,
   van: Warehouse,
   bicycle: Bike,

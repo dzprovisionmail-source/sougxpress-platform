@@ -1,13 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Product, ProductImage, ProductStatus } from '../types/schema-03-core';
-import { getProductsByStore, getProductImages, searchProducts } from '../services/product.service';
-import {
-  getProductsByStoreForMerchant,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from '../services/product.service';
+import { createProduct, deleteProduct, getProductImages, getProductsByStore, getProductsByStoreForMerchant, searchProducts, updateProduct } from '../services/product.service';
 
 /**
  * Full product management (all statuses, CRUD) for the merchant's own store.

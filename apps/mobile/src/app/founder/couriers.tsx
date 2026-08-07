@@ -98,7 +98,7 @@ export default function FounderCouriersScreen() {
 
   const handleToggle = async (
     id: string,
-    action: () => Promise<{ error: string | null }>
+    action: any
   ) => {
     setActionLoading(true);
     const { error: err } = await action();
@@ -381,6 +381,7 @@ function ActionRow({
   tokens: ReturnType<typeof useAppTheme>["tokens"];
   icon: React.ReactNode;
 }) {
+  const actionLoading = false;
   return (
     <TouchableOpacity
       onPress={onPress}
