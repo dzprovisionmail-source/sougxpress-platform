@@ -59,7 +59,7 @@ export default function PublicStoreVideoCard(props: PublicVideoCardProps) {
           )}
           <View style={styles.playOverlay}>
             <View style={[styles.playCircle, { backgroundColor: "rgba(0,0,0,0.55)" }]}>
-              <Play size={22} color=TOKENS.colors.light.background fill=TOKENS.colors.light.background />
+              <Play size={22} color={TOKENS.colors.light.bgBase} fill={TOKENS.colors.light.bgBase} />
             </View>
           </View>
           <View style={[styles.providerBadge, { backgroundColor: providerColor }]}>
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   providerText: {
-    color: TOKENS.colors.light.background,
+    color: TOKENS.colors.light.bgBase,
     fontSize: 10,
     fontWeight: "700",
   },

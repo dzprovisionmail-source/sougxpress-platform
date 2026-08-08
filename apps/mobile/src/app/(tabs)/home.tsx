@@ -114,7 +114,7 @@ const HomeScreen = () => {
               ) : (
                 <>
                   {/* Couriers Horizontal Bar */}
-                  <CouriersHorizontalBar />
+                  <CouriersHorizontalBar couriers={[]} onCourierPress={() => {}} onPress={() => {}} />
 
                   {/* Categories */}
                   <View style={styles.section}>

@@ -23,6 +23,7 @@ import {
   getCourierById,
 } from "@/services/founder-courier.service";
 import { vehicleLabel, VEHICLE_LABELS } from "@/utils/courier.utils";
+import { VehicleType } from "@/types/schema-04-couriers";
 import { uploadCourierImage } from "@/services/courierService";
 
 const isRTL = I18nManager.isRTL;
@@ -141,7 +142,7 @@ export default function FounderCourierFormScreen() {
       full_name: form.full_name.trim(),
       phone_number: form.phone_number.trim(),
       bio: form.bio.trim(),
-      vehicle_type: form.vehicle_type,
+      vehicle_type: form.vehicle_type as VehicleType,
       rating: Number(form.rating) || 5.0,
       is_available: form.is_available,
       is_mock: form.is_mock,

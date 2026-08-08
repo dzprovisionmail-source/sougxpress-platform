@@ -288,4 +288,23 @@ function inferExtension(file: File | Blob): string {
   return map[mime] ?? "jpg";
 }
 
+export const getCourierByUserId = async (
+  userId: string
+): Promise<CourierServiceResponse<Courier | null>> => {
+  try {
+    const { data, error } = await supabase
+      .from("couriers")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return { data: (data as Courier) ?? null, error: null };
+  } catch (err: any) {
+    console.error("getCourierByUserId failed:", err);
+    return { data: null, error: err?.message ?? "فشل جلب بيانات الموصل" };
+  }
+};
+
 export { mapVehicleType, vehicleLabel } from "@/utils/courier.utils";

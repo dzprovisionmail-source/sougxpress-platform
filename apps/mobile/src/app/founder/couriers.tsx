@@ -106,7 +106,7 @@ export default function FounderCouriersScreen() {
     if (err) {
       Alert.alert("خطأ", err);
     } else {
-      setSelected((prev) => (prev && prev.id === id ? { ...prev, ...(action === toggleFounderCourierAvailability ? { is_available: !prev.is_available } : {}) } : prev));
+      setSelected((prev) => (prev && prev.id === id ? { ...prev, ...(typeof action === "function" && action.name === toggleFounderCourierAvailability.name ? { is_available: !prev.is_available } : {}) } : prev));
       load(search, true);
     }
   };
@@ -305,6 +305,7 @@ export default function FounderCouriersScreen() {
                     onPress={() => handleToggle(selected.id, () => toggleFounderCourierAvailability(selected.id))}
                     tokens={tokens}
                     icon={selected.is_available ? <XCircle size={16} color={selected.is_available ? colors.warning : colors.success} /> : <Check size={16} color={selected.is_available ? colors.warning : colors.success} />}
+                    disabled={actionLoading}
                   />
                   <ActionRow
                     label={selected.is_verified ? "إزالة التوثيق" : "توثيق"}
@@ -312,6 +313,7 @@ export default function FounderCouriersScreen() {
                     onPress={() => handleToggle(selected.id, () => toggleFounderCourierVerified(selected.id))}
                     tokens={tokens}
                     icon={<Star size={16} color={colors.success} />}
+                    disabled={actionLoading}
                   />
                   <ActionRow
                     label={selected.is_mock ? "إزالة وضع التجربة" : "وضع تجربة"}
@@ -319,6 +321,7 @@ export default function FounderCouriersScreen() {
                     onPress={() => handleToggle(selected.id, () => toggleFounderCourierDemo(selected.id))}
                     tokens={tokens}
                     icon={<Truck size={16} color={colors.warning} />}
+                    disabled={actionLoading}
                   />
                   <ActionRow
                     label={selected.is_pinned ? "إلغاء التثبيت" : "تثبيت"}
@@ -326,6 +329,7 @@ export default function FounderCouriersScreen() {
                     onPress={() => handleToggle(selected.id, () => toggleFounderCourierPinned(selected.id))}
                     tokens={tokens}
                     icon={<Pin size={16} color={colors.primary} />}
+                    disabled={actionLoading}
                   />
                   <ActionRow
                     label={selected.show_on_home ? "إخفاء من الصفحة" : "إظهار على الصفحة"}
@@ -333,6 +337,7 @@ export default function FounderCouriersScreen() {
                     onPress={() => handleToggle(selected.id, () => toggleFounderCourierHomeVisibility(selected.id))}
                     tokens={tokens}
                     icon={selected.show_on_home ? <EyeOff size={16} color={colors.info} /> : <Eye size={16} color={colors.info} />}
+                    disabled={actionLoading}
                   />
                   <ActionRow
                     label="تعديل"
@@ -340,6 +345,7 @@ export default function FounderCouriersScreen() {
                     onPress={() => { setSelected(null); router.push(`/founder/courier-form?id=${selected.id}` as never); }}
                     tokens={tokens}
                     icon={<Edit3 size={16} color={colors.secondary} />}
+                    disabled={actionLoading}
                   />
                   <ActionRow
                     label="حذف"
@@ -347,6 +353,7 @@ export default function FounderCouriersScreen() {
                     onPress={() => handleDelete(selected.id)}
                     tokens={tokens}
                     icon={<Trash2 size={16} color={colors.error} />}
+                    disabled={actionLoading}
                   />
                 </View>
               </View>
@@ -374,17 +381,19 @@ function ActionRow({
   onPress,
   tokens,
   icon,
+  disabled,
 }: {
   label: string;
   color: string;
   onPress: () => void;
   tokens: ReturnType<typeof useAppTheme>["tokens"];
   icon: React.ReactNode;
+  disabled?: boolean;
 }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      disabled={actionLoading}
+      disabled={disabled}
       style={{
         backgroundColor: color + "18",
         borderColor: color,

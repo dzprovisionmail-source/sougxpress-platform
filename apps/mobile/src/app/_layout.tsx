@@ -3,7 +3,6 @@ LogBox.ignoreLogs(["Unable to activate keep awake"]);
 import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { activateKeepAwakeAsync } from "expo-keep-awake";
 
 // SougXpress is Arabic-only — force RTL layout direction app-wide.
 if (!I18nManager.isRTL) {

@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet } from 'react-native';
+import { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -146,7 +145,7 @@ export default function ProductDetailsScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
       <Header
         title={product.name}
-        rightElement={
+        rightContent={
           <TouchableOpacity activeOpacity={0.8} onPress={() => setIsFavorite(!isFavorite)} style={{ padding: 4 }}>
             <Heart size={22} color={isFavorite ? colors.error : colors.textPrimary} fill={isFavorite ? colors.error : "transparent"} />
           </TouchableOpacity>
@@ -173,7 +172,7 @@ export default function ProductDetailsScreen() {
               {product.name}
             </Typography>
             <Badge
-              text={product.is_available !== false ? "متوفر" : "غير متوفر"}
+              label={product.is_available !== false ? "متوفر" : "غير متوفر"}
               variant={product.is_available !== false ? "success" : "error"}
             />
           </View>
@@ -213,7 +212,7 @@ export default function ProductDetailsScreen() {
                   {store.category || "متجر في عين صفراء"}
                 </Typography>
               </View>
-              <Badge text="تصفح المتجر" variant="primary" />
+              <Badge label="تصفح المتجر" variant="primary" />
             </View>
           </TouchableOpacity>
         )}
