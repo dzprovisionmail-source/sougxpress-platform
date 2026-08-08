@@ -112,7 +112,7 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
               await deleteStoreGalleryImageByUrl(storeId, imageUrl);
               onImageDelete(imageUrl);
             } catch (error: any) {
-              Alert.alert('Erreur de suppression', error.message);
+              Alert.alert('خطأ في الحذف', error.message);
             }
           },
         },
