@@ -20,7 +20,6 @@ import {
 import {
   getFounderStoreGallery, addFounderGalleryImage, updateFounderGalleryImage, deleteFounderGalleryImage,
   getFounderStoreVideos, addFounderVideo, deleteFounderVideo,
-  getFounderStoreFacebookVideos, addFounderFacebookVideo,
   getFounderStoreProducts, addFounderProduct, updateFounderProduct, deleteFounderProduct,
 } from "@/services/founder-store-content.service";
 import { StoreGalleryImage, StoreVideo, Product } from "@/types/schema-03-core";

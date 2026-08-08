@@ -175,7 +175,7 @@ export default function CustomerOrdersScreen() {
           </View>
 
           <Badge
-            text={getStatusLabel(item.status)}
+            label={getStatusLabel(item.status)}
             variant={getStatusBadgeVariant(item.status)}
           />
         </View>
@@ -202,7 +202,7 @@ export default function CustomerOrdersScreen() {
                 onPress={() =>
                   router.push({ pathname: "/store-details", params: { id: item.stores?.id } })
                 }
-                variant="subtle"
+                variant="outline"
                 size="sm"
                 icon={<RotateCcw size={14} color={colors.primary} />}
               />
@@ -223,7 +223,7 @@ export default function CustomerOrdersScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
-      <Header title="طلباتي" showBack={false} />
+      <Header title="طلباتي" leftContent={null} />
 
       {error ? (
         <View style={styles.centered}>
@@ -241,7 +241,7 @@ export default function CustomerOrdersScreen() {
           }
           ListEmptyComponent={
             <EmptyState
-              type="empty-orders"
+              type="no-orders"
               onAction={() => router.push("/customer/home")}
             />
           }
@@ -264,7 +264,7 @@ export default function CustomerOrdersScreen() {
             <View style={[styles.sheetRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
               <Typography variant="body" color="secondary">الحالة الحالية</Typography>
               <Badge
-                text={getStatusLabel(selectedOrder.status)}
+                label={getStatusLabel(selectedOrder.status)}
                 variant={getStatusBadgeVariant(selectedOrder.status)}
               />
             </View>

@@ -110,7 +110,7 @@ export interface CreateFounderCourierParams {
 export async function createFounderCourier(
   params: CreateFounderCourierParams
 ): Promise<CourierServiceResponse<FounderCourier>> {
-  const result = await invokeCourierManagement("create", params);
+  const result = await invokeCourierManagement("create", params as unknown as Record<string, unknown>);
   if (result.error || !result.data) {
     return { data: null, error: result.error };
   }

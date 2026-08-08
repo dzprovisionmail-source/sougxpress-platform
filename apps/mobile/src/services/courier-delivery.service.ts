@@ -21,7 +21,7 @@ export const DELIVERY_TRANSITIONS: Record<DeliveryStatus, DeliveryStatus[]> = {
 export interface CourierDelivery {
   id: string;
   order_id: string;
-  courier_id: string;
+  driver_id: string;
   status: DeliveryStatus;
   customer_id: string;
   store_id: string;
