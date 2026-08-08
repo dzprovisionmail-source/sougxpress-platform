@@ -12,17 +12,25 @@ export default function CouriersHorizontalBar({ couriers, onCourierPress, onPres
   const { colors } = useAppTheme();
   const [liveCouriers, setLiveCouriers] = useState<Array<{ id: string; full_name: string; vehicle_type: string; rating: number; avatar_url?: string | null; is_available?: boolean; is_mock?: boolean }>>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const fetchCouriers = async () => {
       try {
+        setError(null);
         const res = await getAvailableCouriers();
-        if (!cancelled && res.data && res.data.length > 0) {
-          setLiveCouriers(res.data);
+        if (!cancelled) {
+          if (res.error) {
+            setError(res.error);
+          } else if (res.data && res.data.length > 0) {
+            setLiveCouriers(res.data);
+          }
         }
       } catch (e) {
-        console.warn("CouriersHorizontalBar fetch failed:", e);
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "فشل جلب قائمة الموصلين");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -51,8 +59,26 @@ export default function CouriersHorizontalBar({ couriers, onCourierPress, onPres
     );
   }
 
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>الموصلون المتاحون</Text>
+        <View style={styles.loadingRow}>
+          <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+        </View>
+      </View>
+    );
+  }
+
   if (list.length === 0) {
-    return null;
+    return (
+      <View style={styles.container}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>الموصلون المتاحون</Text>
+        <View style={styles.loadingRow}>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>لا يوجد موصلون متاحون حالياً</Text>
+        </View>
+      </View>
+    );
   }
 
   const handlePress = onCourierPress || onPress;
@@ -193,6 +219,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: TOKENS.spacing.lg,
   },
   loadingText: {
+    fontSize: TOKENS.typography.sizes.sm,
+    fontFamily: TOKENS.typography.families.arabic,
+  },
+  errorText: {
     fontSize: TOKENS.typography.sizes.sm,
     fontFamily: TOKENS.typography.families.arabic,
   },
