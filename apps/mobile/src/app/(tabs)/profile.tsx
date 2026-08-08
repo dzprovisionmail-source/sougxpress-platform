@@ -28,7 +28,7 @@ const ProfileScreen = () => {
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      Alert.alert('Erreur de déconnexion', error.message);
+      Alert.alert('خطأ في تسجيل الخروج', error.message);
     } else {
       // Navigate to login or home screen
     }
@@ -44,7 +44,7 @@ const ProfileScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement du profil...</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>جاري تحميل الملف الشخصي...</Text>
       </View>
     );
   }
@@ -52,7 +52,7 @@ const ProfileScreen = () => {
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text style={[styles.errorText, { color: colors.error }]}>Erreur: {error}</Text>
+        <Text style={[styles.errorText, { color: colors.error }]}>خطأ: {error}</Text>
       </View>
     );
   }
@@ -70,39 +70,39 @@ const ProfileScreen = () => {
         description="أنت من أوائل مستخدمي Soug-XPRESS"
       />
 
-      {/* Informations personnelles */}
+      {/* معلوماتي */}
       <ProfileCard icon={<BadgeInfo color={colors.primary} size={iconSizes.default} />} title="معلوماتي">
         <ProfileRow icon={<Smartphone color={colors.textSecondary} size={iconSizes.small} />} label="رقم الهاتف" value={profile?.phone || ''} />
         <ProfileRow icon={<Mail color={colors.textSecondary} size={iconSizes.small} />} label="البريد الإلكتروني" value={profile?.email || ''} />
         <ProfileRow icon={<Building2 color={colors.textSecondary} size={iconSizes.small} />} label="المدينة" value={profile?.city || ''} />
         <ProfileRow icon={<MapPinned color={colors.textSecondary} size={iconSizes.small} />} label="الحي" value={profile?.neighborhood || ''} />
         <ProfileRow icon={<House color={colors.textSecondary} size={iconSizes.small} />} label="العنوان" value={profile?.address || ''} />
-        <ProfileRow icon={<Map color={colors.textSecondary} size={iconSizes.small} />} label="الموقع" value="Voir sur la carte" />
+        <ProfileRow icon={<Map color={colors.textSecondary} size={iconSizes.small} />} label="الموقع" value="عرض على الخريطة" />
         <Button title="تعديل" onPress={() => { /* Handle edit */ }} variant="outline" />
       </ProfileCard>
 
-      {/* Mes commandes */}
+      {/* طلباتي */}
       <ProfileCard icon={<Package color={colors.primary} size={iconSizes.default} />} title="طلباتي">
         <Button icon={<Package color={colors.textSecondary} size={iconSizes.small} />} title="الطلبات الحالية" onPress={() => { /* Navigate to current orders */ }} variant="ghost" />
         <Button icon={<PackageOpen color={colors.textSecondary} size={iconSizes.small} />} title="الطلبات السابقة" onPress={() => { /* Navigate to past orders */ }} variant="ghost" />
         <Button icon={<PackageCheck color={colors.textSecondary} size={iconSizes.small} />} title="الطلبات الملغاة" onPress={() => { /* Navigate to cancelled orders */ }} variant="ghost" />
       </ProfileCard>
 
-      {/* Favoris */}
+      {/* المفضلة */}
       <ProfileCard icon={<Heart color={colors.primary} size={iconSizes.default} />} title="المفضلة">
         <Button icon={<Store color={colors.textSecondary} size={iconSizes.small} />} title="المتاجر" onPress={() => { /* Navigate to favorite stores */ }} variant="ghost" />
         <Button icon={<ShoppingBag color={colors.textSecondary} size={iconSizes.small} />} title="المنتجات" onPress={() => { /* Navigate to favorite products */ }} variant="ghost" />
         <Button icon={<Bike color={colors.textSecondary} size={iconSizes.small} />} title="الموصلون" onPress={() => { /* Navigate to favorite drivers */ }} variant="ghost" />
       </ProfileCard>
 
-      {/* Notifications */}
+      {/* الإشعارات */}
       <ProfileCard icon={<Bell color={colors.primary} size={iconSizes.default} />} title="الإشعارات">
         <Button icon={<Bell color={colors.textSecondary} size={iconSizes.small} />} title="إشعارات الطلبات" onPress={() => { /* Toggle order notifications */ }} variant="ghost" />
         <Button icon={<Bell color={colors.textSecondary} size={iconSizes.small} />} title="العروض" onPress={() => { /* Toggle offers notifications */ }} variant="ghost" />
         <Button icon={<Bell color={colors.textSecondary} size={iconSizes.small} />} title="أخبار المنصة" onPress={() => { /* Toggle platform news notifications */ }} variant="ghost" />
       </ProfileCard>
 
-      {/* Aide */}
+      {/* المساعدة */}
       <ProfileCard icon={<LifeBuoy color={colors.primary} size={iconSizes.default} />} title="المساعدة">
         <Button icon={<LifeBuoy color={colors.textSecondary} size={iconSizes.small} />} title="تواصل معنا" onPress={() => { /* Contact support */ }} variant="ghost" />
         <Button icon={<BadgeInfo color={colors.textSecondary} size={iconSizes.small} />} title="الأسئلة الشائعة" onPress={() => { /* Navigate to FAQ */ }} variant="ghost" />
@@ -110,13 +110,13 @@ const ProfileScreen = () => {
         <Button icon={<ShieldCheck color={colors.textSecondary} size={iconSizes.small} />} title="شروط الاستخدام" onPress={() => { /* Navigate to terms of use */ }} variant="ghost" />
       </ProfileCard>
 
-      {/* Sécurité */}
+      {/* الأمان */}
       <ProfileCard icon={<ShieldCheck color={colors.primary} size={iconSizes.default} />} title="الأمان">
         <Button icon={<Shield color={colors.textSecondary} size={iconSizes.small} />} title="تغيير كلمة المرور" onPress={() => { /* Change password */ }} variant="ghost" />
         <Button icon={<ShieldCheck color={colors.textSecondary} size={iconSizes.small} />} title="حذف الحساب" onPress={() => { /* Delete account */ }} variant="ghost" />
       </ProfileCard>
 
-      {/* Déconnexion */}
+      {/* تسجيل الخروج */}
       <View style={styles.logoutButtonContainer}>
         <Button icon={<LogOut color={colors.error} size={iconSizes.default} />} title="تسجيل الخروج" onPress={handleLogout} variant="danger" />
       </View>

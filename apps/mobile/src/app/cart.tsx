@@ -26,7 +26,7 @@ const CartScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement du panier...</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>جاري تحميل السلة...</Text>
       </View>
     );
   }

@@ -39,7 +39,7 @@ const useCart = () => {
   };
 
   const subtotal = cartItems.reduce((acc, item) => acc + (item.product.price_minor * item.quantity), 0);
-  const deliveryFee = 20000; // Placeholder: 200.00 DZD in minor units
+  const deliveryFee = 0; // TODO: integrate store/zone delivery fee
   const total = subtotal + deliveryFee;
 
   return {

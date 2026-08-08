@@ -59,7 +59,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ avatarUrl, onUpload, si
       onUpload(publicUrlData.publicUrl);
 
     } catch (error: any) {
-      Alert.alert('Erreur d\'upload', error.message);
+      Alert.alert('خطأ في الرفع', error.message);
     } finally {
       setUploading(false);
     }

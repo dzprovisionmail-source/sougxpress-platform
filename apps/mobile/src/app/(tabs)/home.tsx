@@ -99,7 +99,7 @@ const HomeScreen = () => {
                       id={store.id}
                       name={store.name}
                       category={store.category}
-                      rating="4.5"
+                      rating={store.rating || "4.5"}
                       coverImage={store.cover_url}
                       isOpen={store.is_open}
                       isFeatured={(store as any).is_featured}
@@ -143,7 +143,7 @@ const HomeScreen = () => {
                        name={store.name}
                        category={getArabicCategoryName(store.main_category || store.category)}
                        subcategory={store.sub_category}
-                       rating="4.5"
+                       rating={store.rating || "4.5"}
                        coverImage={store.cover_url}
                        isOpen={store.is_open}
                        isFeatured={store.is_featured}
@@ -163,7 +163,7 @@ const HomeScreen = () => {
                        name={store.name}
                        category={getArabicCategoryName(store.main_category || store.category)}
                        subcategory={store.sub_category}
-                       rating="4.5"
+                       rating={store.rating || "4.5"}
                        coverImage={store.cover_url}
                        isOpen={store.is_open}
                        isFeatured={store.is_featured}
@@ -183,7 +183,7 @@ const HomeScreen = () => {
                        name={store.name}
                        category={getArabicCategoryName(store.main_category || store.category)}
                        subcategory={store.sub_category}
-                       rating="4.5"
+                       rating={store.rating || "4.5"}
                        coverImage={store.cover_url}
                        isOpen={store.is_open}
                        isFeatured={store.is_featured}
@@ -203,7 +203,7 @@ const HomeScreen = () => {
                        name={store.name}
                        category={getArabicCategoryName(store.main_category || store.category)}
                        subcategory={store.sub_category}
-                       rating="4.5"
+                       rating={store.rating || "4.5"}
                        coverImage={store.cover_url}
                        isOpen={store.is_open}
                        isFeatured={store.is_featured}
