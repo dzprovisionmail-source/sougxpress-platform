@@ -10,7 +10,7 @@ import { VEHICLE_ICONS, mapVehicleType, vehicleLabel } from "@/utils/courier.uti
 export default function CouriersHorizontalBar({ couriers, onCourierPress, onPress }) {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const [liveCouriers, setLiveCouriers] = useState<Array<{ id: string; full_name: string; vehicle_type: string; rating: number; avatar_url?: string | null; is_available?: boolean; is_mock?: boolean }>>([]);
+  const [liveCouriers, setLiveCouriers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function CouriersHorizontalBar({ couriers, onCourierPress, onPres
 
   const list = (couriers && couriers.length > 0) ? couriers : liveCouriers;
 
-  const getIcon = (type: string, size: number = 13) => {
+  const getIcon = (type, size = 13) => {
     const vehicleType = mapVehicleType(type);
     const Icon = VEHICLE_ICONS[vehicleType] || Bike;
     return <Icon size={size} color={colors.primary} />;

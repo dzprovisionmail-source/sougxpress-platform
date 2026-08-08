@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { StyleSheet } from 'react-native';
 import {
-  StyleSheet,
   View,
   ScrollView,
   TouchableOpacity,
@@ -204,7 +204,7 @@ export default function StoreDetailsScreen() {
         {/* Media Section: Photos / Videos Tabs (above products) */}
         <View style={{ marginTop: TOKENS.spacing.lg, paddingHorizontal: TOKENS.spacing.md }}>
           <View style={{ flexDirection: "row-reverse", gap: TOKENS.spacing.sm, marginBottom: TOKENS.spacing.sm }}>
-            <TouchableOpacity
+            <TouchableOpacity activeOpacity={0.8}
               onPress={() => setMediaTab("photos")}
               style={{
                 paddingVertical: 6,
@@ -223,7 +223,7 @@ export default function StoreDetailsScreen() {
                 صور
               </Typography>
             </TouchableOpacity>
-            <TouchableOpacity
+            <TouchableOpacity activeOpacity={0.8}
               onPress={() => setMediaTab("videos")}
               style={{
                 paddingVertical: 6,
@@ -253,7 +253,7 @@ export default function StoreDetailsScreen() {
                 contentContainerStyle={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 12 }}
               >
                 {gallery.map((img) => (
-                  <TouchableOpacity key={img.id} onPress={() => setViewingMediaItem(img)} style={{ alignItems: "center" }}>
+                  <TouchableOpacity activeOpacity={0.8} key={img.id} onPress={() => setViewingMediaItem(img)} style={{ alignItems: "center" }}>
                     <Image
                       source={{ uri: img.image_url }}
                       style={{ width: 140, height: 140, borderRadius: TOKENS.radius.sm, borderWidth: 1, borderColor: colors.borderSubtle }}
@@ -315,7 +315,7 @@ export default function StoreDetailsScreen() {
             {categories.map((cat) => {
               const active = cat === selectedCategory;
               return (
-                <TouchableOpacity
+                <TouchableOpacity activeOpacity={0.8}
                   key={cat}
                   onPress={() => setSelectedCategory(cat)}
                   style={[

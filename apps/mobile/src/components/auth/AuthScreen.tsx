@@ -10,8 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Typography, Input, Button, AinSefraZoneSelect, SimpleSelect } from "../ui";
-import type { SelectOption } from "../ui";
+import { Typography, Input, Button, AinSefraZoneSelect, SimpleSelect, type SelectOption } from "../ui";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
