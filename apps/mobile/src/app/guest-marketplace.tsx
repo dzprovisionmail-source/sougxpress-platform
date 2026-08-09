@@ -155,7 +155,11 @@ export default function GuestMarketplaceScreen() {
         </View>
 
         {/* Couriers Horizontal Bar */}
+<<<<<<< ours
         <CouriersHorizontalBar couriers={[]} onCourierPress={() => {}} onPress={() => {}} />
+=======
+        <CouriersHorizontalBar couriers={[]} onPress={() => router.push('/customer/couriers')} />
+>>>>>>> theirs
 
         {/* Horizontal Category List */}
         <View style={styles.categoriesSection}>
