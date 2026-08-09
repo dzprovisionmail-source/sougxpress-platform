@@ -14,13 +14,9 @@ export default function RootLayout() {
   useEffect(() => {
     if (__DEV__) {
       import("expo-keep-awake")
-        .then(({ activateKeepAwakeAsync }) => {
-          activateKeepAwakeAsync().catch(() => {
-            // Silently ignore keep-awake failures in development
-          });
-        })
+        .then(({ activateKeepAwakeAsync }) => activateKeepAwakeAsync())
         .catch(() => {
-          // Silently ignore if expo-keep-awake is not installed
+          // Silently ignore keep-awake failures in development
         });
     }
   }, []);
