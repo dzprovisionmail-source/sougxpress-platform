@@ -1,4 +1,5 @@
 import React from "react";
+import { TOKENS } from "@/constants/tokens";
 import {
   View,
   Text,
@@ -18,7 +19,6 @@ import { router } from "expo-router";
 import { ArrowRight, Bell, CircleUserRound, LogOut } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { LOGO_DARK, LOGO_WORDMARK } from "@/constants/brand";
-import { TOKENS } from "@/constants/tokens";
 import { supabase } from "@/lib/supabase";
 
 interface AdminPageShellProps {

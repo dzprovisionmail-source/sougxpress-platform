@@ -1,0 +1,415 @@
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  I18nManager,
+  Alert,
+  Share,
+  Image,
+  Linking,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeft, Phone, Star, Share2, Heart, Image as ImageIcon, ClipboardList, TrendingUp } from "lucide-react-native";
+import {
+  Typography,
+  Avatar,
+  Rating,
+  Button,
+  EmptyState,
+  Badge,
+  SectionHeader,
+  Card,
+} from "@/components/ui";
+import { useAppTheme } from "@/contexts/ThemeContext";
+import { TOKENS } from "@/constants/tokens";
+import { getCourierById, toggleFavoriteCourier } from "@/services/courierService";
+import { supabase } from "@/lib/supabase";
+import { getVehicleIcon, isCourierAvailable, vehicleLabel } from "@/utils/courier.utils";
+
+const isRTL = I18nManager.isRTL;
+
+const getStyles = (colors: ReturnType<typeof useAppTheme>["colors"]) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+    },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    scrollContent: {
+      padding: TOKENS.spacing.lg,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: TOKENS.spacing.lg,
+    },
+    profileHero: {
+      alignItems: "center",
+      marginBottom: TOKENS.spacing.xl,
+      position: "relative",
+    },
+    avatarRing: {
+      padding: 4,
+      borderRadius: TOKENS.radius.full,
+      borderWidth: 3,
+      borderColor: colors.primary,
+    },
+    badgeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: TOKENS.spacing.sm,
+      marginTop: TOKENS.spacing.sm,
+      flexWrap: "wrap",
+      justifyContent: "center",
+    },
+    section: {
+      marginBottom: TOKENS.spacing.xl,
+    },
+    sectionHeader: {
+      marginBottom: TOKENS.spacing.sm,
+    },
+    bio: {
+      lineHeight: 24,
+    },
+    vehiclePhoto: {
+      width: "100%",
+      height: 200,
+      borderRadius: TOKENS.radius.lg,
+    },
+    contactRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: TOKENS.spacing.sm,
+      paddingVertical: TOKENS.spacing.sm,
+      paddingHorizontal: TOKENS.spacing.md,
+      borderRadius: TOKENS.radius.md,
+      backgroundColor: `${colors.primary}08`,
+      borderWidth: 1,
+      borderColor: `${colors.primary}18`,
+    },
+    actions: {
+      flexDirection: "row",
+      gap: TOKENS.spacing.md,
+      marginTop: TOKENS.spacing.lg,
+    },
+    actionBtn: {
+      flex: 1,
+    },
+    futureSection: {
+      padding: TOKENS.spacing.lg,
+      borderRadius: TOKENS.radius.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgElevated,
+      alignItems: "center",
+      gap: TOKENS.spacing.sm,
+    },
+    futureIcon: {
+      opacity: 0.4,
+    },
+    futureLabel: {
+      opacity: 0.5,
+    },
+    vehicleChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: `${TOKENS.colors.brandPrimary}12`,
+      paddingHorizontal: TOKENS.spacing.sm,
+      paddingVertical: TOKENS.spacing.xs,
+      borderRadius: TOKENS.radius.full,
+    },
+    statsCard: {
+      padding: TOKENS.spacing.md,
+    },
+    statsGrid: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      gap: TOKENS.spacing.md,
+    },
+    statBox: {
+      alignItems: "center",
+      gap: TOKENS.spacing.xs,
+      padding: TOKENS.spacing.sm,
+      borderRadius: TOKENS.radius.md,
+      backgroundColor: `${colors.primary}08`,
+      flex: 1,
+    },
+  });
+
+export default function CourierProfile() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
+
+  const [courier, setCourier] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserId(user.id);
+    };
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    const load = async () => {
+      setLoading(true);
+      const { data, error } = await getCourierById(id);
+      if (data) setCourier(data);
+      else if (error) Alert.alert("خطأ", error);
+      setLoading(false);
+    };
+    load();
+  }, [id]);
+
+  const handleCall = () => {
+    if (courier?.phone_number) {
+      Linking.openURL(`tel:${courier.phone_number}`).catch(() => {
+        Alert.alert("خطأ", "لا يمكن فتح تطبيق الاتصال");
+      });
+    }
+  };
+
+  const handleMessage = () => {
+    if (courier?.phone_number) {
+      Alert.alert("مراسلة", `فتح محادثة مع ${courier.full_name}`);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!userId) {
+      Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لإضافة الموصل إلى المفضلة");
+      return;
+    }
+    const previousIsFavorite = courier.is_favorite;
+    setCourier((prev: any) => ({ ...prev, is_favorite: !prev.is_favorite }));
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData?.user?.id;
+      if (!currentUserId) {
+        Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لإضافة الموصل إلى المفضلة");
+        setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));
+        return;
+      }
+      const { error } = await toggleFavoriteCourier(currentUserId, courier.id);
+      if (error) {
+        Alert.alert("خطأ", error);
+        setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));
+        return;
+      }
+      const { data: updatedCourier } = await getCourierById(courier.id);
+      if (updatedCourier) {
+        setCourier((prev: any) => ({ ...prev, is_favorite: updatedCourier.is_favorite }));
+      }
+    } catch (e) {
+      console.error("toggleFavorite failed:", e);
+      setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `تحقق من ${courier?.full_name} على SougXPRESS!`,
+        title: courier?.full_name,
+      });
+    } catch (e) {
+      console.error("Share failed:", e);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.primary} size="large" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!courier) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+        <View style={styles.center}>
+          <EmptyState title="لم يتم العثور على الموصل" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const vehicleType = vehicleLabel(courier.vehicle_type);
+  const available = isCourierAvailable(courier);
+
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+            accessibilityLabel="رجوع"
+          >
+            <ArrowLeft size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <Typography variant="h2" align="center">
+            ملف الموصل
+          </Typography>
+          <View style={{ width: 24 }} />
+        </View>
+
+        <View style={styles.profileHero}>
+          <View style={styles.avatarRing}>
+            <Avatar uri={courier.avatar_url} name={courier.full_name} size="xl" />
+          </View>
+          <Typography variant="h1" align="center" style={{ marginTop: TOKENS.spacing.md }}>
+            {courier.full_name}
+          </Typography>
+          <View style={styles.badgeRow}>
+            <Badge variant={available ? "success" : "error"} label={available ? "متاح" : "غير متاح"} />
+            {courier.is_mock && <Badge variant="accent" label="تجريبي" />}
+            <View style={[styles.vehicleChip, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              {getVehicleIcon(courier.vehicle_type, colors.primary, 16)}
+              <Typography variant="caption" color="secondary" style={{ marginHorizontal: TOKENS.spacing.xs }}>
+                {vehicleType}
+              </Typography>
+            </View>
+          </View>
+          <Rating rating={courier.rating} size="md" showBadge style={{ marginTop: TOKENS.spacing.sm }} />
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="الإحصائيات" icon={<TrendingUp size={18} color={colors.primary} />} />
+          <Card variant="outlined" style={styles.statsCard}>
+            <View style={styles.statsGrid}>
+              <View style={[styles.statBox, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <Star size={18} color="#FFD700" fill="#FFD700" />
+                <View style={{ marginRight: TOKENS.spacing.sm }}>
+                  <Typography variant="h3">{typeof courier.rating === "number" ? courier.rating.toFixed(1) : courier.rating}</Typography>
+                  <Typography variant="caption" color="secondary">التقييم</Typography>
+                </View>
+              </View>
+              <View style={[styles.statBox, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <ClipboardList size={18} color={colors.primary} />
+                <View style={{ marginRight: TOKENS.spacing.sm }}>
+                  <Typography variant="h3">{courier.delivery_count ?? 0}</Typography>
+                  <Typography variant="caption" color="secondary">توصيلات</Typography>
+                </View>
+              </View>
+            </View>
+          </Card>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="نبذة" />
+          <Typography style={[styles.bio, { color: colors.textPrimary }]}>{courier.bio || "لا توجد نبذة"}</Typography>
+        </View>
+
+        {courier.vehicle_photo_url ? (
+          <View style={styles.section}>
+            <SectionHeader title="صورة المركبة" />
+            <Image
+              source={{ uri: courier.vehicle_photo_url }}
+              style={styles.vehiclePhoto}
+              resizeMode="cover"
+              onError={() => {}}
+              accessibilityLabel="صورة المركبة"
+            />
+          </View>
+        ) : null}
+
+        <View style={styles.section}>
+          <SectionHeader title="جهة الاتصال" />
+          <TouchableOpacity onPress={handleCall} activeOpacity={0.8}>
+            <View style={styles.contactRow}>
+              <Phone size={18} color={colors.primary} />
+              <Typography style={{ flex: 1, textAlign: isRTL ? "right" : "left" }}>{courier.phone_number}</Typography>
+              <Badge variant="accent" label="اتصال" />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="آراء العملاء" icon={<Star size={18} color={colors.primary} />} />
+          <Card variant="outlined" style={styles.futureSection}>
+            <Star size={32} color={colors.textDisabled} />
+            <Typography variant="body" color="secondary" align="center">
+              ستظهر آراء العملاء هنا
+            </Typography>
+            <Typography variant="caption" color="secondary" align="center">
+              قريباً
+            </Typography>
+          </Card>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="معرض الصور" icon={<ImageIcon size={18} color={colors.primary} />} />
+          <Card variant="outlined" style={styles.futureSection}>
+            <ImageIcon size={32} color={colors.textDisabled} />
+            <Typography variant="body" color="secondary" align="center">
+              ستظهر معرض الصور هنا
+            </Typography>
+            <Typography variant="caption" color="secondary" align="center">
+              قريباً
+            </Typography>
+          </Card>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="سجل التوصيلات" icon={<ClipboardList size={18} color={colors.primary} />} />
+          <Card variant="outlined" style={styles.futureSection}>
+            <ClipboardList size={32} color={colors.textDisabled} />
+            <Typography variant="body" color="secondary" align="center">
+              ستظهر سجل التوصيلات هنا
+            </Typography>
+            <Typography variant="caption" color="secondary" align="center">
+              قريباً
+            </Typography>
+          </Card>
+        </View>
+
+        <View style={[styles.actions, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+          <Button
+            title="اتصال"
+            icon={<Phone size={18} color={colors.textOnBrand} />}
+            onPress={handleCall}
+            style={styles.actionBtn}
+            accessibilityLabel="اتصال بالموصل"
+          />
+          <Button
+            title={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+            variant="outline"
+            icon={<Heart size={18} color={colors.primary} />}
+            onPress={handleToggleFavorite}
+            style={styles.actionBtn}
+            disabled={!userId}
+            accessibilityLabel={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+          />
+          <Button
+            title="مشاركة"
+            variant="ghost"
+            icon={<Share2 size={18} color={colors.primary} />}
+            onPress={handleShare}
+            style={styles.actionBtn}
+            accessibilityLabel="مشاركة الملف"
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}

@@ -1,7 +1,6 @@
- 
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { CircleUserRound, Store, Bike, Home } from 'lucide-react-native';
+import { CircleUserRound, ShoppingCart, Heart, Home } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
@@ -23,24 +22,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="favorites"
+        options={{
+          title: 'المفضلة',
+          tabBarIcon: ({ color }) => <Heart color={color} size={24} />,
+        }}
+      />
+      <Tabs.Screen
+        name="cart"
+        options={{
+          title: 'السلة',
+          tabBarIcon: ({ color }) => <ShoppingCart color={color} size={24} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'حسابي',
           tabBarIcon: ({ color }) => <CircleUserRound color={color} size={24} />,
-        }}
-      />
-      <Tabs.Screen
-        name="store"
-        options={{
-          title: 'متجري',
-          tabBarIcon: ({ color }) => <Store color={color} size={24} />,
-        }}
-      />
-      <Tabs.Screen
-        name="driver"
-        options={{
-          title: 'ملفي المهني',
-          tabBarIcon: ({ color }) => <Bike color={color} size={24} />,
         }}
       />
     </Tabs>
