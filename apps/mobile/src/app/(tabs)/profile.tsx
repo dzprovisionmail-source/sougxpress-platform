@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import {
   BadgeInfo, Smartphone, Mail, Building2, MapPinned, House, Map,
   Package, PackageOpen, PackageCheck, Heart, Store, ShoppingBag, Bike,
@@ -22,6 +22,7 @@ import { typography } from '@/design/typography';
 import { iconSizes } from '@/design/icons';
 
 const ProfileScreen = () => {
+  const router = useRouter();
   const { profile, loading, error, updateProfile } = useProfile();
   const { colors } = useAppTheme();
 
@@ -44,7 +45,25 @@ const ProfileScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Chargement du profil...</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>جاري التحميل...</Text>
+      </View>
+    );
+  }
+
+  if (error === "User not logged in") {
+    return (
+      <View style={styles.centered}>
+        <Typography variant="h3" align="center" style={{ marginBottom: spacing.md }}>
+          تسجيل الدخول
+        </Typography>
+        <Typography variant="body" color="secondary" align="center" style={{ marginBottom: spacing.lg }}>
+          يرجى تسجيل الدخول لعرض حسابك
+        </Typography>
+        <Button
+          title="تسجيل الدخول"
+          onPress={() => router.push("/login")}
+          icon={<LogIn size={18} color={colors.textOnBrand} />}
+        />
       </View>
     );
   }
@@ -52,7 +71,7 @@ const ProfileScreen = () => {
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text style={[styles.errorText, { color: colors.error }]}>Erreur: {error}</Text>
+        <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
       </View>
     );
   }
