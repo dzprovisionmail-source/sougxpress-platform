@@ -63,7 +63,7 @@ const CheckoutScreen = () => {
           />
           <Button
             title="العودة للرئيسية"
-            onPress={() => router.push('/customer/home')}
+            onPress={() => router.push('/(tabs)/home')}
             variant="outline"
             style={styles.successButton}
           />
