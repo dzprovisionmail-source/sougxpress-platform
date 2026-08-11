@@ -7,7 +7,7 @@ export const getMerchant = async (merchantId: string): Promise<Merchant | null> 
     .from("merchants")
     .select("*", { count: "exact" })
     .eq("id", merchantId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("Error fetching merchant:", error);

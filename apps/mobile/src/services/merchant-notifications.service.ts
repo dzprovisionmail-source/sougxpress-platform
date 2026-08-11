@@ -12,7 +12,7 @@ export interface MerchantNotification {
 export const getMerchantNotifications = async (): Promise<MerchantNotification[]> => {
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, type, title, message, is_read, created_at")
+    .select("id, type, title, body, is_read, created_at")
     .order("created_at", { ascending: false })
     .limit(60);
 
