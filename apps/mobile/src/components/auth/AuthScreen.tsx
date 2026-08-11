@@ -281,7 +281,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     setApprovalStatus(status);
 
     if (status === "active") {
-      if (role === "customer") router.replace("/(tabs)/home");
+      if (role === "customer") router.replace("/customer/home");
       else if (role === "merchant") router.replace("/merchant/dashboard");
       else if (role === "driver") router.replace("/driver/dashboard");
     }

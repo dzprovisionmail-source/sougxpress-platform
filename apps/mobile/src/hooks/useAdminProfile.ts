@@ -60,7 +60,7 @@ export function useAdminProfile(): UseAdminProfileResult {
 
       if (!["admin", "founder"].includes(role)) {
         const roleRoutes: Record<string, string> = {
-          customer: "/(tabs)/home",
+          customer: "/customer/home",
           merchant: "/merchant/dashboard",
           driver: "/driver/dashboard",
         };

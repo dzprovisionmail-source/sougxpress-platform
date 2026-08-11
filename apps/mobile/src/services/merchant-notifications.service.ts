@@ -4,7 +4,7 @@ export interface MerchantNotification {
   id: string;
   type: string;
   title: string;
-  message: string;
+  body: string;
   is_read: boolean;
   created_at: string;
 }

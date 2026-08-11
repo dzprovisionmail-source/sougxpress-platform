@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Users, LogIn } from 'lucide-react-native';
+import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn } from 'lucide-react-native';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button } from '@/components/ui';
 import { useAppTheme } from '@/contexts/ThemeContext';
@@ -436,17 +436,23 @@ const HomeScreen = () => {
 
         {/* Couriers Banner */}
         <TouchableOpacity
-          style={[styles.couriersBanner, { backgroundColor: colors.primary + "12" }]}
+          style={[
+            styles.couriersBanner,
+            {
+              backgroundColor: colors.bgElevated,
+              borderLeftColor: colors.primary,
+              borderLeftWidth: 4,
+            },
+          ]}
           onPress={() => router.push('/couriers')}
           activeOpacity={0.8}
         >
-          <View style={[styles.couriersBannerContent, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <View style={[styles.couriersBannerText, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-              <Text style={[styles.couriersBannerTitle, { color: colors.textPrimary }]}>الموصلون المتاحون</Text>
-              <Text style={[styles.couriersBannerSubtitle, { color: colors.textSecondary }]}>استعرض الموصلين المتاحين</Text>
+          <View style={[styles.couriersBannerContent, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+            <View style={styles.couriersBannerText}>
+              <Text style={[styles.couriersBannerTitle, { color: colors.textPrimary, fontWeight: '700' }]}>الموصلون المتاحون</Text>
             </View>
-            <View style={[styles.couriersBannerIcon, { backgroundColor: colors.primary + "18" }]}>
-              <Users size={24} color={colors.primary} />
+            <View style={styles.couriersBannerIcon}>
+              <Bike size={20} color={colors.primary} />
             </View>
           </View>
         </TouchableOpacity>
@@ -761,12 +767,14 @@ const styles = StyleSheet.create({
   },
   couriersBanner: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    borderRadius: radius.medium,
-    padding: spacing.md,
+    marginVertical: spacing.sm,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     ...shadows.small,
   },
   couriersBannerContent: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -775,18 +783,10 @@ const styles = StyleSheet.create({
   },
   couriersBannerTitle: {
     ...typography.title,
-    marginBottom: spacing.xs,
-  },
-  couriersBannerSubtitle: {
-    ...typography.caption,
+    fontWeight: '700',
   },
   couriersBannerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
+    marginLeft: spacing.sm,
   },
   loginBanner: {
     marginHorizontal: spacing.lg,
