@@ -153,7 +153,7 @@ export default function CustomerFavoritesScreen() {
         {favorites.length === 0 ? (
           <EmptyState
             type="empty-favorites"
-            onAction={() => router.push("/customer/home")}
+            onAction={() => router.push("/home")}
           />
         ) : (
           <View style={styles.grid}>

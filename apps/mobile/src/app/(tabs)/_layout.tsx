@@ -8,7 +8,6 @@ import {
   Heart,
   ShoppingCart,
   CircleUserRound,
-  LogIn,
   Bike,
   Store,
   ClipboardList,
@@ -60,6 +59,7 @@ export default function TabLayout() {
           { name: 'home', title: 'الرئيسية', Icon: Home },
           { name: 'favorites', title: 'المفضلة', Icon: Heart },
           { name: 'cart', title: 'السلة', Icon: ShoppingCart },
+          { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
         ];
       case 'courier':
@@ -71,23 +71,20 @@ export default function TabLayout() {
       case 'merchant':
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
-          { name: 'my-store', title: 'متجري', Icon: Store },
           { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+          { name: 'my-store', title: 'متجري', Icon: Store },
+          { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
         ];
       case 'guest':
       default:
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
           { name: 'favorites', title: 'المفضلة', Icon: Heart },
-          { name: 'cart', title: 'السلة', Icon: ShoppingCart },
-          { name: 'login', title: 'تسجيل الدخول', Icon: LogIn },
+          { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+          { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
         ];
     }
   })();
-
-  if (loading) {
-    return null;
-  }
 
   return (
     <Tabs
@@ -116,14 +113,20 @@ export default function TabLayout() {
           name={screen.name}
           options={{
             title: screen.title,
-            tabBarIcon: ({ color }) => <ScreenIcon color={color} Icon={screen.Icon} />,
+            tabBarIcon: ({ color, size }) => <ScreenIcon color={color} size={size} Icon={screen.Icon} />,
           }}
         />
       ))}
+
+      <Tabs.Screen name="couriers" options={{ href: null }} />
+      <Tabs.Screen name="courier/[id]" options={{ href: null }} />
+      <Tabs.Screen name="driver" options={{ href: null }} />
+      <Tabs.Screen name="store" options={{ href: null }} />
+      <Tabs.Screen name="login" options={{ href: null }} />
     </Tabs>
   );
 }
 
-const ScreenIcon = ({ color, Icon }: { color: string; Icon: React.ComponentType<{ color: string; size: number }> }) => {
-  return <Icon color={color} size={24} />;
+const ScreenIcon = ({ color, size, Icon }: { color: string; size: number; Icon: React.ComponentType<{ color: string; size: number }> }) => {
+  return <Icon color={color} size={size} />;
 };
