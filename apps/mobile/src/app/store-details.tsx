@@ -29,9 +29,13 @@ import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export default function StoreDetailsScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const rawParams = useLocalSearchParams<{ id: string }>();
+  const rawId = rawParams.id;
+  const id = rawId && UUID_REGEX.test(rawId) ? rawId : undefined;
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
@@ -65,9 +69,11 @@ export default function StoreDetailsScreen() {
   }, []);
 
   useEffect(() => {
-    if (id) {
-      fetchStoreData();
+    if (!id) {
+      setLoading(false);
+      return;
     }
+    fetchStoreData();
   }, [id]);
 
   const fetchStoreData = async () => {
@@ -130,6 +136,15 @@ export default function StoreDetailsScreen() {
       return matchesCat && matchesQuery;
     });
   }, [products, selectedCategory, searchQuery]);
+
+  if (!id) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+        <Header title="معرف غير صالح" />
+        <EmptyState type="no-stores" description="معرف المتجر غير صالح أو مفقود" />
+      </SafeAreaView>
+    );
+  }
 
   if (loading && !refreshing) {
     return (

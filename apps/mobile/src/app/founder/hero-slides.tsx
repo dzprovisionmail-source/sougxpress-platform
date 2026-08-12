@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   Modal,
 } from "react-native";
 import { router } from "expo-router";
+import { supabase } from "@/lib/supabase";
 import { Image as ImageIcon, Plus, Trash2, Edit3, ArrowRight, Check, X, Eye } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
@@ -47,6 +48,29 @@ export default function FounderHeroSlidesScreen() {
   const [formIsActive, setFormIsActive] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Store and product selectors for structured hero destinations
+  const [allStoresList, setAllStoresList] = useState<any[]>([]);
+  const [storeProductsList, setStoreProductsList] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase.from("stores").select("id, name").eq("status", "active").then(({ data }) => {
+      if (data) setAllStoresList(data);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (formContentType === 'product' && formTargetId) {
+      // If targetId is a storeId when choosing product, or if targetId is product
+      supabase.from("products").select("id, name, store_id").eq("status", "active").then(({ data }) => {
+        if (data) setStoreProductsList(data);
+      });
+    } else if (formContentType === 'product') {
+      supabase.from("products").select("id, name, store_id").eq("status", "active").then(({ data }) => {
+        if (data) setStoreProductsList(data);
+      });
+    }
+  }, [formContentType]);
 
   const loadSlides = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -353,14 +377,70 @@ export default function FounderHeroSlidesScreen() {
                   ))}
                 </View>
 
-                <Text style={styles.inputLabel}>معرف الهدف (Target ID / Store ID / Product ID)</Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                  value={formTargetId}
-                  onChangeText={setFormTargetId}
-                  placeholder="اختياري (معرف المتجر أو المنتج)"
-                  placeholderTextColor={colors.textDisabled}
-                />
+                {formContentType === "store" && (
+                  <>
+                    <Text style={styles.inputLabel}>اختر المتجر المستهدف</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                      {allStoresList.map((store) => (
+                        <TouchableOpacity
+                          key={store.id}
+                          style={[
+                            styles.typeChip,
+                            {
+                              backgroundColor: formTargetId === store.id ? colors.primary : colors.bgElevated,
+                              borderColor: formTargetId === store.id ? colors.primary : colors.borderSubtle,
+                              marginRight: 8,
+                            },
+                          ]}
+                          onPress={() => setFormTargetId(store.id)}
+                        >
+                          <Text style={{ color: formTargetId === store.id ? "#FFF" : colors.textPrimary, fontSize: 12 }}>
+                            {store.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
+
+                {formContentType === "product" && (
+                  <>
+                    <Text style={styles.inputLabel}>اختر المنتج المستهدف</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                      {storeProductsList.map((prod) => (
+                        <TouchableOpacity
+                          key={prod.id}
+                          style={[
+                            styles.typeChip,
+                            {
+                              backgroundColor: formTargetId === prod.id ? colors.primary : colors.bgElevated,
+                              borderColor: formTargetId === prod.id ? colors.primary : colors.borderSubtle,
+                              marginRight: 8,
+                            },
+                          ]}
+                          onPress={() => setFormTargetId(prod.id)}
+                        >
+                          <Text style={{ color: formTargetId === prod.id ? "#FFF" : colors.textPrimary, fontSize: 12 }}>
+                            {prod.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
+
+                {formContentType !== "store" && formContentType !== "product" && (
+                  <>
+                    <Text style={styles.inputLabel}>معرف الهدف (اختياري)</Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
+                      value={formTargetId}
+                      onChangeText={setFormTargetId}
+                      placeholder="معرف مخصص إذا وجد"
+                      placeholderTextColor={colors.textDisabled}
+                    />
+                  </>
+                )}
 
                 <View style={{ flexDirection: "row", gap: 12 }}>
                   <View style={{ flex: 1 }}>

@@ -29,6 +29,7 @@ interface HeroSlide {
   buttonLabel: string;
   storeId?: string;
   storeName?: string;
+  target_id?: string;
   kind?: "alert" | "promotion" | "flash" | "store" | "product" | "courier";
 }
 
@@ -128,6 +129,7 @@ const HomeScreen = () => {
           description: s.subtitle || "",
           buttonLabel: s.cta_label || "تسوق الآن",
           storeId: s.content_type === "store" ? s.target_id || undefined : undefined,
+          target_id: s.target_id || undefined,
           kind: s.content_type as any,
         }));
         setHeroSlides(mappedSlides);
@@ -220,6 +222,23 @@ const HomeScreen = () => {
     fetchHeroContent();
   }, [fetchHeroContent]);
 
+  // Automatic hero slider rotation every 2 seconds
+  useEffect(() => {
+    if (!heroSlides || heroSlides.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => {
+        const next = (prev + 1) % heroSlides.length;
+        try {
+          heroScrollRef.current?.scrollToIndex({ index: next, animated: true });
+        } catch (e) {
+          // Ignore scroll index out of bounds during fast updates
+        }
+        return next;
+      });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [heroSlides]);
+
   const handleHeroScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const slideIndex = Math.round(contentOffsetX / SCREEN_WIDTH);
@@ -234,10 +253,14 @@ const HomeScreen = () => {
         const courierId = item.id.replace("courier-", "");
         router.push({ pathname: "/courier/[id]", params: { id: courierId } });
       } else if (item.kind === "product") {
-        const productId = item.id.replace("product-", "");
+        // If target_id exists and is uuid use it, else fallback to id suffix
+        const rawTarget = (item as any).target_id;
+        const productId = rawTarget || item.id.replace("product-", "");
         router.push({ pathname: "/product-details", params: { id: productId } });
       } else if (item.storeId) {
         router.push({ pathname: "/store-details", params: { id: item.storeId } });
+      } else if (item.kind === "store" && (item as any).target_id) {
+        router.push({ pathname: "/store-details", params: { id: (item as any).target_id } });
       } else if (heroStore) {
         router.push({ pathname: "/store-details", params: { id: heroStore.id } });
       }
