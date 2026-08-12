@@ -16,7 +16,7 @@ import useCart from '@/hooks/useCart';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
 import { getArabicCategoryName } from '@/config/storeCategories';
 import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
-import { getActiveHeroSlides } from '@/services/heroSlider.service';
+import { getActiveHeroSlides, getHeroSliderSettings } from '@/services/heroSlider.service';
 import { supabase } from '@/lib/supabase';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -78,6 +78,8 @@ const HomeScreen = () => {
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(HERO_SLIDES_TEMPLATES);
   const [heroLoading, setHeroLoading] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const [rotationInterval, setRotationInterval] = useState(3);
 
   useEffect(() => {
     checkAuth();
@@ -119,6 +121,10 @@ const HomeScreen = () => {
   const fetchHeroContent = useCallback(async () => {
     setHeroLoading(true);
     try {
+      const settings = await getHeroSliderSettings();
+      setAutoRotate(settings.autoRotate);
+      setRotationInterval(settings.intervalSeconds);
+
       // 1. Try fetching Founder-managed hero slides from database first
       const dbSlides = await getActiveHeroSlides();
       if (dbSlides && dbSlides.length > 0) {
@@ -222,9 +228,10 @@ const HomeScreen = () => {
     fetchHeroContent();
   }, [fetchHeroContent]);
 
-  // Automatic hero slider rotation every 2 seconds
+  // Automatic hero slider rotation based on settings
   useEffect(() => {
-    if (!heroSlides || heroSlides.length <= 1) return;
+    if (!autoRotate || !heroSlides || heroSlides.length <= 1) return;
+    const intervalMs = Math.max(rotationInterval, 1) * 1000;
     const interval = setInterval(() => {
       setActiveSlide((prev) => {
         const next = (prev + 1) % heroSlides.length;
@@ -235,9 +242,9 @@ const HomeScreen = () => {
         }
         return next;
       });
-    }, 2000);
+    }, intervalMs);
     return () => clearInterval(interval);
-  }, [heroSlides]);
+  }, [heroSlides, autoRotate, rotationInterval]);
 
   const handleHeroScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;

@@ -25,6 +25,8 @@ import {
   updateHeroSlide,
   deleteHeroSlide,
   uploadHeroSlideImage,
+  getHeroSliderSettings,
+  updateHeroSliderSettings,
   type HeroSlide,
 } from "@/services/heroSlider.service";
 
@@ -49,9 +51,14 @@ export default function FounderHeroSlidesScreen() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Rotation settings state
+  const [autoRotate, setAutoRotate] = useState(true);
+  const [rotationInterval, setRotationInterval] = useState(3);
+
   // Store and product selectors for structured hero destinations
   const [allStoresList, setAllStoresList] = useState<any[]>([]);
   const [storeProductsList, setStoreProductsList] = useState<any[]>([]);
+  const [selectedProductStoreId, setSelectedProductStoreId] = useState("");
 
   useEffect(() => {
     supabase.from("stores").select("id, name").eq("status", "active").then(({ data }) => {
@@ -60,25 +67,38 @@ export default function FounderHeroSlidesScreen() {
   }, []);
 
   useEffect(() => {
-    if (formContentType === 'product' && formTargetId) {
-      // If targetId is a storeId when choosing product, or if targetId is product
-      supabase.from("products").select("id, name, store_id").eq("status", "active").then(({ data }) => {
-        if (data) setStoreProductsList(data);
-      });
-    } else if (formContentType === 'product') {
-      supabase.from("products").select("id, name, store_id").eq("status", "active").then(({ data }) => {
+    if (formContentType === 'product') {
+      let query = supabase.from("products").select("id, name, store_id").eq("status", "active");
+      if (selectedProductStoreId) {
+        query = query.eq("store_id", selectedProductStoreId);
+      }
+      query.then(({ data }) => {
         if (data) setStoreProductsList(data);
       });
     }
-  }, [formContentType]);
+  }, [formContentType, selectedProductStoreId]);
 
   const loadSlides = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
-    const data = await getFounderHeroSlides();
+    const [data, settings] = await Promise.all([
+      getFounderHeroSlides(),
+      getHeroSliderSettings(),
+    ]);
     setSlides(data);
+    setAutoRotate(settings.autoRotate);
+    setRotationInterval(settings.intervalSeconds);
     setLoading(false);
     setRefreshing(false);
+  };
+
+  const handleSaveSettings = async (newAutoRotate: boolean, newInterval: number) => {
+    setAutoRotate(newAutoRotate);
+    setRotationInterval(newInterval);
+    const res = await updateHeroSliderSettings(newAutoRotate, newInterval);
+    if (!res.success) {
+      Alert.alert("خطأ", res.error || "تعذّر حفظ إعدادات التدوير");
+    }
   };
 
   useEffect(() => {
@@ -225,6 +245,42 @@ export default function FounderHeroSlidesScreen() {
             <Plus size={20} color="#FFF" />
             <Text style={styles.createBtnText}>شريحة جديدة</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Rotation Settings Card */}
+        <View style={[styles.settingsCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <Text style={{ color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, fontWeight: "700" }}>تدوير تلقائي للشرائح</Text>
+            <Switch
+              value={autoRotate}
+              onValueChange={(val) => handleSaveSettings(val, rotationInterval)}
+              trackColor={{ false: "#767577", true: colors.primary + "88" }}
+              thumbColor={autoRotate ? colors.primary : "#f4f3f4"}
+            />
+          </View>
+          {autoRotate && (
+            <>
+              <Text style={{ color: colors.textSecondary, fontFamily: tokens.typography.families.arabic, fontSize: 12, marginBottom: 6 }}>سرعة التدوير (بالثواني):</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {[1, 2, 3, 4, 5, 6, 10].map((sec) => (
+                  <TouchableOpacity
+                    key={sec}
+                    style={[
+                      styles.typeChip,
+                      {
+                        backgroundColor: rotationInterval === sec ? colors.primary : colors.bgSurface,
+                        borderColor: rotationInterval === sec ? colors.primary : colors.borderSubtle,
+                        marginRight: 6,
+                      },
+                    ]}
+                    onPress={() => handleSaveSettings(autoRotate, sec)}
+                  >
+                    <Text style={{ color: rotationInterval === sec ? "#FFF" : colors.textPrimary, fontSize: 12 }}>{sec} ث</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </>
+          )}
         </View>
 
         {loading ? (
@@ -405,7 +461,29 @@ export default function FounderHeroSlidesScreen() {
 
                 {formContentType === "product" && (
                   <>
-                    <Text style={styles.inputLabel}>اختر المنتج المستهدف</Text>
+                    <Text style={styles.inputLabel}>1. اختر المتجر أولاً</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+                      {allStoresList.map((store) => (
+                        <TouchableOpacity
+                          key={store.id}
+                          style={[
+                            styles.typeChip,
+                            {
+                              backgroundColor: selectedProductStoreId === store.id ? colors.primary : colors.bgElevated,
+                              borderColor: selectedProductStoreId === store.id ? colors.primary : colors.borderSubtle,
+                              marginRight: 8,
+                            },
+                          ]}
+                          onPress={() => setSelectedProductStoreId(store.id)}
+                        >
+                          <Text style={{ color: selectedProductStoreId === store.id ? "#FFF" : colors.textPrimary, fontSize: 12 }}>
+                            {store.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+
+                    <Text style={styles.inputLabel}>2. اختر المنتج المستهدف</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
                       {storeProductsList.map((prod) => (
                         <TouchableOpacity
@@ -531,6 +609,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 32,
+  },
+  settingsCard: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
   },
   listContent: {
     gap: 16,

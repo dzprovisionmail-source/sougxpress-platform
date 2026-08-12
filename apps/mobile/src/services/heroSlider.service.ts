@@ -147,3 +147,57 @@ export async function uploadHeroSlideImage(uri: string): Promise<{ success: bool
     return { success: false, error: err.message || "فشل رفع الصورة" };
   }
 }
+
+export interface HeroSliderSettings {
+  autoRotate: boolean;
+  intervalSeconds: number;
+}
+
+export async function getHeroSliderSettings(): Promise<HeroSliderSettings> {
+  try {
+    const { data, error } = await supabase
+      .from("platform_financial_settings")
+      .select("key, value")
+      .in("key", ["hero_auto_rotate", "hero_rotation_interval"]);
+
+    if (error || !data) return { autoRotate: true, intervalSeconds: 3 };
+
+    let autoRotate = true;
+    let intervalSeconds = 3;
+
+    data.forEach((row: any) => {
+      if (row.key === "hero_auto_rotate") {
+        if (typeof row.value === "boolean") autoRotate = row.value;
+        else if (row.value === "false" || row.value === false) autoRotate = false;
+      }
+      if (row.key === "hero_rotation_interval") {
+        const parsed = parseInt(String(row.value), 10);
+        if (!isNaN(parsed) && parsed >= 1) intervalSeconds = parsed;
+      }
+    });
+
+    return { autoRotate, intervalSeconds };
+  } catch (err) {
+    console.error("getHeroSliderSettings error:", err);
+    return { autoRotate: true, intervalSeconds: 3 };
+  }
+}
+
+export async function updateHeroSliderSettings(autoRotate: boolean, intervalSeconds: number): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error: err1 } = await supabase
+      .from("platform_financial_settings")
+      .upsert({ key: "hero_auto_rotate", value: String(autoRotate), description: "Hero auto rotation enabled" }, { onConflict: "key" });
+    if (err1) throw err1;
+
+    const { error: err2 } = await supabase
+      .from("platform_financial_settings")
+      .upsert({ key: "hero_rotation_interval", value: String(intervalSeconds), description: "Hero rotation interval in seconds" }, { onConflict: "key" });
+    if (err2) throw err2;
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("updateHeroSliderSettings error:", err);
+    return { success: false, error: err.message || "تعذّر حفظ إعدادات العرض" };
+  }
+}
