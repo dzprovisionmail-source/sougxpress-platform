@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
   },
   productCol: {
     width: 160,
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   cartBadge: {
     position: 'absolute',

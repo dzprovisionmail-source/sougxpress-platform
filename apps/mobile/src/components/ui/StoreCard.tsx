@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     fontSize: TOKENS.typography.sizes.lg,
     fontWeight: '800',
     flex: 1,
-    marginRight: 8,
+    marginEnd: 8,
   },
   metaRow: {
     alignItems: 'center',
