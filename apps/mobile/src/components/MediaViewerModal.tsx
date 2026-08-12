@@ -175,8 +175,6 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
       const result = await addGalleryComment(
         mediaItemId,
         currentUserId,
-        currentUserRole ?? "guest",
-        null,
         commentText
       );
       if (result) {

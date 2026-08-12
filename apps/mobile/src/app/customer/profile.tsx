@@ -156,15 +156,34 @@ export default function CustomerProfileScreen() {
     try {
       const response = await fetch(uri);
       const blob = await response.blob();
-      const filePath = `customer_avatars/${profile.id}.${uri.split(".").pop() ?? "jpg"}`;
-      const { error } = await supabase.storage.from("avatars").upload(filePath, blob, { contentType: blob.type, upsert: true });
-      if (error) throw error;
+      const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
+      const contentType = ext === "png" ? "image/png" : "image/jpeg";
+      const filePath = `customer_avatars/${profile.id}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, blob, { contentType, upsert: true });
+      if (uploadError) throw uploadError;
+
       const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      const { error: updateError } = await supabase.from("customers").update({ avatar_url: data.publicUrl }).eq("id", profile.id);
-      if (updateError) throw updateError;
-      setProfile((prev: any) => ({ ...prev, avatar_url: data.publicUrl }));
+      const publicUrl = data.publicUrl;
+
+      // Update customers table
+      const { error: updateCustomerError } = await supabase
+        .from("customers")
+        .update({ avatar_url: publicUrl })
+        .eq("id", profile.id);
+      if (updateCustomerError) throw updateCustomerError;
+
+      // Also update profiles table if it exists
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", profile.id);
+
+      setProfile((prev: any) => ({ ...prev, avatar_url: publicUrl }));
+      Alert.alert("نجاح", "تم تحديث الصورة الشخصية بنجاح.");
     } catch (err: any) {
-      Alert.alert("خطأ", err.message || "تعذر رفع الصورة.");
+      Alert.alert("خطأ", err.message || "تعذر رفع الصورة. حاول مرة أخرى.");
     } finally {
       setUploadingAvatar(false);
     }

@@ -369,21 +369,91 @@ export const getGalleryComments = async (imageId: string): Promise<GalleryCommen
   }
 };
 
+export async function getUserDisplayInfo(userId: string): Promise<{ name: string; avatarUrl: string | null }> {
+  try {
+    // 1. Check profiles table first
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, name, avatar_url, role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profile) {
+      const name = profile.full_name || profile.name;
+      if (name) {
+        return { name, avatarUrl: profile.avatar_url || null };
+      }
+    }
+
+    const role = profile?.role;
+
+    // 2. Check role-specific tables
+    if (role === 'customer' || !role) {
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("full_name, first_name, last_name, avatar_url")
+        .eq("id", userId)
+        .maybeSingle();
+      if (customer) {
+        const name = customer.full_name || [customer.first_name, customer.last_name].filter(Boolean).join(" ");
+        if (name) return { name, avatarUrl: customer.avatar_url || null };
+      }
+    }
+
+    if (role === 'merchant') {
+      const { data: merchant } = await supabase
+        .from("merchants")
+        .select("full_name, name, business_name, avatar_url")
+        .eq("id", userId)
+        .maybeSingle();
+      if (merchant) {
+        const name = merchant.full_name || merchant.name || merchant.business_name;
+        if (name) return { name, avatarUrl: merchant.avatar_url || null };
+      }
+    }
+
+    if (role === 'driver' || role === 'courier') {
+      const { data: driver } = await supabase
+        .from("drivers")
+        .select("full_name, name, avatar_url")
+        .eq("id", userId)
+        .maybeSingle();
+      if (driver) {
+        const name = driver.full_name || driver.name;
+        if (name) return { name, avatarUrl: driver.avatar_url || null };
+      }
+    }
+
+    // Direct fallbacks across tables
+    const { data: cust } = await supabase.from("customers").select("full_name, avatar_url").eq("id", userId).maybeSingle();
+    if (cust?.full_name) return { name: cust.full_name, avatarUrl: cust.avatar_url || null };
+
+    const { data: merc } = await supabase.from("merchants").select("full_name, business_name, avatar_url").eq("id", userId).maybeSingle();
+    if (merc?.full_name || merc?.business_name) return { name: merc.full_name || merc.business_name || "", avatarUrl: merc.avatar_url || null };
+
+    const { data: driv } = await supabase.from("drivers").select("full_name, avatar_url").eq("id", userId).maybeSingle();
+    if (driv?.full_name) return { name: driv.full_name, avatarUrl: driv.avatar_url || null };
+
+    return { name: "مستخدم", avatarUrl: null };
+  } catch {
+    return { name: "مستخدم", avatarUrl: null };
+  }
+}
+
 export const addGalleryComment = async (
   imageId: string,
   userId: string,
-  userName: string,
-  userAvatarUrl: string | null,
   content: string
 ): Promise<GalleryCommentWithAuthor | null> => {
   try {
+    const { name, avatarUrl } = await getUserDisplayInfo(userId);
     const { data, error } = await supabase
       .from("store_gallery_comments")
       .insert({
         gallery_image_id: imageId,
         user_id: userId,
-        user_name: userName,
-        user_avatar_url: userAvatarUrl,
+        user_name: name || "مستخدم",
+        user_avatar_url: avatarUrl,
         content: content.trim(),
       })
       .select()
