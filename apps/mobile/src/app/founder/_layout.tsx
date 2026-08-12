@@ -70,6 +70,7 @@ export default function FounderLayout() {
       <Stack.Screen name="add-demo-driver" />
       <Stack.Screen name="add-demo-customer" />
       <Stack.Screen name="categories" />
+      <Stack.Screen name="hero-slides" />
     </Stack>
   );
 }

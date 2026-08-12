@@ -416,6 +416,7 @@ export default function FounderControlCenterScreen() {
             <QuickAction label="إنشاء موصل تجريبي" icon={<Truck size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/add-demo-driver" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إنشاء زبون تجريبي" icon={<UserPlus size={18} color={blue} />} accentColor={blue} onPress={() => router.push("/founder/add-demo-customer" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="معاينة السوق كزائر" icon={<Eye size={18} color={info} />} accentColor={info} onPress={() => router.push("/guest-marketplace?preview=1" as never)} colors={colors} tokens={tokens} />
+            <QuickAction label="إدارة شرائح العرض (Hero Slider)" icon={<Megaphone size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/hero-slides" as never)} colors={colors} tokens={tokens} />
           </View>
         </SectionBlock>
 

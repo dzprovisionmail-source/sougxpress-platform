@@ -16,6 +16,7 @@ import useCart from '@/hooks/useCart';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
 import { getArabicCategoryName } from '@/config/storeCategories';
 import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
+import { getActiveHeroSlides } from '@/services/heroSlider.service';
 import { supabase } from '@/lib/supabase';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -80,15 +81,7 @@ const HomeScreen = () => {
   useEffect(() => {
     checkAuth();
     getActiveCategories().then((cats) => {
-      setCategories([
-        ...cats,
-        {
-          id: "couriers",
-          name_ar: "🛵 الموصلون",
-          icon: "bicycle-outline",
-          subtitle: "الموصلون المتاحون",
-        },
-      ]);
+      setCategories(cats);
     });
     fetchProducts();
   }, []);
@@ -125,6 +118,23 @@ const HomeScreen = () => {
   const fetchHeroContent = useCallback(async () => {
     setHeroLoading(true);
     try {
+      // 1. Try fetching Founder-managed hero slides from database first
+      const dbSlides = await getActiveHeroSlides();
+      if (dbSlides && dbSlides.length > 0) {
+        const mappedSlides: HeroSlide[] = dbSlides.map((s) => ({
+          id: s.id,
+          image: s.image_url,
+          title: s.title,
+          description: s.subtitle || "",
+          buttonLabel: s.cta_label || "تسوق الآن",
+          storeId: s.content_type === "store" ? s.target_id || undefined : undefined,
+          kind: s.content_type as any,
+        }));
+        setHeroSlides(mappedSlides);
+        setHeroLoading(false);
+        return;
+      }
+
       const now = new Date().toISOString();
 
       const [alertsRes, promotionsRes, newStoresRes, newProductsRes] = await Promise.all([
