@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     ...shadows.small,
   },
   couriersBannerContent: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -796,7 +796,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   couriersBannerIcon: {
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   loginBanner: {
     marginHorizontal: spacing.lg,
@@ -813,7 +813,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   loginBannerBtn: {
-    marginLeft: spacing.md,
+    marginStart: spacing.md,
   },
   noResultsText: {
     ...typography.body,

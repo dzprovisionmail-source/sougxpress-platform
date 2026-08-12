@@ -455,20 +455,20 @@ const styles = StyleSheet.create<{ [key: string]: ViewStyle | TextStyle | any }>
   actionRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    justifyContent: "space-around",
+    paddingVertical: 12,
+    marginTop: 16,
     borderTopWidth: 1,
     borderBottomWidth: 1,
   },
   actionButton: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
   },
   actionText: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   ratingSelector: {
     flexDirection: "row-reverse",

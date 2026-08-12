@@ -299,14 +299,14 @@ export default function CourierProfile() {
             <View style={styles.statsGrid}>
               <View style={[styles.statBox, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                 <Star size={18} color="#FFD700" fill="#FFD700" />
-                <View style={{ marginRight: TOKENS.spacing.sm }}>
+                <View style={{ marginEnd: TOKENS.spacing.sm }}>
                   <Typography variant="h3">{typeof courier.rating === "number" ? courier.rating.toFixed(1) : courier.rating}</Typography>
                   <Typography variant="caption" color="secondary">التقييم</Typography>
                 </View>
               </View>
               <View style={[styles.statBox, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                 <ClipboardList size={18} color={colors.primary} />
-                <View style={{ marginRight: TOKENS.spacing.sm }}>
+                <View style={{ marginEnd: TOKENS.spacing.sm }}>
                   <Typography variant="h3">{courier.delivery_count ?? 0}</Typography>
                   <Typography variant="caption" color="secondary">توصيلات</Typography>
                 </View>

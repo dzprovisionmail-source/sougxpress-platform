@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: TOKENS.radius.xs,
-    marginLeft: 4,
+    marginStart: 4,
   },
   discountText: {
     fontSize: 10,

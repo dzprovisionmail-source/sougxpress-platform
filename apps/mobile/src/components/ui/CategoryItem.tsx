@@ -50,8 +50,7 @@ export const CategoryItem: React.FC<CategoryItemProps> = ({
           size={18} 
           color={isActive ? colors.textOnBrand : colors.primary}
           style={{
-            marginRight: isRTL ? 0 : TOKENS.spacing.sm,
-            marginLeft: isRTL ? TOKENS.spacing.sm : 0,
+            marginEnd: TOKENS.spacing.sm,
           }}
         />
         <Typography 
@@ -75,7 +74,7 @@ const styles = StyleSheet.create({
     paddingVertical: TOKENS.spacing.sm,
     borderRadius: TOKENS.radius.full,
     borderWidth: 1,
-    marginRight: TOKENS.spacing.md,
+    marginEnd: TOKENS.spacing.md,
     marginBottom: TOKENS.spacing.md,
     justifyContent: "center",
     alignItems: "center",

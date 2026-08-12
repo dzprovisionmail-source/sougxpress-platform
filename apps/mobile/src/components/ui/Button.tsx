@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   buttonTextWithIcon: {
-    marginRight: TOKENS.spacing.sm,
+    marginEnd: TOKENS.spacing.sm,
   },
   disabledButton: {
     opacity: 0.5,

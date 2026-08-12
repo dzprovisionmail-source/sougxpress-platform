@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   iconContainer: {
-    marginLeft: spacing.md, // Adjust for RTL
+    marginStart: spacing.md, // Adjust for RTL
   },
   title: {
     ...typography.body,
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   },
   value: {
     ...typography.body,
-    marginRight: spacing.sm, // Adjust for RTL
+    marginEnd: spacing.sm, // Adjust for RTL
   },
 });
 

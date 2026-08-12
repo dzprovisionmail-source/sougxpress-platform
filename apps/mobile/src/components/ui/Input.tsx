@@ -119,10 +119,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   iconContainerRTL: {
-    marginRight: TOKENS.spacing.sm,
+    marginEnd: TOKENS.spacing.sm,
   },
   iconContainerLTR: {
-    marginLeft: TOKENS.spacing.sm,
+    marginStart: TOKENS.spacing.sm,
   },
   input: {
     flex: 1,

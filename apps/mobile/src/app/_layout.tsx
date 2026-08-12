@@ -13,28 +13,25 @@ if (!I18nManager.isRTL) {
 export default function RootLayout() {
   useEffect(() => {
     let mounted = true;
+    let deactivateFn: (() => void) | null = null;
+
     if (__DEV__) {
-      import("expo-keep-awake")
-        .then(({ activateKeepAwakeAsync, deactivateKeepAwake }) => {
+      (async () => {
+        try {
+          const { activateKeepAwakeAsync, deactivateKeepAwake } = await import("expo-keep-awake");
           if (mounted) {
-            activateKeepAwakeAsync().catch(() => {
-              // Silently ignore keep-awake activation failures
-            });
+            deactivateFn = deactivateKeepAwake;
+            await activateKeepAwakeAsync();
           }
-          return deactivateKeepAwake;
-        })
-        .then((deactivate) => {
-          return () => {
-            mounted = false;
-            if (deactivate) deactivate();
-          };
-        })
-        .catch(() => {
-          // Silently ignore dynamic import or lifecycle failures
-        });
+        } catch (e) {
+          // Ignore keep-awake errors
+        }
+      })();
     }
+
     return () => {
       mounted = false;
+      if (deactivateFn) deactivateFn();
     };
   }, []);
 
