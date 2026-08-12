@@ -56,14 +56,14 @@ export default function TabLayout() {
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
           { name: 'market', title: 'السوق', Icon: Store },
-          { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+          { name: 'orders-customer', title: 'الطلبات', Icon: ClipboardList },
           { name: 'cart', title: 'السلة', Icon: ShoppingCart },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
         ];
       case 'courier':
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
-          { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+          { name: 'orders-courier', title: 'الطلبات', Icon: ClipboardList },
           { name: 'deliveries', title: 'التوصيلات', Icon: Bike },
           { name: 'earnings', title: 'الأرباح', Icon: Wallet },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
@@ -71,7 +71,7 @@ export default function TabLayout() {
       case 'merchant':
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
-          { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+          { name: 'orders-merchant', title: 'الطلبات', Icon: ClipboardList },
           { name: 'products', title: 'المنتجات', Icon: Package },
           { name: 'my-store', title: 'متجري', Icon: Store },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
@@ -80,8 +80,6 @@ export default function TabLayout() {
       default:
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
-          { name: 'favorites', title: 'المفضلة', Icon: Heart },
-          { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
         ];
     }
@@ -125,6 +123,8 @@ export default function TabLayout() {
       <Tabs.Screen name="store" options={{ href: null }} />
       <Tabs.Screen name="login" options={{ href: null }} />
       <Tabs.Screen name="market" options={{ href: null }} />
+      <Tabs.Screen name="orders" options={{ href: null }} />
+      <Tabs.Screen name="favorites" options={{ href: null }} />
     </Tabs>
   );
 }
