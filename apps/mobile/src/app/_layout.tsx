@@ -12,13 +12,30 @@ if (!I18nManager.isRTL) {
 
 export default function RootLayout() {
   useEffect(() => {
+    let mounted = true;
     if (__DEV__) {
       import("expo-keep-awake")
-        .then(({ activateKeepAwakeAsync }) => activateKeepAwakeAsync())
+        .then(({ activateKeepAwakeAsync, deactivateKeepAwake }) => {
+          if (mounted) {
+            activateKeepAwakeAsync().catch(() => {
+              // Silently ignore keep-awake activation failures
+            });
+          }
+          return deactivateKeepAwake;
+        })
+        .then((deactivate) => {
+          return () => {
+            mounted = false;
+            if (deactivate) deactivate();
+          };
+        })
         .catch(() => {
-          // Silently ignore keep-awake failures in development
+          // Silently ignore dynamic import or lifecycle failures
         });
     }
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (

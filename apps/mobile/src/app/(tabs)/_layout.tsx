@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Tabs, router } from 'expo-router';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Tabs, router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -27,6 +28,8 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { colors, tokens } = useAppTheme();
   const [role, setRole] = useState<Role>('guest');
+  const params = useLocalSearchParams();
+  const isPreviewMode = params.preview === '1';
 
   useEffect(() => {
     let mounted = true;
@@ -47,6 +50,13 @@ export default function TabLayout() {
         if (!mounted) return;
 
         const r = (profile as any)?.role;
+        
+        // Handle Founder Market Preview
+        if (isPreviewMode && (r === 'founder' || r === 'admin')) {
+          setRole('customer'); // Presentation role only
+          return;
+        }
+
         if (r === 'customer') setRole('customer');
         else if (r === 'driver') setRole('courier');
         else if (r === 'merchant') setRole('merchant');
@@ -59,7 +69,7 @@ export default function TabLayout() {
     };
     checkRole();
     return () => { mounted = false; };
-  }, []);
+  }, [isPreviewMode]);
 
   // Define approved tabs for each role
   const roleTabs: Record<Role, TabConfig[]> = {
@@ -112,8 +122,20 @@ export default function TabLayout() {
   };
 
   return (
-    <Tabs
-      screenOptions={{
+    <View style={{ flex: 1 }}>
+      {isPreviewMode && (
+        <View style={[styles.previewBanner, { backgroundColor: colors.info, paddingTop: insets.top }]}>
+          <Text style={styles.previewText}>وضع معاينة السوق للمؤسس</Text>
+          <TouchableOpacity 
+            onPress={() => router.replace('/founder')}
+            style={styles.exitBtn}
+          >
+            <Text style={styles.exitText}>العودة لمركز التحكم</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      <Tabs
+        screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#FF8A00',
         tabBarInactiveTintColor: '#888888',
@@ -152,5 +174,34 @@ export default function TabLayout() {
       <Tabs.Screen name="couriers" options={{ href: null }} />
       <Tabs.Screen name="courier/[id]" options={{ href: null }} />
     </Tabs>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  previewBanner: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    zIndex: 100,
+  },
+  previewText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'System',
+  },
+  exitBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  exitText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+});

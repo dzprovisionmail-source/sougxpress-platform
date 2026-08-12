@@ -317,8 +317,9 @@ export async function getFounderActivityFeed(limit = 20): Promise<ActivityFeedEn
 // ─── Realtime subscriptions ────────────────────────────────────────────────────
 
 export function subscribeToFounderStats(callback: () => void) {
-  const channel = supabase
-    .channel("founder_control_center")
+  const channel = supabase.channel("founder_control_center");
+
+  channel
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "orders" },
@@ -346,10 +347,15 @@ export function subscribeToFounderStats(callback: () => void) {
     )
     .on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "audit_logs" },
+      { event: "*", schema: "public", table: "admin_audit_logs" },
       callback
-    )
-    .subscribe();
+    );
+
+  channel.subscribe((status) => {
+    if (status === "SUBSCRIBED") {
+      console.log("Founder Control Center Realtime: Subscribed successfully");
+    }
+  });
 
   return {
     unsubscribe: () => {

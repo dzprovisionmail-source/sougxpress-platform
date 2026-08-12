@@ -13,12 +13,25 @@ const useCheckout = () => {
   const [notes, setNotes] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [customerZoneId, setCustomerZoneId] = useState<string | null>(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUserId(user.id);
+        
+        // Check if user is founder/admin to enable preview-only protection
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (profile?.role === 'founder' || profile?.role === 'admin') {
+          setIsPreviewMode(true);
+        }
+
         const { data: addressData } = await supabase
           .from('customer_addresses')
           .select('*')
@@ -45,6 +58,11 @@ const useCheckout = () => {
   }, []);
 
   const handleConfirmOrder = async (): Promise<{ success: boolean; orderId?: string }> => {
+    if (isPreviewMode) {
+      setError("وضع معاينة السوق مخصص للتصفح فقط.");
+      return { success: false };
+    }
+
     if (!currentUserId || !selectedAddress || cartItems.length === 0) {
       setError("يرجى اختيار العنوان والتأكد من أن سلتك ليست فارغة.");
       return { success: false };
