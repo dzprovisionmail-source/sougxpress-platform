@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, SafeAreaView, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn } from 'lucide-react-native';
 
@@ -754,7 +754,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
-    alignSelf: "flex-start",
+    alignSelf: I18nManager.isRTL ? "flex-end" : "flex-start",
     marginTop: spacing.xs,
   },
   heroActionText: {

@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   badgesRow: {
     position: 'absolute',
     top: TOKENS.spacing.sm,
-    right: TOKENS.spacing.sm,
+    [I18nManager.isRTL ? 'left' : 'right']: TOKENS.spacing.sm,
     gap: TOKENS.spacing.xs,
   },
   statusBadge: {

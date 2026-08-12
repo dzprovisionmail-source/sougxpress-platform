@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   favoriteBtn: {
     position: 'absolute',
     top: 6,
-    left: 6,
+    [I18nManager.isRTL ? 'right' : 'left']: 6,
     width: 32,
     height: 32,
     borderRadius: 16,
