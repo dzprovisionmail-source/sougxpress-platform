@@ -11,6 +11,8 @@ import {
   Bike,
   Store,
   ClipboardList,
+  Package,
+  Wallet,
 } from 'lucide-react-native';
 
 type Role = 'guest' | 'customer' | 'courier' | 'merchant';
@@ -19,7 +21,6 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { colors, tokens } = useAppTheme();
   const [role, setRole] = useState<Role>('guest');
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -29,7 +30,6 @@ export default function TabLayout() {
         if (!mounted) return;
         if (!user) {
           setRole('guest');
-          setLoading(false);
           return;
         }
         const { data: profile } = await supabase
@@ -44,8 +44,6 @@ export default function TabLayout() {
         else setRole('guest');
       } catch {
         if (mounted) setRole('guest');
-      } finally {
-        if (mounted) setLoading(false);
       }
     };
     checkRole();
@@ -57,21 +55,24 @@ export default function TabLayout() {
       case 'customer':
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
-          { name: 'favorites', title: 'المفضلة', Icon: Heart },
-          { name: 'cart', title: 'السلة', Icon: ShoppingCart },
+          { name: 'market', title: 'السوق', Icon: Store },
           { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+          { name: 'cart', title: 'السلة', Icon: ShoppingCart },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
         ];
       case 'courier':
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
+          { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
           { name: 'deliveries', title: 'التوصيلات', Icon: Bike },
+          { name: 'earnings', title: 'الأرباح', Icon: Wallet },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
         ];
       case 'merchant':
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
           { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+          { name: 'products', title: 'المنتجات', Icon: Package },
           { name: 'my-store', title: 'متجري', Icon: Store },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
         ];
@@ -123,6 +124,7 @@ export default function TabLayout() {
       <Tabs.Screen name="driver" options={{ href: null }} />
       <Tabs.Screen name="store" options={{ href: null }} />
       <Tabs.Screen name="login" options={{ href: null }} />
+      <Tabs.Screen name="market" options={{ href: null }} />
     </Tabs>
   );
 }
