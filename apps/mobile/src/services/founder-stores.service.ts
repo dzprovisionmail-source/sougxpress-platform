@@ -139,7 +139,8 @@ export async function uploadStoreLogo(
     const ext = uri.split(".").pop()?.split("?")[0].toLowerCase() ?? "jpg";
     const contentType = `image/${ext === "jpg" ? "jpeg" : ext}`;
     const path = `${storeId}/logo.${ext}`;
-    const arrayBuffer = await new File(uri).arrayBuffer();
+    const response = await fetch(uri);
+    const arrayBuffer = await response.arrayBuffer();
 
     const { error: uploadError } = await supabase.storage
       .from("store_images")
@@ -163,7 +164,8 @@ export async function uploadStoreCover(
     const ext = uri.split(".").pop()?.split("?")[0].toLowerCase() ?? "jpg";
     const contentType = `image/${ext === "jpg" ? "jpeg" : ext}`;
     const path = `${storeId}/cover.${ext}`;
-    const arrayBuffer = await new File(uri).arrayBuffer();
+    const response = await fetch(uri);
+    const arrayBuffer = await response.arrayBuffer();
 
     const { error: uploadError } = await supabase.storage
       .from("store_images")

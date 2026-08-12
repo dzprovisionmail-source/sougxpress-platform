@@ -148,7 +148,6 @@ export default function TabLayout() {
       <Tabs.Screen name="orders-courier" options={{ href: null }} />
       <Tabs.Screen name="driver" options={{ href: null }} />
       <Tabs.Screen name="store" options={{ href: null }} />
-      <Tabs.Screen name="login" options={{ href: null }} />
       <Tabs.Screen name="favorites" options={{ href: null }} />
       <Tabs.Screen name="couriers" options={{ href: null }} />
       <Tabs.Screen name="courier/[id]" options={{ href: null }} />
