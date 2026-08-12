@@ -12,9 +12,19 @@ import { TOKENS } from '@/constants/tokens';
 import { getThemeColors, DEFAULT_THEME } from '@/constants/theme';
 
 import useCheckout from '@/hooks/useCheckout';
+import { supabase } from '@/lib/supabase';
 
 const CheckoutScreen = () => {
   const router = useRouter();
+  const [isGuest, setIsGuest] = React.useState(false);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        setIsGuest(true);
+      }
+    });
+  }, []);
   const colors = getThemeColors(DEFAULT_THEME);
   const isRTL = I18nManager.isRTL;
   
@@ -44,6 +54,28 @@ const CheckoutScreen = () => {
       Alert.alert('خطأ', error);
     }
   };
+
+  if (isGuest) {
+    return (
+      <SafeAreaView style={[styles.centered, { backgroundColor: colors.bgBase, padding: TOKENS.spacing.xl }]}>
+        <Stack.Screen options={{ title: 'تسجيل الدخول مطلوب' }} />
+        <ShoppingBag size={80} color={colors.textDisabled} style={{ marginBottom: TOKENS.spacing.lg }} />
+        <Typography variant="h2" align="center" style={{ marginBottom: TOKENS.spacing.md }}>
+          مرحبًا بك في Soug-XPRESS
+        </Typography>
+        <Typography variant="body" color="secondary" align="center" style={{ marginBottom: TOKENS.spacing.xl }}>
+          يجب عليك تسجيل الدخول لإتمام عملية الشراء ومتابعة طلبك.
+        </Typography>
+        <Button
+          title="التسجيل / الدخول"
+          onPress={() => router.push("/login")}
+          variant="primary"
+          size="lg"
+          style={{ width: '100%' }}
+        />
+      </SafeAreaView>
+    );
+  }
 
   if (orderSuccess) {
     return (
@@ -167,6 +199,11 @@ const CheckoutScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   fullContainer: {
     flex: 1,

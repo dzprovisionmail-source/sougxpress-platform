@@ -20,7 +20,7 @@ import {
   ImageFallback,
   Dialog,
 } from "@/components/ui";
-import { Trash2, ArrowLeft, ArrowRight, ShoppingBag, ShieldCheck } from "lucide-react-native";
+import { Trash2, ArrowLeft, ArrowRight, ShoppingBag, ShieldCheck, LogIn } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -103,30 +103,30 @@ export default function CustomerCartScreen() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
         <Header title="سلة التسوق" />
-        <View style={[styles.centered, { padding: TOKENS.spacing.xl }]}>
-          <ShoppingBag size={80} color={colors.textDisabled} style={{ marginBottom: TOKENS.spacing.lg }} />
-          <Typography variant="h2" align="center" style={{ marginBottom: TOKENS.spacing.md }}>
-            سلة التسوق
+        <View style={[styles.centered, { paddingHorizontal: TOKENS.spacing.xl }]}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.primary + '10', width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: TOKENS.spacing.xl }]}>
+            <ShoppingBag size={50} color={colors.primary} />
+          </View>
+          <Typography variant="h2" align="center" style={{ marginBottom: TOKENS.spacing.md, fontWeight: '700' }}>
+            مرحبًا بك في Soug-XPRESS
           </Typography>
-          <Typography variant="body" color="secondary" align="center" style={{ marginBottom: TOKENS.spacing.xl }}>
-            يجب عليك تسجيل الدخول لإضافة المنتجات إلى السلة وإتمام عملية الشراء.
+          <Typography variant="body" color="secondary" align="center" style={{ marginBottom: TOKENS.spacing.xl, lineHeight: 24 }}>
+            سجّل حسابك الآن للبدء في إضافة المنتجات إلى سلتك والاستمتاع بتجربة تسوق فريدة في عين صفراء.
           </Typography>
-          
-          <TouchableOpacity 
-            activeOpacity={0.9}
-            onPress={() => router.push("/login")}
-            style={[styles.guestBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary, width: '100%', padding: TOKENS.spacing.lg, borderRadius: TOKENS.radius.md, borderWidth: 1, borderStyle: 'dashed' }]}
-          >
-            <Typography variant="h3" color="brand" align="center">
-              يجب عليك التسجيل أولًا
-            </Typography>
-          </TouchableOpacity>
-
           <Button
-            title="تسجيل الدخول"
+            title="التسجيل / الدخول"
             onPress={() => router.push("/login")}
-            style={{ width: '100%', marginTop: TOKENS.spacing.xl }}
+            variant="primary"
+            size="lg"
+            icon={<LogIn size={20} color={colors.textOnBrand} />}
+            style={{ width: '100%' }}
           />
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/home")}
+            style={{ marginTop: TOKENS.spacing.lg }}
+          >
+            <Typography variant="caption" color="secondary">متابعة التصفح كضيف</Typography>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -267,6 +267,10 @@ export default function CustomerCartScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   scrollContent: {
     padding: TOKENS.spacing.md,
     paddingBottom: 110,
