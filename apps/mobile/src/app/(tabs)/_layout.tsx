@@ -124,13 +124,13 @@ export default function TabLayout() {
   return (
     <View style={{ flex: 1 }}>
       {isPreviewMode && (
-        <View style={[styles.previewBanner, { backgroundColor: colors.info, paddingTop: insets.top }]}>
-          <Text style={styles.previewText}>وضع معاينة السوق للمؤسس</Text>
+        <View style={[styles.previewBanner, { backgroundColor: colors.primary, paddingTop: Math.max(insets.top, 8) + 4, paddingBottom: 10, paddingHorizontal: 16 }]}>
+          <Text style={[styles.previewText, { fontFamily: tokens.typography.families.arabic }]}>وضع معاينة السوق (كمتصفح)</Text>
           <TouchableOpacity 
             onPress={() => router.replace('/founder')}
             style={styles.exitBtn}
           >
-            <Text style={styles.exitText}>العودة لمركز التحكم</Text>
+            <Text style={[styles.exitText, { fontFamily: tokens.typography.families.arabic }]}>← لوحة المؤسس</Text>
           </TouchableOpacity>
         </View>
       )}

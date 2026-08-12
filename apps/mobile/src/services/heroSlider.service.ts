@@ -126,14 +126,14 @@ export async function deleteHeroSlide(id: string): Promise<{ success: boolean; e
 export async function uploadHeroSlideImage(uri: string): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
     const response = await fetch(uri);
-    const blob = await response.blob();
-    const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
+    const arrayBuffer = await response.arrayBuffer();
+    const ext = uri.split(".").pop()?.split("?")[0].toLowerCase() ?? "jpg";
     const fileName = `hero_slides/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-    const contentType = ext === "png" ? "image/png" : "image/jpeg";
+    const contentType = `image/${ext === "jpg" ? "jpeg" : ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from("store_images")
-      .upload(fileName, blob, { contentType, upsert: true });
+      .upload(fileName, arrayBuffer, { contentType, upsert: true });
 
     if (uploadError) throw uploadError;
 

@@ -450,16 +450,16 @@ const HomeScreen = () => {
             styles.couriersBanner,
             {
               backgroundColor: colors.bgElevated,
-              borderLeftColor: colors.primary,
-              borderLeftWidth: 4,
+              borderRightColor: colors.primary,
+              borderRightWidth: 4,
             },
           ]}
           onPress={() => router.push('/couriers')}
           activeOpacity={0.8}
         >
-          <View style={[styles.couriersBannerContent, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+          <View style={[styles.couriersBannerContent, { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' }]}>
             <View style={styles.couriersBannerText}>
-              <Text style={[styles.couriersBannerTitle, { color: colors.textPrimary, fontWeight: '700' }]}>الموصلون المتاحون</Text>
+              <Text style={[styles.couriersBannerTitle, { color: colors.textPrimary, fontWeight: '700', textAlign: 'right' }]}>الموصلون المتاحون</Text>
             </View>
             <View style={styles.couriersBannerIcon}>
               <Bike size={20} color={colors.primary} />
@@ -796,7 +796,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   couriersBannerIcon: {
-    marginLeft: spacing.sm,
+    marginRight: spacing.sm,
   },
   loginBanner: {
     marginHorizontal: spacing.lg,
@@ -813,7 +813,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   loginBannerBtn: {
-    marginRight: spacing.md,
+    marginLeft: spacing.md,
   },
   noResultsText: {
     ...typography.body,
