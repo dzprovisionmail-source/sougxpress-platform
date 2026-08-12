@@ -98,4 +98,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
   },
+  center: {
+    alignItems: "center",
+    marginTop: TOKENS.spacing.xl,
+    paddingHorizontal: TOKENS.spacing.md,
+  },
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

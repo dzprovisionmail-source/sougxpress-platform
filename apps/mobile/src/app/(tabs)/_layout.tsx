@@ -98,7 +98,6 @@ export default function TabLayout() {
     if (!approvedTab) {
       return {
         href: null,
-        tabBarButton: () => null,
       };
     }
 
@@ -142,15 +141,17 @@ export default function TabLayout() {
       <Tabs.Screen name="my-store" options={getTabOptions('my-store')} />
       <Tabs.Screen name="deliveries" options={getTabOptions('deliveries')} />
       <Tabs.Screen name="earnings" options={getTabOptions('earnings')} />
-      <Tabs.Screen name="orders-customer" options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="orders-merchant" options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="orders-courier" options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="driver" options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="store" options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="login" options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="favorites" options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="couriers" options={{ href: null, tabBarButton: () => null }} />
-      <Tabs.Screen name="courier/[id]" options={{ href: null, tabBarButton: () => null }} />
+
+      {/* Hidden Routes */}
+      <Tabs.Screen name="orders-customer" options={{ href: null }} />
+      <Tabs.Screen name="orders-merchant" options={{ href: null }} />
+      <Tabs.Screen name="orders-courier" options={{ href: null }} />
+      <Tabs.Screen name="driver" options={{ href: null }} />
+      <Tabs.Screen name="store" options={{ href: null }} />
+      <Tabs.Screen name="login" options={{ href: null }} />
+      <Tabs.Screen name="favorites" options={{ href: null }} />
+      <Tabs.Screen name="couriers" options={{ href: null }} />
+      <Tabs.Screen name="courier/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

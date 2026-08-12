@@ -5,7 +5,9 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import useCourierOrders from "@/hooks/useCourierOrders";
 import { TOKENS } from "@/constants/tokens";
-import { Bike, MapPin, Phone, MessageCircle, ChevronRight } from "lucide-react-native";
+import { Bike, MapPin, Phone, MessageCircle, ChevronRight, LogIn } from "lucide-react-native";
+import { Typography, Button } from "@/components/ui";
+import { supabase } from "@/lib/supabase";
 import { DeliveryStatus, updateDeliveryStatus } from "@/services/courier-delivery.service";
 
 const NEXT_STATUS: Partial<Record<DeliveryStatus, DeliveryStatus>> = {
@@ -29,6 +31,13 @@ export default function DeliveriesScreen() {
   const { colors, tokens } = useAppTheme();
   const { userId } = useCurrentUserId();
   const { activeDeliveries, loading, refreshDeliveries } = useCourierOrders(userId || "");
+  const [isGuest, setIsGuest] = React.useState(false);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) setIsGuest(user === null);
+    });
+  }, []);
 
   const statusLabel = (status: string) => {
     switch (status) {
@@ -65,10 +74,36 @@ export default function DeliveriesScreen() {
     ]);
   };
 
-  if (loading && activeDeliveries.length === 0) {
+  if (loading && activeDeliveries.length === 0 && !isGuest) {
     return (
       <View style={[styles.container, { backgroundColor: colors.bgBase, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (isGuest) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
+        <View style={styles.center}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.primary + '10', width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: TOKENS.spacing.xl }]}>
+            <Bike size={50} color={colors.primary} />
+          </View>
+          <Typography variant="h2" align="center" style={{ marginBottom: TOKENS.spacing.md, fontWeight: '700' }}>
+            مرحبًا بك في Soug-XPRESS
+          </Typography>
+          <Typography variant="body" color="secondary" align="center" style={{ marginBottom: TOKENS.spacing.xl, lineHeight: 24 }}>
+            يجب عليك تسجيل الدخول كعامل توصيل للوصول إلى قائمة التوصيلات النشطة.
+          </Typography>
+          <Button
+            title="التسجيل / الدخول"
+            onPress={() => router.push("/login")}
+            variant="primary"
+            size="lg"
+            icon={<LogIn size={20} color={colors.textOnBrand} />}
+            style={{ width: '100%' }}
+          />
+        </View>
       </View>
     );
   }
@@ -176,6 +211,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 60,
     gap: 16,
+  },
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyText: {
     fontSize: 16,

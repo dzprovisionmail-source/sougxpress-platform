@@ -6,7 +6,9 @@ import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import { getStoreByMerchantId } from "@/services/store.service";
 import { Store } from "@/types/schema-03-core";
 import { TOKENS } from "@/constants/tokens";
-import { Store as StoreIcon } from "lucide-react-native";
+import { Store as StoreIcon, LogIn } from "lucide-react-native";
+import { Typography, Button } from "@/components/ui";
+import { supabase } from "@/lib/supabase";
 
 export default function MyStoreScreen() {
   const router = useRouter();
@@ -14,6 +16,13 @@ export default function MyStoreScreen() {
   const { userId } = useCurrentUserId();
   const [store, setStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) setIsGuest(true);
+    });
+  }, []);
 
   useEffect(() => {
     const loadStore = async () => {
@@ -26,11 +35,38 @@ export default function MyStoreScreen() {
     loadStore();
   }, [userId]);
 
-  if (loading) {
+  if (loading && !isGuest) {
     return (
       <ScrollView style={[styles.container, { backgroundColor: colors.bgBase }]}>
         <ActivityIndicator size="large" color={colors.primary} style={styles.center} />
       </ScrollView>
+    );
+  }
+
+  if (isGuest) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>متجري</Text>
+        <View style={styles.center}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.primary + '10', width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: TOKENS.spacing.xl }]}>
+            <StoreIcon size={50} color={colors.primary} />
+          </View>
+          <Typography variant="h2" align="center" style={{ marginBottom: TOKENS.spacing.md, fontWeight: '700' }}>
+            مرحبًا بك في Soug-XPRESS
+          </Typography>
+          <Typography variant="body" color="secondary" align="center" style={{ marginBottom: TOKENS.spacing.xl, lineHeight: 24 }}>
+            يجب عليك تسجيل الدخول كتاجر لإدارة متجرك وإعدادات البيع.
+          </Typography>
+          <Button
+            title="التسجيل / الدخول"
+            onPress={() => router.push("/login")}
+            variant="primary"
+            size="lg"
+            icon={<LogIn size={20} color={colors.textOnBrand} />}
+            style={{ width: '100%' }}
+          />
+        </View>
+      </View>
     );
   }
 
@@ -92,6 +128,10 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: TOKENS.spacing.md,
     fontSize: 16,
+  },
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   card: {
     padding: TOKENS.spacing.md,
