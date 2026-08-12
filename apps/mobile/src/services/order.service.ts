@@ -89,3 +89,17 @@ export const validateMerchantOrderOwnership = async (orderId: string, merchantId
   if (error || !order) return false;
   return true;
 };
+
+export const getCustomerOrders = async (customerId: string): Promise<Order[]> => {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching customer orders:", error);
+    return [];
+  }
+  return data as Order[];
+};
