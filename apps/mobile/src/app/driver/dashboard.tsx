@@ -114,7 +114,7 @@ export default function DriverDashboardScreen() {
             <SectionTitle icon={<Bike color={colors.primary} size={tokens.spacing.lg} />}>
               {`مرحباً ${driver?.full_name || ""}`}
             </SectionTitle>
-            <TouchableOpacity onPress={() => router.push("/driver/notifications")}>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/profile")}>
               <Bell color={colors.textSecondary} size={22} />
             </TouchableOpacity>
           </View>
@@ -142,7 +142,7 @@ export default function DriverDashboardScreen() {
           <WorkspaceButton
             title="عرض تفاصيل الأرباح"
             variant="outline"
-            onPress={() => router.push("/driver/earnings")}
+            onPress={() => router.push("/(tabs)/earnings")}
             style={{ marginTop: tokens.spacing.sm }}
           />
         </SectionCard>
@@ -259,7 +259,7 @@ export default function DriverDashboardScreen() {
             <WorkspaceButton
               title="عرض جميع التوصيلات"
               variant="outline"
-              onPress={() => router.push("/driver/deliveries")}
+              onPress={() => router.push("/(tabs)/deliveries")}
               style={{ marginTop: tokens.spacing.sm }}
             />
           )}

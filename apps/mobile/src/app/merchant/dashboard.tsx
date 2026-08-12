@@ -209,7 +209,7 @@ export default function MerchantDashboardScreen() {
           </StatGrid>
           <WorkspaceButton
             title="فتح مركز الطلبات"
-            onPress={() => router.push("/merchant/orders")}
+            onPress={() => router.push("/(tabs)/orders")}
             style={{ marginTop: tokens.spacing.md }}
           />
         </SectionCard>
@@ -226,21 +226,21 @@ export default function MerchantDashboardScreen() {
           <WorkspaceButton
             title="إدارة المتجر والمنتجات"
             variant="outline"
-            onPress={() => router.push("/merchant/store")}
+            onPress={() => router.push("/(tabs)/my-store")}
             style={{ marginBottom: tokens.spacing.sm }}
           />
           <WorkspaceButton
             title="عرض الأرباح والإحصاءات"
             variant="outline"
             icon={<Wallet color={colors.primary} size={18} />}
-            onPress={() => router.push("/merchant/earnings")}
+            onPress={() => router.push("/(tabs)/earnings")}
             style={{ marginBottom: tokens.spacing.sm }}
           />
           <WorkspaceButton
             title="الإشعارات"
             variant="ghost"
             icon={<Bell color={colors.primary} size={18} />}
-            onPress={() => router.push("/merchant/notifications")}
+            onPress={() => router.push("/(tabs)/profile")}
           />
         </SectionCard>
 

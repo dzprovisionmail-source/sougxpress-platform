@@ -1,50 +1,14 @@
 import React from "react";
-import { Tabs } from "expo-router";
-import { LayoutGrid, Bike, CircleUserRound, Wallet } from "lucide-react-native";
-import { useAppTheme } from "@/contexts/ThemeContext";
+import { Stack } from "expo-router";
 
 export default function DriverLayout() {
-  const { colors, tokens } = useAppTheme();
-
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: { backgroundColor: colors.bgElevated, borderTopColor: colors.borderSubtle },
-        tabBarLabelStyle: { fontFamily: tokens.typography.families.arabic, fontSize: 12 },
-      }}
-    >
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: "الرئيسية",
-          tabBarIcon: ({ color, size }) => <LayoutGrid color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="deliveries"
-        options={{
-          title: "التوصيلات",
-          tabBarIcon: ({ color, size }) => <Bike color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="earnings"
-        options={{
-          title: "الأرباح",
-          tabBarIcon: ({ color, size }) => <Wallet color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "حسابي",
-          tabBarIcon: ({ color, size }) => <CircleUserRound color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen name="notifications" options={{ href: null }} />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="dashboard" />
+      <Stack.Screen name="deliveries" />
+      <Stack.Screen name="earnings" />
+      <Stack.Screen name="profile" />
+      <Stack.Screen name="notifications" />
+    </Stack>
   );
 }
