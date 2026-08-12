@@ -95,7 +95,7 @@ export default function CustomerCartScreen() {
         <Header title="سلة التسوق" />
         <EmptyState
           type="empty-cart"
-          onAction={() => router.push("/customer/home")}
+          onAction={() => router.push("/(tabs)/home")}
         />
       </SafeAreaView>
     );

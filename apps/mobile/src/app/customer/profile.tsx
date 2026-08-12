@@ -195,13 +195,13 @@ export default function CustomerProfileScreen() {
       id: "orders",
       title: "طلباتي",
       icon: <ClipboardList color={colors.primary} size={22} />,
-      route: "/customer/orders",
+      route: "/(tabs)/orders",
     },
     {
       id: "favorites",
       title: "المفضلة",
       icon: <Heart color={colors.primary} size={22} />,
-      route: "/customer/favorites",
+      route: "/(tabs)/favorites",
     },
     {
       id: "addresses",

@@ -120,7 +120,7 @@ export default function ProductDetailsScreen() {
 
       Alert.alert("تمت الإضافة", "تمت إضافة المنتج بنجاح إلى سلة التسوق", [
         { text: "متابعة التسوق", style: "cancel" },
-        { text: "عرض السلة", onPress: () => router.push("/customer/cart") },
+        { text: "عرض السلة", onPress: () => router.push("/(tabs)/cart") },
       ]);
     } catch (err: any) {
       console.error("Cart error:", err);

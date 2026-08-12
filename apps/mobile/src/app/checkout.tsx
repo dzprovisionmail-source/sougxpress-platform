@@ -58,7 +58,7 @@ const CheckoutScreen = () => {
           
           <Button
             title="عرض الطلب"
-            onPress={() => router.push({ pathname: "/customer/orders" })}
+            onPress={() => router.push({ pathname: "/(tabs)/orders" })}
             style={styles.successButton}
           />
           <Button

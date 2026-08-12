@@ -242,7 +242,7 @@ export default function CustomerOrdersScreen() {
           ListEmptyComponent={
             <EmptyState
               type="no-orders"
-              onAction={() => router.push("/customer/home")}
+              onAction={() => router.push("/(tabs)/home")}
             />
           }
         />
