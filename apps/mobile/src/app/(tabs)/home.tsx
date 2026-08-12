@@ -253,22 +253,21 @@ const HomeScreen = () => {
   };
 
   const renderHeroSlide = ({ item, index }: { item: HeroSlide; index: number }) => {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const heroStore = item.storeId ? storesMap.get(item.storeId) : allStores[index];
 
     const handlePress = () => {
+      const targetProd = (item as any).target_product_id || ((item.kind === "product" && UUID_REGEX.test((item as any).target_id)) ? (item as any).target_id : null);
+      const targetStore = (item as any).target_store_id || item.storeId || ((item.kind === "store" && UUID_REGEX.test((item as any).target_id)) ? (item as any).target_id : null);
+
       if (item.kind === "courier") {
         const courierId = item.id.replace("courier-", "");
         router.push({ pathname: "/courier/[id]", params: { id: courierId } });
-      } else if (item.kind === "product") {
-        // If target_id exists and is uuid use it, else fallback to id suffix
-        const rawTarget = (item as any).target_id;
-        const productId = rawTarget || item.id.replace("product-", "");
-        router.push({ pathname: "/product-details", params: { id: productId } });
-      } else if (item.storeId) {
-        router.push({ pathname: "/store-details", params: { id: item.storeId } });
-      } else if (item.kind === "store" && (item as any).target_id) {
-        router.push({ pathname: "/store-details", params: { id: (item as any).target_id } });
-      } else if (heroStore) {
+      } else if (targetProd && UUID_REGEX.test(targetProd)) {
+        router.push({ pathname: "/product-details", params: { id: targetProd } });
+      } else if (targetStore && UUID_REGEX.test(targetStore)) {
+        router.push({ pathname: "/store-details", params: { id: targetStore } });
+      } else if (heroStore && UUID_REGEX.test(heroStore.id)) {
         router.push({ pathname: "/store-details", params: { id: heroStore.id } });
       }
     };

@@ -23,6 +23,7 @@
       "expo-font"
     ],
     "ios": {
+      "supportsRTL": true,
       "bundleIdentifier": "com.sougxpress.founder",
       "config": {
         "googleSignIn": {
@@ -31,6 +32,7 @@
       }
     },
     "android": {
+      "supportsRTL": true,
       "package": "com.sougxpress.founder",
       "adaptiveIcon": {
         "foreground": "assets/brand/logo-icon.png",

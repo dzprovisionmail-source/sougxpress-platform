@@ -7,6 +7,8 @@ export interface HeroSlide {
   image_url: string;
   content_type: 'product' | 'store' | 'promotion' | 'custom' | 'internal';
   target_id?: string | null;
+  target_store_id?: string | null;
+  target_product_id?: string | null;
   cta_label?: string | null;
   is_active: boolean;
   display_order: number;

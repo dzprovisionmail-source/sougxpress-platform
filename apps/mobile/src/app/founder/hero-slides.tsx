@@ -126,7 +126,7 @@ export default function FounderHeroSlidesScreen() {
     setFormImageUrl(slide.image_url);
     setFormCtaLabel(slide.cta_label || "تسوق الآن");
     setFormContentType(slide.content_type);
-    setFormTargetId(slide.target_id || "");
+    setFormTargetId(slide.target_id || slide.target_store_id || slide.target_product_id || "");
     setFormDisplayOrder(String(slide.display_order));
     setFormPriority(String(slide.priority));
     setFormIsActive(slide.is_active);
@@ -165,13 +165,36 @@ export default function FounderHeroSlidesScreen() {
     }
 
     setSaving(true);
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    let validatedTargetId = formTargetId.trim() || null;
+    let targetStoreId: string | null = null;
+    let targetProductId: string | null = null;
+
+    if (formContentType === 'store') {
+      if (validatedTargetId && !UUID_REGEX.test(validatedTargetId)) {
+        Alert.alert("خطأ", "معرف المتجر غير صالح (يجب أن يكون UUID)");
+        setSaving(false);
+        return;
+      }
+      targetStoreId = validatedTargetId;
+    } else if (formContentType === 'product') {
+      if (validatedTargetId && !UUID_REGEX.test(validatedTargetId)) {
+        Alert.alert("خطأ", "معرف المنتج غير صالح (يجب أن يكون UUID)");
+        setSaving(false);
+        return;
+      }
+      targetProductId = validatedTargetId;
+    }
+
     const payload = {
       title: formTitle.trim(),
       subtitle: formSubtitle.trim() || null,
       image_url: formImageUrl.trim(),
       cta_label: formCtaLabel.trim() || "تسوق الآن",
       content_type: formContentType,
-      target_id: formTargetId.trim() || null,
+      target_id: validatedTargetId,
+      target_store_id: targetStoreId,
+      target_product_id: targetProductId,
       display_order: parseInt(formDisplayOrder, 10) || 0,
       priority: parseInt(formPriority, 10) || 0,
       is_active: formIsActive,
