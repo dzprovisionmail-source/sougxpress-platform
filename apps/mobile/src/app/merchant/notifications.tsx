@@ -180,7 +180,7 @@ export default function MerchantNotificationsScreen() {
                     color="secondary"
                     style={{ fontSize: tokens.typography.sizes.sm }}
                   >
-                    {item.message}
+                    {item.body}
                   </WorkspaceText>
                   <WorkspaceText
                     color="disabled"

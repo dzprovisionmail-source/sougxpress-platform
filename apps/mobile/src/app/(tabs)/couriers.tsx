@@ -129,7 +129,7 @@ export default function CouriersDirectoryScreen() {
     const vehicleType = vehicleLabel(courier.vehicle_type);
 
     return (
-      <Card variant="elevated" style={styles.card}>
+      <Card key={courier.id} variant="elevated" style={styles.card}>
         <View style={[styles.cardTopRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <View style={styles.avatarCol}>
             <Avatar uri={courier.avatar_url} name={courier.full_name} size="xl" />

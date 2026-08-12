@@ -1,21 +1,25 @@
 import { supabase } from "@/lib/supabase";
-import { Courier, CourierServiceResponse } from "@/types/schema-04-couriers";
+import { CourierServiceResponse } from "@/types/schema-04-couriers";
 
 export type DeliveryStatus =
   | "pending"
   | "accepted"
+  | "arrived_at_store"
   | "picked_up"
-  | "on_the_way"
+  | "out_for_delivery"
   | "delivered"
-  | "cancelled";
+  | "cancelled"
+  | "failed";
 
 export const DELIVERY_TRANSITIONS: Record<DeliveryStatus, DeliveryStatus[]> = {
   pending: ["accepted", "cancelled"],
-  accepted: ["picked_up", "cancelled"],
-  picked_up: ["on_the_way", "cancelled"],
-  on_the_way: ["delivered", "cancelled"],
+  accepted: ["arrived_at_store", "cancelled"],
+  arrived_at_store: ["picked_up", "cancelled"],
+  picked_up: ["out_for_delivery", "cancelled"],
+  out_for_delivery: ["delivered", "failed"],
   delivered: [],
   cancelled: [],
+  failed: [],
 };
 
 export interface CourierDelivery {
@@ -35,9 +39,8 @@ export interface CourierDelivery {
   customer_phone: string;
   address_text: string;
   created_at: string;
-  accepted_at: string | null;
+  assigned_at: string | null;
   picked_up_at: string | null;
-  on_the_way_at: string | null;
   delivered_at: string | null;
 }
 
@@ -60,10 +63,16 @@ export const getCourierDeliveries = async (
 ): Promise<CourierServiceResponse<CourierDelivery[]>> => {
   try {
     let query = supabase
-      .from("orders")
-      .select(
-        "*, customer:customers(full_name, phone_number), store:stores(name), address:customer_addresses(address_text)"
-      )
+      .from("delivery_assignments")
+      .select(`
+        *,
+        order:orders (
+          *,
+          customer:customers (full_name, phone),
+          store:stores (name),
+          address:customer_addresses (address_text)
+        )
+      `)
       .eq("driver_id", courierId)
       .order("created_at", { ascending: false });
 
@@ -75,27 +84,26 @@ export const getCourierDeliveries = async (
 
     if (error) throw error;
 
-    const deliveries: CourierDelivery[] = (data as any[] ?? []).map((order: any) => ({
-      id: order.id,
-      order_id: order.id,
+    const deliveries: CourierDelivery[] = (data as any[] ?? []).map((assignment: any) => ({
+      id: assignment.id,
+      order_id: assignment.order_id,
       driver_id: courierId,
-      status: order.status as DeliveryStatus,
-      customer_id: order.customer_id,
-      store_id: order.store_id,
-      delivery_address_id: order.delivery_address_id,
-      delivery_fee_minor: order.delivery_fee_minor ?? 0,
-      subtotal_minor: order.subtotal_minor ?? 0,
-      total_minor: order.total_minor ?? 0,
-      special_instructions: order.special_instructions ?? null,
-      store_name: order.store?.name ?? "Unknown Store",
-      customer_name: order.customer?.full_name ?? "Unknown Customer",
-      customer_phone: order.customer?.phone_number ?? "",
-      address_text: order.address?.address_text ?? "",
-      created_at: order.created_at,
-      accepted_at: null,
-      picked_up_at: null,
-      on_the_way_at: null,
-      delivered_at: null,
+      status: assignment.status as DeliveryStatus,
+      customer_id: assignment.order?.customer_id,
+      store_id: assignment.order?.store_id,
+      delivery_address_id: assignment.order?.delivery_address_id,
+      delivery_fee_minor: assignment.order?.delivery_fee_minor ?? 0,
+      subtotal_minor: assignment.order?.subtotal_minor ?? 0,
+      total_minor: assignment.order?.total_minor ?? 0,
+      special_instructions: assignment.order?.special_instructions ?? null,
+      store_name: assignment.order?.store?.name ?? "Unknown Store",
+      customer_name: assignment.order?.customer?.full_name ?? "Unknown Customer",
+      customer_phone: assignment.order?.customer?.phone ?? "",
+      address_text: assignment.order?.address?.address_text ?? "",
+      created_at: assignment.created_at,
+      assigned_at: assignment.assigned_at,
+      picked_up_at: assignment.picked_up_at,
+      delivered_at: assignment.delivered_at,
     }));
 
     return { data: deliveries, error: null };
@@ -105,17 +113,18 @@ export const getCourierDeliveries = async (
 };
 
 export const acceptDelivery = async (
-  orderId: string,
+  assignmentId: string,
   courierId: string
 ): Promise<CourierServiceResponse<CourierDelivery>> => {
   try {
     const { data, error } = await supabase
-      .from("orders")
+      .from("delivery_assignments")
       .update({
         status: "accepted" as any,
-        driver_id: courierId,
+        assigned_at: new Date().toISOString(),
       })
-      .eq("id", orderId)
+      .eq("id", assignmentId)
+      .eq("driver_id", courierId)
       .select()
       .single();
 
@@ -123,43 +132,45 @@ export const acceptDelivery = async (
 
     return { data: data as any as CourierDelivery, error: null };
   } catch (err: any) {
-    return { data: null, error: err?.message ?? "فشل قبول التوصيل" };
+    return { data: null, error: err?.message ?? "فشل قبول التوصil" };
   }
 };
 
-export const rejectDelivery = async (
-  orderId: string,
-  courierId: string
-): Promise<CourierServiceResponse<null>> => {
-  try {
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        status: "cancelled" as any,
-        driver_id: null,
-      })
-      .eq("id", orderId)
-      .eq("driver_id", courierId);
-
-    if (error) throw error;
-
-    return { data: null, error: null };
-  } catch (err: any) {
-    return { data: null, error: err?.message ?? "فشل رفض التوصيل" };
-  }
-};
-
-export const pickUpDelivery = async (
-  orderId: string,
+export const arriveAtStore = async (
+  assignmentId: string,
   courierId: string
 ): Promise<CourierServiceResponse<CourierDelivery>> => {
   try {
     const { data, error } = await supabase
-      .from("orders")
+      .from("delivery_assignments")
+      .update({
+        status: "arrived_at_store" as any,
+      })
+      .eq("id", assignmentId)
+      .eq("driver_id", courierId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { data: data as any as CourierDelivery, error: null };
+  } catch (err: any) {
+    return { data: null, error: err?.message ?? "فشل تحديث الوصول للمتجر" };
+  }
+};
+
+export const pickUpDelivery = async (
+  assignmentId: string,
+  courierId: string
+): Promise<CourierServiceResponse<CourierDelivery>> => {
+  try {
+    const { data, error } = await supabase
+      .from("delivery_assignments")
       .update({
         status: "picked_up" as any,
+        picked_up_at: new Date().toISOString(),
       })
-      .eq("id", orderId)
+      .eq("id", assignmentId)
       .eq("driver_id", courierId)
       .select()
       .single();
@@ -173,16 +184,16 @@ export const pickUpDelivery = async (
 };
 
 export const startDelivery = async (
-  orderId: string,
+  assignmentId: string,
   courierId: string
 ): Promise<CourierServiceResponse<CourierDelivery>> => {
   try {
     const { data, error } = await supabase
-      .from("orders")
+      .from("delivery_assignments")
       .update({
-        status: "on_the_way" as any,
+        status: "out_for_delivery" as any,
       })
-      .eq("id", orderId)
+      .eq("id", assignmentId)
       .eq("driver_id", courierId)
       .select()
       .single();
@@ -196,16 +207,17 @@ export const startDelivery = async (
 };
 
 export const completeDelivery = async (
-  orderId: string,
+  assignmentId: string,
   courierId: string
 ): Promise<CourierServiceResponse<CourierDelivery>> => {
   try {
     const { data, error } = await supabase
-      .from("orders")
+      .from("delivery_assignments")
       .update({
         status: "delivered" as any,
+        delivered_at: new Date().toISOString(),
       })
-      .eq("id", orderId)
+      .eq("id", assignmentId)
       .eq("driver_id", courierId)
       .select()
       .single();
@@ -219,32 +231,24 @@ export const completeDelivery = async (
 };
 
 export const updateDeliveryStatus = async (
-  orderId: string,
+  assignmentId: string,
   courierId: string,
   newStatus: DeliveryStatus
 ): Promise<CourierServiceResponse<CourierDelivery>> => {
   try {
-    const { data: currentData, error: fetchError } = await supabase
-      .from("orders")
-      .select("status")
-      .eq("id", orderId)
-      .eq("driver_id", courierId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    const currentStatus = currentData?.status as DeliveryStatus;
-    if (!isValidTransition(currentStatus, newStatus)) {
-      return {
-        data: null,
-        error: `الانتقال من "${currentStatus}" إلى "${newStatus}" غير مسموح`,
-      };
+    const updates: Record<string, any> = { status: newStatus, updated_at: new Date().toISOString() };
+    if (newStatus === "delivered") {
+      updates.delivered_at = new Date().toISOString();
+    } else if (newStatus === "picked_up") {
+      updates.picked_up_at = new Date().toISOString();
+    } else if (newStatus === "accepted") {
+      updates.assigned_at = new Date().toISOString();
     }
 
     const { data, error } = await supabase
-      .from("orders")
-      .update({ status: newStatus as any })
-      .eq("id", orderId)
+      .from("delivery_assignments")
+      .update(updates)
+      .eq("id", assignmentId)
       .eq("driver_id", courierId)
       .select()
       .single();
@@ -262,29 +266,15 @@ export const getDeliveryEarnings = async (
   period: "daily" | "weekly" | "total"
 ): Promise<CourierServiceResponse<DeliveryStats>> => {
   try {
-    let dateFilter: string;
-    switch (period) {
-      case "daily":
-        dateFilter = "today";
-        break;
-      case "weekly":
-        dateFilter = "week";
-        break;
-      case "total":
-      default:
-        dateFilter = "all";
-        break;
-    }
-
     let query = supabase
-      .from("orders")
-      .select("total_minor, delivery_fee_minor")
+      .from("delivery_assignments")
+      .select("*, order:orders(total_minor, delivery_fee_minor)")
       .eq("driver_id", courierId)
       .eq("status", "delivered");
 
-    if (dateFilter === "today") {
+    if (period === "daily") {
       query = query.gte("created_at", new Date().toISOString().split("T")[0]);
-    } else if (dateFilter === "week") {
+    } else if (period === "weekly") {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       query = query.gte("created_at", weekAgo.toISOString());
@@ -294,9 +284,9 @@ export const getDeliveryEarnings = async (
 
     if (error) throw error;
 
-    const orders = (data as any[]) ?? [];
-    const totalEarnings = orders.reduce(
-      (sum, order) => sum + (order.total_minor ?? 0) + (order.delivery_fee_minor ?? 0),
+    const assignments = (data as any[]) ?? [];
+    const totalEarnings = assignments.reduce(
+      (sum, assignment) => sum + (assignment.order?.total_minor ?? 0) + (assignment.order?.delivery_fee_minor ?? 0),
       0
     );
 
@@ -304,9 +294,9 @@ export const getDeliveryEarnings = async (
       daily: period === "daily" ? totalEarnings : 0,
       weekly: period === "weekly" ? totalEarnings : 0,
       total: totalEarnings,
-      dailyCount: period === "daily" ? orders.length : 0,
-      weeklyCount: period === "weekly" ? orders.length : 0,
-      totalCount: orders.length,
+      dailyCount: period === "daily" ? assignments.length : 0,
+      weeklyCount: period === "weekly" ? assignments.length : 0,
+      totalCount: assignments.length,
     };
 
     return { data: stats, error: null };
@@ -327,7 +317,7 @@ export const subscribeToCourierDeliveries = (
         {
           event: "*",
           schema: "public",
-          table: "orders",
+          table: "delivery_assignments",
           filter: `driver_id=eq.${courierId}`,
         },
         callback

@@ -88,7 +88,7 @@ const CheckoutScreen = () => {
             {/* Address Section */}
             <AddressCard
               address={selectedAddress}
-              onEdit={() => { router.push("/customer/addresses") }}
+              onEdit={() => { router.push("/(tabs)/profile") }}
             />
 
             {/* Store Info */}

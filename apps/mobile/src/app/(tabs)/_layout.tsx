@@ -41,6 +41,9 @@ export default function TabLayout() {
         if (r === 'customer') setRole('customer');
         else if (r === 'driver') setRole('courier');
         else if (r === 'merchant') setRole('merchant');
+        else if (r === 'founder' || r === 'admin') {
+          import('expo-router').then(({ router }) => router.replace('/founder'));
+        }
         else setRole('guest');
       } catch {
         if (mounted) setRole('guest');
@@ -56,14 +59,14 @@ export default function TabLayout() {
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
           { name: 'market', title: 'السوق', Icon: Store },
-          { name: 'orders-customer', title: 'الطلبات', Icon: ClipboardList },
+          { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
           { name: 'cart', title: 'السلة', Icon: ShoppingCart },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
         ];
       case 'courier':
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
-          { name: 'orders-courier', title: 'الطلبات', Icon: ClipboardList },
+          { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
           { name: 'deliveries', title: 'التوصيلات', Icon: Bike },
           { name: 'earnings', title: 'الأرباح', Icon: Wallet },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
@@ -71,7 +74,7 @@ export default function TabLayout() {
       case 'merchant':
         return [
           { name: 'home', title: 'الرئيسية', Icon: Home },
-          { name: 'orders-merchant', title: 'الطلبات', Icon: ClipboardList },
+          { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
           { name: 'products', title: 'المنتجات', Icon: Package },
           { name: 'my-store', title: 'متجري', Icon: Store },
           { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
@@ -122,8 +125,6 @@ export default function TabLayout() {
       <Tabs.Screen name="driver" options={{ href: null }} />
       <Tabs.Screen name="store" options={{ href: null }} />
       <Tabs.Screen name="login" options={{ href: null }} />
-      <Tabs.Screen name="market" options={{ href: null }} />
-      <Tabs.Screen name="orders" options={{ href: null }} />
       <Tabs.Screen name="favorites" options={{ href: null }} />
     </Tabs>
   );

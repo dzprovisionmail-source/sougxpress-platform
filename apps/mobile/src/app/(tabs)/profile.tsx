@@ -1,169 +1,119 @@
+import React, { useState, useEffect } from "react";
+import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
+import { supabase } from "@/lib/supabase";
+import { useAppTheme } from "@/contexts/ThemeContext";
+import { Typography, Button } from "@/components/ui";
+import { LogIn, UserCircle } from "lucide-react-native";
+import { TOKENS } from "@/constants/tokens";
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import {
-  BadgeInfo, Smartphone, Mail, Building2, MapPinned, House, Map,
-  Package, PackageOpen, PackageCheck, Heart, Store, ShoppingBag, Bike,
-  Bell, LifeBuoy, Shield, ShieldCheck, LogOut, CircleUserRound
-} from 'lucide-react-native';
+import CustomerProfileScreen from "../customer/profile";
+import MerchantProfileScreen from "../merchant/profile";
+import DriverProfileScreen from "../driver/profile";
 
-import ProfileHeader from '@/components/profile/ProfileHeader';
-import ProfileCard from '@/components/profile/ProfileCard';
-import ProfileRow from '@/components/profile/ProfileRow';
-import { Button } from '@/components/ui';
+type Role = 'customer' | 'courier' | 'merchant' | 'guest';
 
-import useProfile from '@/hooks/useProfile';
-import { supabase } from '@/lib/supabase';
-
-import { useAppTheme } from '@/contexts/ThemeContext';
-import { spacing } from '@/design/spacing';
-import { typography } from '@/design/typography';
-import { iconSizes } from '@/design/icons';
-
-const ProfileScreen = () => {
+export default function ProfileGateway() {
   const router = useRouter();
-  const { profile, loading, error, updateProfile } = useProfile();
-  const { colors } = useAppTheme();
+  const { colors, tokens } = useAppTheme();
+  const [role, setRole] = useState<Role | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      Alert.alert('Erreur de déconnexion', error.message);
-    } else {
-      // Navigate to login or home screen
-    }
-  };
+  useEffect(() => {
+    const checkRole = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setRole('guest');
+          return;
+        }
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        
+        const r = (profile as any)?.role;
+        if (r === 'customer') setRole('customer');
+        else if (r === 'driver') setRole('courier');
+        else if (r === 'merchant') setRole('merchant');
+        else setRole('guest');
+      } catch (error) {
+        console.error("Error checking role in profile gateway:", error);
+        setRole('guest');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleAvatarUpload = async (newAvatarUrl: string) => {
-    if (profile) {
-      await updateProfile({ ...profile, avatar_url: newAvatarUrl }); // Assuming avatar_url field exists in Customer
-    }
-  };
+    checkRole();
+  }, []);
 
   if (loading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>جاري التحميل...</Text>
       </View>
     );
   }
 
-  if (error === "User not logged in") {
+  if (role === 'guest') {
     return (
-      <View style={styles.centered}>
-        <Typography variant="h3" align="center" style={{ marginBottom: spacing.md }}>
-          تسجيل الدخول
+      <View style={[styles.centered, { backgroundColor: colors.bgBase, padding: TOKENS.spacing.xl }]}>
+        <UserCircle size={80} color={colors.textDisabled} style={{ marginBottom: TOKENS.spacing.lg }} />
+        
+        <Typography variant="h2" align="center" style={{ marginBottom: TOKENS.spacing.md }}>
+          حسابي
         </Typography>
-        <Typography variant="body" color="secondary" align="center" style={{ marginBottom: spacing.lg }}>
-          يرجى تسجيل الدخول لعرض حسابك
+        
+        <Typography variant="body" color="secondary" align="center" style={{ marginBottom: TOKENS.spacing.xl }}>
+          سجل دخولك للوصول إلى طلباتك، مفضلاتك، وإعدادات حسابك الشخصي.
         </Typography>
-        <Button
-          title="تسجيل الدخول"
+
+        {/* Guest Banner - Required by Handoff */}
+        <TouchableOpacity 
+          activeOpacity={0.9}
           onPress={() => router.push("/login")}
-          icon={<LogIn size={18} color={colors.textOnBrand} />}
+          style={[styles.guestBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}
+        >
+          <Typography variant="h3" color="brand" align="center">
+            يجب عليك التسجيل أولًا
+          </Typography>
+        </TouchableOpacity>
+
+        <Button
+          title="تسجيل الدخول / إنشاء حساب"
+          onPress={() => router.push("/login")}
+          icon={<LogIn size={20} color={colors.textOnBrand} />}
+          style={{ width: '100%', marginTop: TOKENS.spacing.xl }}
         />
       </View>
     );
   }
 
-  if (error) {
-    return (
-      <View style={styles.centered}>
-        <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-      </View>
-    );
+  switch (role) {
+    case 'customer':
+      return <CustomerProfileScreen />;
+    case 'courier':
+      return <DriverProfileScreen />;
+    case 'merchant':
+      return <MerchantProfileScreen />;
+    default:
+      return null;
   }
-
-  return (
-    <ScrollView style={styles.container}>
-      <Stack.Screen options={{ title: 'حسابي' }} />
-
-      <ProfileHeader
-        avatarUrl={profile?.avatar_url || null}
-        onAvatarUpload={handleAvatarUpload}
-        name={profile?.full_name || 'اسم المستخدم'}
-        phoneNumber={profile?.phone || '+966 50 123 4567'}
-        badgeText="⭐ العضوية الذهبية"
-        description="أنت من أوائل مستخدمي Soug-XPRESS"
-      />
-
-      {/* Informations personnelles */}
-      <ProfileCard icon={<BadgeInfo color={colors.primary} size={iconSizes.default} />} title="معلوماتي">
-        <ProfileRow icon={<Smartphone color={colors.textSecondary} size={iconSizes.small} />} label="رقم الهاتف" value={profile?.phone || ''} />
-        <ProfileRow icon={<Mail color={colors.textSecondary} size={iconSizes.small} />} label="البريد الإلكتروني" value={profile?.email || ''} />
-        <ProfileRow icon={<Building2 color={colors.textSecondary} size={iconSizes.small} />} label="المدينة" value={profile?.city || ''} />
-        <ProfileRow icon={<MapPinned color={colors.textSecondary} size={iconSizes.small} />} label="الحي" value={profile?.neighborhood || ''} />
-        <ProfileRow icon={<House color={colors.textSecondary} size={iconSizes.small} />} label="العنوان" value={profile?.address || ''} />
-        <ProfileRow icon={<Map color={colors.textSecondary} size={iconSizes.small} />} label="الموقع" value="Voir sur la carte" />
-        <Button title="تعديل" onPress={() => { /* Handle edit */ }} variant="outline" />
-      </ProfileCard>
-
-      {/* Mes commandes */}
-      <ProfileCard icon={<Package color={colors.primary} size={iconSizes.default} />} title="طلباتي">
-        <Button icon={<Package color={colors.textSecondary} size={iconSizes.small} />} title="الطلبات الحالية" onPress={() => { /* Navigate to current orders */ }} variant="ghost" />
-        <Button icon={<PackageOpen color={colors.textSecondary} size={iconSizes.small} />} title="الطلبات السابقة" onPress={() => { /* Navigate to past orders */ }} variant="ghost" />
-        <Button icon={<PackageCheck color={colors.textSecondary} size={iconSizes.small} />} title="الطلبات الملغاة" onPress={() => { /* Navigate to cancelled orders */ }} variant="ghost" />
-      </ProfileCard>
-
-      {/* Favoris */}
-      <ProfileCard icon={<Heart color={colors.primary} size={iconSizes.default} />} title="المفضلة">
-        <Button icon={<Store color={colors.textSecondary} size={iconSizes.small} />} title="المتاجر" onPress={() => { /* Navigate to favorite stores */ }} variant="ghost" />
-        <Button icon={<ShoppingBag color={colors.textSecondary} size={iconSizes.small} />} title="المنتجات" onPress={() => { /* Navigate to favorite products */ }} variant="ghost" />
-        <Button icon={<Bike color={colors.textSecondary} size={iconSizes.small} />} title="الموصلون" onPress={() => { /* Navigate to favorite drivers */ }} variant="ghost" />
-      </ProfileCard>
-
-      {/* Notifications */}
-      <ProfileCard icon={<Bell color={colors.primary} size={iconSizes.default} />} title="الإشعارات">
-        <Button icon={<Bell color={colors.textSecondary} size={iconSizes.small} />} title="إشعارات الطلبات" onPress={() => { /* Toggle order notifications */ }} variant="ghost" />
-        <Button icon={<Bell color={colors.textSecondary} size={iconSizes.small} />} title="العروض" onPress={() => { /* Toggle offers notifications */ }} variant="ghost" />
-        <Button icon={<Bell color={colors.textSecondary} size={iconSizes.small} />} title="أخبار المنصة" onPress={() => { /* Toggle platform news notifications */ }} variant="ghost" />
-      </ProfileCard>
-
-      {/* Aide */}
-      <ProfileCard icon={<LifeBuoy color={colors.primary} size={iconSizes.default} />} title="المساعدة">
-        <Button icon={<LifeBuoy color={colors.textSecondary} size={iconSizes.small} />} title="تواصل معنا" onPress={() => { /* Contact support */ }} variant="ghost" />
-        <Button icon={<BadgeInfo color={colors.textSecondary} size={iconSizes.small} />} title="الأسئلة الشائعة" onPress={() => { /* Navigate to FAQ */ }} variant="ghost" />
-        <Button icon={<Shield color={colors.textSecondary} size={iconSizes.small} />} title="سياسة الخصوصية" onPress={() => { /* Navigate to privacy policy */ }} variant="ghost" />
-        <Button icon={<ShieldCheck color={colors.textSecondary} size={iconSizes.small} />} title="شروط الاستخدام" onPress={() => { /* Navigate to terms of use */ }} variant="ghost" />
-      </ProfileCard>
-
-      {/* Sécurité */}
-      <ProfileCard icon={<ShieldCheck color={colors.primary} size={iconSizes.default} />} title="الأمان">
-        <Button icon={<Shield color={colors.textSecondary} size={iconSizes.small} />} title="تغيير كلمة المرور" onPress={() => { /* Change password */ }} variant="ghost" />
-        <Button icon={<ShieldCheck color={colors.textSecondary} size={iconSizes.small} />} title="حذف الحساب" onPress={() => { /* Delete account */ }} variant="ghost" />
-      </ProfileCard>
-
-      {/* Déconnexion */}
-      <View style={styles.logoutButtonContainer}>
-        <Button icon={<LogOut color={colors.error} size={iconSizes.default} />} title="تسجيل الخروج" onPress={handleLogout} variant="danger" />
-      </View>
-    </ScrollView>
-  );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingText: {
-    ...typography.body,
-    marginTop: spacing.md,
-  },
-  errorText: {
-    ...typography.body,
-    marginTop: spacing.md,
-  },
-  logoutButtonContainer: {
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.md,
-  },
+  guestBanner: {
+    width: '100%',
+    padding: TOKENS.spacing.lg,
+    borderRadius: TOKENS.radius.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  }
 });
-
-export default ProfileScreen;

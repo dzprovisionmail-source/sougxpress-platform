@@ -5,5 +5,5 @@ import { Redirect } from "expo-router";
  * The merchant orders screen now lives inside the Merchant workspace.
  */
 export default function LegacyMerchantOrdersRedirect() {
-  return <Redirect href="/merchant/orders" />;
+  return <Redirect href="/(tabs)/orders" />;
 }

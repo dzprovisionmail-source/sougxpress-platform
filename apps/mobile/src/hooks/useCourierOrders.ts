@@ -9,8 +9,9 @@ import { DeliveryStatus } from "@/services/courier-delivery.service";
 const ACTIVE_STATUSES: DeliveryStatus[] = [
   "pending",
   "accepted",
+  "arrived_at_store",
   "picked_up",
-  "on_the_way",
+  "out_for_delivery",
 ];
 
 const useCourierOrders = (courierId: string) => {

@@ -1,6 +1,5 @@
-
 import { useCallback, useEffect, useState } from "react";
-import { Order, OrderStatus } from "../types/schema-03-core";
+import { Order } from "../types/schema-03-core";
 import {
   getDriverOrders,
   getAvailableOrders,
@@ -10,12 +9,14 @@ import {
 } from "../services/driver-orders.service";
 
 /**
- * Order enriched with the joined store/zone/address fields selected by
- * driver-orders.service.ts (used to render delivery cards and maps links).
+ * Order enriched with assignment data and joined fields.
  */
 export type DriverOrder = Order & {
+  assignment_id: string;
+  assignment_status: string;
   store?: { name: string; zone?: { city: string } };
   address?: { address_text: string; latitude: number; longitude: number };
+  customer?: { phone: string };
 };
 
 const useDriverOrders = (driverId: string, zoneId?: string) => {
@@ -54,14 +55,14 @@ const useDriverOrders = (driverId: string, zoneId?: string) => {
     }
   }, [driverId, fetchOrders]);
 
-  const handleAccept = async (orderId: string) => {
-    const success = await acceptOrder(orderId, driverId);
+  const handleAccept = async (assignmentId: string) => {
+    const success = await acceptOrder(assignmentId, driverId);
     if (success) fetchOrders();
     return success;
   };
 
-  const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
-    const success = await updateDeliveryStatus(orderId, newStatus, driverId);
+  const handleUpdateStatus = async (assignmentId: string, newStatus: string) => {
+    const success = await updateDeliveryStatus(assignmentId, newStatus, driverId);
     if (success) fetchOrders();
     return success;
   };

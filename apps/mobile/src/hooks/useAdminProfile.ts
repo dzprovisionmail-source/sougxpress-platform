@@ -59,13 +59,7 @@ export function useAdminProfile(): UseAdminProfileResult {
       const role: string = profileData.role ?? "";
 
       if (!["admin", "founder"].includes(role)) {
-        const roleRoutes: Record<string, string> = {
-          customer: "/(tabs)/home",
-          merchant: "/merchant/dashboard",
-          driver: "/driver/dashboard",
-        };
-        const dest = roleRoutes[role] ?? "/";
-        router.replace(dest as Parameters<typeof router.replace>[0]);
+        router.replace("/(tabs)/home");
         return;
       }
 

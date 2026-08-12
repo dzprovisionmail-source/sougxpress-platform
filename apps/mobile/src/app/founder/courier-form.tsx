@@ -99,7 +99,7 @@ export default function FounderCourierFormScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: field === "avatar_url" ? [1, 1] : [16, 9],
       quality: 0.8,

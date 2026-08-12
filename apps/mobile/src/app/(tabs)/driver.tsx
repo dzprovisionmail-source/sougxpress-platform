@@ -5,5 +5,5 @@ import { Redirect } from "expo-router";
  * The driver profile now lives inside the Driver workspace.
  */
 export default function LegacyDriverRedirect() {
-  return <Redirect href="/driver/dashboard" />;
+  return <Redirect href="/(tabs)/home" />;
 }

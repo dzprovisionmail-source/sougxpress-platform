@@ -35,6 +35,7 @@ export default function RootLayout() {
         <Stack.Screen name="product-details" />
         <Stack.Screen name="checkout" />
         <Stack.Screen name="merchant-orders" />
+        {/* Legacy role trees - kept as hidden to prevent route errors but not used for navigation */}
         <Stack.Screen name="merchant" />
         <Stack.Screen name="driver" />
         <Stack.Screen name="(tabs)" />

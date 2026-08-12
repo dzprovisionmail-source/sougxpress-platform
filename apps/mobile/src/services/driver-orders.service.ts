@@ -1,18 +1,20 @@
-
 import { supabase } from "../lib/supabase";
 import { Order, OrderStatus } from "../types/schema-03-core";
 
 /**
- * Orders currently assigned to this driver (accepted through delivered),
- * mirroring the read pattern used by merchant-orders.service.ts.
+ * Assignments currently for this driver.
  */
-const ORDER_SELECT_WITH_LOCATIONS =
-  "*, store:stores(name, zone:zones(city)), address:customer_addresses(address_text, latitude, longitude)";
-
-export const getDriverOrders = async (driverId: string): Promise<Order[]> => {
+export const getDriverOrders = async (driverId: string): Promise<any[]> => {
   const { data, error } = await supabase
-    .from("orders")
-    .select(ORDER_SELECT_WITH_LOCATIONS)
+    .from("delivery_assignments")
+    .select(`
+      *,
+      order:orders (
+        *,
+        store:stores (name, zone:zones (city)),
+        address:customer_addresses (address_text, latitude, longitude)
+      )
+    `)
     .eq("driver_id", driverId)
     .order("created_at", { ascending: false });
 
@@ -20,52 +22,58 @@ export const getDriverOrders = async (driverId: string): Promise<Order[]> => {
     console.error("Error fetching driver orders:", error);
     return [];
   }
-  return data as any[];
+  return (data as any[] ?? []).map(a => ({
+    ...a.order,
+    assignment_id: a.id,
+    assignment_status: a.status
+  }));
 };
 
 /**
- * Orders ready for pickup in the driver's zone that have not yet been
- * claimed by another driver — the "available deliveries" pool.
+ * Available delivery assignments in the driver's zone.
  */
-export const getAvailableOrders = async (zoneId: string): Promise<Order[]> => {
+export const getAvailableOrders = async (zoneId: string): Promise<any[]> => {
   if (!zoneId) return [];
 
   const { data, error } = await supabase
-    .from("orders")
-    .select(ORDER_SELECT_WITH_LOCATIONS)
-    .eq("zone_id", zoneId)
-    .eq("status", "ready_for_pickup")
+    .from("delivery_assignments")
+    .select(`
+      *,
+      order:orders (
+        *,
+        store:stores (name, zone:zones (city)),
+        address:customer_addresses (address_text, latitude, longitude)
+      )
+    `)
+    .eq("status", "pending")
     .is("driver_id", null)
+    .eq("order.zone_id", zoneId)
     .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Error fetching available orders:", error);
     return [];
   }
-  return data as any[];
+  return (data as any[] ?? []).map(a => ({
+    ...a.order,
+    assignment_id: a.id,
+    assignment_status: a.status
+  }));
 };
 
-export const acceptOrder = async (orderId: string, driverId: string): Promise<boolean> => {
+export const acceptOrder = async (assignmentId: string, driverId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from("orders")
-      .update({ driver_id: driverId, updated_at: new Date().toISOString() })
-      .eq("id", orderId)
+      .from("delivery_assignments")
+      .update({ 
+        driver_id: driverId, 
+        status: "accepted",
+        assigned_at: new Date().toISOString() 
+      })
+      .eq("id", assignmentId)
       .is("driver_id", null);
 
     if (error) throw error;
-
-    const { error: historyError } = await supabase
-      .from("order_status_history")
-      .insert({
-        order_id: orderId,
-        status: "ready_for_pickup",
-        changed_by: driverId,
-        changed_by_role: "driver",
-      });
-
-    if (historyError) throw historyError;
-
     return true;
   } catch (error) {
     console.error("Error accepting order:", error);
@@ -74,46 +82,25 @@ export const acceptOrder = async (orderId: string, driverId: string): Promise<bo
 };
 
 export const updateDeliveryStatus = async (
-  orderId: string,
-  newStatus: OrderStatus,
+  assignmentId: string,
+  newStatus: string,
   driverId: string
 ): Promise<boolean> => {
   try {
-    const { data: order, error: fetchError } = await supabase
-      .from("orders")
-      .select("driver_id")
-      .eq("id", orderId)
-      .single();
-
-    if (fetchError || !order || order.driver_id !== driverId) {
-      console.error("Driver ownership validation failed for order:", orderId);
-      return false;
-    }
-
-    const updates: Record<string, unknown> = { status: newStatus, updated_at: new Date().toISOString() };
+    const updates: Record<string, any> = { status: newStatus, updated_at: new Date().toISOString() };
     if (newStatus === "delivered") {
       updates.delivered_at = new Date().toISOString();
+    } else if (newStatus === "picked_up") {
+      updates.picked_up_at = new Date().toISOString();
     }
 
-    const { error: orderError } = await supabase
-      .from("orders")
+    const { error } = await supabase
+      .from("delivery_assignments")
       .update(updates)
-      .eq("id", orderId)
+      .eq("id", assignmentId)
       .eq("driver_id", driverId);
 
-    if (orderError) throw orderError;
-
-    const { error: historyError } = await supabase
-      .from("order_status_history")
-      .insert({
-        order_id: orderId,
-        status: newStatus,
-        changed_by: driverId,
-        changed_by_role: "driver",
-      });
-
-    if (historyError) throw historyError;
-
+    if (error) throw error;
     return true;
   } catch (error) {
     console.error("Error updating delivery status:", error);
@@ -123,10 +110,10 @@ export const updateDeliveryStatus = async (
 
 export const subscribeToDriverOrders = (driverId: string, callback: () => void) => {
   return supabase
-    .channel(`driver_orders_${driverId}`)
+    .channel(`driver_assignments_${driverId}`)
     .on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "orders" },
+      { event: "*", schema: "public", table: "delivery_assignments", filter: `driver_id=eq.${driverId}` },
       callback
     )
     .subscribe();

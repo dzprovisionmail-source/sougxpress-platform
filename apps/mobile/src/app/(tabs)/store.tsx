@@ -5,5 +5,5 @@ import { Redirect } from "expo-router";
  * Merchant store management now lives inside the Merchant workspace.
  */
 export default function LegacyMerchantStoreRedirect() {
-  return <Redirect href="/merchant/store" />;
+  return <Redirect href="/(tabs)/my-store" />;
 }

@@ -3,11 +3,12 @@ import { supabase } from "../lib/supabase";
 import { Driver } from "../types/schema-03-core";
 
 export const getDriver = async (driverId: string): Promise<Driver | null> => {
+  if (!driverId || driverId.length < 36) return null;
   const { data, error } = await supabase
     .from("drivers")
-    .select("*", { count: "exact" })
+    .select("*")
     .eq("id", driverId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("Error fetching driver:", error);
@@ -17,12 +18,13 @@ export const getDriver = async (driverId: string): Promise<Driver | null> => {
 };
 
 export const updateDriver = async (driverId: string, updates: Partial<Driver>): Promise<Driver | null> => {
+  if (!driverId || driverId.length < 36) return null;
   const { data, error } = await supabase
     .from("drivers")
     .update(updates)
     .eq("id", driverId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("Error updating driver:", error);

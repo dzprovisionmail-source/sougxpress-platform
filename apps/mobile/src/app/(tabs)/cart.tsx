@@ -23,6 +23,7 @@ import {
 import { Trash2, ArrowLeft, ArrowRight, ShoppingBag, ShieldCheck } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { supabase } from "@/lib/supabase";
 import {
   getCart,
   removeFromCart,
@@ -39,18 +40,27 @@ export default function CustomerCartScreen() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [itemToRemove, setItemToRemove] = useState<string | null>(null);
 
+  const [isGuest, setIsGuest] = useState(false);
+
   useEffect(() => {
-    loadCart();
+    checkAuthAndLoadCart();
   }, []);
 
-  const loadCart = async () => {
+  const checkAuthAndLoadCart = async () => {
     try {
       setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setIsGuest(true);
+        setLoading(false);
+        return;
+      }
       const items = await getCart();
       setCartItems(items);
     } catch (error) {
       console.error("Error loading cart:", error);
-    } finally {      setLoading(false);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,13 +99,46 @@ export default function CustomerCartScreen() {
     );
   }
 
+  if (isGuest) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
+        <Header title="سلة التسوق" />
+        <View style={[styles.centered, { padding: TOKENS.spacing.xl }]}>
+          <ShoppingBag size={80} color={colors.textDisabled} style={{ marginBottom: TOKENS.spacing.lg }} />
+          <Typography variant="h2" align="center" style={{ marginBottom: TOKENS.spacing.md }}>
+            سلة التسوق
+          </Typography>
+          <Typography variant="body" color="secondary" align="center" style={{ marginBottom: TOKENS.spacing.xl }}>
+            يجب عليك تسجيل الدخول لإضافة المنتجات إلى السلة وإتمام عملية الشراء.
+          </Typography>
+          
+          <TouchableOpacity 
+            activeOpacity={0.9}
+            onPress={() => router.push("/login")}
+            style={[styles.guestBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary, width: '100%', padding: TOKENS.spacing.lg, borderRadius: TOKENS.radius.md, borderWidth: 1, borderStyle: 'dashed' }]}
+          >
+            <Typography variant="h3" color="brand" align="center">
+              يجب عليك التسجيل أولًا
+            </Typography>
+          </TouchableOpacity>
+
+          <Button
+            title="تسجيل الدخول"
+            onPress={() => router.push("/login")}
+            style={{ width: '100%', marginTop: TOKENS.spacing.xl }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (cartItems.length === 0) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
         <Header title="سلة التسوق" />
         <EmptyState
           type="empty-cart"
-          onAction={() => router.push("/home")}
+          onAction={() => router.push("/(tabs)/home")}
         />
       </SafeAreaView>
     );
@@ -247,6 +290,12 @@ const styles = StyleSheet.create({
   },
   trashBtn: {
     padding: 4,
+  },
+  guestBanner: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    padding: TOKENS.spacing.lg,
+    borderRadius: TOKENS.radius.md,
   },
   quantityRow: {
     justifyContent: "space-between",

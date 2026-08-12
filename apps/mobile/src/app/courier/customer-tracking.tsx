@@ -20,18 +20,21 @@ import { DeliveryStatus } from "@/services/courier-delivery.service";
 const STATUS_FLOW: DeliveryStatus[] = [
   "pending",
   "accepted",
+  "arrived_at_store",
   "picked_up",
-  "on_the_way",
+  "out_for_delivery",
   "delivered",
 ];
 
-const STATUS_LABEL: Record<DeliveryStatus, string> = {
+const STATUS_LABEL: Partial<Record<DeliveryStatus, string>> = {
   pending: "بانتظار القبول",
   accepted: "مقبول",
+  arrived_at_store: "في المتجر",
   picked_up: "تم الاستلام",
-  on_the_way: "في الطريق",
+  out_for_delivery: "في الطريق",
   delivered: "مُسلّم",
   cancelled: "ملغي",
+  failed: "فشل",
 };
 
 export default function CustomerTrackingScreen() {
