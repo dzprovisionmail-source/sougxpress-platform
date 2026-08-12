@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Tabs, router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useState, useEffect } from 'react';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import {
   Home,
-  Heart,
   ShoppingCart,
   CircleUserRound,
   Bike,
@@ -71,7 +70,7 @@ export default function TabLayout() {
     return () => { mounted = false; };
   }, [isPreviewMode]);
 
-  // Define approved tabs for each role
+  // Define approved tabs for each role strictly per specifications
   const roleTabs: Record<Role, TabConfig[]> = {
     guest: [
       { name: 'home', title: 'الرئيسية', Icon: Home },
@@ -102,7 +101,6 @@ export default function TabLayout() {
 
   const currentTabs = roleTabs[role];
 
-  // Helper to check if a route is an approved tab for the current role
   const getTabOptions = (routeName: string) => {
     const approvedTab = currentTabs.find(t => t.name === routeName);
     if (!approvedTab) {
@@ -117,7 +115,6 @@ export default function TabLayout() {
       tabBarIcon: ({ color, size }: { color: string; size: number }) => (
         <IconComponent color={color} size={size} />
       ),
-      href: `/(tabs)/${routeName}`,
     };
   };
 
@@ -136,44 +133,44 @@ export default function TabLayout() {
       )}
       <Tabs
         screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#FF8A00',
-        tabBarInactiveTintColor: '#888888',
-        tabBarLabelStyle: {
-          fontFamily: tokens.typography.families.arabic,
-          fontSize: 12,
-          fontWeight: '700',
-        },
-        tabBarStyle: {
-          backgroundColor: colors.bgSurface,
-          borderTopColor: colors.borderSubtle,
-          borderTopWidth: 1,
-          paddingBottom: Math.max(insets.bottom, 8),
-          paddingTop: 8,
-          height: 60 + Math.max(insets.bottom, 8),
-        },
-      }}
-    >
-      <Tabs.Screen name="home" options={getTabOptions('home')} />
-      <Tabs.Screen name="market" options={getTabOptions('market')} />
-      <Tabs.Screen name="orders" options={getTabOptions('orders')} />
-      <Tabs.Screen name="cart" options={getTabOptions('cart')} />
-      <Tabs.Screen name="profile" options={getTabOptions('profile')} />
-      <Tabs.Screen name="products" options={getTabOptions('products')} />
-      <Tabs.Screen name="my-store" options={getTabOptions('my-store')} />
-      <Tabs.Screen name="deliveries" options={getTabOptions('deliveries')} />
-      <Tabs.Screen name="earnings" options={getTabOptions('earnings')} />
+          headerShown: false,
+          tabBarActiveTintColor: '#FF8A00',
+          tabBarInactiveTintColor: '#888888',
+          tabBarLabelStyle: {
+            fontFamily: tokens.typography.families.arabic,
+            fontSize: 12,
+            fontWeight: '700',
+          },
+          tabBarStyle: {
+            backgroundColor: colors.bgSurface,
+            borderTopColor: colors.borderSubtle,
+            borderTopWidth: 1,
+            paddingBottom: Math.max(insets.bottom, 8),
+            paddingTop: 8,
+            height: 60 + Math.max(insets.bottom, 8),
+          },
+        }}
+      >
+        <Tabs.Screen name="home" options={getTabOptions('home')} />
+        <Tabs.Screen name="market" options={getTabOptions('market')} />
+        <Tabs.Screen name="orders" options={getTabOptions('orders')} />
+        <Tabs.Screen name="cart" options={getTabOptions('cart')} />
+        <Tabs.Screen name="profile" options={getTabOptions('profile')} />
+        <Tabs.Screen name="products" options={getTabOptions('products')} />
+        <Tabs.Screen name="my-store" options={getTabOptions('my-store')} />
+        <Tabs.Screen name="deliveries" options={getTabOptions('deliveries')} />
+        <Tabs.Screen name="earnings" options={getTabOptions('earnings')} />
 
-      {/* Hidden Routes */}
-      <Tabs.Screen name="orders-customer" options={{ href: null }} />
-      <Tabs.Screen name="orders-merchant" options={{ href: null }} />
-      <Tabs.Screen name="orders-courier" options={{ href: null }} />
-      <Tabs.Screen name="driver" options={{ href: null }} />
-      <Tabs.Screen name="store" options={{ href: null }} />
-      <Tabs.Screen name="favorites" options={{ href: null }} />
-      <Tabs.Screen name="couriers" options={{ href: null }} />
-      <Tabs.Screen name="courier/[id]" options={{ href: null }} />
-    </Tabs>
+        {/* Hidden Routes */}
+        <Tabs.Screen name="orders-customer" options={{ href: null }} />
+        <Tabs.Screen name="orders-merchant" options={{ href: null }} />
+        <Tabs.Screen name="orders-courier" options={{ href: null }} />
+        <Tabs.Screen name="driver" options={{ href: null }} />
+        <Tabs.Screen name="store" options={{ href: null }} />
+        <Tabs.Screen name="favorites" options={{ href: null }} />
+        <Tabs.Screen name="couriers" options={{ href: null }} />
+        <Tabs.Screen name="courier/[id]" options={{ href: null }} />
+      </Tabs>
     </View>
   );
 }
@@ -191,7 +188,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: '700',
-    fontFamily: 'System',
   },
   exitBtn: {
     backgroundColor: 'rgba(255,255,255,0.2)',
