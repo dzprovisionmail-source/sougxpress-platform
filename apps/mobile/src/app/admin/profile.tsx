@@ -172,7 +172,7 @@ function InfoRow({
       <Text style={{ color: colors.textSecondary, fontFamily: tokens.typography.families.arabic, fontSize: tokens.typography.sizes.base, textAlign: "right" }}>
         {label}
       </Text>
-      <Text style={{ color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, fontSize: tokens.typography.sizes.base, textAlign: "left" }}>
+      <Text style={{ color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, fontSize: tokens.typography.sizes.base, textAlign: "right" }}>
         {value}
       </Text>
     </View>
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 2, alignItems: "center", justifyContent: "center", marginBottom: 12 },
   name: { fontWeight: "700", textAlign: "center" },
   email: { textAlign: "center", marginTop: 4 },
-  roleBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 0 },
+  roleBadge: { flexDirection: "row-reverse", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 0 },
   roleText: { fontWeight: "600" },
   section: { borderWidth: 1 },
   sectionTitle: { fontWeight: "700", textAlign: "right", marginBottom: 12 },

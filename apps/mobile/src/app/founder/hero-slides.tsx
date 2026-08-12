@@ -285,7 +285,7 @@ export default function FounderHeroSlidesScreen() {
             <>
               <Text style={{ color: colors.textSecondary, fontFamily: tokens.typography.families.arabic, fontSize: 12, marginBottom: 6 }}>سرعة التدوير (بالثواني):</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {[1, 2, 3, 4, 5, 6, 10].map((sec) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((sec) => (
                   <TouchableOpacity
                     key={sec}
                     style={[
