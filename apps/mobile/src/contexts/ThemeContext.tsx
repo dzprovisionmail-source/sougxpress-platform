@@ -14,6 +14,10 @@ interface ThemeContextValue {
   tokens: typeof TOKENS;
   setTheme: (theme: ThemeType) => void;
   isRTL: boolean;
+  rowDirection: "row-reverse" | "row";
+  start: "right" | "left";
+  end: "left" | "right";
+  textAlign: "right" | "left";
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
@@ -40,12 +44,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     AsyncStorage.setItem(THEME_STORAGE_KEY, next).catch(() => {});
   }, []);
 
+  const isRTL = I18nManager.isRTL;
   const value: ThemeContextValue = {
     theme,
     colors: getThemeColors(theme),
     tokens: TOKENS,
     setTheme,
-    isRTL: I18nManager.isRTL,
+    isRTL,
+    rowDirection: isRTL ? "row-reverse" : "row",
+    start: isRTL ? "right" : "left",
+    end: isRTL ? "left" : "right",
+    textAlign: isRTL ? "right" : "left",
   };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
