@@ -27,7 +27,7 @@ import * as ImagePicker from "expo-image-picker";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
-import { getStoreByMerchantId, updateStore, createStore } from "@/services/store.service";
+import { getStoreByMerchantId, getStoresByMerchantId, updateStore, createStore } from "@/services/store.service";
 import useStore from "@/hooks/useStore";
 import { useMerchantProducts } from "@/hooks/useProducts";
 import { Store } from "@/types/schema-03-core";
@@ -128,6 +128,7 @@ export default function MerchantStoreScreen() {
   const { userId } = useCurrentUserId();
 
   const [storeId, setStoreId] = useState<string>("");
+  const [stores, setStores] = useState<Store[]>([]);
   const [resolving, setResolving] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [form, setForm] = useState<StoreFormValues | null>(null);
@@ -152,16 +153,24 @@ export default function MerchantStoreScreen() {
   const [pendingAssetType, setPendingAssetType] = useState<"logos" | "covers" | null>(null);
   const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
 
+  const loadMerchantStores = async () => {
+    if (!userId) return;
+    const list = await getStoresByMerchantId(userId);
+    setStores(list);
+    if (list.length > 0) {
+      if (!storeId || !list.some(s => s.id === storeId)) {
+        setStoreId(list[0].id);
+      }
+      setShowCreateForm(false);
+    } else {
+      setShowCreateForm(true);
+    }
+    setResolving(false);
+  };
+
   useEffect(() => {
     if (!userId) return;
-    getStoreByMerchantId(userId).then((s) => {
-      if (s?.id) {
-        setStoreId(s.id);
-      } else {
-        setShowCreateForm(true);
-      }
-      setResolving(false);
-    });
+    loadMerchantStores();
     loadCategories();
   }, [userId]);
 
@@ -206,6 +215,10 @@ export default function MerchantStoreScreen() {
   /* ── Create store ──────────────────────────────────────────── */
   const handleCreateStore = async () => {
     if (!userId) return;
+    if (stores.length >= 5) {
+      Alert.alert("تنبيه", "لقد وصلت إلى الحد الأقصى وهو 5 متاجر.");
+      return;
+    }
     if (!createForm.name.trim()) {
       Alert.alert("خطأ", "اسم المتجر مطلوب");
       return;
@@ -235,9 +248,10 @@ export default function MerchantStoreScreen() {
     setCreating(false);
     if (created) {
       setStoreId(created.id);
-      setShowCreateForm(false);
+      setCreateForm(EMPTY_CREATE_FORM);
+      await loadMerchantStores();
     } else {
-      Alert.alert("خطأ", "تعذر إنشاء المتجر. يرجى المحاولة لاحقاً.");
+      Alert.alert("خطأ", "تعذر إنشاء المتجر (قد تكون وصلت للحد الأقصى 5 متاجر).");
     }
   };
 
@@ -522,6 +536,85 @@ export default function MerchantStoreScreen() {
           paddingBottom: tokens.spacing["3xl"],
         }}
       >
+        {/* My Stores (متاجري) section */}
+        <SectionCard>
+          <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: tokens.spacing.sm }}>
+            <SectionTitle
+              icon={<StoreIcon color={colors.primary} size={tokens.spacing.lg} />}
+            >
+              {`متاجري (${stores.length}/5)`}
+            </SectionTitle>
+            {stores.length < 5 ? (
+              <TouchableOpacity
+                onPress={() => setShowCreateForm(true)}
+                style={{
+                  backgroundColor: colors.primary,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: tokens.radius.sm,
+                }}
+              >
+                <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600" }}>+ إضافة متجر</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          {stores.length >= 5 && (
+            <WorkspaceText color="error" style={{ fontSize: 12, marginBottom: 8, textAlign: "right" }}>
+              لقد وصلت إلى الحد الأقصى وهو 5 متاجر.
+            </WorkspaceText>
+          )}
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
+            <View style={{ flexDirection: "row-reverse", gap: 8 }}>
+              {stores.map((s) => {
+                const isActive = s.id === storeId;
+                return (
+                  <TouchableOpacity
+                    key={s.id}
+                    onPress={() => {
+                      setStoreId(s.id);
+                      setShowCreateForm(false);
+                    }}
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 10,
+                      borderRadius: tokens.radius.sm,
+                      borderWidth: 1,
+                      borderColor: isActive ? colors.primary : colors.borderSubtle,
+                      backgroundColor: isActive ? colors.primary + "18" : colors.bgElevated,
+                      minWidth: 110,
+                      alignItems: "flex-end",
+                    }}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: isActive ? colors.primary : colors.textPrimary,
+                        fontSize: 13,
+                        fontWeight: "700",
+                        textAlign: "right",
+                      }}
+                    >
+                      {s.name}
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.textSecondary,
+                        fontSize: 11,
+                        marginTop: 2,
+                        textAlign: "right",
+                      }}
+                    >
+                      {s.status === "active" ? "نشط" : "قيد المراجعة"}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </SectionCard>
+
         {/* Open / Close toggle card */}
         <SectionCard>
           <View

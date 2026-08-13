@@ -242,12 +242,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         if (mQueryError) throw mQueryError;
 
         if (!merchant) {
+          const bName = businessName.trim() || fullName || "متجر";
           const { error: mInsertError } = await supabase
             .from("merchants")
             .upsert({
               id: userId,
               owner_full_name: fullName || "تاجر",
-              business_name: businessName.trim() || fullName || "متجر",
+              business_name: bName,
               phone: phoneNumber || "",
               contact_phone: phoneNumber || "",
               contact_email: userEmail,
@@ -257,6 +258,33 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               status: "pending_review",
             }, { onConflict: "id" });
           if (mInsertError) throw mInsertError;
+
+          // Also check if an initial store exists; if not, create Store #1 automatically
+          const { count: storeCount, error: countErr } = await supabase
+            .from("stores")
+            .select("*", { count: "exact", head: true })
+            .eq("merchant_id", userId);
+
+          if (!countErr && (storeCount === null || storeCount === 0)) {
+            const { error: storeInsertErr } = await supabase
+              .from("stores")
+              .insert({
+                merchant_id: userId,
+                name: bName,
+                category: "عام",
+                main_category: "عام",
+                address_line1: address.trim() || "العنوان الرئيسي",
+                city: "عين الصفراء",
+                country: "Algeria",
+                zone_id: resolvedZoneId,
+                status: "pending",
+                is_open: false,
+              });
+            if (storeInsertErr) {
+              console.error("[AuthScreen] Failed to create initial store #1:", storeInsertErr);
+            }
+          }
+
           status = "pending";
         } else {
           status = merchant.status;

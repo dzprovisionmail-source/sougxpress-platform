@@ -516,3 +516,22 @@ export const rateGalleryItem = async (imageId: string, userId: string, rating: n
     return false;
   }
 };
+
+export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]> => {
+  if (!merchantId || !isValidUUID(merchantId)) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("stores")
+    .select("*")
+    .eq("merchant_id", merchantId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching stores by merchant:", error);
+    return [];
+  }
+  return (data as Store[]) || [];
+};
