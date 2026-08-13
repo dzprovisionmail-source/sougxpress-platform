@@ -12,6 +12,7 @@ import ProfileCard from './ProfileCard';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { SimpleSelect } from '@/components/ui';
 import { Product } from '@/types/schema-03-core';
+import { uploadToSupabase } from '@/utils/upload.utils';
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
@@ -122,14 +123,11 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
 
   const uploadImage = async (uri: string, productId: string): Promise<string | null> => {
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
       const ext = uri.split('.').pop() ?? 'jpg';
       const path = `products/${storeId}/${productId}.${ext}`;
-      const { error } = await supabase.storage
-        .from('store_images')
-        .upload(path, blob, { contentType: blob.type, upsert: true });
-      if (error) throw error;
+      
+      await uploadToSupabase(supabase, 'store_images', path, uri);
+      
       const { data } = supabase.storage.from('store_images').getPublicUrl(path);
       return data.publicUrl;
     } catch (err) {

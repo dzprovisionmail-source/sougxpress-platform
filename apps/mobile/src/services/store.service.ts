@@ -203,17 +203,37 @@ export const getStoreGalleryImages = async (storeId: string): Promise<string[]> 
     return [];
   }
 
-  const { data, error } = await supabase.storage.from("store_images").list(`store_gallery/${storeId}`, { sortBy: { column: "name", order: "asc" } });
+  // We list the base store_gallery folder and filter for files belonging to this store
+  // This handles both new folder-based paths (store_gallery/ID/file) 
+  // and legacy hyphenated paths (store_gallery/ID-timestamp.jpg)
+  
+  // First try the new folder-based structure (efficient)
+  const { data: folderData, error: folderError } = await supabase.storage
+    .from("store_images")
+    .list(`store_gallery/${storeId}`, { sortBy: { column: "name", order: "asc" } });
 
-  if (error) {
-    console.error("Error listing store gallery images:", error);
-    return [];
+  let imageUrls: string[] = [];
+
+  if (!folderError && folderData && folderData.length > 0) {
+    imageUrls = folderData.map((file) => {
+      const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(`store_gallery/${storeId}/${file.name}`);
+      return publicUrlData.publicUrl;
+    });
   }
 
-  const imageUrls = data.map((file) => {
-    const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(`store_gallery/${storeId}/${file.name}`);
-    return publicUrlData.publicUrl;
-  });
+  // Also check for legacy hyphenated files in the root store_gallery folder
+  const { data: rootData, error: rootError } = await supabase.storage
+    .from("store_images")
+    .list("store_gallery", { sortBy: { column: "name", order: "asc" } });
+
+  if (!rootError && rootData) {
+    const legacyFiles = rootData.filter(file => file.name.startsWith(`${storeId}-`));
+    const legacyUrls = legacyFiles.map((file) => {
+      const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(`store_gallery/${file.name}`);
+      return publicUrlData.publicUrl;
+    });
+    imageUrls = [...imageUrls, ...legacyUrls];
+  }
 
   return imageUrls;
 };

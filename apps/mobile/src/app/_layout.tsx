@@ -1,5 +1,10 @@
 import { LogBox, I18nManager } from "react-native";
-LogBox.ignoreLogs(["Unable to activate keep awake"]);
+LogBox.ignoreLogs([
+  "Unable to activate keep awake",
+  "SafeAreaView has been deprecated",
+  "MediaTypeOptions` have been deprecated",
+  "Method getInfoAsync imported from \"expo-file-system\" is deprecated"
+]);
 import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -16,17 +21,12 @@ export default function RootLayout() {
     let deactivateFn: (() => void) | null = null;
 
     if (__DEV__) {
-      (async () => {
-        try {
-          const { activateKeepAwakeAsync, deactivateKeepAwake } = await import("expo-keep-awake");
-          if (mounted) {
-            deactivateFn = deactivateKeepAwake;
-            await activateKeepAwakeAsync();
-          }
-        } catch (e) {
-          // Ignore keep-awake errors
+      import("expo-keep-awake").then(({ activateKeepAwakeAsync, deactivateKeepAwake }) => {
+        if (mounted) {
+          deactivateFn = deactivateKeepAwake;
+          activateKeepAwakeAsync().catch(() => {});
         }
-      })();
+      }).catch(() => {});
     }
 
     return () => {

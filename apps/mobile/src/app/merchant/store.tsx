@@ -48,6 +48,7 @@ import { supabase } from "@/lib/supabase";
 import { ImageOptimizerModal, SimpleSelect } from "@/components/ui";
 import { ImageType } from "@/utils/imageOptimizer";
 import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
+import { uploadToSupabase } from "@/utils/upload.utils";
 import {
   SectionCard,
   SectionTitle,
@@ -304,17 +305,10 @@ export default function UnifiedMerchantStoreDashboard() {
     setOptimizerVisible(false);
 
     try {
-      const response = await fetch(processedUri);
-      const blob = await response.blob();
       const ext = processedUri.split(".").pop() ?? "jpg";
       const filePath = `${store.id}/${pendingAssetType === "logos" ? "logo" : "cover"}.${ext}`;
 
-      // Use upsert: true to overwrite existing files and avoid duplicate path errors
-      const { error: uploadErr } = await supabase.storage
-        .from("store_images")
-        .upload(filePath, blob, { contentType: blob.type, upsert: true });
-
-      if (uploadErr) throw uploadErr;
+      await uploadToSupabase(supabase, "store_images", filePath, processedUri);
 
       const { data } = supabase.storage.from("store_images").getPublicUrl(filePath);
       if (data?.publicUrl) {
@@ -323,7 +317,8 @@ export default function UnifiedMerchantStoreDashboard() {
         Alert.alert("نجاح", "تم تحديث الصورة بنجاح");
       }
     } catch (err: any) {
-      Alert.alert("خطأ", "فشل رفع الصورة: " + err.message);
+      console.error("[store] upload error:", err);
+      Alert.alert("خطأ", "فشل رفع الصورة: " + (err.message || "خطأ غير معروف"));
     } finally {
       setPendingAssetType(null);
     }

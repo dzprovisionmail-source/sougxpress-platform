@@ -6,6 +6,7 @@ import { Images, Upload, X } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { addStoreGalleryImage, deleteStoreGalleryImage } from '@/services/store.service';
+import { uploadToSupabase } from '@/utils/upload.utils';
 
 interface StoreImageGalleryProps {
   storeId: string;
@@ -52,17 +53,11 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
     }
     setUploading(true);
     try {
-      const response = await fetch(galleryImageUri);
-      const blob = await response.blob();
       const fileExt = galleryImageUri.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `store_gallery/${storeId}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('store_images')
-        .upload(filePath, blob, { contentType: blob.type });
-
-      if (uploadError) throw uploadError;
+      await uploadToSupabase(supabase, 'store_images', filePath, galleryImageUri);
 
       const { data: publicUrlData } = supabase.storage.from('store_images').getPublicUrl(filePath);
 
@@ -72,7 +67,8 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
       setGalleryImageTitle('');
       setCaption('');
     } catch (error: any) {
-      Alert.alert('خطأ', error.message);
+      console.error("[gallery] upload error:", error);
+      Alert.alert('خطأ', error.message || "فشل رفع الصورة");
     } finally {
       setUploading(false);
     }
