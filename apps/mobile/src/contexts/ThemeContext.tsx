@@ -27,6 +27,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     let mounted = true;
+    // Ensure native RTL is forced for Arabic-first UI
+    if (!I18nManager.isRTL) {
+      I18nManager.allowRTL(true);
+      I18nManager.forceRTL(true);
+    }
     AsyncStorage.getItem(THEME_STORAGE_KEY)
       .then((stored) => {
         if (mounted && (stored === "dark" || stored === "light" || stored === "ivory")) {
