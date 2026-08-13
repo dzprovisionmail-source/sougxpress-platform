@@ -306,7 +306,9 @@ export default function UnifiedMerchantStoreDashboard() {
 
     try {
       const ext = processedUri.split(".").pop() ?? "jpg";
-      const filePath = `${store.id}/${pendingAssetType === "logos" ? "logo" : "cover"}.${ext}`;
+      // Use a flat path in the bucket root to avoid nested folder RLS/listing complexities
+      const fileName = `${store.id}-${pendingAssetType === "logos" ? "logo" : "cover"}.${ext}`;
+      const filePath = fileName;
 
       await uploadToSupabase(supabase, "store_images", filePath, processedUri);
 

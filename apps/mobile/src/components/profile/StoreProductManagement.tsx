@@ -124,7 +124,8 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
   const uploadImage = async (uri: string, productId: string): Promise<string | null> => {
     try {
       const ext = uri.split('.').pop() ?? 'jpg';
-      const path = `products/${storeId}/${productId}.${ext}`;
+      // Use flat path in root for maximum RLS compatibility
+      const path = `product-${storeId}-${productId}.${ext}`;
       
       await uploadToSupabase(supabase, 'store_images', path, uri);
       

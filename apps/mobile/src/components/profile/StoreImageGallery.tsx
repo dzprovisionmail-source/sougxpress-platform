@@ -54,8 +54,9 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
     setUploading(true);
     try {
       const fileExt = galleryImageUri.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `store_gallery/${storeId}/${fileName}`;
+      // Use flat path in root for maximum RLS compatibility
+      const fileName = `gallery-${storeId}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
 
       await uploadToSupabase(supabase, 'store_images', filePath, galleryImageUri);
 
