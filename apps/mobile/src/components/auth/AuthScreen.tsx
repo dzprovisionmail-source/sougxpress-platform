@@ -162,16 +162,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     let userRole = profile?.role;
 
     if (!profile) {
+      console.log("[AuthScreen] Inserting profile for userId:", userId, "role:", role);
       const { error: insertError } = await supabase
         .from("profiles")
-        .insert({ id: userId, role })
+        .upsert({ id: userId, role }, { onConflict: "id" })
         .select()
         .single();
 
       if (insertError) {
+        console.error("[AuthScreen] Profile upsert error:", insertError.code, insertError.message, insertError.details, insertError.hint);
         Alert.alert(
           "خطأ في التسجيل",
-          "فشل إنشاء الملف الشخصي. يرجى المحاولة لاحقاً."
+          `فشل إنشاء الملف الشخصي: ${insertError.message}`
         );
         return;
       }
@@ -202,9 +204,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         if (cQueryError) throw cQueryError;
 
         if (!customer) {
+          console.log("[AuthScreen] Inserting customer record for userId:", userId);
           const { error: cInsertError } = await supabase
             .from("customers")
-            .insert({
+            .upsert({
               id: userId,
               full_name: fullName || "مستخدم",
               phone: phoneNumber || "",
@@ -212,8 +215,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               zone_id: resolvedZoneId,
               address: address.trim() || null,
               status: "active",
-            });
-          if (cInsertError) throw cInsertError;
+            }, { onConflict: "id" });
+          if (cInsertError) {
+            console.error("[AuthScreen] Customer upsert error:", cInsertError.code, cInsertError.message, cInsertError.details, cInsertError.hint);
+            throw cInsertError;
+          }
           status = "active";
         } else {
           status = customer.status;
@@ -347,22 +353,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
         if (error) throw error;
 
-        let activeUserId = data?.session?.user?.id || data?.user?.id;
+        let sessionData = data?.session;
 
-        if (!activeUserId) {
-          // If signUp succeeded without immediate session or user object, try signing in directly
-          console.log("[AuthScreen] No session/user from signUp, attempting explicit signInWithPassword...");
+        if (!sessionData) {
+          console.log("[AuthScreen] No session returned from signUp (Confirm email might be enabled or pending). Attempting explicit signInWithPassword...");
           const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
             email,
             password,
           });
           if (signInErr) {
             console.error("[AuthScreen] explicit signIn failed after signUp:", signInErr.message);
-            throw signInErr;
+            throw new Error("تم إنشاء الحساب ولكن تعذر تسجيل الدخول تلقائياً. يرجى تسجيل الدخول يدوياً.");
           }
-          activeUserId = signInData?.session?.user?.id;
+          sessionData = signInData?.session;
         }
 
+        const activeUserId = sessionData?.user?.id || data?.user?.id;
         if (!activeUserId) {
           throw new Error("فشل إنشاء جلسة المستخدم. يرجى تسجيل الدخول يدوياً.");
         }
