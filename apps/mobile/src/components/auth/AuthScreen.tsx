@@ -235,15 +235,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         if (!merchant) {
           const { error: mInsertError } = await supabase
             .from("merchants")
-            .insert({
+            .upsert({
               id: userId,
               owner_full_name: fullName || "تاجر",
               business_name: businessName.trim() || fullName || "متجر",
               phone: phoneNumber || "",
+              contact_email: userEmail,
+              email: userEmail,
               zone_id: resolvedZoneId,
               address: address.trim() || null,
               status: "pending_review",
-            });
+            }, { onConflict: "id" });
           if (mInsertError) throw mInsertError;
           status = "pending";
         } else {
