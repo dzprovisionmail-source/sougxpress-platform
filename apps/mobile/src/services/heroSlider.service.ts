@@ -203,3 +203,57 @@ export async function updateHeroSliderSettings(autoRotate: boolean, intervalSeco
     return { success: false, error: err.message || "تعذّر حفظ إعدادات العرض" };
   }
 }
+
+export interface MarketSectionSettings {
+  showSpecialOffers: boolean;
+  showNewStores: boolean;
+  showAllStores: boolean;
+}
+
+export async function getMarketSectionSettings(): Promise<MarketSectionSettings> {
+  try {
+    const { data, error } = await supabase
+      .from("platform_financial_settings")
+      .select("key, value")
+      .in("key", ["market_show_special_offers", "market_show_new_stores", "market_show_all_stores"]);
+
+    if (error || !data) return { showSpecialOffers: true, showNewStores: true, showAllStores: true };
+
+    let showSpecialOffers = true;
+    let showNewStores = true;
+    let showAllStores = true;
+
+    data.forEach((row: any) => {
+      const val = row.value === true || row.value === "true";
+      if (row.key === "market_show_special_offers") showSpecialOffers = val;
+      if (row.key === "market_show_new_stores") showNewStores = val;
+      if (row.key === "market_show_all_stores") showAllStores = val;
+    });
+
+    return { showSpecialOffers, showNewStores, showAllStores };
+  } catch (err) {
+    console.error("getMarketSectionSettings error:", err);
+    return { showSpecialOffers: true, showNewStores: true, showAllStores: true };
+  }
+}
+
+export async function updateMarketSectionSettings(settings: MarketSectionSettings): Promise<{ success: boolean; error?: string }> {
+  try {
+    await supabase.from("platform_financial_settings").upsert(
+      { key: "market_show_special_offers", value: String(settings.showSpecialOffers), description: "Show special offers in market" },
+      { onConflict: "key" }
+    );
+    await supabase.from("platform_financial_settings").upsert(
+      { key: "market_show_new_stores", value: String(settings.showNewStores), description: "Show new stores in market" },
+      { onConflict: "key" }
+    );
+    await supabase.from("platform_financial_settings").upsert(
+      { key: "market_show_all_stores", value: String(settings.showAllStores), description: "Show all stores in market" },
+      { onConflict: "key" }
+    );
+    return { success: true };
+  } catch (err: any) {
+    console.error("updateMarketSectionSettings error:", err);
+    return { success: false, error: err.message || "تعذّر حفظ إعدادات أقسام السوق" };
+  }
+}

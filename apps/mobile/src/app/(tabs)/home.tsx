@@ -16,7 +16,7 @@ import useCart from '@/hooks/useCart';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
 import { getArabicCategoryName } from '@/config/storeCategories';
 import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
-import { getActiveHeroSlides, getHeroSliderSettings } from '@/services/heroSlider.service';
+import { getActiveHeroSlides, getHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
 import { supabase } from '@/lib/supabase';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -82,6 +82,11 @@ const HomeScreen = () => {
   const [heroLoading, setHeroLoading] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [rotationInterval, setRotationInterval] = useState(3);
+  const [marketSections, setMarketSections] = useState<MarketSectionSettings>({
+    showSpecialOffers: true,
+    showNewStores: true,
+    showAllStores: true,
+  });
 
   useEffect(() => {
     checkAuth();
@@ -89,6 +94,9 @@ const HomeScreen = () => {
       setCategories(cats);
     });
     fetchProducts();
+    getMarketSectionSettings().then((res) => {
+      setMarketSections(res);
+    });
   }, []);
 
   const checkAuth = async () => {
@@ -582,73 +590,79 @@ const HomeScreen = () => {
             </View>
 
             {/* New Stores */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر جديدة</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                {(searchQuery.length > 0 ? [] : newStoresData).map((store: any) => (
-                  <StoreCard
-                    key={store.id}
-                    id={store.id}
-                    name={store.name}
-                    category={getArabicCategoryName(store.main_category || store.category)}
-                    subcategory={store.sub_category}
-                    rating={store.rating?.toString() || "0.0"}
-                    coverImage={store.cover_url}
-                    logoImage={store.logo_url}
-                    isOpen={store.is_open ?? store.status === "active"}
-                    isFeatured={store.is_featured}
-                    address={store.address_line1 ?? store.city ?? ""}
-                    onPress={() => handleStorePress(store.id)}
-                  />
-                ))}
-              </ScrollView>
-            </View>
+            {marketSections.showNewStores && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر جديدة</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                  {(searchQuery.length > 0 ? [] : newStoresData).map((store: any) => (
+                    <StoreCard
+                      key={store.id}
+                      id={store.id}
+                      name={store.name}
+                      category={getArabicCategoryName(store.main_category || store.category)}
+                      subcategory={store.sub_category}
+                      rating={store.rating?.toString() || "0.0"}
+                      coverImage={store.cover_url}
+                      logoImage={store.logo_url}
+                      isOpen={store.is_open ?? store.status === "active"}
+                      isFeatured={store.is_featured}
+                      address={store.address_line1 ?? store.city ?? ""}
+                      onPress={() => handleStorePress(store.id)}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {/* Nearby Stores (Placeholder) */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر قريبة</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                {displayedStores.slice(6, 9).map((store: any) => (
-                  <StoreCard
-                    key={store.id}
-                    id={store.id}
-                    name={store.name}
-                    category={getArabicCategoryName(store.main_category || store.category)}
-                    subcategory={store.sub_category}
-                    rating={store.rating?.toString() || "0.0"}
-                    coverImage={store.cover_url}
-                    logoImage={store.logo_url}
-                    isOpen={store.is_open ?? store.status === "active"}
-                    isFeatured={store.is_featured}
-                    address={store.address_line1 ?? store.city ?? ""}
-                    onPress={() => handleStorePress(store.id)}
-                  />
-                ))}
-              </ScrollView>
-            </View>
+            {marketSections.showAllStores && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر قريبة</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                  {displayedStores.slice(6, 9).map((store: any) => (
+                    <StoreCard
+                      key={store.id}
+                      id={store.id}
+                      name={store.name}
+                      category={getArabicCategoryName(store.main_category || store.category)}
+                      subcategory={store.sub_category}
+                      rating={store.rating?.toString() || "0.0"}
+                      coverImage={store.cover_url}
+                      logoImage={store.logo_url}
+                      isOpen={store.is_open ?? store.status === "active"}
+                      isFeatured={store.is_featured}
+                      address={store.address_line1 ?? store.city ?? ""}
+                      onPress={() => handleStorePress(store.id)}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {/* Special Offers (Placeholder / Promotions) */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>عروض خاصة</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                {displayedStores.filter((s: any) => s.is_featured).slice(6, 9).map((store: any) => (
-                  <StoreCard
-                    key={store.id}
-                    id={store.id}
-                    name={store.name}
-                    category={getArabicCategoryName(store.main_category || store.category)}
-                    subcategory={store.sub_category}
-                    rating={store.rating?.toString() || "0.0"}
-                    coverImage={store.cover_url}
-                    logoImage={store.logo_url}
-                    isOpen={store.is_open ?? store.status === "active"}
-                    isFeatured={store.is_featured}
-                    address={store.address_line1 ?? store.city ?? ""}
-                    onPress={() => handleStorePress(store.id)}
-                  />
-                ))}
-              </ScrollView>
-            </View>
+            {marketSections.showSpecialOffers && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>عروض خاصة</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                  {displayedStores.filter((s: any) => s.is_featured).slice(6, 9).map((store: any) => (
+                    <StoreCard
+                      key={store.id}
+                      id={store.id}
+                      name={store.name}
+                      category={getArabicCategoryName(store.main_category || store.category)}
+                      subcategory={store.sub_category}
+                      rating={store.rating?.toString() || "0.0"}
+                      coverImage={store.cover_url}
+                      logoImage={store.logo_url}
+                      isOpen={store.is_open ?? store.status === "active"}
+                      isFeatured={store.is_featured}
+                      address={store.address_line1 ?? store.city ?? ""}
+                      onPress={() => handleStorePress(store.id)}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {/* Featured Products - Guest only */}
             {isGuest && products.length > 0 && (
