@@ -226,7 +226,7 @@ export default function MerchantDashboardScreen() {
           <WorkspaceButton
             title="إدارة المتجر والمنتجات"
             variant="outline"
-            onPress={() => router.push("/(tabs)/my-store")}
+            onPress={() => router.push("/merchant/store")}
             style={{ marginBottom: tokens.spacing.sm }}
           />
           <WorkspaceButton

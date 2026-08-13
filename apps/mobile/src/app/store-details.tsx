@@ -187,6 +187,32 @@ export default function StoreDetailsScreen() {
           />
         </View>
 
+        {/* Merchant / Founder Management Banner */}
+        {currentUserId && (currentUserRole === 'founder' || currentUserRole === 'admin' || (currentUserRole === 'merchant' && store.merchant_id === currentUserId)) && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: colors.primary,
+              marginHorizontal: TOKENS.spacing.md,
+              marginBottom: TOKENS.spacing.md,
+              padding: TOKENS.spacing.md,
+              borderRadius: TOKENS.radius.md,
+              flexDirection: 'row-reverse',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+            onPress={() => router.push('/merchant/store')}
+            activeOpacity={0.85}
+          >
+            <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
+              <StoreIcon color="#fff" size={20} />
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14, marginRight: 8, fontFamily: TOKENS.typography.families.arabic }}>
+                ⚙️ لوحة إدارة هذا المتجر
+              </Text>
+            </View>
+            <Text style={{ color: '#fff', fontSize: 12, opacity: 0.9, fontFamily: TOKENS.typography.families.arabic }}>إدارة المنتجات والصور ←</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Store Card Header Info */}
         <View style={[styles.storeCardInfo, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
           <View style={styles.avatarRow}>
