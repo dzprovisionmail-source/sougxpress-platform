@@ -109,7 +109,8 @@ async function uploadStoreAsset(
     const response = await fetch(uri);
     const blob = await response.blob();
     const ext = uri.split(".").pop() ?? "jpg";
-    const filePath = `${path}/${storeId}.${ext}`;
+    const assetName = path === "logos" ? "logo" : "cover";
+    const filePath = `${storeId}/${assetName}.${ext}`;
     const { error } = await supabase.storage
       .from("store_images")
       .upload(filePath, blob, { contentType: blob.type, upsert: true });
@@ -155,7 +156,30 @@ export default function MerchantStoreScreen() {
 
   const loadMerchantStores = async () => {
     if (!userId) return;
-    const list = await getStoresByMerchantId(userId);
+    let list = await getStoresByMerchantId(userId);
+    
+    // Auto-repair: If merchant exists but has no stores, create the first one
+    if (list.length === 0) {
+      const { data: merchant } = await supabase
+        .from("merchants")
+        .select("business_name, zone_id, address")
+        .eq("id", userId)
+        .maybeSingle();
+      
+      if (merchant) {
+        const created = await createStore(userId, {
+          name: merchant.business_name || "متجري",
+          category: "عام",
+          address_line1: merchant.address || "العنوان الرئيسي",
+          city: "عين الصفراء",
+          country: "Algeria",
+        });
+        if (created) {
+          list = [created];
+        }
+      }
+    }
+
     setStores(list);
     if (list.length > 0) {
       if (!storeId || !list.some(s => s.id === storeId)) {
@@ -523,8 +547,12 @@ export default function MerchantStoreScreen() {
   const statusLabel =
     store.status === "active"
       ? "نشط"
+      : store.status === "pending"
+      ? "قيد المراجعة"
       : store.status === "paused"
       ? "موقوف مؤقتاً"
+      : store.status === "suspended"
+      ? "موقوف من الإدارة"
       : store.status;
 
   /* ── Render ────────────────────────────────────────────────── */

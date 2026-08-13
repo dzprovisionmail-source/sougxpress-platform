@@ -236,13 +236,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       } else if (role === "merchant") {
         const { data: merchant, error: mQueryError } = await supabase
           .from("merchants")
-          .select("status")
+          .select("status, business_name")
           .eq("id", userId)
           .maybeSingle();
         if (mQueryError) throw mQueryError;
 
+        const bName = businessName.trim() || merchant?.business_name || fullName || "متجر";
         if (!merchant) {
-          const bName = businessName.trim() || fullName || "متجر";
           const { error: mInsertError } = await supabase
             .from("merchants")
             .upsert({
@@ -258,36 +258,35 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               status: "pending_review",
             }, { onConflict: "id" });
           if (mInsertError) throw mInsertError;
-
-          // Also check if an initial store exists; if not, create Store #1 automatically
-          const { count: storeCount, error: countErr } = await supabase
-            .from("stores")
-            .select("*", { count: "exact", head: true })
-            .eq("merchant_id", userId);
-
-          if (!countErr && (storeCount === null || storeCount === 0)) {
-            const { error: storeInsertErr } = await supabase
-              .from("stores")
-              .insert({
-                merchant_id: userId,
-                name: bName,
-                category: "عام",
-                main_category: "عام",
-                address_line1: address.trim() || "العنوان الرئيسي",
-                city: "عين الصفراء",
-                country: "Algeria",
-                zone_id: resolvedZoneId,
-                status: "pending",
-                is_open: false,
-              });
-            if (storeInsertErr) {
-              console.error("[AuthScreen] Failed to create initial store #1:", storeInsertErr);
-            }
-          }
-
           status = "pending";
         } else {
           status = merchant.status;
+        }
+
+        // Ensure at least one store exists for the merchant (idempotent)
+        const { count: storeCount, error: countErr } = await supabase
+          .from("stores")
+          .select("*", { count: "exact", head: true })
+          .eq("merchant_id", userId);
+
+        if (!countErr && (storeCount === null || storeCount === 0)) {
+          const { error: storeInsertErr } = await supabase
+            .from("stores")
+            .insert({
+              merchant_id: userId,
+              name: bName,
+              category: "عام",
+              main_category: "عام",
+              address_line1: address.trim() || "العنوان الرئيسي",
+              city: "عين الصفراء",
+              country: "Algeria",
+              zone_id: resolvedZoneId,
+              status: "pending",
+              is_open: false,
+            });
+          if (storeInsertErr) {
+            console.error("[AuthScreen] Failed to create initial store #1:", storeInsertErr);
+          }
         }
       } else if (role === "driver") {
         const { data: driver, error: dQueryError } = await supabase

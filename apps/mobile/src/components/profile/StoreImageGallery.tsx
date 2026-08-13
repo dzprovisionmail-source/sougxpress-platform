@@ -55,8 +55,8 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
       const response = await fetch(galleryImageUri);
       const blob = await response.blob();
       const fileExt = galleryImageUri.split('.').pop();
-      const fileName = `${storeId}-${Date.now()}.${fileExt}`;
-      const filePath = `store_gallery/${fileName}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `store_gallery/${storeId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('store_images')
@@ -100,9 +100,11 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
           text: 'Supprimer',
           onPress: async () => {
             try {
-              const fileName = imageUrl.split('/').pop();
-              if (!fileName) throw new Error('Invalid image URL');
-              const filePath = `store_gallery/${fileName}`;
+              const parts = imageUrl.split('/');
+              const fileName = parts.pop();
+              const sId = parts.pop();
+              if (!fileName || !sId) throw new Error('Invalid image URL');
+              const filePath = `store_gallery/${sId}/${fileName}`;
 
               const { error } = await supabase.storage.from('store_images').remove([filePath]);
 

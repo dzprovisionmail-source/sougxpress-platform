@@ -69,7 +69,7 @@ export interface Merchant {
   updated_at: string;
 }
 
-export type StoreStatus = "draft" | "active" | "paused" | "suspended";
+export type StoreStatus = "draft" | "active" | "paused" | "suspended" | "pending";
 
 export interface Store {
   id: string;
