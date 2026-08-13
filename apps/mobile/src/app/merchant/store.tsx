@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   ScrollView,
   View,
@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Image,
   Text,
+  StyleSheet,
 } from "react-native";
 import {
   Store as StoreIcon,
@@ -23,6 +24,17 @@ import {
   Tag,
   ImagePlus,
   Eye,
+  Plus,
+  ChevronLeft,
+  LayoutDashboard,
+  MapPin,
+  User,
+  Mail,
+  Phone,
+  Video,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
 } from "lucide-react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -36,11 +48,10 @@ import { Store } from "@/types/schema-03-core";
 import StoreImageGallery from "@/components/profile/StoreImageGallery";
 import StoreProductManagement from "@/components/profile/StoreProductManagement";
 import { supabase } from "@/lib/supabase";
-import { ImageOptimizerModal } from "@/components/ui";
+import { ImageOptimizerModal, SimpleSelect, Typography } from "@/components/ui";
 import { ImageType } from "@/utils/imageOptimizer";
 import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
 import {
-  WorkspaceScreen,
   SectionCard,
   SectionTitle,
   WorkspaceRow,
@@ -48,8 +59,10 @@ import {
   WorkspaceButton,
   LoadingState,
 } from "@/features/workspace/ui";
+import { AdminPageShell } from "@/components/admin/AdminPageShell";
+import { TOKENS } from "@/constants/tokens";
 
-/* ─── Store edit form ─────────────────────────────────────────── */
+/* ─── Types ─────────────────────────────────────────────────── */
 interface StoreFormValues {
   name: string;
   category: string;
@@ -63,6 +76,33 @@ interface StoreFormValues {
   closes_at: string;
 }
 
+interface CreateFormValues {
+  name: string;
+  category: string;
+  category_id?: string;
+  subcategory_id?: string;
+  address_line1: string;
+  city: string;
+  description: string;
+  phone_number: string;
+  opens_at: string;
+  closes_at: string;
+}
+
+const EMPTY_CREATE_FORM: CreateFormValues = {
+  name: "",
+  category: "",
+  category_id: undefined,
+  subcategory_id: undefined,
+  address_line1: "",
+  city: "عين الصفراء",
+  description: "",
+  phone_number: "",
+  opens_at: "09:00",
+  closes_at: "21:00",
+};
+
+/* ─── Helpers ───────────────────────────────────────────────── */
 function buildForm(s: Store): StoreFormValues {
   return {
     name: s.name ?? "",
@@ -78,38 +118,6 @@ function buildForm(s: Store): StoreFormValues {
   };
 }
 
-/* ─── Create store form values ────────────────────────────────── */
-interface CreateFormValues {
-  name: string;
-  category: string;
-  category_id?: string;
-  subcategory_id?: string;
-  address_line1: string;
-  city: string;
-  description: string;
-  phone_number: string;
-  opens_at: string;
-  closes_at: string;
-  latitude: string;
-  longitude: string;
-}
-
-const EMPTY_CREATE_FORM: CreateFormValues = {
-  name: "",
-  category: "",
-  category_id: undefined,
-  subcategory_id: undefined,
-  address_line1: "",
-  city: "عين الصفراء",
-  description: "",
-  phone_number: "",
-  opens_at: "09:00",
-  closes_at: "21:00",
-  latitude: "",
-  longitude: "",
-};
-
-/* ─── Image uploader helper ───────────────────────────────────── */
 async function uploadStoreAsset(
   storeId: string,
   path: "logos" | "covers",
@@ -133,7 +141,7 @@ async function uploadStoreAsset(
   }
 }
 
-/* ─── Screen ──────────────────────────────────────────────────── */
+/* ─── Screen ─────────────────────────────────────────────────── */
 export default function MerchantStoreScreen() {
   const { colors, tokens } = useAppTheme();
   const { userId } = useCurrentUserId();
@@ -210,12 +218,6 @@ export default function MerchantStoreScreen() {
     loadCategories();
   }, [userId]);
 
-  useEffect(() => {
-    if (editModalOpen && categories.length === 0 && !loadingCategories) {
-      loadCategories();
-    }
-  }, [editModalOpen]);
-
   const loadCategories = async () => {
     setLoadingCategories(true);
     const cats = await getActiveCategories();
@@ -248,7 +250,7 @@ export default function MerchantStoreScreen() {
     setVisibility,
   } = useMerchantProducts(storeId);
 
-  /* ── Create store ──────────────────────────────────────────── */
+  /* ── Actions ────────────────────────────────────────────────── */
   const handleCreateStore = async () => {
     if (!userId) return;
     if (stores.length >= 5) {
@@ -259,17 +261,11 @@ export default function MerchantStoreScreen() {
       Alert.alert("خطأ", "اسم المتجر مطلوب");
       return;
     }
-    if (!createForm.category.trim() && !createForm.category_id) {
-      Alert.alert("خطأ", "فئة المتجر مطلوبة");
-      return;
-    }
     if (!createForm.address_line1.trim()) {
       Alert.alert("خطأ", "عنوان المتجر مطلوب");
       return;
     }
     setCreating(true);
-    const lat = parseFloat(createForm.latitude);
-    const lng = parseFloat(createForm.longitude);
     const created = await createStore(userId, {
       name: createForm.name.trim(),
       category: createForm.category.trim() || "عام",
@@ -282,8 +278,6 @@ export default function MerchantStoreScreen() {
       country: "Algeria",
       opens_at: createForm.opens_at || "09:00",
       closes_at: createForm.closes_at || "21:00",
-      latitude: !isNaN(lat) ? lat : undefined,
-      longitude: !isNaN(lng) ? lng : undefined,
     });
     setCreating(false);
     if (created) {
@@ -295,7 +289,6 @@ export default function MerchantStoreScreen() {
     }
   };
 
-  /* ── Open/Close toggle ─────────────────────────────────────── */
   const handleToggleOpen = async (value: boolean) => {
     if (!store) return;
     setTogglingOpen(true);
@@ -306,7 +299,6 @@ export default function MerchantStoreScreen() {
     setTogglingOpen(false);
   };
 
-  /* ── Edit modal ────────────────────────────────────────────── */
   const openEditModal = () => {
     if (!store) return;
     setForm(buildForm(store));
@@ -318,7 +310,7 @@ export default function MerchantStoreScreen() {
     setEditModalOpen(true);
   };
 
-  const handleSave = async () => {
+  const handleSaveEdit = async () => {
     if (!form || !store) return;
     if (!form.name.trim()) {
       Alert.alert("خطأ", "اسم المتجر مطلوب");
@@ -346,7 +338,6 @@ export default function MerchantStoreScreen() {
     }
   };
 
-  /* ── Logo / Cover upload ───────────────────────────────────── */
   const pickAndUpload = async (asset: "logos" | "covers") => {
     if (!store) return;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -388,514 +379,261 @@ export default function MerchantStoreScreen() {
     setPendingImageUri(null);
   };
 
-  /* ── Loading guard ─────────────────────────────────────────── */
+  /* ── Render Parts ─────────────────────────────────────────── */
+  const renderStatusBadge = (status: string) => {
+    const statusMap: Record<string, { label: string; color: string; icon: any }> = {
+      active: { label: "نشط", color: colors.success, icon: CheckCircle2 },
+      pending: { label: "قيد المراجعة", color: colors.warning, icon: Clock },
+      paused: { label: "متوقف مؤقتاً", color: colors.info, icon: AlertCircle },
+      suspended: { label: "موقوف من الإدارة", color: colors.error, icon: AlertCircle },
+    };
+    const config = statusMap[status] || { label: status, color: colors.textSecondary, icon: AlertCircle };
+    const Icon = config.icon;
+    
+    return (
+      <View style={[styles.statusBadge, { backgroundColor: config.color + "18" }]}>
+        <Icon color={config.color} size={14} />
+        <Text style={[styles.statusBadgeText, { color: config.color, fontFamily: tokens.typography.families.arabic }]}>
+          {config.label}
+        </Text>
+      </View>
+    );
+  };
+
   if (resolving) {
     return (
-      <WorkspaceScreen>
+      <AdminPageShell title="إدارة المتجر">
         <LoadingState message="جاري تحميل المتجر..." />
-      </WorkspaceScreen>
+      </AdminPageShell>
     );
   }
 
-  /* ── No store → Create Store form ─────────────────────────── */
   if (showCreateForm || (!storeId && !resolving)) {
     return (
-      <WorkspaceScreen>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <ScrollView
-            contentContainerStyle={{
-              paddingTop: tokens.spacing.xl,
-              paddingBottom: tokens.spacing["3xl"],
-            }}
-          >
-            <SectionCard>
-              <WorkspaceText
-                variant="title"
-                style={{ textAlign: "right", marginBottom: tokens.spacing.md }}
-              >
-                إنشاء متجرك
-              </WorkspaceText>
-              <WorkspaceText
-                color="secondary"
-                style={{
-                  textAlign: "right",
-                  fontSize: tokens.typography.sizes.sm,
-                  marginBottom: tokens.spacing.lg,
-                }}
-              >
-                أدخل بيانات متجرك الأساسية. سيتم مراجعة طلبك من قِبل الإدارة قبل التفعيل.
-              </WorkspaceText>
-
-              {(
-                [
-                  { key: "name", label: "اسم المتجر *", placeholder: "مثال: متجر العائلة" },
-                  { key: "description", label: "الوصف", placeholder: "وصف مختصر للمتجر", multiline: true },
-                  { key: "phone_number", label: "رقم الهاتف", placeholder: "0555 000 000", keyboardType: "phone-pad" },
-                  { key: "address_line1", label: "عنوان المتجر *", placeholder: "الشارع أو الحي" },
-                  { key: "city", label: "المدينة", placeholder: "عين الصفراء" },
-                  { key: "opens_at", label: "وقت الفتح (HH:MM)", placeholder: "09:00" },
-                  { key: "closes_at", label: "وقت الغلق (HH:MM)", placeholder: "21:00" },
-                  { key: "latitude", label: "خط العرض (اختياري)", placeholder: "مثال: 32.7490", keyboardType: "decimal-pad" },
-                  { key: "longitude", label: "خط الطول (اختياري)", placeholder: "-0.5860", keyboardType: "decimal-pad" },
-                ] as Array<{
-                  key: keyof CreateFormValues;
-                  label: string;
-                  placeholder: string;
-                  multiline?: boolean;
-                  keyboardType?: "default" | "decimal-pad" | "phone-pad";
-                }>
-              ).map((field) => (
-                <View key={field.key} style={{ marginBottom: tokens.spacing.md }}>
-                  <WorkspaceText
-                    color="secondary"
-                    style={{ fontSize: tokens.typography.sizes.sm, marginBottom: 4 }}
-                  >
-                    {field.label}
-                  </WorkspaceText>
-                  <TextInput
-                    value={createForm[field.key]}
-                    onChangeText={(text) =>
-                      setCreateForm((prev) => ({ ...prev, [field.key]: text }))
-                    }
-                    style={{
-                      borderWidth: 1,
-                      borderColor: colors.borderSubtle,
-                      borderRadius: tokens.radius.sm,
-                      paddingHorizontal: tokens.spacing.md,
-                      paddingVertical: tokens.spacing.sm,
-                      color: colors.textPrimary,
-                      fontFamily: tokens.typography.families.arabic,
-                      fontSize: tokens.typography.sizes.base,
-                      textAlign: "right",
-                      minHeight: field.multiline ? 72 : undefined,
-                      textAlignVertical: field.multiline ? "top" : "center",
-                    }}
-                    placeholder={field.placeholder}
-                    placeholderTextColor={colors.textDisabled}
-                    multiline={field.multiline}
-                    keyboardType={field.keyboardType ?? "default"}
-                  />
-                </View>
-              ))}
-
-              <View style={{ marginBottom: tokens.spacing.md }}>
-                <WorkspaceText color="secondary" style={{ fontSize: tokens.typography.sizes.sm, marginBottom: 4 }}>
-                  الفئة الرئيسية *
-                </WorkspaceText>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
-                  <View style={{ flexDirection: "row-reverse", gap: 8 }}>
-                    {categories.map((cat) => (
-                      <TouchableOpacity
-                        key={cat.id}
-                        onPress={() => handleCategoryChange(cat.id)}
-                        style={[
-                          {
-                            paddingHorizontal: 12,
-                            paddingVertical: 8,
-                            borderRadius: tokens.radius.sm,
-                            borderWidth: 1,
-                            borderColor: createForm.category_id === cat.id ? colors.primary : colors.borderSubtle,
-                            backgroundColor: createForm.category_id === cat.id ? colors.primary + "18" : colors.bgElevated,
-                          },
-                        ]}
-                      >
-                        <Text style={{ color: createForm.category_id === cat.id ? colors.primary : colors.textPrimary, fontSize: 13, fontWeight: "600" }}>
-                          {cat.name_ar}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </ScrollView>
-              </View>
-
-              {subcategories.length > 0 && (
-                <View style={{ marginBottom: tokens.spacing.md }}>
-                  <WorkspaceText color="secondary" style={{ fontSize: tokens.typography.sizes.sm, marginBottom: 4 }}>
-                    الفئة الفرعية
-                  </WorkspaceText>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View style={{ flexDirection: "row-reverse", gap: 8 }}>
-                      {subcategories.map((sub) => (
-                        <TouchableOpacity
-                          key={sub.id}
-                          onPress={() => setCreateForm((prev) => ({ ...prev, subcategory_id: sub.id }))}
-                          style={[
-                            {
-                              paddingHorizontal: 12,
-                              paddingVertical: 8,
-                              borderRadius: tokens.radius.sm,
-                              borderWidth: 1,
-                              borderColor: createForm.subcategory_id === sub.id ? colors.primary : colors.borderSubtle,
-                              backgroundColor: createForm.subcategory_id === sub.id ? colors.primary + "18" : colors.bgElevated,
-                            },
-                          ]}
-                        >
-                          <Text style={{ color: createForm.subcategory_id === sub.id ? colors.primary : colors.textPrimary, fontSize: 13 }}>
-                            {sub.name_ar}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </View>
-              )}
-
-              <WorkspaceButton
-                title={creating ? "جاري الإنشاء..." : "إنشاء المتجر"}
-                onPress={handleCreateStore}
-                isLoading={creating}
-                style={{ marginTop: tokens.spacing.sm }}
+      <AdminPageShell title="إنشاء متجر جديد" showBack={stores.length > 0}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+          <SectionCard style={{ marginTop: tokens.spacing.lg }}>
+            <SectionTitle icon={<Plus color={colors.primary} size={20} />}>بيانات المتجر الجديد</SectionTitle>
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>اسم المتجر *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.bgBase, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                value={createForm.name}
+                onChangeText={(t) => setCreateForm(p => ({ ...p, name: t }))}
+                placeholder="أدخل اسم المتجر"
+                placeholderTextColor={colors.textDisabled}
               />
-            </SectionCard>
-          </ScrollView>
+            </View>
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>الفئة الرئيسية</Text>
+              <SimpleSelect
+                value={createForm.category_id || ""}
+                onChange={handleCategoryChange}
+                options={categories.map(c => ({ value: c.id, label: c.name_ar }))}
+                placeholder="اختر فئة"
+              />
+            </View>
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>العنوان *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.bgBase, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                value={createForm.address_line1}
+                onChangeText={(t) => setCreateForm(p => ({ ...p, address_line1: t }))}
+                placeholder="العنوان التفصيلي"
+              />
+            </View>
+            <WorkspaceButton
+              title={creating ? "جاري الإنشاء..." : "إنشاء المتجر"}
+              onPress={handleCreateStore}
+              isLoading={creating}
+              style={{ marginTop: tokens.spacing.md }}
+            />
+            {stores.length > 0 && (
+              <WorkspaceButton
+                title="إلغاء"
+                variant="ghost"
+                onPress={() => setShowCreateForm(false)}
+                style={{ marginTop: tokens.spacing.xs }}
+              />
+            )}
+          </SectionCard>
         </KeyboardAvoidingView>
-      </WorkspaceScreen>
+      </AdminPageShell>
     );
   }
 
-  /* ── Store loading ─────────────────────────────────────────── */
   if (storeId && loading && !store) {
     return (
-      <WorkspaceScreen>
-        <LoadingState message="جاري تحميل المتجر..." />
-      </WorkspaceScreen>
+      <AdminPageShell title="إدارة المتجر">
+        <LoadingState message="جاري تحميل بيانات المتجر..." />
+      </AdminPageShell>
     );
   }
 
   if (!store) return null;
 
-  const isOpen = store.is_open ?? false;
-  const statusLabel =
-    store.status === "active"
-      ? "نشط"
-      : store.status === "pending"
-      ? "قيد المراجعة"
-      : store.status === "paused"
-      ? "موقوف مؤقتاً"
-      : store.status === "suspended"
-      ? "موقوف من الإدارة"
-      : store.status;
-
-  /* ── Render ────────────────────────────────────────────────── */
   return (
-    <WorkspaceScreen>
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: tokens.spacing.xl,
-          paddingBottom: tokens.spacing["3xl"],
-        }}
-      >
-        {/* My Stores (متاجري) section */}
-        <SectionCard>
-          <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: tokens.spacing.sm }}>
-            <View style={{ flexDirection: "row-reverse", alignItems: "center" }}>
-              <SectionTitle
-                icon={<StoreIcon color={colors.primary} size={tokens.spacing.lg} />}
-              >
-                {`متاجري (${stores.length}/5)`}
-              </SectionTitle>
-              {store && (
-                <TouchableOpacity
-                  onPress={() => router.push(`/store-details?id=${store.id}`)}
-                  style={{
-                    marginRight: tokens.spacing.md,
-                    backgroundColor: colors.info + "18",
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: tokens.radius.sm,
-                    flexDirection: "row-reverse",
-                    alignItems: "center",
-                  }}
-                >
-                  <ShoppingBag color={colors.info} size={14} />
-                  <Text style={{ color: colors.info, fontSize: 12, marginRight: 4, fontWeight: "600" }}>معاينة في السوق</Text>
-                </TouchableOpacity>
+    <AdminPageShell title="لوحة إدارة المتجر">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tokens.spacing["3xl"] }}>
+        
+        {/* 1. Header & Switcher */}
+        <SectionCard style={{ marginTop: tokens.spacing.lg }}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerInfo}>
+              <WorkspaceText variant="title" style={{ textAlign: "right" }}>{store.name}</WorkspaceText>
+              {renderStatusBadge(store.status)}
+            </View>
+            <View style={styles.headerLogo}>
+              {store.logo_url ? (
+                <Image source={{ uri: store.logo_url }} style={styles.logoCircle} />
+              ) : (
+                <View style={[styles.logoCircle, { backgroundColor: colors.bgBase, justifyContent: "center", alignItems: "center" }]}>
+                  <StoreIcon color={colors.textDisabled} size={24} />
+                </View>
               )}
             </View>
-            {stores.length < 5 ? (
-              <TouchableOpacity
-                onPress={() => setShowCreateForm(true)}
-                style={{
-                  backgroundColor: colors.primary,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: tokens.radius.sm,
-                }}
-              >
-                <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600" }}>+ إضافة متجر</Text>
-              </TouchableOpacity>
-            ) : null}
           </View>
 
-          {stores.length >= 5 && (
-            <WorkspaceText color="error" style={{ fontSize: 12, marginBottom: 8, textAlign: "right" }}>
-              لقد وصلت إلى الحد الأقصى وهو 5 متاجر.
-            </WorkspaceText>
-          )}
+          <View style={styles.switcherRow}>
+            <WorkspaceText color="secondary" style={{ fontSize: 12 }}>{`متاجري (${stores.length}/5)`}</WorkspaceText>
+            {stores.length < 5 && (
+              <TouchableOpacity onPress={() => setShowCreateForm(true)} style={styles.addStoreBtn}>
+                <Plus color={colors.primary} size={14} />
+                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "600", marginRight: 4 }}>إضافة متجر</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storeList}>
             <View style={{ flexDirection: "row-reverse", gap: 8 }}>
-              {stores.map((s) => {
-                const isActive = s.id === storeId;
-                return (
-                  <TouchableOpacity
-                    key={s.id}
-                    onPress={() => {
-                      setStoreId(s.id);
-                      setShowCreateForm(false);
-                    }}
-                    style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 10,
-                      borderRadius: tokens.radius.sm,
-                      borderWidth: 1,
-                      borderColor: isActive ? colors.primary : colors.borderSubtle,
-                      backgroundColor: isActive ? colors.primary + "18" : colors.bgElevated,
-                      minWidth: 110,
-                      alignItems: "flex-end",
-                    }}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={{
-                        color: isActive ? colors.primary : colors.textPrimary,
-                        fontSize: 13,
-                        fontWeight: "700",
-                        textAlign: "right",
-                      }}
-                    >
-                      {s.name}
-                    </Text>
-                    <Text
-                      style={{
-                        color: colors.textSecondary,
-                        fontSize: 11,
-                        marginTop: 2,
-                        textAlign: "right",
-                      }}
-                    >
-                      {s.status === "active" ? "نشط" : "قيد المراجعة"}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {stores.map((s) => (
+                <TouchableOpacity
+                  key={s.id}
+                  onPress={() => setStoreId(s.id)}
+                  style={[
+                    styles.storeTab,
+                    { 
+                      borderColor: s.id === storeId ? colors.primary : colors.borderSubtle,
+                      backgroundColor: s.id === storeId ? colors.primary + "10" : "transparent"
+                    }
+                  ]}
+                >
+                  <Text style={{ color: s.id === storeId ? colors.primary : colors.textPrimary, fontWeight: s.id === storeId ? "700" : "500", fontSize: 13 }}>
+                    {s.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </ScrollView>
         </SectionCard>
 
-        {/* Quick Actions & Status */}
-        <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.md, paddingHorizontal: tokens.spacing.md, marginBottom: tokens.spacing.md }}>
-          <SectionCard style={{ flex: 1, marginBottom: 0 }}>
+        {/* 2. Status & Quick Actions */}
+        <View style={styles.quickActionsGrid}>
+          <SectionCard style={styles.statusCard}>
             <View style={{ alignItems: "center" }}>
-              <WorkspaceText color="secondary" style={{ fontSize: 12, marginBottom: 4 }}>حالة المتجر</WorkspaceText>
+              <WorkspaceText color="secondary" style={{ fontSize: 11, marginBottom: 4 }}>حالة الفتح</WorkspaceText>
               <Switch
-                value={isOpen}
+                value={store.is_open}
                 onValueChange={handleToggleOpen}
                 disabled={togglingOpen}
                 trackColor={{ false: colors.borderSubtle, true: colors.success }}
                 thumbColor={colors.textOnBrand}
               />
-              <WorkspaceText
-                color={isOpen ? "success" : "error"}
-                style={{ fontWeight: "700", fontSize: 12, marginTop: 4 }}
-              >
-                {isOpen ? "مفتوح" : "مغلق"}
+              <WorkspaceText color={store.is_open ? "success" : "error"} style={{ fontWeight: "700", fontSize: 12, marginTop: 4 }}>
+                {store.is_open ? "مفتوح" : "مغلق"}
               </WorkspaceText>
             </View>
           </SectionCard>
 
-          <SectionCard style={{ flex: 2, marginBottom: 0 }}>
-            <View style={{ flexDirection: "row-reverse", justifyContent: "space-around", alignItems: "center", height: "100%" }}>
-              <TouchableOpacity style={{ alignItems: "center" }} onPress={() => router.push(`/store-details?id=${store.id}`)}>
-                <View style={{ backgroundColor: colors.info + "18", padding: 8, borderRadius: tokens.radius.full, marginBottom: 4 }}>
-                  <Eye color={colors.info} size={20} />
-                </View>
-                <Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: "600" }}>معاينة</Text>
+          <SectionCard style={styles.actionsCard}>
+            <View style={styles.actionButtons}>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => router.push(`/store-details?id=${store.id}`)}>
+                <View style={[styles.actionIcon, { backgroundColor: colors.info + "15" }]}><Eye color={colors.info} size={18} /></View>
+                <Text style={styles.actionLabel}>معاينة</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity style={{ alignItems: "center" }} onPress={openEditModal}>
-                <View style={{ backgroundColor: colors.primary + "18", padding: 8, borderRadius: tokens.radius.full, marginBottom: 4 }}>
-                  <Pencil color={colors.primary} size={20} />
-                </View>
-                <Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: "600" }}>تعديل</Text>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/merchant/orders")}>
+                <View style={[styles.actionIcon, { backgroundColor: colors.success + "15" }]}><ShoppingBag color={colors.success} size={18} /></View>
+                <Text style={styles.actionLabel}>الطلبات</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity style={{ alignItems: "center" }} onPress={() => {}}>
-                <View style={{ backgroundColor: colors.success + "18", padding: 8, borderRadius: tokens.radius.full, marginBottom: 4 }}>
-                  <ShoppingBag color={colors.success} size={20} />
-                </View>
-                <Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: "600" }}>الطلبات</Text>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/merchant/promotions")}>
+                <View style={[styles.actionIcon, { backgroundColor: colors.warning + "15" }]}><Tag color={colors.warning} size={18} /></View>
+                <Text style={styles.actionLabel}>العروض</Text>
               </TouchableOpacity>
             </View>
           </SectionCard>
         </View>
 
-        {/* Store profile */}
+        {/* 3. Store Info */}
         <SectionCard>
-          <View
-            style={{
-              flexDirection: "row-reverse",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: tokens.spacing.md,
-            }}
-          >
-            <SectionTitle
-              icon={<StoreIcon color={colors.primary} size={tokens.spacing.lg} />}
-            >
-              ملف المتجر
-            </SectionTitle>
-            <TouchableOpacity
-              onPress={openEditModal}
-              style={{
-                flexDirection: "row-reverse",
-                alignItems: "center",
-                backgroundColor: colors.primary + "18",
-                borderRadius: tokens.radius.sm,
-                paddingHorizontal: tokens.spacing.sm,
-                paddingVertical: 4,
-              }}
-            >
+          <View style={styles.sectionHeader}>
+            <SectionTitle icon={<LayoutDashboard color={colors.primary} size={18} />}>معلومات المتجر</SectionTitle>
+            <TouchableOpacity onPress={openEditModal} style={styles.editBtn}>
               <Pencil color={colors.primary} size={14} />
-              <WorkspaceText
-                color="brand"
-                style={{
-                  fontSize: tokens.typography.sizes.sm,
-                  marginRight: 4,
-                  fontWeight: "600",
-                }}
-              >
-                تعديل
-              </WorkspaceText>
+              <Text style={styles.editBtnText}>تعديل</Text>
             </TouchableOpacity>
           </View>
-
-          <WorkspaceRow label="اسم المتجر" value={store.name} />
-          {merchant && <WorkspaceRow label="اسم المالك" value={merchant.owner_full_name} />}
-          {merchant && <WorkspaceRow label="البريد الإلكتروني" value={merchant.email} />}
-          <WorkspaceRow label="الفئة" value={store.category} />
-          {store.description ? (
-            <WorkspaceRow label="الوصف" value={store.description} />
-          ) : null}
-          <WorkspaceRow label="رقم الهاتف" value={store.phone_number || "غير محدد"} />
-          <WorkspaceRow label="المدينة" value={store.city || "عين الصفراء"} />
-          <WorkspaceRow label="العنوان" value={store.address_line1 || "غير محدد"} />
-          {store.latitude != null && store.longitude != null ? (
-            <WorkspaceRow
-              label="الموقع الجغرافي"
-              value={`${store.latitude.toFixed(5)}, ${store.longitude.toFixed(5)}`}
-            />
-          ) : null}
-          <WorkspaceRow label="حالة المتجر" value={statusLabel} isLast />
+          
+          <WorkspaceRow label="اسم المتجر" value={store.name} icon={<StoreIcon size={16} color={colors.textDisabled} />} />
+          {merchant && <WorkspaceRow label="اسم المالك" value={merchant.owner_full_name} icon={<User size={16} color={colors.textDisabled} />} />}
+          {merchant && <WorkspaceRow label="البريد الإلكتروني" value={merchant.email} icon={<Mail size={16} color={colors.textDisabled} />} />}
+          <WorkspaceRow label="رقم الهاتف" value={store.phone_number || "غير محدد"} icon={<Phone size={16} color={colors.textDisabled} />} />
+          <WorkspaceRow label="المدينة" value={store.city || "عين الصفراء"} icon={<MapPin size={16} color={colors.textDisabled} />} />
+          <WorkspaceRow label="العنوان" value={store.address_line1 || "غير محدد"} isLast />
+          
+          {store.description && (
+            <View style={styles.descBox}>
+              <Text style={[styles.descLabel, { color: colors.textSecondary }]}>الوصف:</Text>
+              <Text style={[styles.descText, { color: colors.textPrimary }]}>{store.description}</Text>
+            </View>
+          )}
         </SectionCard>
 
-        {/* Logo & Cover */}
+        {/* 4. Hours & Category */}
+        <View style={styles.twoColumnRow}>
+          <SectionCard style={{ flex: 1, marginRight: 0, marginLeft: tokens.spacing.sm }}>
+            <SectionTitle icon={<Clock3 color={colors.primary} size={18} />}>ساعات العمل</SectionTitle>
+            <WorkspaceRow label="الفتح" value={store.opens_at ? String(store.opens_at).slice(0, 5) : "--"} />
+            <WorkspaceRow label="الغلق" value={store.closes_at ? String(store.closes_at).slice(0, 5) : "--"} isLast />
+          </SectionCard>
+          <SectionCard style={{ flex: 1, marginLeft: 0, marginRight: tokens.spacing.sm }}>
+            <SectionTitle icon={<Tag color={colors.primary} size={18} />}>التصنيف</SectionTitle>
+            <WorkspaceRow label="الرئيسي" value={store.category} />
+            <WorkspaceRow label="الفرعي" value={store.sub_category || "--"} isLast />
+          </SectionCard>
+        </View>
+
+        {/* 5. Visual Identity */}
         <SectionCard>
-          <SectionTitle
-            icon={<ImagePlus color={colors.primary} size={tokens.spacing.lg} />}
-          >
-            الشعار والغلاف
-          </SectionTitle>
-
-          {/* Logo */}
-          <View style={{ marginBottom: tokens.spacing.md }}>
-            <WorkspaceText
-              color="secondary"
-              style={{ fontSize: tokens.typography.sizes.sm, marginBottom: tokens.spacing.xs, textAlign: "right" }}
-            >
-              شعار المتجر
-            </WorkspaceText>
-            {store.logo_url ? (
-              <Image
-                source={{ uri: store.logo_url }}
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: tokens.radius.md,
-                  alignSelf: "flex-end",
-                  marginBottom: tokens.spacing.xs,
-                  borderWidth: 1,
-                  borderColor: colors.borderSubtle,
-                }}
-              />
-            ) : null}
-            <WorkspaceButton
-              title={uploadingLogo ? "جاري الرفع..." : "رفع الشعار"}
-              variant="outline"
-              onPress={() => pickAndUpload("logos")}
-              isLoading={uploadingLogo}
-            />
-          </View>
-
-          {/* Cover */}
-          <View>
-            <WorkspaceText
-              color="secondary"
-              style={{ fontSize: tokens.typography.sizes.sm, marginBottom: tokens.spacing.xs, textAlign: "right" }}
-            >
-              صورة الغلاف
-            </WorkspaceText>
-            {store.cover_url ? (
-              <Image
-                source={{ uri: store.cover_url }}
-                style={{
-                  width: "100%",
-                  height: 120,
-                  borderRadius: tokens.radius.md,
-                  marginBottom: tokens.spacing.xs,
-                  borderWidth: 1,
-                  borderColor: colors.borderSubtle,
-                }}
-                resizeMode="cover"
-              />
-            ) : null}
-            <WorkspaceButton
-              title={uploadingCover ? "جاري الرفع..." : "رفع صورة الغلاف"}
-              variant="outline"
-              onPress={() => pickAndUpload("covers")}
-              isLoading={uploadingCover}
-            />
+          <SectionTitle icon={<ImagePlus color={colors.primary} size={18} />}>الهوية البصرية</SectionTitle>
+          <View style={styles.visualGrid}>
+            <View style={styles.visualItem}>
+              <Text style={[styles.visualLabel, { color: colors.textSecondary }]}>الشعار (Logo)</Text>
+              <TouchableOpacity style={[styles.visualBox, { borderColor: colors.borderSubtle }]} onPress={() => pickAndUpload("logos")}>
+                {store.logo_url ? (
+                  <Image source={{ uri: store.logo_url }} style={styles.visualImg} />
+                ) : (
+                  <Plus color={colors.textDisabled} size={24} />
+                )}
+                {uploadingLogo && <ActivityIndicator style={styles.loader} color={colors.primary} />}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.visualItem}>
+              <Text style={[styles.visualLabel, { color: colors.textSecondary }]}>الغلاف (Cover)</Text>
+              <TouchableOpacity style={[styles.visualBox, { borderColor: colors.borderSubtle, aspectRatio: 2 }]} onPress={() => pickAndUpload("covers")}>
+                {store.cover_url ? (
+                  <Image source={{ uri: store.cover_url }} style={styles.visualImg} />
+                ) : (
+                  <Plus color={colors.textDisabled} size={24} />
+                )}
+                {uploadingCover && <ActivityIndicator style={styles.loader} color={colors.primary} />}
+              </TouchableOpacity>
+            </View>
           </View>
         </SectionCard>
 
-        {/* Opening hours */}
+        {/* 6. Gallery */}
         <SectionCard>
-          <SectionTitle
-            icon={<Clock3 color={colors.primary} size={tokens.spacing.lg} />}
-          >
-            أوقات العمل
-          </SectionTitle>
-          <WorkspaceRow
-            label="وقت الفتح"
-            value={store.opens_at ? String(store.opens_at).slice(0, 5) : "--"}
-          />
-          <WorkspaceRow
-            label="وقت الغلق"
-            value={store.closes_at ? String(store.closes_at).slice(0, 5) : "--"}
-            isLast
-          />
-        </SectionCard>
-
-        {/* Promotions link */}
-        <SectionCard>
-          <SectionTitle icon={<Tag color={colors.primary} size={tokens.spacing.lg} />}>
-            العروض الترويجية
-          </SectionTitle>
-          <WorkspaceText color="secondary" style={{ textAlign: "right", fontSize: tokens.typography.sizes.sm, marginBottom: tokens.spacing.sm }}>
-            أنشئ عروضاً وخصومات مخصصة لمتجرك من تبويب "العروض" في شريط التنقل.
-          </WorkspaceText>
-        </SectionCard>
-
-        {/* Gallery */}
-        <SectionCard>
-          <SectionTitle
-            icon={<Images color={colors.primary} size={tokens.spacing.lg} />}
-          >
-            معرض الصور
-          </SectionTitle>
+          <SectionTitle icon={<Images color={colors.primary} size={18} />}>معرض الصور</SectionTitle>
           <StoreImageGallery
             storeId={store.id}
             images={galleryImages}
@@ -905,7 +643,7 @@ export default function MerchantStoreScreen() {
           />
         </SectionCard>
 
-        {/* Products */}
+        {/* 7. Products Management */}
         <SectionCard>
           <StoreProductManagement
             isMerchantView
@@ -918,188 +656,282 @@ export default function MerchantStoreScreen() {
             onToggleVisibility={setVisibility}
           />
         </SectionCard>
+
       </ScrollView>
 
-      {/* ── Edit Store Modal ──────────────────────────────────── */}
-      <Modal
-        visible={editModalOpen}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setEditModalOpen(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "flex-end",
-              backgroundColor: "rgba(0,0,0,0.55)",
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: colors.bgElevated,
-                borderTopLeftRadius: tokens.radius.lg,
-                borderTopRightRadius: tokens.radius.lg,
-                padding: tokens.spacing.lg,
-                maxHeight: "90%",
-              }}
-            >
-              {/* Modal header */}
-              <View
-                style={{
-                  flexDirection: "row-reverse",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: tokens.spacing.lg,
-                }}
-              >
-                <WorkspaceText variant="title">تعديل ملف المتجر</WorkspaceText>
-                <TouchableOpacity onPress={() => setEditModalOpen(false)}>
-                  <X color={colors.textSecondary} size={22} />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {form &&
-                  (
-                    [
-                      { key: "name", label: "اسم المتجر *", placeholder: "مثال: متجر العائلة" },
-                      { key: "description", label: "الوصف", placeholder: "وصف مختصر للمتجر", multiline: true },
-                      { key: "phone_number", label: "رقم الهاتف", placeholder: "0555 000 000", keyboardType: "phone-pad" },
-                      { key: "address_line1", label: "العنوان", placeholder: "الشارع أو الحي" },
-                      { key: "city", label: "المدينة", placeholder: "مثال: عين الصفراء" },
-                      { key: "opens_at", label: "وقت الفتح (HH:MM)", placeholder: "09:00" },
-                      { key: "closes_at", label: "وقت الغلق (HH:MM)", placeholder: "21:00" },
-                    ] as Array<{
-                      key: keyof StoreFormValues;
-                      label: string;
-                      placeholder: string;
-                      multiline?: boolean;
-                      keyboardType?: "default" | "phone-pad";
-                    }>
-                  ).map((field) => (
-                    <View key={field.key} style={{ marginBottom: tokens.spacing.md }}>
-                      <WorkspaceText
-                        color="secondary"
-                        style={{
-                          fontSize: tokens.typography.sizes.sm,
-                          marginBottom: 4,
-                        }}
-                      >
-                        {field.label}
-                      </WorkspaceText>
-                      <TextInput
-                        value={form[field.key]}
-                        onChangeText={(text) =>
-                          setForm((prev) =>
-                            prev ? { ...prev, [field.key]: text } : prev
-                          )
-                        }
-                        style={{
-                          borderWidth: 1,
-                          borderColor: colors.borderSubtle,
-                          borderRadius: tokens.radius.sm,
-                          paddingHorizontal: tokens.spacing.md,
-                          paddingVertical: tokens.spacing.sm,
-                          color: colors.textPrimary,
-                          fontFamily: tokens.typography.families.arabic,
-                          fontSize: tokens.typography.sizes.base,
-                          textAlign: "right",
-                          minHeight: field.multiline ? 72 : undefined,
-                          textAlignVertical: field.multiline ? "top" : "center",
-                        }}
-                        placeholder={field.placeholder}
-                        placeholderTextColor={colors.textDisabled}
-                        multiline={field.multiline}
-                        keyboardType={field.keyboardType ?? "default"}
-                      />
-                    </View>
-                  ))}
-
-                <View style={{ marginBottom: tokens.spacing.md }}>
-                  <WorkspaceText color="secondary" style={{ fontSize: tokens.typography.sizes.sm, marginBottom: 4 }}>
-                    الفئة الرئيسية
-                  </WorkspaceText>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View style={{ flexDirection: "row-reverse", gap: 8 }}>
-                      {categories.map((cat) => (
-                        <TouchableOpacity
-                          key={cat.id}
-                          onPress={() => handleEditCategoryChange(cat.id)}
-                          style={[
-                            {
-                              paddingHorizontal: 12,
-                              paddingVertical: 8,
-                              borderRadius: tokens.radius.sm,
-                              borderWidth: 1,
-                              borderColor: form?.category_id === cat.id ? colors.primary : colors.borderSubtle,
-                              backgroundColor: form?.category_id === cat.id ? colors.primary + "18" : colors.bgElevated,
-                            },
-                          ]}
-                        >
-                          <Text style={{ color: form?.category_id === cat.id ? colors.primary : colors.textPrimary, fontSize: 13, fontWeight: "600" }}>
-                            {cat.name_ar}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </View>
-
-                {subcategories.length > 0 && (
-                  <View style={{ marginBottom: tokens.spacing.md }}>
-                    <WorkspaceText color="secondary" style={{ fontSize: tokens.typography.sizes.sm, marginBottom: 4 }}>
-                      الفئة الفرعية
-                    </WorkspaceText>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <View style={{ flexDirection: "row-reverse", gap: 8 }}>
-                        {subcategories.map((sub) => (
-                          <TouchableOpacity
-                            key={sub.id}
-                            onPress={() => setForm((prev) => prev ? { ...prev, subcategory_id: sub.id } : prev)}
-                            style={[
-                              {
-                                paddingHorizontal: 12,
-                                paddingVertical: 8,
-                                borderRadius: tokens.radius.sm,
-                                borderWidth: 1,
-                                borderColor: form?.subcategory_id === sub.id ? colors.primary : colors.borderSubtle,
-                                backgroundColor: form?.subcategory_id === sub.id ? colors.primary + "18" : colors.bgElevated,
-                              },
-                            ]}
-                          >
-                            <Text style={{ color: form?.subcategory_id === sub.id ? colors.primary : colors.textPrimary, fontSize: 13 }}>
-                              {sub.name_ar}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </ScrollView>
-                  </View>
-                )}
-
-                <WorkspaceButton
-                  title={saving ? "جاري الحفظ..." : "حفظ التعديلات"}
-                  onPress={handleSave}
-                  isLoading={saving}
-                  style={{ marginTop: tokens.spacing.sm, marginBottom: tokens.spacing.xl }}
+      {/* ── Edit Modal ─────────────────────────────────────────── */}
+      <Modal visible={editModalOpen} animationType="slide">
+        <AdminPageShell title="تعديل بيانات المتجر" showBack={false}>
+          <View style={{ paddingVertical: tokens.spacing.lg }}>
+            <SectionCard>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>اسم المتجر</Text>
+                <TextInput
+                  style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary }]}
+                  value={form?.name}
+                  onChangeText={(t) => setForm(p => p ? ({ ...p, name: t }) : null)}
                 />
-              </ScrollView>
-            </View>
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>الوصف</Text>
+                <TextInput
+                  style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary, height: 80 }]}
+                  value={form?.description}
+                  onChangeText={(t) => setForm(p => p ? ({ ...p, description: t }) : null)}
+                  multiline
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>رقم الهاتف</Text>
+                <TextInput
+                  style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary }]}
+                  value={form?.phone_number}
+                  onChangeText={(t) => setForm(p => p ? ({ ...p, phone_number: t }) : null)}
+                  keyboardType="phone-pad"
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>الفئة</Text>
+                <SimpleSelect
+                  value={form?.category_id || ""}
+                  onChange={handleEditCategoryChange}
+                  options={categories.map(c => ({ value: c.id, label: c.name_ar }))}
+                />
+              </View>
+              <View style={styles.twoColumnRow}>
+                <View style={[styles.formGroup, { flex: 1, marginLeft: 8 }]}>
+                  <Text style={styles.label}>وقت الفتح</Text>
+                  <TextInput
+                    style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary }]}
+                    value={form?.opens_at}
+                    onChangeText={(t) => setForm(p => p ? ({ ...p, opens_at: t }) : null)}
+                    placeholder="09:00"
+                  />
+                </View>
+                <View style={[styles.formGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>وقت الغلق</Text>
+                  <TextInput
+                    style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary }]}
+                    value={form?.closes_at}
+                    onChangeText={(t) => setForm(p => p ? ({ ...p, closes_at: t }) : null)}
+                    placeholder="21:00"
+                  />
+                </View>
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>العنوان</Text>
+                <TextInput
+                  style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary }]}
+                  value={form?.address_line1}
+                  onChangeText={(t) => setForm(p => p ? ({ ...p, address_line1: t }) : null)}
+                />
+              </View>
+              
+              <View style={{ flexDirection: "row-reverse", gap: 12, marginTop: 12 }}>
+                <WorkspaceButton title="حفظ التغييرات" onPress={handleSaveEdit} isLoading={saving} style={{ flex: 1 }} />
+                <WorkspaceButton title="إلغاء" variant="outline" onPress={() => setEditModalOpen(false)} style={{ flex: 1 }} />
+              </View>
+            </SectionCard>
           </View>
-        </KeyboardAvoidingView>
+        </AdminPageShell>
       </Modal>
 
       <ImageOptimizerModal
         visible={optimizerVisible}
-        imageUri={pendingImageUri}
+        imageUri={pendingImageUri || ""}
         imageType={optimizerType}
         onClose={() => setOptimizerVisible(false)}
         onComplete={handleOptimizerComplete}
       />
-    </WorkspaceScreen>
+    </AdminPageShell>
   );
 }
+
+const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  headerInfo: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  headerLogo: {
+    marginLeft: 16,
+  },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: "#FF8A00",
+  },
+  statusBadge: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 4,
+    gap: 4,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  switcherRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  addStoreBtn: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  storeList: {
+    marginTop: 8,
+  },
+  storeTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  quickActionsGrid: {
+    flexDirection: "row-reverse",
+    gap: 12,
+    paddingHorizontal: 16,
+    marginBottom: 0,
+  },
+  statusCard: {
+    flex: 1,
+    marginHorizontal: 0,
+    padding: 12,
+  },
+  actionsCard: {
+    flex: 2.5,
+    marginHorizontal: 0,
+    padding: 12,
+  },
+  actionButtons: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-around",
+    alignItems: "center",
+    height: "100%",
+  },
+  actionBtn: {
+    alignItems: "center",
+  },
+  actionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  actionLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    fontFamily: TOKENS.typography.families.arabic,
+  },
+  sectionHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  editBtn: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    backgroundColor: "#FF8A0015",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    gap: 4,
+  },
+  editBtnText: {
+    color: "#FF8A00",
+    fontSize: 12,
+    fontWeight: "700",
+    fontFamily: TOKENS.typography.families.arabic,
+  },
+  descBox: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: "#00000005",
+    borderRadius: 8,
+  },
+  descLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    marginBottom: 4,
+    fontFamily: TOKENS.typography.families.arabic,
+    textAlign: "right",
+  },
+  descText: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: TOKENS.typography.families.arabic,
+    textAlign: "right",
+  },
+  twoColumnRow: {
+    flexDirection: "row-reverse",
+    marginHorizontal: 8,
+  },
+  visualGrid: {
+    flexDirection: "row-reverse",
+    gap: 12,
+  },
+  visualItem: {
+    flex: 1,
+  },
+  visualLabel: {
+    fontSize: 11,
+    marginBottom: 6,
+    textAlign: "right",
+    fontFamily: TOKENS.typography.families.arabic,
+  },
+  visualBox: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+    backgroundColor: "#00000003",
+  },
+  visualImg: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  loader: {
+    position: "absolute",
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 8,
+    textAlign: "right",
+    fontFamily: TOKENS.typography.families.arabic,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    textAlign: "right",
+    fontFamily: TOKENS.typography.families.arabic,
+  },
+});

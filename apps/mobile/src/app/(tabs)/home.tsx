@@ -407,22 +407,7 @@ const HomeScreen = () => {
       />
 
       <ScrollView style={styles.container}>
-        {/* Merchant Quick Access Banner */}
-        {userRole === 'merchant' && (
-          <TouchableOpacity
-            style={[{ backgroundColor: colors.primary, marginHorizontal: 16, marginTop: 12, marginBottom: 4, borderRadius: 12, padding: 12, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' }]}
-            onPress={() => router.push('/merchant/store')}
-            activeOpacity={0.9}
-          >
-            <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
-              <StoreIcon color="#fff" size={22} />
-              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700', marginRight: 8, fontFamily: tokens.typography.families.arabic }}>
-                ⚙️ إدارة متاجري
-              </Text>
-            </View>
-            <Text style={{ color: '#fff', fontSize: 12, opacity: 0.9 }}>انقر للإدارة ←</Text>
-          </TouchableOpacity>
-        )}
+
 
         {/* Search Bar */}
         <View style={[styles.searchContainer, { backgroundColor: colors.bgSurface }]}>
