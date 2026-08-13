@@ -2,8 +2,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   ScrollView,
   View,
-  Switch,
-  Modal,
   TextInput,
   TouchableOpacity,
   Alert,
@@ -13,6 +11,7 @@ import {
   Image,
   Text,
   StyleSheet,
+  Modal,
 } from "react-native";
 import {
   Store as StoreIcon,
@@ -23,46 +22,38 @@ import {
   X,
   Tag,
   ImagePlus,
-  Eye,
   Plus,
-  ChevronLeft,
-  LayoutDashboard,
+  ChevronDown,
   MapPin,
-  User,
-  Mail,
   Phone,
-  Video,
   CheckCircle2,
   AlertCircle,
   Clock,
+  Trash2,
+  Save,
 } from "lucide-react-native";
-import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
-import { getStoreByMerchantId, getStoresByMerchantId, updateStore, createStore } from "@/services/store.service";
+import { getStoresByMerchantId, updateStore, createStore } from "@/services/store.service";
 import useStore from "@/hooks/useStore";
 import { useMerchantProducts } from "@/hooks/useProducts";
 import { Store } from "@/types/schema-03-core";
 import StoreImageGallery from "@/components/profile/StoreImageGallery";
 import StoreProductManagement from "@/components/profile/StoreProductManagement";
 import { supabase } from "@/lib/supabase";
-import { ImageOptimizerModal, SimpleSelect, Typography } from "@/components/ui";
+import { ImageOptimizerModal, SimpleSelect } from "@/components/ui";
 import { ImageType } from "@/utils/imageOptimizer";
 import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
 import {
   SectionCard,
   SectionTitle,
-  WorkspaceRow,
-  WorkspaceText,
   WorkspaceButton,
   LoadingState,
 } from "@/features/workspace/ui";
 import { AdminPageShell } from "@/components/admin/AdminPageShell";
-import { TOKENS } from "@/constants/tokens";
 
-/* ─── Types ─────────────────────────────────────────────────── */
 interface StoreFormValues {
   name: string;
   category: string;
@@ -76,181 +67,103 @@ interface StoreFormValues {
   closes_at: string;
 }
 
-interface CreateFormValues {
-  name: string;
-  category: string;
-  category_id?: string;
-  subcategory_id?: string;
-  address_line1: string;
-  city: string;
-  description: string;
-  phone_number: string;
-  opens_at: string;
-  closes_at: string;
-}
-
-const EMPTY_CREATE_FORM: CreateFormValues = {
+const EMPTY_FORM: StoreFormValues = {
   name: "",
   category: "",
   category_id: undefined,
   subcategory_id: undefined,
-  address_line1: "",
-  city: "عين الصفراء",
   description: "",
   phone_number: "",
+  address_line1: "",
+  city: "عين الصفراء",
   opens_at: "09:00",
   closes_at: "21:00",
 };
 
-/* ─── Helpers ───────────────────────────────────────────────── */
-function buildForm(s: Store): StoreFormValues {
-  return {
-    name: s.name ?? "",
-    category: s.category ?? "",
-    category_id: s.category_id ?? undefined,
-    subcategory_id: s.subcategory_id ?? undefined,
-    description: s.description ?? "",
-    phone_number: s.phone_number ?? "",
-    address_line1: s.address_line1 ?? "",
-    city: s.city ?? "",
-    opens_at: s.opens_at ? String(s.opens_at).slice(0, 5) : "09:00",
-    closes_at: s.closes_at ? String(s.closes_at).slice(0, 5) : "21:00",
-  };
-}
-
-async function uploadStoreAsset(
-  storeId: string,
-  path: "logos" | "covers",
-  uri: string
-): Promise<string | null> {
-  try {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const ext = uri.split(".").pop() ?? "jpg";
-    const assetName = path === "logos" ? "logo" : "cover";
-    const filePath = `${storeId}/${assetName}.${ext}`;
-    const { error } = await supabase.storage
-      .from("store_images")
-      .upload(filePath, blob, { contentType: blob.type, upsert: true });
-    if (error) throw error;
-    const { data } = supabase.storage.from("store_images").getPublicUrl(filePath);
-    return data.publicUrl;
-  } catch (err: any) {
-    console.error(`[store] upload ${path} error:`, err);
-    return null;
-  }
-}
-
-/* ─── Screen ─────────────────────────────────────────────────── */
-export default function MerchantStoreScreen() {
+export default function UnifiedMerchantStoreDashboard() {
   const { colors, tokens } = useAppTheme();
   const { userId } = useCurrentUserId();
 
-  const [storeId, setStoreId] = useState<string>("");
   const [stores, setStores] = useState<Store[]>([]);
+  const [storeId, setStoreId] = useState<string>("");
   const [merchant, setMerchant] = useState<any>(null);
-  const [resolving, setResolving] = useState(true);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [form, setForm] = useState<StoreFormValues | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [togglingOpen, setTogglingOpen] = useState(false);
+  const [loadingList, setLoadingList] = useState(true);
 
-  // Create store state
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [createForm, setCreateForm] = useState<CreateFormValues>(EMPTY_CREATE_FORM);
+  // Store selector modal
+  const [showSelectorModal, setShowSelectorModal] = useState(false);
+
+  // Create store modal/form state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState<StoreFormValues>(EMPTY_FORM);
   const [creating, setCreating] = useState(false);
 
-  // Category/subcategory state
-  const [categories, setCategories] = useState<Array<{ id: string; name_ar: string; icon?: string }>>([]);
-  const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
-  const [loadingCategories, setLoadingCategories] = useState(false);
+  // Edit store info modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<StoreFormValues>(EMPTY_FORM);
+  const [savingEdit, setSavingEdit] = useState(false);
 
-  // Logo / cover upload state
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
+  // Categories & Subcategories
+  const [categories, setCategories] = useState<Array<{ id: string; name_ar: string }>>([]);
+  const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
+
+  // Image upload / optimizer state
   const [optimizerVisible, setOptimizerVisible] = useState(false);
   const [optimizerType, setOptimizerType] = useState<ImageType>("logo");
   const [pendingAssetType, setPendingAssetType] = useState<"logos" | "covers" | null>(null);
   const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
 
-  const loadMerchantStores = async () => {
+  const loadData = useCallback(async () => {
     if (!userId) return;
-    
-    // Fetch merchant details
-    const { data: merchantData } = await supabase
+    setLoadingList(true);
+
+    const { data: mData } = await supabase
       .from("merchants")
       .select("*")
       .eq("id", userId)
       .maybeSingle();
-    setMerchant(merchantData);
+    setMerchant(mData);
 
     let list = await getStoresByMerchantId(userId);
-    
-    // Auto-repair: If merchant exists but has no stores, create the first one
-    if (list.length === 0 && merchantData) {
+
+    // Auto-repair if merchant has 0 stores
+    if (list.length === 0 && mData) {
       const created = await createStore(userId, {
-        name: merchantData.business_name || "متجري",
+        name: mData.business_name || "متجري الأول",
         category: "عام",
-        address_line1: merchantData.address || "العنوان الرئيسي",
+        address_line1: mData.address || "العنوان الرئيسي",
         city: "عين الصفراء",
         country: "Algeria",
       });
-      if (created) {
-        list = [created];
-      }
+      if (created) list = [created];
     }
 
     setStores(list);
     if (list.length > 0) {
-      if (!storeId || !list.some(s => s.id === storeId)) {
+      if (!storeId || !list.some((s) => s.id === storeId)) {
         setStoreId(list[0].id);
       }
-      setShowCreateForm(false);
-    } else {
-      setShowCreateForm(true);
     }
-    setResolving(false);
-  };
+    setLoadingList(false);
+  }, [userId, storeId]);
 
   useEffect(() => {
-    if (!userId) return;
-    loadMerchantStores();
-    loadCategories();
-  }, [userId]);
+    loadData();
+    getActiveCategories().then(setCategories);
+  }, [loadData]);
 
-  const loadCategories = async () => {
-    setLoadingCategories(true);
-    const cats = await getActiveCategories();
-    setCategories(cats);
-    setLoadingCategories(false);
-  };
+  const { store, galleryImages, handleImageUpload, handleImageDelete, updateStore: updateStoreHook } = useStore(storeId);
+  const { products, loading: productsLoading, addProduct, editProduct, removeProduct, setVisibility } = useMerchantProducts(storeId);
 
-  const handleCategoryChange = async (categoryId: string) => {
-    setCreateForm((prev) => ({ ...prev, category_id: categoryId, subcategory_id: undefined }));
+  const handleCategoryChange = async (categoryId: string, isCreate: boolean) => {
     const subs = await getActiveSubcategories(categoryId);
     setSubcategories(subs);
+    if (isCreate) {
+      setCreateForm((prev) => ({ ...prev, category_id: categoryId, subcategory_id: undefined }));
+    } else {
+      setEditForm((prev) => ({ ...prev, category_id: categoryId, subcategory_id: undefined }));
+    }
   };
 
-  const handleEditCategoryChange = async (categoryId: string) => {
-    if (!form) return;
-    const subs = await getActiveSubcategories(categoryId);
-    setSubcategories(subs);
-    setForm((prev) => prev ? { ...prev, category_id: categoryId, subcategory_id: undefined } : prev);
-  };
-
-  const { store, galleryImages, loading, updateStore: updateStoreHook, handleImageUpload, handleImageDelete } =
-    useStore(storeId);
-
-  const {
-    products,
-    loading: productsLoading,
-    addProduct,
-    editProduct,
-    removeProduct,
-    setVisibility,
-  } = useMerchantProducts(storeId);
-
-  /* ── Actions ────────────────────────────────────────────────── */
   const handleCreateStore = async () => {
     if (!userId) return;
     if (stores.length >= 5) {
@@ -265,6 +178,7 @@ export default function MerchantStoreScreen() {
       Alert.alert("خطأ", "عنوان المتجر مطلوب");
       return;
     }
+
     setCreating(true);
     const created = await createStore(userId, {
       name: createForm.name.trim(),
@@ -280,465 +194,464 @@ export default function MerchantStoreScreen() {
       closes_at: createForm.closes_at || "21:00",
     });
     setCreating(false);
+
     if (created) {
       setStoreId(created.id);
-      setCreateForm(EMPTY_CREATE_FORM);
-      await loadMerchantStores();
+      setCreateForm(EMPTY_FORM);
+      setShowCreateModal(false);
+      await loadData();
     } else {
-      Alert.alert("خطأ", "تعذر إنشاء المتجر (قد تكون وصلت للحد الأقصى 5 متاجر).");
+      Alert.alert("خطأ", "تعذر إنشاء المتجر.");
     }
-  };
-
-  const handleToggleOpen = async (value: boolean) => {
-    if (!store) return;
-    setTogglingOpen(true);
-    const updated = await updateStore(store.id, { is_open: value });
-    if (updated) {
-      await updateStoreHook({ is_open: value });
-    }
-    setTogglingOpen(false);
   };
 
   const openEditModal = () => {
     if (!store) return;
-    setForm(buildForm(store));
+    setEditForm({
+      name: store.name ?? "",
+      category: store.category ?? "",
+      category_id: store.category_id ?? undefined,
+      subcategory_id: store.subcategory_id ?? undefined,
+      description: store.description ?? "",
+      phone_number: store.phone_number ?? "",
+      address_line1: store.address_line1 ?? "",
+      city: store.city ?? "",
+      opens_at: store.opens_at ? String(store.opens_at).slice(0, 5) : "09:00",
+      closes_at: store.closes_at ? String(store.closes_at).slice(0, 5) : "21:00",
+    });
     if (store.category_id) {
-      handleEditCategoryChange(store.category_id);
+      getActiveSubcategories(store.category_id).then(setSubcategories);
     } else {
       setSubcategories([]);
     }
-    setEditModalOpen(true);
+    setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
-    if (!form || !store) return;
-    if (!form.name.trim()) {
+    if (!editForm.name.trim()) {
       Alert.alert("خطأ", "اسم المتجر مطلوب");
       return;
     }
-    setSaving(true);
+    setSavingEdit(true);
     const updates: Partial<Store> = {
-      name: form.name.trim(),
-      category: form.category.trim(),
-      description: form.description.trim() || undefined,
-      phone_number: form.phone_number.trim() || undefined,
-      address_line1: form.address_line1.trim() || undefined,
-      city: form.city.trim() || undefined,
-      opens_at: form.opens_at || undefined,
-      closes_at: form.closes_at || undefined,
+      name: editForm.name.trim(),
+      category: editForm.category.trim(),
+      description: editForm.description.trim() || undefined,
+      phone_number: editForm.phone_number.trim() || undefined,
+      address_line1: editForm.address_line1.trim() || undefined,
+      city: editForm.city.trim() || undefined,
+      opens_at: editForm.opens_at || undefined,
+      closes_at: editForm.closes_at || undefined,
     };
-    if (form.category_id) updates.category_id = form.category_id;
-    if (form.subcategory_id !== undefined) updates.subcategory_id = form.subcategory_id;
+    if (editForm.category_id) updates.category_id = editForm.category_id;
+    if (editForm.subcategory_id !== undefined) updates.subcategory_id = editForm.subcategory_id;
+
     const ok = await updateStoreHook(updates);
-    setSaving(false);
+    setSavingEdit(false);
     if (ok !== undefined) {
-      setEditModalOpen(false);
+      setShowEditModal(false);
+      Alert.alert("نجاح", "تم حفظ التعديلات بنجاح");
     } else {
-      Alert.alert("خطأ", "تعذر حفظ التعديلات. حاول مرة أخرى.");
+      Alert.alert("خطأ", "تعذر حفظ التعديلات");
     }
   };
 
-  const pickAndUpload = async (asset: "logos" | "covers") => {
-    if (!store) return;
+  const pickImage = async (assetType: "logos" | "covers") => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("إذن مطلوب", "يجب السماح بالوصول إلى المعرض لرفع الصورة.");
+      Alert.alert("إذن مطلوب", "يجب السماح بالوصول إلى الصور.");
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
-    if (result.canceled) return;
-    setPendingImageUri(result.assets[0].uri);
-    setPendingAssetType(asset);
-    setOptimizerType(asset === "logos" ? "logo" : "cover");
+    if (res.canceled || !res.assets[0]?.uri) return;
+
+    setPendingImageUri(res.assets[0].uri);
+    setPendingAssetType(assetType);
+    setOptimizerType(assetType === "logos" ? "logo" : "cover");
     setOptimizerVisible(true);
   };
 
   const handleOptimizerComplete = async (processedUri: string) => {
     if (!store || !pendingAssetType) return;
-    const asset = pendingAssetType;
     setOptimizerVisible(false);
 
-    if (asset === "logos") setUploadingLogo(true);
-    else setUploadingCover(true);
+    try {
+      const response = await fetch(processedUri);
+      const blob = await response.blob();
+      const ext = processedUri.split(".").pop() ?? "jpg";
+      const filePath = `${store.id}/${pendingAssetType === "logos" ? "logo" : "cover"}.${ext}`;
 
-    const url = await uploadStoreAsset(store.id, asset, processedUri);
+      const { error: uploadErr } = await supabase.storage
+        .from("store_images")
+        .upload(filePath, blob, { contentType: blob.type, upsert: true });
 
-    if (asset === "logos") setUploadingLogo(false);
-    else setUploadingCover(false);
+      if (uploadErr) throw uploadErr;
 
-    if (url) {
-      const field = asset === "logos" ? { logo_url: url } : { cover_url: url };
-      await updateStoreHook(field as Partial<Store>);
-    } else {
-      Alert.alert("خطأ", "تعذر رفع الصورة. حاول مرة أخرى.");
+      const { data } = supabase.storage.from("store_images").getPublicUrl(filePath);
+      if (data?.publicUrl) {
+        const field = pendingAssetType === "logos" ? { logo_url: data.publicUrl } : { cover_url: data.publicUrl };
+        await updateStoreHook(field);
+        Alert.alert("نجاح", "تم تحديث الصورة بنجاح");
+      }
+    } catch (err: any) {
+      Alert.alert("خطأ", "فشل رفع الصورة: " + err.message);
+    } finally {
+      setPendingAssetType(null);
     }
-    setPendingAssetType(null);
-    setPendingImageUri(null);
   };
 
-  /* ── Render Parts ─────────────────────────────────────────── */
-  const renderStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; color: string; icon: any }> = {
-      active: { label: "نشط", color: colors.success, icon: CheckCircle2 },
-      pending: { label: "قيد المراجعة", color: colors.warning, icon: Clock },
-      paused: { label: "متوقف مؤقتاً", color: colors.info, icon: AlertCircle },
-      suspended: { label: "موقوف من الإدارة", color: colors.error, icon: AlertCircle },
-    };
-    const config = statusMap[status] || { label: status, color: colors.textSecondary, icon: AlertCircle };
-    const Icon = config.icon;
-    
-    return (
-      <View style={[styles.statusBadge, { backgroundColor: config.color + "18" }]}>
-        <Icon color={config.color} size={14} />
-        <Text style={[styles.statusBadgeText, { color: config.color, fontFamily: tokens.typography.families.arabic }]}>
-          {config.label}
-        </Text>
-      </View>
-    );
-  };
-
-  if (resolving) {
+  if (loadingList) {
     return (
       <AdminPageShell title="إدارة المتجر">
-        <LoadingState message="جاري تحميل المتجر..." />
+        <LoadingState message="جاري تحميل لوحة التحكم..." />
       </AdminPageShell>
     );
   }
 
-  if (showCreateForm || (!storeId && !resolving)) {
-    return (
-      <AdminPageShell title="إنشاء متجر جديد" showBack={stores.length > 0}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-          <SectionCard style={{ marginTop: tokens.spacing.lg }}>
-            <SectionTitle icon={<Plus color={colors.primary} size={20} />}>بيانات المتجر الجديد</SectionTitle>
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>اسم المتجر *</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.bgBase, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
-                value={createForm.name}
-                onChangeText={(t) => setCreateForm(p => ({ ...p, name: t }))}
-                placeholder="أدخل اسم المتجر"
-                placeholderTextColor={colors.textDisabled}
-              />
-            </View>
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>الفئة الرئيسية</Text>
-              <SimpleSelect
-                value={createForm.category_id || ""}
-                onChange={handleCategoryChange}
-                options={categories.map(c => ({ value: c.id, label: c.name_ar }))}
-                placeholder="اختر فئة"
-              />
-            </View>
-            <View style={styles.formGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>العنوان *</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.bgBase, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
-                value={createForm.address_line1}
-                onChangeText={(t) => setCreateForm(p => ({ ...p, address_line1: t }))}
-                placeholder="العنوان التفصيلي"
-              />
-            </View>
-            <WorkspaceButton
-              title={creating ? "جاري الإنشاء..." : "إنشاء المتجر"}
-              onPress={handleCreateStore}
-              isLoading={creating}
-              style={{ marginTop: tokens.spacing.md }}
-            />
-            {stores.length > 0 && (
-              <WorkspaceButton
-                title="إلغاء"
-                variant="ghost"
-                onPress={() => setShowCreateForm(false)}
-                style={{ marginTop: tokens.spacing.xs }}
-              />
-            )}
-          </SectionCard>
-        </KeyboardAvoidingView>
-      </AdminPageShell>
-    );
-  }
-
-  if (storeId && loading && !store) {
-    return (
-      <AdminPageShell title="إدارة المتجر">
-        <LoadingState message="جاري تحميل بيانات المتجر..." />
-      </AdminPageShell>
-    );
-  }
-
-  if (!store) return null;
+  const activeStore = stores.find((s) => s.id === storeId) || stores[0];
 
   return (
-    <AdminPageShell title="لوحة إدارة المتجر">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tokens.spacing["3xl"] }}>
+    <AdminPageShell title="لوحة تحكم التاجر">
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         
-        {/* 1. Header & Switcher */}
-        <SectionCard style={{ marginTop: tokens.spacing.lg }}>
-          <View style={styles.headerRow}>
-            <View style={styles.headerInfo}>
-              <WorkspaceText variant="title" style={{ textAlign: "right" }}>{store.name}</WorkspaceText>
-              {renderStatusBadge(store.status)}
-            </View>
-            <View style={styles.headerLogo}>
-              {store.logo_url ? (
-                <Image source={{ uri: store.logo_url }} style={styles.logoCircle} />
-              ) : (
-                <View style={[styles.logoCircle, { backgroundColor: colors.bgBase, justifyContent: "center", alignItems: "center" }]}>
-                  <StoreIcon color={colors.textDisabled} size={24} />
-                </View>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.switcherRow}>
-            <WorkspaceText color="secondary" style={{ fontSize: 12 }}>{`متاجري (${stores.length}/5)`}</WorkspaceText>
-            {stores.length < 5 && (
-              <TouchableOpacity onPress={() => setShowCreateForm(true)} style={styles.addStoreBtn}>
-                <Plus color={colors.primary} size={14} />
-                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "600", marginRight: 4 }}>إضافة متجر</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storeList}>
-            <View style={{ flexDirection: "row-reverse", gap: 8 }}>
-              {stores.map((s) => (
-                <TouchableOpacity
-                  key={s.id}
-                  onPress={() => setStoreId(s.id)}
-                  style={[
-                    styles.storeTab,
-                    { 
-                      borderColor: s.id === storeId ? colors.primary : colors.borderSubtle,
-                      backgroundColor: s.id === storeId ? colors.primary + "10" : "transparent"
-                    }
-                  ]}
-                >
-                  <Text style={{ color: s.id === storeId ? colors.primary : colors.textPrimary, fontWeight: s.id === storeId ? "700" : "500", fontSize: 13 }}>
-                    {s.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </SectionCard>
-
-        {/* 2. Status & Quick Actions */}
-        <View style={styles.quickActionsGrid}>
-          <SectionCard style={styles.statusCard}>
-            <View style={{ alignItems: "center" }}>
-              <WorkspaceText color="secondary" style={{ fontSize: 11, marginBottom: 4 }}>حالة الفتح</WorkspaceText>
-              <Switch
-                value={store.is_open}
-                onValueChange={handleToggleOpen}
-                disabled={togglingOpen}
-                trackColor={{ false: colors.borderSubtle, true: colors.success }}
-                thumbColor={colors.textOnBrand}
-              />
-              <WorkspaceText color={store.is_open ? "success" : "error"} style={{ fontWeight: "700", fontSize: 12, marginTop: 4 }}>
-                {store.is_open ? "مفتوح" : "مغلق"}
-              </WorkspaceText>
-            </View>
-          </SectionCard>
-
-          <SectionCard style={styles.actionsCard}>
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => router.push(`/store-details?id=${store.id}`)}>
-                <View style={[styles.actionIcon, { backgroundColor: colors.info + "15" }]}><Eye color={colors.info} size={18} /></View>
-                <Text style={styles.actionLabel}>معاينة</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/merchant/orders")}>
-                <View style={[styles.actionIcon, { backgroundColor: colors.success + "15" }]}><ShoppingBag color={colors.success} size={18} /></View>
-                <Text style={styles.actionLabel}>الطلبات</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/merchant/promotions")}>
-                <View style={[styles.actionIcon, { backgroundColor: colors.warning + "15" }]}><Tag color={colors.warning} size={18} /></View>
-                <Text style={styles.actionLabel}>العروض</Text>
-              </TouchableOpacity>
-            </View>
-          </SectionCard>
-        </View>
-
-        {/* 3. Store Info */}
+        {/* Store Header & Selector Card */}
         <SectionCard>
-          <View style={styles.sectionHeader}>
-            <SectionTitle icon={<LayoutDashboard color={colors.primary} size={18} />}>معلومات المتجر</SectionTitle>
-            <TouchableOpacity onPress={openEditModal} style={styles.editBtn}>
-              <Pencil color={colors.primary} size={14} />
-              <Text style={styles.editBtnText}>تعديل</Text>
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1, alignItems: "flex-end" }}>
+              <Text style={[styles.storeNameText, { color: colors.textPrimary }]}>
+                {activeStore ? activeStore.name : "متجر جديد"}
+              </Text>
+              <Text style={[styles.storeSubText, { color: colors.textSecondary }]}>
+                {merchant?.business_name || "حساب تاجر"} • {stores.length} / 5 متاجر
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setShowSelectorModal(true)}
+              style={[styles.selectorBtn, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
+            >
+              <StoreIcon size={20} color={colors.primary} />
+              <ChevronDown size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
-          
-          <WorkspaceRow label="اسم المتجر" value={store.name} icon={<StoreIcon size={16} color={colors.textDisabled} />} />
-          {merchant && <WorkspaceRow label="اسم المالك" value={merchant.owner_full_name} icon={<User size={16} color={colors.textDisabled} />} />}
-          {merchant && <WorkspaceRow label="البريد الإلكتروني" value={merchant.email} icon={<Mail size={16} color={colors.textDisabled} />} />}
-          <WorkspaceRow label="رقم الهاتف" value={store.phone_number || "غير محدد"} icon={<Phone size={16} color={colors.textDisabled} />} />
-          <WorkspaceRow label="المدينة" value={store.city || "عين الصفراء"} icon={<MapPin size={16} color={colors.textDisabled} />} />
-          <WorkspaceRow label="العنوان" value={store.address_line1 || "غير محدد"} isLast />
-          
-          {store.description && (
-            <View style={styles.descBox}>
-              <Text style={[styles.descLabel, { color: colors.textSecondary }]}>الوصف:</Text>
-              <Text style={[styles.descText, { color: colors.textPrimary }]}>{store.description}</Text>
-            </View>
+
+          {stores.length < 5 && (
+            <TouchableOpacity
+              onPress={() => setShowCreateModal(true)}
+              style={[styles.addStoreBtn, { backgroundColor: colors.primary + "18", borderColor: colors.primary }]}
+            >
+              <Plus size={16} color={colors.primary} />
+              <Text style={[styles.addStoreText, { color: colors.primary }]}>إضافة متجر جديد</Text>
+            </TouchableOpacity>
           )}
         </SectionCard>
 
-        {/* 4. Hours & Category */}
-        <View style={styles.twoColumnRow}>
-          <SectionCard style={{ flex: 1, marginRight: 0, marginLeft: tokens.spacing.sm }}>
-            <SectionTitle icon={<Clock3 color={colors.primary} size={18} />}>ساعات العمل</SectionTitle>
-            <WorkspaceRow label="الفتح" value={store.opens_at ? String(store.opens_at).slice(0, 5) : "--"} />
-            <WorkspaceRow label="الغلق" value={store.closes_at ? String(store.closes_at).slice(0, 5) : "--"} isLast />
-          </SectionCard>
-          <SectionCard style={{ flex: 1, marginLeft: 0, marginRight: tokens.spacing.sm }}>
-            <SectionTitle icon={<Tag color={colors.primary} size={18} />}>التصنيف</SectionTitle>
-            <WorkspaceRow label="الرئيسي" value={store.category} />
-            <WorkspaceRow label="الفرعي" value={store.sub_category || "--"} isLast />
-          </SectionCard>
-        </View>
+        {activeStore && (
+          <>
+            {/* Store Information Card */}
+            <SectionCard>
+              <View style={styles.sectionHeaderRow}>
+                <TouchableOpacity onPress={openEditModal} style={[styles.editBtn, { backgroundColor: colors.primary + "18" }]}>
+                  <Pencil size={16} color={colors.primary} />
+                  <Text style={[styles.editBtnText, { color: colors.primary }]}>تعديل البيانات</Text>
+                </TouchableOpacity>
+                <SectionTitle icon={<StoreIcon size={18} color={colors.primary} />}>معلومات المتجر</SectionTitle>
+              </View>
 
-        {/* 5. Visual Identity */}
-        <SectionCard>
-          <SectionTitle icon={<ImagePlus color={colors.primary} size={18} />}>الهوية البصرية</SectionTitle>
-          <View style={styles.visualGrid}>
-            <View style={styles.visualItem}>
-              <Text style={[styles.visualLabel, { color: colors.textSecondary }]}>الشعار (Logo)</Text>
-              <TouchableOpacity style={[styles.visualBox, { borderColor: colors.borderSubtle }]} onPress={() => pickAndUpload("logos")}>
-                {store.logo_url ? (
-                  <Image source={{ uri: store.logo_url }} style={styles.visualImg} />
-                ) : (
-                  <Plus color={colors.textDisabled} size={24} />
-                )}
-                {uploadingLogo && <ActivityIndicator style={styles.loader} color={colors.primary} />}
-              </TouchableOpacity>
-            </View>
-            <View style={styles.visualItem}>
-              <Text style={[styles.visualLabel, { color: colors.textSecondary }]}>الغلاف (Cover)</Text>
-              <TouchableOpacity style={[styles.visualBox, { borderColor: colors.borderSubtle, aspectRatio: 2 }]} onPress={() => pickAndUpload("covers")}>
-                {store.cover_url ? (
-                  <Image source={{ uri: store.cover_url }} style={styles.visualImg} />
-                ) : (
-                  <Plus color={colors.textDisabled} size={24} />
-                )}
-                {uploadingCover && <ActivityIndicator style={styles.loader} color={colors.primary} />}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </SectionCard>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoVal, { color: colors.textPrimary }]}>{activeStore.name}</Text>
+                <Text style={[styles.infoKey, { color: colors.textSecondary }]}>اسم المتجر</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoVal, { color: colors.textPrimary }]}>{activeStore.description || "—"}</Text>
+                <Text style={[styles.infoKey, { color: colors.textSecondary }]}>الوصف</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoVal, { color: colors.textPrimary }]}>{activeStore.phone_number || merchant?.phone || "—"}</Text>
+                <Text style={[styles.infoKey, { color: colors.textSecondary }]}>الهاتف</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoVal, { color: colors.textPrimary }]}>{activeStore.address_line1 || "—"}, {activeStore.city || "عين الصفراء"}</Text>
+                <Text style={[styles.infoKey, { color: colors.textSecondary }]}>العنوان</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoVal, { color: colors.textPrimary }]}>{activeStore.category || "عام"}</Text>
+                <Text style={[styles.infoKey, { color: colors.textSecondary }]}>التصنيف</Text>
+              </View>
+            </SectionCard>
 
-        {/* 6. Gallery */}
-        <SectionCard>
-          <SectionTitle icon={<Images color={colors.primary} size={18} />}>معرض الصور</SectionTitle>
-          <StoreImageGallery
-            storeId={store.id}
-            images={galleryImages}
-            isMerchantView
-            onImageUpload={handleImageUpload}
-            onImageDelete={handleImageDelete}
-          />
-        </SectionCard>
+            {/* Opening Hours Card */}
+            <SectionCard>
+              <SectionTitle icon={<Clock3 size={18} color={colors.primary} />}>أوقات العمل</SectionTitle>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoVal, { color: colors.textPrimary }]}>
+                  {activeStore.opens_at ? String(activeStore.opens_at).slice(0, 5) : "09:00"} - {activeStore.closes_at ? String(activeStore.closes_at).slice(0, 5) : "21:00"}
+                </Text>
+                <Text style={[styles.infoKey, { color: colors.textSecondary }]}>ساعات العمل اليومية</Text>
+              </View>
+            </SectionCard>
 
-        {/* 7. Products Management */}
-        <SectionCard>
-          <StoreProductManagement
-            isMerchantView
-            storeId={store.id}
-            products={products}
-            loading={productsLoading}
-            onAddProduct={addProduct}
-            onEditProduct={editProduct}
-            onDeleteProduct={removeProduct}
-            onToggleVisibility={setVisibility}
-          />
-        </SectionCard>
+            {/* Store Branding Card (Logo & Cover) */}
+            <SectionCard>
+              <SectionTitle icon={<Images size={18} color={colors.primary} />}>الهوية البصرية (الشعار والغلاف)</SectionTitle>
+              <View style={styles.brandingRow}>
+                <View style={styles.brandingItem}>
+                  <Text style={[styles.labelSmall, { color: colors.textSecondary }]}>شعار المتجر (Logo)</Text>
+                  <TouchableOpacity
+                    onPress={() => pickImage("logos")}
+                    style={[styles.imageBox, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
+                  >
+                    {activeStore.logo_url ? (
+                      <Image source={{ uri: activeStore.logo_url }} style={styles.uploadedImg} />
+                    ) : (
+                      <ImagePlus size={24} color={colors.textSecondary} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.brandingItem}>
+                  <Text style={[styles.labelSmall, { color: colors.textSecondary }]}>صورة الغلاف (Cover)</Text>
+                  <TouchableOpacity
+                    onPress={() => pickImage("covers")}
+                    style={[styles.imageBox, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
+                  >
+                    {activeStore.cover_url ? (
+                      <Image source={{ uri: activeStore.cover_url }} style={styles.uploadedImg} />
+                    ) : (
+                      <ImagePlus size={24} color={colors.textSecondary} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </SectionCard>
+
+            {/* Store Gallery Card */}
+            <SectionCard>
+              <SectionTitle icon={<Images size={18} color={colors.primary} />}>معرض الصور</SectionTitle>
+              <StoreImageGallery
+                storeId={storeId}
+                images={galleryImages}
+                isMerchantView={true}
+                onImageUpload={handleImageUpload}
+                onImageDelete={handleImageDelete}
+              />
+            </SectionCard>
+
+            {/* Products Management Card */}
+            <SectionCard>
+              <SectionTitle icon={<ShoppingBag size={18} color={colors.primary} />}>إدارة المنتجات</SectionTitle>
+              <StoreProductManagement
+                storeId={storeId}
+                isMerchantView={true}
+                products={products}
+                loading={productsLoading}
+                onAddProduct={addProduct}
+                onEditProduct={editProduct}
+                onDeleteProduct={removeProduct}
+                onToggleVisibility={setVisibility}
+              />
+            </SectionCard>
+          </>
+        )}
 
       </ScrollView>
 
-      {/* ── Edit Modal ─────────────────────────────────────────── */}
-      <Modal visible={editModalOpen} animationType="slide">
-        <AdminPageShell title="تعديل بيانات المتجر" showBack={false}>
-          <View style={{ paddingVertical: tokens.spacing.lg }}>
-            <SectionCard>
+      {/* Selector Modal */}
+      <Modal visible={showSelectorModal} transparent animationType="slide">
+        <View style={styles.overlay}>
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface }]}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowSelectorModal(false)}>
+                <X size={20} color={colors.textPrimary} />
+              </TouchableOpacity>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>اختر المتجر</Text>
+            </View>
+            <ScrollView style={{ maxHeight: 300 }}>
+              {stores.map((s) => (
+                <TouchableOpacity
+                  key={s.id}
+                  onPress={() => {
+                    setStoreId(s.id);
+                    setShowSelectorModal(false);
+                  }}
+                  style={[
+                    styles.selectorItem,
+                    {
+                      backgroundColor: s.id === storeId ? colors.primary + "18" : colors.bgElevated,
+                      borderColor: s.id === storeId ? colors.primary : colors.borderSubtle,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.selectorItemText, { color: s.id === storeId ? colors.primary : colors.textPrimary }]}>
+                    {s.name} ({s.category})
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Create Store Modal */}
+      <Modal visible={showCreateModal} transparent animationType="slide">
+        <View style={styles.overlay}>
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface }]}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+                <X size={20} color={colors.textPrimary} />
+              </TouchableOpacity>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>إضافة متجر جديد</Text>
+            </View>
+            <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
               <View style={styles.formGroup}>
-                <Text style={styles.label}>اسم المتجر</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>اسم المتجر *</Text>
                 <TextInput
-                  style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                  value={form?.name}
-                  onChangeText={(t) => setForm(p => p ? ({ ...p, name: t }) : null)}
+                  style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                  placeholder="أدخل اسم المتجر"
+                  placeholderTextColor={colors.textDisabled}
+                  value={createForm.name}
+                  onChangeText={(t) => setCreateForm({ ...createForm, name: t })}
+                  textAlign="right"
                 />
               </View>
               <View style={styles.formGroup}>
-                <Text style={styles.label}>الوصف</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>العنوان *</Text>
                 <TextInput
-                  style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary, height: 80 }]}
-                  value={form?.description}
-                  onChangeText={(t) => setForm(p => p ? ({ ...p, description: t }) : null)}
+                  style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                  placeholder="أدخل العنوان"
+                  placeholderTextColor={colors.textDisabled}
+                  value={createForm.address_line1}
+                  onChangeText={(t) => setCreateForm({ ...createForm, address_line1: t })}
+                  textAlign="right"
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>الفئة الرئيسية</Text>
+                <SimpleSelect
+                  value={createForm.category_id || ""}
+                  onChange={(id) => handleCategoryChange(id, true)}
+                  options={categories.map((c) => ({ value: c.id, label: c.name_ar }))}
+                  placeholder="اختر الفئة"
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>الوصف</Text>
+                <TextInput
+                  style={[styles.inputMulti, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                  placeholder="وصف مختصر للمتجر"
+                  placeholderTextColor={colors.textDisabled}
+                  value={createForm.description}
+                  onChangeText={(t) => setCreateForm({ ...createForm, description: t })}
+                  textAlign="right"
+                  multiline
+                />
+              </View>
+
+              <WorkspaceButton
+                title="إنشاء المتجر"
+                onPress={handleCreateStore}
+                isLoading={creating}
+                style={{ marginTop: 16 }}
+              />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Store Modal */}
+      <Modal visible={showEditModal} transparent animationType="slide">
+        <View style={styles.overlay}>
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface }]}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <X size={20} color={colors.textPrimary} />
+              </TouchableOpacity>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>تعديل بيانات المتجر</Text>
+            </View>
+            <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>اسم المتجر *</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                  value={editForm.name}
+                  onChangeText={(t) => setEditForm({ ...editForm, name: t })}
+                  textAlign="right"
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>الوصف</Text>
+                <TextInput
+                  style={[styles.inputMulti, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                  value={editForm.description}
+                  onChangeText={(t) => setEditForm({ ...editForm, description: t })}
+                  textAlign="right"
                   multiline
                 />
               </View>
               <View style={styles.formGroup}>
-                <Text style={styles.label}>رقم الهاتف</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>الهاتف</Text>
                 <TextInput
-                  style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                  value={form?.phone_number}
-                  onChangeText={(t) => setForm(p => p ? ({ ...p, phone_number: t }) : null)}
-                  keyboardType="phone-pad"
+                  style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                  value={editForm.phone_number}
+                  onChangeText={(t) => setEditForm({ ...editForm, phone_number: t })}
+                  textAlign="right"
                 />
               </View>
               <View style={styles.formGroup}>
-                <Text style={styles.label}>الفئة</Text>
-                <SimpleSelect
-                  value={form?.category_id || ""}
-                  onChange={handleEditCategoryChange}
-                  options={categories.map(c => ({ value: c.id, label: c.name_ar }))}
+                <Text style={[styles.label, { color: colors.textSecondary }]}>العنوان</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                  value={editForm.address_line1}
+                  onChangeText={(t) => setEditForm({ ...editForm, address_line1: t })}
+                  textAlign="right"
                 />
               </View>
-              <View style={styles.twoColumnRow}>
-                <View style={[styles.formGroup, { flex: 1, marginLeft: 8 }]}>
-                  <Text style={styles.label}>وقت الفتح</Text>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>الفئة الرئيسية</Text>
+                <SimpleSelect
+                  value={editForm.category_id || ""}
+                  onChange={(id) => handleCategoryChange(id, false)}
+                  options={categories.map((c) => ({ value: c.id, label: c.name_ar }))}
+                  placeholder="اختر الفئة"
+                />
+              </View>
+              <View style={styles.row}>
+                <View style={[styles.formGroup, { flex: 1 }]}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>يفتح (09:00)</Text>
                   <TextInput
-                    style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                    value={form?.opens_at}
-                    onChangeText={(t) => setForm(p => p ? ({ ...p, opens_at: t }) : null)}
-                    placeholder="09:00"
+                    style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                    value={editForm.opens_at}
+                    onChangeText={(t) => setEditForm({ ...editForm, opens_at: t })}
+                    textAlign="right"
                   />
                 </View>
                 <View style={[styles.formGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>وقت الغلق</Text>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>يغلق (21:00)</Text>
                   <TextInput
-                    style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                    value={form?.closes_at}
-                    onChangeText={(t) => setForm(p => p ? ({ ...p, closes_at: t }) : null)}
-                    placeholder="21:00"
+                    style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                    value={editForm.closes_at}
+                    onChangeText={(t) => setEditForm({ ...editForm, closes_at: t })}
+                    textAlign="right"
                   />
                 </View>
               </View>
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>العنوان</Text>
-                <TextInput
-                  style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                  value={form?.address_line1}
-                  onChangeText={(t) => setForm(p => p ? ({ ...p, address_line1: t }) : null)}
-                />
-              </View>
-              
-              <View style={{ flexDirection: "row-reverse", gap: 12, marginTop: 12 }}>
-                <WorkspaceButton title="حفظ التغييرات" onPress={handleSaveEdit} isLoading={saving} style={{ flex: 1 }} />
-                <WorkspaceButton title="إلغاء" variant="outline" onPress={() => setEditModalOpen(false)} style={{ flex: 1 }} />
-              </View>
-            </SectionCard>
+
+              <WorkspaceButton
+                title="حفظ التعديلات"
+                onPress={handleSaveEdit}
+                isLoading={savingEdit}
+                style={{ marginTop: 16 }}
+              />
+            </ScrollView>
           </View>
-        </AdminPageShell>
+        </View>
       </Modal>
 
+      {/* Image Optimizer Modal */}
       <ImageOptimizerModal
         visible={optimizerVisible}
-        imageUri={pendingImageUri || ""}
+        imageUri={pendingImageUri}
         imageType={optimizerType}
         onClose={() => setOptimizerVisible(false)}
         onComplete={handleOptimizerComplete}
@@ -752,96 +665,41 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
   },
-  headerInfo: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  headerLogo: {
-    marginLeft: 16,
-  },
-  logoCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 2,
-    borderColor: "#FF8A00",
-  },
-  statusBadge: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 4,
-    gap: 4,
-  },
-  statusBadgeText: {
-    fontSize: 11,
+  storeNameText: {
+    fontSize: 18,
     fontWeight: "700",
+    textAlign: "right",
   },
-  switcherRow: {
+  storeSubText: {
+    fontSize: 13,
+    textAlign: "right",
+    marginTop: 2,
+  },
+  selectorBtn: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   addStoreBtn: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    paddingVertical: 4,
-  },
-  storeList: {
-    marginTop: 8,
-  },
-  storeTab: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    minWidth: 80,
-    alignItems: "center",
   },
-  quickActionsGrid: {
-    flexDirection: "row-reverse",
-    gap: 12,
-    paddingHorizontal: 16,
-    marginBottom: 0,
+  addStoreText: {
+    fontWeight: "700",
+    fontSize: 14,
   },
-  statusCard: {
-    flex: 1,
-    marginHorizontal: 0,
-    padding: 12,
-  },
-  actionsCard: {
-    flex: 2.5,
-    marginHorizontal: 0,
-    padding: 12,
-  },
-  actionButtons: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-around",
-    alignItems: "center",
-    height: "100%",
-  },
-  actionBtn: {
-    alignItems: "center",
-  },
-  actionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  actionLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-    fontFamily: TOKENS.typography.families.arabic,
-  },
-  sectionHeader: {
+  sectionHeaderRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
@@ -850,88 +708,125 @@ const styles = StyleSheet.create({
   editBtn: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    backgroundColor: "#FF8A0015",
+    gap: 6,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 6,
-    gap: 4,
   },
   editBtnText: {
-    color: "#FF8A00",
     fontSize: 12,
     fontWeight: "700",
-    fontFamily: TOKENS.typography.families.arabic,
   },
-  descBox: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: "#00000005",
-    borderRadius: 8,
-  },
-  descLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    marginBottom: 4,
-    fontFamily: TOKENS.typography.families.arabic,
-    textAlign: "right",
-  },
-  descText: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontFamily: TOKENS.typography.families.arabic,
-    textAlign: "right",
-  },
-  twoColumnRow: {
+  infoRow: {
     flexDirection: "row-reverse",
-    marginHorizontal: 8,
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
-  visualGrid: {
+  infoKey: {
+    fontSize: 13,
+  },
+  infoVal: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  statusBadge: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  brandingRow: {
     flexDirection: "row-reverse",
     gap: 12,
+    marginTop: 8,
   },
-  visualItem: {
+  brandingItem: {
     flex: 1,
   },
-  visualLabel: {
-    fontSize: 11,
+  labelSmall: {
+    fontSize: 12,
     marginBottom: 6,
     textAlign: "right",
-    fontFamily: TOKENS.typography.families.arabic,
   },
-  visualBox: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: 12,
+  imageBox: {
+    height: 90,
+    borderRadius: 8,
     borderWidth: 1,
     borderStyle: "dashed",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
     overflow: "hidden",
-    backgroundColor: "#00000003",
   },
-  visualImg: {
+  uploadedImg: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover",
   },
-  loader: {
-    position: "absolute",
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: "85%",
+  },
+  modalHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  selectorItem: {
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  selectorItemText: {
+    textAlign: "right",
+    fontWeight: "600",
+    fontSize: 15,
   },
   formGroup: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   label: {
     fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: "right",
-    fontFamily: TOKENS.typography.families.arabic,
   },
   input: {
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
+    fontSize: 14,
     textAlign: "right",
-    fontFamily: TOKENS.typography.families.arabic,
+  },
+  inputMulti: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    textAlign: "right",
+    height: 80,
+    textAlignVertical: "top",
+  },
+  row: {
+    flexDirection: "row-reverse",
+    gap: 10,
   },
 });
