@@ -31,7 +31,9 @@ import {
   Clock,
   Trash2,
   Save,
+  Eye,
 } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -83,6 +85,7 @@ const EMPTY_FORM: StoreFormValues = {
 export default function UnifiedMerchantStoreDashboard() {
   const { colors, tokens } = useAppTheme();
   const { userId } = useCurrentUserId();
+  const router = useRouter();
 
   const [stores, setStores] = useState<Store[]>([]);
   const [storeId, setStoreId] = useState<string>("");
@@ -353,10 +356,16 @@ export default function UnifiedMerchantStoreDashboard() {
             {/* Store Information Card */}
             <SectionCard>
               <View style={styles.sectionHeaderRow}>
-                <TouchableOpacity onPress={openEditModal} style={[styles.editBtn, { backgroundColor: colors.primary + "18" }]}>
-                  <Pencil size={16} color={colors.primary} />
-                  <Text style={[styles.editBtnText, { color: colors.primary }]}>تعديل البيانات</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <TouchableOpacity onPress={() => router.push(`/store-details?id=${activeStore.id}`)} style={[styles.editBtn, { backgroundColor: colors.success + "18", marginLeft: 8 }]}>
+                    <Eye size={16} color={colors.success} />
+                    <Text style={[styles.editBtnText, { color: colors.success }]}>معاينة</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={openEditModal} style={[styles.editBtn, { backgroundColor: colors.primary + "18" }]}>
+                    <Pencil size={16} color={colors.primary} />
+                    <Text style={[styles.editBtnText, { color: colors.primary }]}>تعديل</Text>
+                  </TouchableOpacity>
+                </View>
                 <SectionTitle icon={<StoreIcon size={18} color={colors.primary} />}>معلومات المتجر</SectionTitle>
               </View>
 
