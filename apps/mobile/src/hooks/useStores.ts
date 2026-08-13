@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Store } from '../types/schema-03-core';
 import { getAllStores, getStoresByCategory, searchStores } from '../services/store.service';
+import { supabase } from '../lib/supabase';
 
 export const useStores = (category?: string) => {
   const [stores, setStores] = useState<Store[]>([]);
@@ -53,4 +54,35 @@ export const useSearch = () => {
   };
 
   return { results, loading, handleSearch };
+};
+
+export const useNewStores = (limit: number = 10) => {
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNewStores = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('stores')
+          .select('*')
+          .eq('status', 'active')
+          .eq('is_new', true)
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        
+        if (error) throw error;
+        setStores(data || []);
+      } catch (err) {
+        console.error('Error fetching new stores:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNewStores();
+  }, [limit]);
+
+  return { stores, loading };
 };

@@ -179,7 +179,9 @@ export const createStore = async (
     phone_number: data.phone_number,
     opens_at: data.opens_at,
     closes_at: data.closes_at,
-    status: "pending",
+    status: "active",
+    is_new: true,
+    show_on_home: true,
     is_open: false,
   };
   if (data.category_id) payload.category_id = data.category_id;

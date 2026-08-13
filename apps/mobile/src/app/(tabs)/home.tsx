@@ -11,7 +11,7 @@ import { iconSizes } from '@/design/icons';
 import { radius } from '@/design/radius';
 import { shadows } from '@/design/shadows';
 
-import { useStores, useSearch } from '@/hooks/useStores';
+import { useStores, useSearch, useNewStores } from '@/hooks/useStores';
 import useCart from '@/hooks/useCart';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
 import { getArabicCategoryName } from '@/config/storeCategories';
@@ -69,6 +69,7 @@ const HomeScreen = () => {
   const [categories, setCategories] = useState<Array<{ id: string; name_ar: string; icon?: string; subtitle?: string }>>([]);
   const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
   const { stores: allStores, loading: storesLoading, error: storesError } = useStores();
+  const { stores: newStoresData, loading: newStoresLoading } = useNewStores(6);
   const { results: searchResults, loading: searchLoading, handleSearch } = useSearch();
   const { itemCount } = useCart();
   const [isGuest, setIsGuest] = useState(true);
@@ -384,7 +385,7 @@ const HomeScreen = () => {
   }, [allStores, activeCategory, activeSubcategory, searchQuery]);
 
   const displayedStores = searchQuery.length > 0 ? searchResults.stores : filteredStores;
-  const loading = storesLoading || searchLoading;
+  const loading = storesLoading || searchLoading || newStoresLoading;
   const error = storesError;
 
   return (
@@ -561,7 +562,7 @@ const HomeScreen = () => {
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>المتاجر المميزة</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                {displayedStores.slice(0, 3).map((store: any) => (
+                {(searchQuery.length > 0 ? displayedStores.slice(0, 6) : allStores.filter(s => s.is_featured).slice(0, 6)).map((store: any) => (
                   <StoreCard
                     key={store.id}
                     id={store.id}
@@ -584,7 +585,7 @@ const HomeScreen = () => {
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر جديدة</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                {displayedStores.slice(3, 6).map((store: any) => (
+                {(searchQuery.length > 0 ? [] : newStoresData).map((store: any) => (
                   <StoreCard
                     key={store.id}
                     id={store.id}
