@@ -150,6 +150,10 @@ export const createStore = async (
     country?: string;
     latitude?: number;
     longitude?: number;
+    description?: string;
+    phone_number?: string;
+    opens_at?: string;
+    closes_at?: string;
   }
 ): Promise<Store | null> => {
   if (!merchantId || !isValidUUID(merchantId)) return null;
@@ -166,7 +170,11 @@ export const createStore = async (
     city: data.city || "عين الصفراء",
     country: data.country || "Algeria",
     latitude: data.latitude ?? null,
-    longitude: data.longitude ?? null,
+    longitude: data.longitude,
+    description: data.description,
+    phone_number: data.phone_number,
+    opens_at: data.opens_at,
+    closes_at: data.closes_at,
     status: "pending",
     is_open: false,
   };

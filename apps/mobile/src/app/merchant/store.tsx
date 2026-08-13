@@ -22,7 +22,9 @@ import {
   X,
   Tag,
   ImagePlus,
+  Eye,
 } from "lucide-react-native";
+import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -84,6 +86,10 @@ interface CreateFormValues {
   subcategory_id?: string;
   address_line1: string;
   city: string;
+  description: string;
+  phone_number: string;
+  opens_at: string;
+  closes_at: string;
   latitude: string;
   longitude: string;
 }
@@ -95,6 +101,10 @@ const EMPTY_CREATE_FORM: CreateFormValues = {
   subcategory_id: undefined,
   address_line1: "",
   city: "عين الصفراء",
+  description: "",
+  phone_number: "",
+  opens_at: "09:00",
+  closes_at: "21:00",
   latitude: "",
   longitude: "",
 };
@@ -130,6 +140,7 @@ export default function MerchantStoreScreen() {
 
   const [storeId, setStoreId] = useState<string>("");
   const [stores, setStores] = useState<Store[]>([]);
+  const [merchant, setMerchant] = useState<any>(null);
   const [resolving, setResolving] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [form, setForm] = useState<StoreFormValues | null>(null);
@@ -156,27 +167,28 @@ export default function MerchantStoreScreen() {
 
   const loadMerchantStores = async () => {
     if (!userId) return;
+    
+    // Fetch merchant details
+    const { data: merchantData } = await supabase
+      .from("merchants")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+    setMerchant(merchantData);
+
     let list = await getStoresByMerchantId(userId);
     
     // Auto-repair: If merchant exists but has no stores, create the first one
-    if (list.length === 0) {
-      const { data: merchant } = await supabase
-        .from("merchants")
-        .select("business_name, zone_id, address")
-        .eq("id", userId)
-        .maybeSingle();
-      
-      if (merchant) {
-        const created = await createStore(userId, {
-          name: merchant.business_name || "متجري",
-          category: "عام",
-          address_line1: merchant.address || "العنوان الرئيسي",
-          city: "عين الصفراء",
-          country: "Algeria",
-        });
-        if (created) {
-          list = [created];
-        }
+    if (list.length === 0 && merchantData) {
+      const created = await createStore(userId, {
+        name: merchantData.business_name || "متجري",
+        category: "عام",
+        address_line1: merchantData.address || "العنوان الرئيسي",
+        city: "عين الصفراء",
+        country: "Algeria",
+      });
+      if (created) {
+        list = [created];
       }
     }
 
@@ -260,12 +272,16 @@ export default function MerchantStoreScreen() {
     const lng = parseFloat(createForm.longitude);
     const created = await createStore(userId, {
       name: createForm.name.trim(),
-      category: createForm.category.trim(),
+      category: createForm.category.trim() || "عام",
       category_id: createForm.category_id,
       subcategory_id: createForm.subcategory_id,
+      description: createForm.description.trim() || undefined,
+      phone_number: createForm.phone_number.trim() || undefined,
       address_line1: createForm.address_line1.trim(),
       city: createForm.city.trim() || "عين الصفراء",
       country: "Algeria",
+      opens_at: createForm.opens_at || "09:00",
+      closes_at: createForm.closes_at || "21:00",
       latitude: !isNaN(lat) ? lat : undefined,
       longitude: !isNaN(lng) ? lng : undefined,
     });
@@ -416,15 +432,20 @@ export default function MerchantStoreScreen() {
               {(
                 [
                   { key: "name", label: "اسم المتجر *", placeholder: "مثال: متجر العائلة" },
+                  { key: "description", label: "الوصف", placeholder: "وصف مختصر للمتجر", multiline: true },
+                  { key: "phone_number", label: "رقم الهاتف", placeholder: "0555 000 000", keyboardType: "phone-pad" },
                   { key: "address_line1", label: "عنوان المتجر *", placeholder: "الشارع أو الحي" },
                   { key: "city", label: "المدينة", placeholder: "عين الصفراء" },
+                  { key: "opens_at", label: "وقت الفتح (HH:MM)", placeholder: "09:00" },
+                  { key: "closes_at", label: "وقت الغلق (HH:MM)", placeholder: "21:00" },
                   { key: "latitude", label: "خط العرض (اختياري)", placeholder: "مثال: 32.7490", keyboardType: "decimal-pad" },
-                  { key: "longitude", label: "خط الطول (اختياري)", placeholder: "مثال: -0.5860", keyboardType: "decimal-pad" },
+                  { key: "longitude", label: "خط الطول (اختياري)", placeholder: "-0.5860", keyboardType: "decimal-pad" },
                 ] as Array<{
                   key: keyof CreateFormValues;
                   label: string;
                   placeholder: string;
-                  keyboardType?: "default" | "decimal-pad";
+                  multiline?: boolean;
+                  keyboardType?: "default" | "decimal-pad" | "phone-pad";
                 }>
               ).map((field) => (
                 <View key={field.key} style={{ marginBottom: tokens.spacing.md }}>
@@ -449,9 +470,12 @@ export default function MerchantStoreScreen() {
                       fontFamily: tokens.typography.families.arabic,
                       fontSize: tokens.typography.sizes.base,
                       textAlign: "right",
+                      minHeight: field.multiline ? 72 : undefined,
+                      textAlignVertical: field.multiline ? "top" : "center",
                     }}
                     placeholder={field.placeholder}
                     placeholderTextColor={colors.textDisabled}
+                    multiline={field.multiline}
                     keyboardType={field.keyboardType ?? "default"}
                   />
                 </View>
@@ -567,11 +591,30 @@ export default function MerchantStoreScreen() {
         {/* My Stores (متاجري) section */}
         <SectionCard>
           <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: tokens.spacing.sm }}>
-            <SectionTitle
-              icon={<StoreIcon color={colors.primary} size={tokens.spacing.lg} />}
-            >
-              {`متاجري (${stores.length}/5)`}
-            </SectionTitle>
+            <View style={{ flexDirection: "row-reverse", alignItems: "center" }}>
+              <SectionTitle
+                icon={<StoreIcon color={colors.primary} size={tokens.spacing.lg} />}
+              >
+                {`متاجري (${stores.length}/5)`}
+              </SectionTitle>
+              {store && (
+                <TouchableOpacity
+                  onPress={() => router.push(`/store-details?id=${store.id}`)}
+                  style={{
+                    marginRight: tokens.spacing.md,
+                    backgroundColor: colors.info + "18",
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: tokens.radius.sm,
+                    flexDirection: "row-reverse",
+                    alignItems: "center",
+                  }}
+                >
+                  <ShoppingBag color={colors.info} size={14} />
+                  <Text style={{ color: colors.info, fontSize: 12, marginRight: 4, fontWeight: "600" }}>معاينة في السوق</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {stores.length < 5 ? (
               <TouchableOpacity
                 onPress={() => setShowCreateForm(true)}
@@ -643,35 +686,52 @@ export default function MerchantStoreScreen() {
           </ScrollView>
         </SectionCard>
 
-        {/* Open / Close toggle card */}
-        <SectionCard>
-          <View
-            style={{
-              flexDirection: "row-reverse",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <View>
+        {/* Quick Actions & Status */}
+        <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.md, paddingHorizontal: tokens.spacing.md, marginBottom: tokens.spacing.md }}>
+          <SectionCard style={{ flex: 1, marginBottom: 0 }}>
+            <View style={{ alignItems: "center" }}>
+              <WorkspaceText color="secondary" style={{ fontSize: 12, marginBottom: 4 }}>حالة المتجر</WorkspaceText>
+              <Switch
+                value={isOpen}
+                onValueChange={handleToggleOpen}
+                disabled={togglingOpen}
+                trackColor={{ false: colors.borderSubtle, true: colors.success }}
+                thumbColor={colors.textOnBrand}
+              />
               <WorkspaceText
                 color={isOpen ? "success" : "error"}
-                style={{ fontWeight: "700", fontSize: tokens.typography.sizes.md }}
+                style={{ fontWeight: "700", fontSize: 12, marginTop: 4 }}
               >
-                {isOpen ? "🟢 المتجر مفتوح" : "🔴 المتجر مغلق"}
-              </WorkspaceText>
-              <WorkspaceText color="secondary" style={{ fontSize: tokens.typography.sizes.sm }}>
-                اضغط للتبديل
+                {isOpen ? "مفتوح" : "مغلق"}
               </WorkspaceText>
             </View>
-            <Switch
-              value={isOpen}
-              onValueChange={handleToggleOpen}
-              disabled={togglingOpen}
-              trackColor={{ false: colors.borderSubtle, true: colors.success }}
-              thumbColor={colors.textOnBrand}
-            />
-          </View>
-        </SectionCard>
+          </SectionCard>
+
+          <SectionCard style={{ flex: 2, marginBottom: 0 }}>
+            <View style={{ flexDirection: "row-reverse", justifyContent: "space-around", alignItems: "center", height: "100%" }}>
+              <TouchableOpacity style={{ alignItems: "center" }} onPress={() => router.push(`/store-details?id=${store.id}`)}>
+                <View style={{ backgroundColor: colors.info + "18", padding: 8, borderRadius: tokens.radius.full, marginBottom: 4 }}>
+                  <Eye color={colors.info} size={20} />
+                </View>
+                <Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: "600" }}>معاينة</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={{ alignItems: "center" }} onPress={openEditModal}>
+                <View style={{ backgroundColor: colors.primary + "18", padding: 8, borderRadius: tokens.radius.full, marginBottom: 4 }}>
+                  <Pencil color={colors.primary} size={20} />
+                </View>
+                <Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: "600" }}>تعديل</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={{ alignItems: "center" }} onPress={() => {}}>
+                <View style={{ backgroundColor: colors.success + "18", padding: 8, borderRadius: tokens.radius.full, marginBottom: 4 }}>
+                  <ShoppingBag color={colors.success} size={20} />
+                </View>
+                <Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: "600" }}>الطلبات</Text>
+              </TouchableOpacity>
+            </View>
+          </SectionCard>
+        </View>
 
         {/* Store profile */}
         <SectionCard>
@@ -714,25 +774,15 @@ export default function MerchantStoreScreen() {
           </View>
 
           <WorkspaceRow label="اسم المتجر" value={store.name} />
+          {merchant && <WorkspaceRow label="اسم المالك" value={merchant.owner_full_name} />}
+          {merchant && <WorkspaceRow label="البريد الإلكتروني" value={merchant.email} />}
           <WorkspaceRow label="الفئة" value={store.category} />
-          {store.main_category && store.main_category !== store.category && (
-            <WorkspaceRow label="الفئة الرئيسية" value={store.main_category} />
-          )}
-          {store.sub_category && (
-            <WorkspaceRow label="الفئة الفرعية" value={store.sub_category} />
-          )}
           {store.description ? (
             <WorkspaceRow label="الوصف" value={store.description} />
           ) : null}
-          {store.phone_number ? (
-            <WorkspaceRow label="رقم الهاتف" value={store.phone_number} />
-          ) : null}
-          {store.address_line1 ? (
-            <WorkspaceRow label="العنوان" value={store.address_line1} />
-          ) : null}
-          {store.city ? (
-            <WorkspaceRow label="المدينة" value={store.city} />
-          ) : null}
+          <WorkspaceRow label="رقم الهاتف" value={store.phone_number || "غير محدد"} />
+          <WorkspaceRow label="المدينة" value={store.city || "عين الصفراء"} />
+          <WorkspaceRow label="العنوان" value={store.address_line1 || "غير محدد"} />
           {store.latitude != null && store.longitude != null ? (
             <WorkspaceRow
               label="الموقع الجغرافي"
