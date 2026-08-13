@@ -344,13 +344,50 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
         if (error) throw error;
 
-        if (data.user && !data.session) {
-          setNeedsConfirmation(true);
-        } else if (data.user && data.session) {
-          await handleProvisioningAndGating(
-            data.user.id,
-            data.user.email ?? ""
-          );
+        if (role === "customer") {
+          if (data.session) {
+            await handleProvisioningAndGating(
+              data.session.user.id,
+              data.session.user.email ?? email
+            );
+          } else {
+            try {
+              const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+              });
+              if (signInErr) throw signInErr;
+              if (signInData.session) {
+                await handleProvisioningAndGating(
+                  signInData.session.user.id,
+                  signInData.session.user.email ?? email
+                );
+              } else if (data.user) {
+                await handleProvisioningAndGating(
+                  data.user.id,
+                  data.user.email ?? email
+                );
+              }
+            } catch (signInEx) {
+              if (data.user) {
+                await handleProvisioningAndGating(
+                  data.user.id,
+                  data.user.email ?? email
+                );
+              } else {
+                throw signInEx;
+              }
+            }
+          }
+        } else {
+          if (data.user && !data.session) {
+            setNeedsConfirmation(true);
+          } else if (data.user && data.session) {
+            await handleProvisioningAndGating(
+              data.user.id,
+              data.user.email ?? email
+            );
+          }
         }
       }
     } catch (error: any) {
