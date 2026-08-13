@@ -326,6 +326,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           return;
         }
 
+        console.log("[AuthScreen] Attempting signUp for email:", email, "role:", role);
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -342,53 +343,34 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           },
         });
 
+        console.log("[AuthScreen] signUp result - user:", !!data?.user, "session:", !!data?.session, "error:", error?.message);
+
         if (error) throw error;
 
-        if (role === "customer") {
-          if (data.session) {
-            await handleProvisioningAndGating(
-              data.session.user.id,
-              data.session.user.email ?? email
-            );
-          } else {
-            try {
-              const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-              });
-              if (signInErr) throw signInErr;
-              if (signInData.session) {
-                await handleProvisioningAndGating(
-                  signInData.session.user.id,
-                  signInData.session.user.email ?? email
-                );
-              } else if (data.user) {
-                await handleProvisioningAndGating(
-                  data.user.id,
-                  data.user.email ?? email
-                );
-              }
-            } catch (signInEx) {
-              if (data.user) {
-                await handleProvisioningAndGating(
-                  data.user.id,
-                  data.user.email ?? email
-                );
-              } else {
-                throw signInEx;
-              }
-            }
+        let activeUserId = data?.session?.user?.id || data?.user?.id;
+
+        if (!activeUserId) {
+          // If signUp succeeded without immediate session or user object, try signing in directly
+          console.log("[AuthScreen] No session/user from signUp, attempting explicit signInWithPassword...");
+          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (signInErr) {
+            console.error("[AuthScreen] explicit signIn failed after signUp:", signInErr.message);
+            throw signInErr;
           }
-        } else {
-          if (data.user && !data.session) {
-            setNeedsConfirmation(true);
-          } else if (data.user && data.session) {
-            await handleProvisioningAndGating(
-              data.user.id,
-              data.user.email ?? email
-            );
-          }
+          activeUserId = signInData?.session?.user?.id;
         }
+
+        if (!activeUserId) {
+          throw new Error("فشل إنشاء جلسة المستخدم. يرجى تسجيل الدخول يدوياً.");
+        }
+
+        await handleProvisioningAndGating(
+          activeUserId,
+          email
+        );
       }
     } catch (error: any) {
       const errMsg: string = error?.message ?? "";
