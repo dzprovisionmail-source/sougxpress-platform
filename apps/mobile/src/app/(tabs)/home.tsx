@@ -627,11 +627,11 @@ const HomeScreen = () => {
               </ScrollView>
             </View>
 
-            {/* Special Offers (Placeholder) */}
+            {/* Special Offers (Placeholder / Promotions) */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>عروض خاصة</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                {displayedStores.slice(9, 12).map((store: any) => (
+                {displayedStores.filter((s: any) => s.is_featured).slice(6, 9).map((store: any) => (
                   <StoreCard
                     key={store.id}
                     id={store.id}
