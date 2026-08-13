@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from 'react';
-import { getStore, updateStore, getStoreGalleryImages } from '../services/store.service';
+import { getStore, updateStore, getStoreGalleryImages, getStoreSubcategories, updateStoreSubcategories } from '../services/store.service';
 import { Store } from '../types/schema-03-core';
 import { supabase } from '../lib/supabase';
 
 const useStore = (storeId: string) => {
   const [store, setStore] = useState<Store | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,8 +17,12 @@ const useStore = (storeId: string) => {
       const fetchedStore = await getStore(storeId);
       if (fetchedStore) {
         setStore(fetchedStore);
-        const images = await getStoreGalleryImages(storeId);
+        const [images, subs] = await Promise.all([
+          getStoreGalleryImages(storeId),
+          getStoreSubcategories(storeId)
+        ]);
         setGalleryImages(images);
+        setSelectedSubcategories(subs);
       } else {
         setError("Failed to fetch store");
       }
@@ -42,12 +47,21 @@ const useStore = (storeId: string) => {
     };
   }, [storeId]);
 
-  const handleUpdateStore = async (updates: Partial<Store>) => {
+  const handleUpdateStore = async (updates: Partial<Store> & { subcategory_ids?: string[] }) => {
     if (!store) return;
     setLoading(true);
-    const updatedStore = await updateStore(store.id, updates);
+    
+    const { subcategory_ids, ...storeUpdates } = updates;
+    
+    const results = await Promise.all([
+      updateStore(store.id, storeUpdates),
+      subcategory_ids ? updateStoreSubcategories(store.id, subcategory_ids) : Promise.resolve()
+    ]);
+
+    const updatedStore = results[0];
     if (updatedStore) {
       setStore(updatedStore);
+      if (subcategory_ids) setSelectedSubcategories(subcategory_ids);
     } else {
       setError("Failed to update store");
     }
@@ -62,7 +76,7 @@ const useStore = (storeId: string) => {
     setGalleryImages((prevImages) => prevImages.filter((img) => img !== imageUrl));
   };
 
-  return { store, galleryImages, loading, error, updateStore: handleUpdateStore, handleImageUpload, handleImageDelete };
+  return { store, galleryImages, selectedSubcategories, loading, error, updateStore: handleUpdateStore, handleImageUpload, handleImageDelete };
 };
 
 export default useStore;

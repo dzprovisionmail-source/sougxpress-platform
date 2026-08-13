@@ -110,7 +110,7 @@ export const searchStores = async (query: string): Promise<Store[]> => {
   return data as Store[];
 };
 
-export const updateStore = async (storeId: string, updates: Partial<Store> & { category?: string; category_id?: string; subcategory_id?: string }): Promise<Store | null> => {
+export const updateStore = async (storeId: string, updates: Partial<Store> & { category?: string; category_id?: string; subcategory_id?: string; zone_id?: string }): Promise<Store | null> => {
   if (!storeId || !isValidUUID(storeId)) {
     return null;
   }
@@ -147,6 +147,8 @@ export const createStore = async (
     badges?: string[];
     address_line1: string;
     city?: string;
+    zone_id?: string;
+    neighborhood?: string;
     country?: string;
     latitude?: number;
     longitude?: number;
@@ -168,6 +170,8 @@ export const createStore = async (
     badges: data.badges || [],
     address_line1: data.address_line1,
     city: data.city || "عين الصفراء",
+    zone_id: data.zone_id || null,
+    neighborhood: data.neighborhood || null,
     country: data.country || "Algeria",
     latitude: data.latitude ?? null,
     longitude: data.longitude,
@@ -207,11 +211,29 @@ export const getStoreGalleryImages = async (storeId: string): Promise<string[]> 
   }
 
   const imageUrls = data.map((file) => {
-    const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(`store_gallery/${file.name}`);
+    const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(`store_gallery/${storeId}/${file.name}`);
     return publicUrlData.publicUrl;
   });
 
   return imageUrls;
+};
+
+export const getStoreSubcategories = async (storeId: string): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from("store_subcategories_map")
+    .select("subcategory_id")
+    .eq("store_id", storeId);
+  if (error) return [];
+  return data.map(d => d.subcategory_id);
+};
+
+export const updateStoreSubcategories = async (storeId: string, subcategoryIds: string[]): Promise<void> => {
+  await supabase.from("store_subcategories_map").delete().eq("store_id", storeId);
+  if (subcategoryIds.length > 0) {
+    await supabase.from("store_subcategories_map").insert(
+      subcategoryIds.map(id => ({ store_id: storeId, subcategory_id: id }))
+    );
+  }
 };
 
 // ============================================================================

@@ -55,16 +55,20 @@ import {
   LoadingState,
 } from "@/features/workspace/ui";
 import { AdminPageShell } from "@/components/admin/AdminPageShell";
+import { AIN_SEFRA_ZONES } from "@/constants/ain-sefra-zones";
 
 interface StoreFormValues {
   name: string;
   category: string;
   category_id?: string;
   subcategory_id?: string;
+  subcategory_ids?: string[];
   description: string;
   phone_number: string;
   address_line1: string;
   city: string;
+  zone_id?: string;
+  neighborhood?: string;
   opens_at: string;
   closes_at: string;
 }
@@ -74,10 +78,13 @@ const EMPTY_FORM: StoreFormValues = {
   category: "",
   category_id: undefined,
   subcategory_id: undefined,
+  subcategory_ids: [],
   description: "",
   phone_number: "",
   address_line1: "",
   city: "عين الصفراء",
+  zone_id: undefined,
+  neighborhood: "",
   opens_at: "09:00",
   closes_at: "21:00",
 };
@@ -154,7 +161,7 @@ export default function UnifiedMerchantStoreDashboard() {
     getActiveCategories().then(setCategories);
   }, [loadData]);
 
-  const { store, galleryImages, handleImageUpload, handleImageDelete, updateStore: updateStoreHook } = useStore(storeId);
+  const { store, galleryImages, selectedSubcategories, handleImageUpload, handleImageDelete, updateStore: updateStoreHook } = useStore(storeId);
   const { products, loading: productsLoading, addProduct, editProduct, removeProduct, setVisibility } = useMerchantProducts(storeId);
 
   const handleCategoryChange = async (categoryId: string, isCreate: boolean) => {
@@ -192,6 +199,8 @@ export default function UnifiedMerchantStoreDashboard() {
       phone_number: createForm.phone_number.trim() || undefined,
       address_line1: createForm.address_line1.trim(),
       city: createForm.city.trim() || "عين الصفراء",
+      zone_id: createForm.zone_id,
+      neighborhood: createForm.neighborhood,
       country: "Algeria",
       opens_at: createForm.opens_at || "09:00",
       closes_at: createForm.closes_at || "21:00",
@@ -208,6 +217,13 @@ export default function UnifiedMerchantStoreDashboard() {
     }
   };
 
+  const [allZones, setAllZones] = useState<Array<{ id: string; name: string }>>([]);
+  useEffect(() => {
+    supabase.from("zones").select("id, name").then(({ data }) => {
+      if (data) setAllZones(data);
+    });
+  }, []);
+
   const openEditModal = () => {
     if (!store) return;
     setEditForm({
@@ -215,10 +231,13 @@ export default function UnifiedMerchantStoreDashboard() {
       category: store.category ?? "",
       category_id: store.category_id ?? undefined,
       subcategory_id: store.subcategory_id ?? undefined,
+      subcategory_ids: selectedSubcategories || [],
       description: store.description ?? "",
       phone_number: store.phone_number ?? "",
       address_line1: store.address_line1 ?? "",
-      city: store.city ?? "",
+      city: store.city ?? "عين الصفراء",
+      zone_id: (store as any).zone_id || undefined,
+      neighborhood: (store as any).neighborhood || "",
       opens_at: store.opens_at ? String(store.opens_at).slice(0, 5) : "09:00",
       closes_at: store.closes_at ? String(store.closes_at).slice(0, 5) : "21:00",
     });
@@ -236,15 +255,18 @@ export default function UnifiedMerchantStoreDashboard() {
       return;
     }
     setSavingEdit(true);
-    const updates: Partial<Store> = {
+    const updates: any = {
       name: editForm.name.trim(),
       category: editForm.category.trim(),
       description: editForm.description.trim() || undefined,
       phone_number: editForm.phone_number.trim() || undefined,
       address_line1: editForm.address_line1.trim() || undefined,
-      city: editForm.city.trim() || undefined,
+      city: editForm.city.trim() || "عين الصفراء",
+      zone_id: editForm.zone_id,
+      neighborhood: editForm.neighborhood,
       opens_at: editForm.opens_at || undefined,
       closes_at: editForm.closes_at || undefined,
+      subcategory_ids: editForm.subcategory_ids || [],
     };
     if (editForm.category_id) updates.category_id = editForm.category_id;
     if (editForm.subcategory_id !== undefined) updates.subcategory_id = editForm.subcategory_id;
@@ -287,6 +309,7 @@ export default function UnifiedMerchantStoreDashboard() {
       const ext = processedUri.split(".").pop() ?? "jpg";
       const filePath = `${store.id}/${pendingAssetType === "logos" ? "logo" : "cover"}.${ext}`;
 
+      // Use upsert: true to overwrite existing files and avoid duplicate path errors
       const { error: uploadErr } = await supabase.storage
         .from("store_images")
         .upload(filePath, blob, { contentType: blob.type, upsert: true });
@@ -525,7 +548,19 @@ export default function UnifiedMerchantStoreDashboard() {
                 />
               </View>
               <View style={styles.formGroup}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>العنوان *</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>الحي (عين الصفراء)</Text>
+                <SimpleSelect
+                  value={createForm.neighborhood || ""}
+                  onChange={(val) => {
+                    const zone = allZones.find(z => z.name === val);
+                    setCreateForm({ ...createForm, neighborhood: val, zone_id: zone?.id });
+                  }}
+                  options={AIN_SEFRA_ZONES.map((z) => ({ value: z, label: z }))}
+                  placeholder="اختر الحي"
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>العنوان بالتفصيل *</Text>
                 <TextInput
                   style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
                   placeholder="أدخل العنوان"
@@ -608,7 +643,19 @@ export default function UnifiedMerchantStoreDashboard() {
                 />
               </View>
               <View style={styles.formGroup}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>العنوان</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>الحي (عين الصفراء)</Text>
+                <SimpleSelect
+                  value={editForm.neighborhood || ""}
+                  onChange={(val) => {
+                    const zone = allZones.find(z => z.name === val);
+                    setEditForm({ ...editForm, neighborhood: val, zone_id: zone?.id });
+                  }}
+                  options={AIN_SEFRA_ZONES.map((z) => ({ value: z, label: z }))}
+                  placeholder="اختر الحي"
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>العنوان بالتفصيل</Text>
                 <TextInput
                   style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
                   value={editForm.address_line1}
@@ -625,6 +672,39 @@ export default function UnifiedMerchantStoreDashboard() {
                   placeholder="اختر الفئة"
                 />
               </View>
+              {editForm.category_id && (
+                <View style={styles.formGroup}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>الفئات الفرعية (متعدد)</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {subcategories.map(sub => {
+                      const isSelected = editForm.subcategory_ids?.includes(sub.id);
+                      return (
+                        <TouchableOpacity
+                          key={sub.id}
+                          onPress={() => {
+                            const current = editForm.subcategory_ids || [];
+                            const next = isSelected ? current.filter(id => id !== sub.id) : [...current, sub.id];
+                            setEditForm({ ...editForm, subcategory_ids: next });
+                          }}
+                          style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: 16,
+                            backgroundColor: isSelected ? colors.primary : colors.bgElevated,
+                            margin: 4,
+                            borderWidth: 1,
+                            borderColor: isSelected ? colors.primary : colors.borderSubtle
+                          }}
+                        >
+                          <Text style={{ color: isSelected ? colors.textOnBrand : colors.textPrimary, fontSize: 12 }}>
+                            {sub.name_ar}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
               <View style={styles.row}>
                 <View style={[styles.formGroup, { flex: 1 }]}>
                   <Text style={[styles.label, { color: colors.textSecondary }]}>يفتح (09:00)</Text>
