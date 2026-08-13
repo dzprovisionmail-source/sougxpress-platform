@@ -35,17 +35,26 @@ const isUUID = (s: string) =>
 
 /** Map a Supabase/PostgREST error to a clear Arabic message for the user */
 const toArabicProvisioningError = (err: unknown): string => {
-  const msg: string = (err as any)?.message ?? (err as any)?.details ?? "";
+  const errObj = err as any;
+  const msg: string = errObj?.message ?? errObj?.details ?? "";
+  const code: string = errObj?.code ?? "";
+
+  if (code === "23502" || msg.includes("null value") || msg.includes("not-null")) {
+    if (msg.includes("contact_phone") || msg.includes("phone")) {
+      return "رقم الهاتف مطلوب لتسجيل التاجر.";
+    }
+    if (msg.includes("contact_email") || msg.includes("email")) {
+      return "البريد الإلكتروني مطلوب لتسجيل التاجر.";
+    }
+    if (msg.includes("business_name")) {
+      return "اسم المتجر مطلوب لتسجيل التاجر.";
+    }
+    return "يرجى استكمال جميع الحقول الإلزامية لتسجيل الحساب.";
+  }
   if (msg.includes("duplicate") || msg.includes("unique") || msg.includes("already exists")) {
     return "الحساب موجود مسبقاً. يرجى تسجيل الدخول بدلاً من ذلك.";
   }
-  if (msg.includes("null value") || msg.includes("not-null") || msg.includes("violates not-null")) {
-    return "بيانات ناقصة. يرجى ملء جميع الحقول والمحاولة مجدداً.";
-  }
-  if (msg.includes("column") || msg.includes("relation") || msg.includes("violates")) {
-    return "حدث خطأ في إعداد الحساب. يرجى التواصل مع الدعم.";
-  }
-  return "فشل إعداد بيانات الحساب. يرجى المحاولة لاحقاً.";
+  return msg ? `خطأ في إعداد الحساب: ${msg}` : "فشل إعداد بيانات الحساب. يرجى المحاولة لاحقاً.";
 };
 
 /** Zone label per role */
@@ -240,6 +249,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               owner_full_name: fullName || "تاجر",
               business_name: businessName.trim() || fullName || "متجر",
               phone: phoneNumber || "",
+              contact_phone: phoneNumber || "",
               contact_email: userEmail,
               email: userEmail,
               zone_id: resolvedZoneId,
@@ -371,13 +381,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         }
 
         const activeUserId = sessionData?.user?.id || data?.user?.id;
+        const activeUserEmail = sessionData?.user?.email || data?.user?.email || email;
         if (!activeUserId) {
           throw new Error("فشل إنشاء جلسة المستخدم. يرجى تسجيل الدخول يدوياً.");
         }
 
         await handleProvisioningAndGating(
           activeUserId,
-          email
+          activeUserEmail
         );
       }
     } catch (error: any) {
