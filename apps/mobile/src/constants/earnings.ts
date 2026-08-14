@@ -1,10 +1,10 @@
 /**
  * Driver earnings policy for the Driver workspace.
- * The delivery fee paid by the customer is fixed at 150 DZD per delivery,
+ * The delivery fee paid by the customer is fixed at 200 DZD per delivery,
  * split 80% driver / 20% platform, confirmed by the product owner.
  */
 
-export const FIXED_DELIVERY_FEE_MINOR = 15000; // 150.00 DZD
+export const FIXED_DELIVERY_FEE_MINOR = 20000; // 200.00 DZD
 export const DRIVER_SHARE_RATE = 0.8;
 export const PLATFORM_SHARE_RATE = 0.2;
 

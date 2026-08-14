@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, Alert, Switch, View, TouchableOpacity, Image, Modal, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
-import { Camera, BadgeInfo, Bike, FolderClosed, LogOut, Palette, TrendingUp, User, X } from "lucide-react-native";
+import { Camera, BadgeInfo, Bike, Car, FolderClosed, LogOut, Palette, TrendingUp, User, X } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -9,6 +9,7 @@ import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import useDriver from "@/hooks/useDriver";
 import useDriverOrders from "@/hooks/useDriverOrders";
 import { supabase } from "@/lib/supabase";
+import { uploadToSupabase } from "@/utils/upload.utils";
 import { computeEarningsSplit, formatCurrency } from "@/constants/earnings";
 import {
   WorkspaceScreen,
@@ -40,8 +41,9 @@ export default function DriverProfileScreen() {
   const { driver, loading, updateDriver } = useDriver(userId || "");
   const { orders } = useDriverOrders(userId || "", driver?.zone_id);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingVehicle, setUploadingVehicle] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({ full_name: "", phone: "", vehicle_type: "", vehicle_make: "", vehicle_color: "", license_plate: "" });
+  const [editForm, setEditForm] = useState({ full_name: "", phone: "", bio: "", vehicle_type: "", vehicle_make: "", vehicle_color: "", license_plate: "" });
 
   const stats = useMemo(() => {
     const delivered = orders.filter((o) => o.status === "delivered");
@@ -49,7 +51,9 @@ export default function DriverProfileScreen() {
     const totalHandled = delivered.length + cancelled.length;
     const completionRate = totalHandled > 0 ? Math.round((delivered.length / totalHandled) * 100) : 100;
     const totalEarnings = computeEarningsSplit(delivered.length).driverShareMinor;
-    return { totalDeliveries: delivered.length, completionRate, totalEarnings };
+    const storeNames = Array.from(new Set(orders.map((order) => order.store?.name).filter(Boolean))) as string[];
+    const customerNames = Array.from(new Set(orders.map((order) => order.customer?.full_name || order.customer?.phone).filter(Boolean))) as string[];
+    return { totalDeliveries: delivered.length, completionRate, totalEarnings, storeNames, customerNames };
   }, [orders]);
 
   const isOnline = driver?.availability === "online";
@@ -91,11 +95,9 @@ export default function DriverProfileScreen() {
     setUploadingAvatar(true);
     const uri = result.assets[0].uri;
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const filePath = `driver_avatars/${userId}.${uri.split(".").pop() ?? "jpg"}`;
-      const { error } = await supabase.storage.from("avatars").upload(filePath, blob, { contentType: blob.type, upsert: true });
-      if (error) throw error;
+      const extension = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
+      const filePath = `driver_avatars/${userId}.${extension}`;
+      await uploadToSupabase(supabase, "avatars", filePath, uri, `image/${extension === "jpg" ? "jpeg" : extension}`);
       const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
       await updateDriver({ avatar_url: data.publicUrl });
     } catch (err: any) {
@@ -105,11 +107,40 @@ export default function DriverProfileScreen() {
     }
   };
 
+  const handleVehiclePhotoUpload = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("إذن مطلوب", "يجب السماح بالوصول إلى المعرض لرفع صورة المركبة.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.85,
+    });
+    if (result.canceled) return;
+    setUploadingVehicle(true);
+    try {
+      const uri = result.assets[0].uri;
+      const extension = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
+      const filePath = `driver_vehicles/${userId}.${extension}`;
+      await uploadToSupabase(supabase, "avatars", filePath, uri, `image/${extension === "jpg" ? "jpeg" : extension}`);
+      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      await updateDriver({ vehicle_photo_url: data.publicUrl });
+    } catch (err: any) {
+      Alert.alert("خطأ", err.message || "تعذر رفع صورة المركبة.");
+    } finally {
+      setUploadingVehicle(false);
+    }
+  };
+
   const openEditModal = () => {
     if (!driver) return;
     setEditForm({
       full_name: driver.full_name || "",
       phone: driver.phone || "",
+      bio: driver.bio || "",
       vehicle_type: driver.vehicle_type || "",
       vehicle_make: driver.vehicle_make || "",
       vehicle_color: driver.vehicle_color || "",
@@ -124,6 +155,7 @@ export default function DriverProfileScreen() {
     await updateDriver({
       full_name: editForm.full_name.trim(),
       phone: editForm.phone.trim(),
+      bio: editForm.bio.trim(),
       vehicle_type: editForm.vehicle_type.trim(),
       vehicle_make: editForm.vehicle_make.trim(),
       vehicle_color: editForm.vehicle_color.trim(),
@@ -229,13 +261,25 @@ export default function DriverProfileScreen() {
           </View>
           <WorkspaceRow label="الاسم" value={driver?.full_name || ""} />
           <WorkspaceRow label="الهاتف" value={driver?.phone || ""} />
-          <WorkspaceRow label="المدينة" value={driver?.city || ""} isLast />
+          <WorkspaceRow label="المدينة" value={driver?.city || ""} />
+          <WorkspaceRow label="نبذة عني" value={driver?.bio || "لم تتم إضافة نبذة بعد"} isLast />
         </SectionCard>
 
         <SectionCard>
-          <SectionTitle icon={<Bike color={colors.primary} size={tokens.spacing.lg} />}>
-            مركبتي
-          </SectionTitle>
+          <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: tokens.spacing.sm }}>
+            <SectionTitle icon={<Bike color={colors.primary} size={tokens.spacing.lg} />}>مركبتي</SectionTitle>
+            <TouchableOpacity onPress={handleVehiclePhotoUpload} disabled={uploadingVehicle}>
+              <WorkspaceText color="brand" variant="caption">{uploadingVehicle ? "جاري الرفع..." : "تغيير الصورة"}</WorkspaceText>
+            </TouchableOpacity>
+          </View>
+          {driver?.vehicle_photo_url ? (
+            <Image source={{ uri: driver.vehicle_photo_url }} style={{ width: "100%", height: 160, borderRadius: tokens.radius.md, marginBottom: tokens.spacing.md }} />
+          ) : (
+            <View style={{ width: "100%", height: 120, borderRadius: tokens.radius.md, backgroundColor: colors.bgSurface, alignItems: "center", justifyContent: "center", marginBottom: tokens.spacing.md }}>
+              <Car size={36} color={colors.textDisabled} />
+              <WorkspaceText color="disabled" variant="caption">لم تتم إضافة صورة المركبة</WorkspaceText>
+            </View>
+          )}
           <WorkspaceRow label="نوع المركبة" value={VEHICLE_TYPE_LABEL[driver?.vehicle_type || ""] || driver?.vehicle_type || ""} />
           <WorkspaceRow label="العلامة" value={driver?.vehicle_make || ""} />
           <WorkspaceRow label="اللون" value={driver?.vehicle_color || ""} />
@@ -277,6 +321,24 @@ export default function DriverProfileScreen() {
           <WorkspaceRow label="إجمالي التوصيلات المكتملة" value={String(stats.totalDeliveries)} />
           <WorkspaceRow label="نسبة إتمام التوصيلات" value={`${stats.completionRate}%`} />
           <WorkspaceRow label="إجمالي الأرباح" value={formatCurrency(stats.totalEarnings)} isLast />
+        </SectionCard>
+
+        <SectionCard>
+          <SectionTitle icon={<FolderClosed color={colors.primary} size={tokens.spacing.lg} />}>
+            شبكة التوصيل
+          </SectionTitle>
+          <WorkspaceRow label="المتاجر التي أعمل معها" value={`${stats.storeNames.length} متجر`} />
+          {stats.storeNames.length > 0 && (
+            <WorkspaceText color="secondary" variant="caption" style={{ textAlign: "right", marginBottom: tokens.spacing.sm }}>
+              {stats.storeNames.slice(0, 8).join("، ")}
+            </WorkspaceText>
+          )}
+          <WorkspaceRow label="الزبائن المتصلين" value={`${stats.customerNames.length} زبون`} isLast={stats.customerNames.length === 0} />
+          {stats.customerNames.length > 0 && (
+            <WorkspaceText color="secondary" variant="caption" style={{ textAlign: "right" }}>
+              {stats.customerNames.slice(0, 8).join("، ")}
+            </WorkspaceText>
+          )}
         </SectionCard>
 
         <SectionCard>
@@ -341,6 +403,7 @@ export default function DriverProfileScreen() {
                 {[
                   { key: "full_name", label: "الاسم الكامل", placeholder: "الاسم" },
                   { key: "phone", label: "رقم الهاتف", placeholder: "06XXXXXXXX", keyboardType: "phone-pad" },
+                  { key: "bio", label: "نبذة عني", placeholder: "اكتب نبذة قصيرة عن خبرتك...", multiline: true },
                   { key: "vehicle_type", label: "نوع المركبة", placeholder: "دراجة نارية / سيارة..." },
                   { key: "vehicle_make", label: "العلامة", placeholder: "مثال: Toyota" },
                   { key: "vehicle_color", label: "اللون", placeholder: "مثال: أبيض" },
@@ -356,6 +419,8 @@ export default function DriverProfileScreen() {
                     <TextInput
                       value={editForm[field.key as keyof typeof editForm]}
                       onChangeText={(text) => setEditForm((prev) => ({ ...prev, [field.key]: text }))}
+                      multiline={field.multiline}
+                      numberOfLines={field.multiline ? 4 : 1}
                       style={{
                         borderWidth: 1,
                         borderColor: colors.borderSubtle,

@@ -319,11 +319,17 @@ export interface Driver {
   phone: string;
   email?: string;
   avatar_url?: string;
+  bio?: string;
   city?: string;
   neighborhood?: string;
   vehicle_make?: string;
   vehicle_color?: string;
+  vehicle_photo_url?: string;
   license_plate?: string;
+  delivery_count?: number;
+  commission_owed_minor?: number;
+  commission_paid_through_count?: number;
+  is_suspended_for_debt?: boolean;
   zone_id: string;
   vehicle_type: string;
   status: DriverStatus;

@@ -12,7 +12,8 @@ export const getDriverOrders = async (driverId: string): Promise<any[]> => {
       order:orders (
         *,
         store:stores (name, zone:zones (city)),
-        address:customer_addresses (address_text, latitude, longitude)
+        address:customer_addresses (address_text, latitude, longitude),
+        customer:customers (full_name, phone)
       )
     `)
     .eq("driver_id", driverId)
@@ -42,7 +43,8 @@ export const getAvailableOrders = async (zoneId: string): Promise<any[]> => {
       order:orders (
         *,
         store:stores (name, zone:zones (city)),
-        address:customer_addresses (address_text, latitude, longitude)
+        address:customer_addresses (address_text, latitude, longitude),
+        customer:customers (full_name, phone)
       )
     `)
     .eq("status", "pending")
@@ -63,6 +65,22 @@ export const getAvailableOrders = async (zoneId: string): Promise<any[]> => {
 
 export const acceptOrder = async (assignmentId: string, driverId: string): Promise<boolean> => {
   try {
+    const { data: driver, error: driverError } = await supabase
+      .from("drivers")
+      .select("is_suspended_for_debt, delivery_count, commission_paid_through_count")
+      .eq("id", driverId)
+      .maybeSingle();
+
+    if (driverError) throw driverError;
+    const unpaidDeliveryCount = Math.max(
+      (driver?.delivery_count ?? 0) - (driver?.commission_paid_through_count ?? 0),
+      0
+    );
+    if (driver?.is_suspended_for_debt || unpaidDeliveryCount >= 50) {
+      console.warn("Courier commission payment required before accepting deliveries");
+      return false;
+    }
+
     const { error } = await supabase
       .from("delivery_assignments")
       .update({ 

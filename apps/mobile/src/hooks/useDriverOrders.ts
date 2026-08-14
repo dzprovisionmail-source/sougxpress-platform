@@ -16,7 +16,7 @@ export type DriverOrder = Order & {
   assignment_status: string;
   store?: { name: string; zone?: { city: string } };
   address?: { address_text: string; latitude: number; longitude: number };
-  customer?: { phone: string };
+  customer?: { full_name?: string; phone?: string };
 };
 
 const useDriverOrders = (driverId: string, zoneId?: string) => {
