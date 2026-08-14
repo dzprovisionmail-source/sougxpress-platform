@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "expo-router";
-import { View, ScrollView, StyleSheet, SafeAreaView, I18nManager, Image } from "react-native";
+import { View, ScrollView, StyleSheet, I18nManager, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography, Card } from "../components/ui";
 import { BRAND_NAME_AR, LOGO_ICON, ICON_SHOPPING, ICON_STORE, ICON_DELIVERY } from "../constants/brand";
 import { TOKENS } from "../constants/tokens";

@@ -38,20 +38,24 @@ export default function DriverDashboardScreen() {
     const completedToday = todayOrders.filter((o) => o.status === "delivered");
     const completedTotal = orders.filter((o) => o.status === "delivered");
     const pending = orders.filter((o) => ["ready_for_pickup", "picked_up"].includes(o.status));
+    const completedDeliveryCount = Math.max(driver?.delivery_count ?? 0, completedTotal.length);
     const earningsToday = computeEarningsSplit(completedToday.length).driverShareMinor;
-    const totalEarnings = computeEarningsSplit(completedTotal.length).driverShareMinor;
+    const totalSplit = computeEarningsSplit(completedDeliveryCount);
+    const totalEarnings = totalSplit.driverShareMinor;
+    const platformEarnings = totalSplit.platformShareMinor;
     const availableCount = availableOrders.length;
 
     return {
       todayCount: todayOrders.length,
       pendingCount: pending.length,
       completedTodayCount: completedToday.length,
-      totalDeliveries: completedTotal.length,
+      totalDeliveries: completedDeliveryCount,
       earningsToday,
       totalEarnings,
+      platformEarnings,
       availableCount,
     };
-  }, [orders, availableOrders]);
+  }, [driver?.delivery_count, orders, availableOrders]);
 
   const isOnline = driver?.availability === "online";
 
@@ -149,7 +153,8 @@ export default function DriverDashboardScreen() {
             ملخص المحفظة
           </SectionTitle>
           <StatGrid>
-            <StatCard label="إجمالي الأرباح" value={formatCurrency(stats.totalEarnings)} accent={colors.success} />
+            <StatCard label="إجمالي أرباح الموصل" value={formatCurrency(stats.totalEarnings)} accent={colors.success} />
+            <StatCard label="ربح المنصة" value={formatCurrency(stats.platformEarnings)} accent={colors.warning} />
             <StatCard label="أرباح اليوم" value={formatCurrency(stats.earningsToday)} accent={colors.info} />
           </StatGrid>
           <WorkspaceButton

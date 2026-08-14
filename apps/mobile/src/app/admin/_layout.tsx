@@ -4,8 +4,8 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useAdminProfile } from "@/hooks/useAdminProfile";

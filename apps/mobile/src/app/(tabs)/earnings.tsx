@@ -27,18 +27,24 @@ export default function CourierEarningsScreen() {
     [orders]
   );
 
-  const totals = computeEarningsSplit(deliveredOrders.length);
-  const availableBalance = useMemo(() => computeEarningsSplit(deliveredOrders.length).driverShareMinor, [deliveredOrders.length]);
+  // Commission is earned from the first completed delivery; 30 deliveries is
+  // only an approaching-payment notice, never a visibility threshold.
+  const completedDeliveryCount = Math.max(driver?.delivery_count ?? 0, deliveredOrders.length);
+  const totals = computeEarningsSplit(completedDeliveryCount);
+  const availableBalance = totals.driverShareMinor;
   const monthEarnings = useMemo(() => {
     const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const count = deliveredOrders.filter((o) => new Date(o.delivered_at || o.updated_at) >= monthStart).length;
     return computeEarningsSplit(count).driverShareMinor;
   }, [deliveredOrders]);
 
-  const deliveryCount = driver?.delivery_count ?? deliveredOrders.length;
+  const deliveryCount = completedDeliveryCount;
   const paidThroughCount = driver?.commission_paid_through_count ?? 0;
   const unpaidDeliveryCount = Math.max(deliveryCount - paidThroughCount, 0);
-  const commissionOwedMinor = unpaidDeliveryCount * COMMISSION_PER_DELIVERY_MINOR;
+  const commissionOwedMinor = Math.max(
+    driver?.commission_owed_minor ?? 0,
+    unpaidDeliveryCount * COMMISSION_PER_DELIVERY_MINOR
+  );
   const isPaymentRequired = Boolean(driver?.is_suspended_for_debt) || unpaidDeliveryCount >= PAYMENT_REQUIRED_DELIVERIES;
   const isPaymentApproaching = unpaidDeliveryCount >= APPROACHING_PAYMENT_DELIVERIES && !isPaymentRequired;
 
@@ -59,6 +65,7 @@ export default function CourierEarningsScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.bgBase }]} contentContainerStyle={styles.content}>
       <Text style={[styles.title, { color: colors.textPrimary }]}>الأرباح وعمولة المنصة</Text>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>تُحتسب حصة المنصة من أول توصيلة مكتملة، ولا تنتظر بلوغ 30 توصيلة.</Text>
 
       <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Text style={[styles.label, { color: colors.textSecondary }]}>الرصيد المتاح</Text>
@@ -116,7 +123,7 @@ export default function CourierEarningsScreen() {
       <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>تفاصيل الدفع عبر بريدي موب</Text>
         <Text style={[styles.description, { color: colors.textSecondary }]}>حوّل المبلغ المستحق إلى حساب المنصة عبر بريدي موب، ثم أرسل إثبات الدفع إلى الإدارة للمراجعة.</Text>
-        <Text style={[styles.ripLabel, { color: colors.textSecondary }]}>RIP BaridiMob</Text>
+        <Text style={[styles.ripLabel, { color: colors.textSecondary }]}>RIP المنصة عبر بريدي موب</Text>
         <View style={[styles.ripBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
           <Text selectable style={[styles.ripText, { color: colors.textPrimary }]}>{PLATFORM_RIP}</Text>
           <TouchableOpacity onPress={copyRip} style={[styles.copyButton, { backgroundColor: colors.primary }]}>

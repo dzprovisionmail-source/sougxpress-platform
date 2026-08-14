@@ -1,8 +1,7 @@
-
-import { useState, useEffect } from 'react';
-import { getDriver, updateDriver } from '../services/driver.service';
-import { Driver } from '../types/schema-03-core';
-import { supabase } from '../lib/supabase';
+import { useState, useEffect } from "react";
+import { getDriver, updateDriver } from "../services/driver.service";
+import { Driver } from "../types/schema-03-core";
+import { supabase } from "../lib/supabase";
 
 const useDriver = (driverId: string) => {
   const [driver, setDriver] = useState<Driver | null>(null);
@@ -10,28 +9,51 @@ const useDriver = (driverId: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!driverId) {
+      setDriver(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
     const fetchDriverData = async () => {
       setLoading(true);
       const fetchedDriver = await getDriver(driverId);
+
+      if (cancelled) return;
+
       if (fetchedDriver) {
         setDriver(fetchedDriver);
+        setError(null);
       } else {
         setError("Failed to fetch driver profile");
       }
       setLoading(false);
     };
 
-    fetchDriverData();
+    void fetchDriverData();
 
     const channel = supabase
-      .channel(`public:drivers:id=eq.${driverId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'drivers', filter: `id=eq.${driverId}` }, payload => {
-        setDriver(payload.new as Driver);
-      })
+      .channel(`driver_profile:${driverId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "drivers",
+          filter: `id=eq.${driverId}`,
+        },
+        () => {
+          void fetchDriverData();
+        }
+      )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      void supabase.removeChannel(channel);
     };
   }, [driverId]);
 
@@ -41,6 +63,7 @@ const useDriver = (driverId: string) => {
     const updatedDriver = await updateDriver(driver.id, updates);
     if (updatedDriver) {
       setDriver(updatedDriver);
+      setError(null);
     } else {
       setError("Failed to update driver profile");
     }

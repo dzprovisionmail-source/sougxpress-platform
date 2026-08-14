@@ -14,12 +14,11 @@ import {
   View,
   ScrollView,
   StyleSheet,
-  SafeAreaView,
   I18nManager,
   TouchableOpacity,
   Text,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Typography } from "@/components/ui";
 import {
   BRAND_NAME_AR,
