@@ -97,8 +97,8 @@ export default function DriverDashboardScreen() {
     return result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [filter, orders, availableOrders, searchQuery]);
 
-  const handleOrderPress = (order: DriverOrder) => {
-    router.push(`/driver/order-details?id=${order.id}`);
+  const handleOrderPress = (_order: DriverOrder) => {
+    router.push("/driver/deliveries");
   };
 
   if (driverLoading && !driver) {
@@ -127,7 +127,7 @@ export default function DriverDashboardScreen() {
             <SectionTitle icon={<Bike color={colors.primary} size={tokens.spacing.lg} />}>
               {`مرحباً ${driver?.full_name || ""}`}
             </SectionTitle>
-            <TouchableOpacity onPress={() => router.push("/(tabs)/profile")}>
+            <TouchableOpacity onPress={() => router.push("/driver/notifications")}>
               <Bell color={colors.textSecondary} size={22} />
             </TouchableOpacity>
           </View>
@@ -155,7 +155,7 @@ export default function DriverDashboardScreen() {
           <WorkspaceButton
             title="عرض الأرباح وعمولة المنصة 20%"
             variant="outline"
-            onPress={() => router.push("/(tabs)/earnings")}
+            onPress={() => router.push("/driver/earnings")}
             style={{ marginTop: tokens.spacing.sm }}
           />
         </SectionCard>
@@ -285,7 +285,7 @@ export default function DriverDashboardScreen() {
             <WorkspaceButton
               title="عرض جميع التوصيلات"
               variant="outline"
-              onPress={() => router.push("/(tabs)/deliveries")}
+              onPress={() => router.push("/driver/deliveries")}
               style={{ marginTop: tokens.spacing.sm }}
             />
           )}
