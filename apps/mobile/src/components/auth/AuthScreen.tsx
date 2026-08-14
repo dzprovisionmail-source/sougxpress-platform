@@ -10,11 +10,18 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Typography, Input, Button, AinSefraZoneSelect } from "../ui";
+import {
+  Typography,
+  Input,
+  Button,
+  AinSefraZoneSelect,
+  SimpleSelect,
+} from "../ui";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
 import { AIN_SEFRA_ZONES } from "@/constants/ain-sefra-zones";
+import type { VehicleType } from "@/types/schema-04-couriers";
 
 type Role = "customer" | "merchant" | "driver";
 
@@ -63,6 +70,18 @@ const zoneLabelFor = (role: Role): string => {
   return "الحي";
 };
 
+const VEHICLE_OPTIONS: { value: VehicleType; label: string }[] = [
+  { value: "motorcycle", label: "دراجة نارية" },
+  { value: "car", label: "سيارة" },
+  { value: "van", label: "شاحنة صغيرة" },
+  { value: "bicycle", label: "دراجة هوائية" },
+  { value: "truck", label: "شاحنة" },
+];
+
+const isVehicleType = (value: unknown): value is VehicleType =>
+  typeof value === "string" &&
+  VEHICLE_OPTIONS.some((option) => option.value === value);
+
 export const AuthScreen: React.FC<AuthScreenProps> = ({
   role,
   titleAr,
@@ -85,6 +104,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedZoneId, setSelectedZoneId] = useState("");
   const [zoneError, setZoneError] = useState("");
+  const [vehicleType, setVehicleType] = useState<VehicleType | "">("");
+  const [vehicleError, setVehicleError] = useState("");
   const [address, setAddress] = useState("");
 
   // Merchant-only
@@ -109,12 +130,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        setZones(data);
-      } else {
-        // Fall back to the official constant list (names used as identifiers)
-        setZones(AIN_SEFRA_ZONES.map((name) => ({ id: name, name })));
-      }
+      const zonesByName = new Map(
+        (data ?? []).map((zone) => [zone.name, zone] as const)
+      );
+      // Keep all 28 official neighborhoods visible. When the database contains
+      // a matching row, retain its UUID for zone_id; otherwise use the official
+      // name as the fallback identifier and persist it in drivers.neighborhood.
+      setZones(
+        AIN_SEFRA_ZONES.map(
+          (name) => zonesByName.get(name) ?? { id: name, name }
+        )
+      );
     } catch {
       setZones(AIN_SEFRA_ZONES.map((name) => ({ id: name, name })));
     }
@@ -162,9 +188,29 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     const provisioningZoneId =
       selectedZoneId ||
       (typeof userMetadata.zone_id === "string" ? userMetadata.zone_id : "");
+    const provisioningNeighborhood =
+      typeof userMetadata.neighborhood === "string"
+        ? userMetadata.neighborhood.trim()
+        : zones.find((zone) => zone.id === provisioningZoneId)?.name ||
+          (!isUUID(provisioningZoneId) ? provisioningZoneId : "");
+    const provisioningVehicleType =
+      vehicleType ||
+      (isVehicleType(userMetadata.vehicle_type)
+        ? userMetadata.vehicle_type
+        : "");
     const nameParts = provisioningFullName.split(/\s+/).filter(Boolean);
     const provisioningFirstName = nameParts[0] || "موصل";
     const provisioningLastName = nameParts.slice(1).join(" ") || "غير محدد";
+
+    if (role === "driver" && !provisioningVehicleType) {
+      Alert.alert("نوع المركبة مطلوب", "يرجى اختيار نوع المركبة لإكمال تسجيل الموصل.");
+      return;
+    }
+
+    if (role === "driver" && !provisioningNeighborhood) {
+      Alert.alert("الحي مطلوب", "يرجى اختيار حي من أحياء عين الصفراء لإكمال التسجيل.");
+      return;
+    }
 
     // 1. Check / Provision Profile
     const { data: profile, error: profileError } = await supabase
@@ -318,7 +364,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       } else if (role === "driver") {
         const { data: driver, error: dQueryError } = await supabase
           .from("drivers")
-          .select("status")
+          .select(
+            "status, first_name, last_name, phone_number, email, vehicle_type, city, neighborhood, zone_id, availability, is_available"
+          )
           .eq("id", userId)
           .maybeSingle();
         if (dQueryError) throw dQueryError;
@@ -334,13 +382,52 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               phone_number: provisioningPhone,
               phone: provisioningPhone || null,
               email: userEmail,
+              vehicle_type: provisioningVehicleType || null,
+              city: "Ain Sefra",
+              neighborhood: provisioningNeighborhood || null,
               zone_id: resolvedZoneId,
               availability: "offline",
+              is_available: false,
               status: "pending_review",
             }, { onConflict: "id" });
           if (dInsertError) throw dInsertError;
           status = "pending";
         } else {
+          // Repair only missing fields from trusted Auth metadata/current form
+          // data; never overwrite an existing value with an empty fallback.
+          const driverUpdates: Record<string, unknown> = {};
+          if (!driver.first_name && provisioningFirstName) {
+            driverUpdates.first_name = provisioningFirstName;
+          }
+          if (!driver.last_name && provisioningLastName) {
+            driverUpdates.last_name = provisioningLastName;
+          }
+          if (!driver.phone_number && provisioningPhone) {
+            driverUpdates.phone_number = provisioningPhone;
+          }
+          if (!driver.email && userEmail) {
+            driverUpdates.email = userEmail;
+          }
+          if (!driver.vehicle_type && provisioningVehicleType) {
+            driverUpdates.vehicle_type = provisioningVehicleType;
+          }
+          if (!driver.city) {
+            driverUpdates.city = "Ain Sefra";
+          }
+          if (!driver.neighborhood && provisioningNeighborhood) {
+            driverUpdates.neighborhood = provisioningNeighborhood;
+          }
+          if (!driver.zone_id && resolvedZoneId) {
+            driverUpdates.zone_id = resolvedZoneId;
+          }
+
+          if (Object.keys(driverUpdates).length > 0) {
+            const { error: dUpdateError } = await supabase
+              .from("drivers")
+              .update(driverUpdates)
+              .eq("id", userId);
+            if (dUpdateError) throw dUpdateError;
+          }
           status = driver.status;
         }
       }
@@ -389,7 +476,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           setLoading(false);
           return;
         }
-        if (role !== "driver" && !selectedZoneId) {
+        if (role === "driver" && !vehicleType) {
+          setVehicleError("يرجى اختيار نوع المركبة");
+          setLoading(false);
+          return;
+        }
+        if (!selectedZoneId) {
           setZoneError("يرجى اختيار الحي");
           setLoading(false);
           return;
@@ -411,6 +503,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               full_name: fullName.trim(),
               phone_number: phoneNumber.trim(),
               zone_id: isUUID(selectedZoneId) ? selectedZoneId : null,
+              neighborhood:
+                role === "driver"
+                  ? zones.find((zone) => zone.id === selectedZoneId)?.name ||
+                    (!isUUID(selectedZoneId) ? selectedZoneId : undefined)
+                  : undefined,
+              vehicle_type: role === "driver" ? vehicleType : undefined,
               business_name:
                 role === "merchant" ? businessName.trim() : undefined,
             },
@@ -567,7 +665,33 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   keyboardType="phone-pad"
                 />
 
-                {/* 3. الحي (customer + merchant only) */}
+                {/* 3. الحي، ونوع المركبة + الحي للموصل */}
+                {role === "driver" && (
+                  <>
+                    <SimpleSelect
+                      label="نوع المركبة"
+                      placeholder="اختر نوع المركبة"
+                      options={VEHICLE_OPTIONS}
+                      value={vehicleType}
+                      onChange={(value) => {
+                        setVehicleType(value as VehicleType);
+                        setVehicleError("");
+                      }}
+                      error={vehicleError}
+                    />
+                    <AinSefraZoneSelect
+                      zones={zones}
+                      value={selectedZoneId}
+                      onChange={(id) => {
+                        setSelectedZoneId(id);
+                        setZoneError("");
+                      }}
+                      label="حي عين الصفراء"
+                      error={zoneError}
+                    />
+                  </>
+                )}
+
                 {role !== "driver" && (
                   <AinSefraZoneSelect
                     zones={zones}
