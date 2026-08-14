@@ -326,7 +326,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         if (!driver) {
           const { error: dInsertError } = await supabase
             .from("drivers")
-            .insert({
+            .upsert({
               id: userId,
               first_name: provisioningFirstName,
               last_name: provisioningLastName,
@@ -337,7 +337,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               zone_id: resolvedZoneId,
               availability: "offline",
               status: "pending_review",
-            });
+            }, { onConflict: "id" });
           if (dInsertError) throw dInsertError;
           status = "pending";
         } else {
@@ -458,22 +458,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           errMsg.includes("already registered") ||
           errMsg.includes("already been registered"))
       ) {
-        try {
-          const { data: recoverData, error: recoverErr } =
-            await supabase.auth.signInWithPassword({ email, password });
-          if (recoverErr) throw recoverErr;
-          await handleProvisioningAndGating(
-            recoverData.user.id,
-            recoverData.user.email ?? "",
-            recoverData.user.user_metadata
-          );
-        } catch (recoverError: any) {
-          console.error("[AuthScreen] retry recovery error:", recoverError);
-          Alert.alert(
-            "خطأ",
-            recoverError?.message || "فشل استكمال التسجيل. يرجى المحاولة لاحقاً."
-          );
-        }
+        Alert.alert(
+          "الحساب موجود بالفعل",
+          "هذا البريد الإلكتروني مسجل مسبقاً. يرجى تسجيل الدخول بدلاً من ذلك.",
+          [
+            {
+              text: "تسجيل الدخول",
+              onPress: () => setIsLogin(true)
+            },
+            {
+              text: "إلغاء",
+              style: "cancel"
+            }
+          ]
+        );
         return;
       }
       console.error("[AuthScreen] auth error:", error);

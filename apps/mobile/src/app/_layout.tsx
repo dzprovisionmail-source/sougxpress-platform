@@ -22,12 +22,16 @@ export default function RootLayout() {
     let deactivateFn: (() => void) | null = null;
 
     if (__DEV__) {
-      import("expo-keep-awake").then(({ activateKeepAwakeAsync, deactivateKeepAwake }) => {
-        if (mounted) {
-          deactivateFn = deactivateKeepAwake;
-          activateKeepAwakeAsync().catch(() => {});
-        }
-      }).catch(() => {});
+      try {
+        import("expo-keep-awake").then(({ activateKeepAwakeAsync, deactivateKeepAwake }) => {
+          if (mounted) {
+            deactivateFn = deactivateKeepAwake;
+            activateKeepAwakeAsync().catch(() => {});
+          }
+        }).catch(() => {});
+      } catch (e) {
+        console.warn("Keep awake failed to load:", e);
+      }
     }
 
     return () => {
