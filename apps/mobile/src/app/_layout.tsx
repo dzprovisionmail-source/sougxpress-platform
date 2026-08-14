@@ -10,8 +10,9 @@ import { Stack } from "expo-router";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // SougXpress is Arabic-only — force RTL layout direction app-wide.
+I18nManager.allowRTL(true);
+I18nManager.swapLeftAndRightInRTL(true);
 if (!I18nManager.isRTL) {
-  I18nManager.allowRTL(true);
   I18nManager.forceRTL(true);
 }
 

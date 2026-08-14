@@ -61,8 +61,7 @@ const HERO_STORE_TITLES = ["سوبر ماركت الوفاء", "مخبزة ال�
 
 const HomeScreen = () => {
   const router = useRouter();
-  const { colors, tokens } = useAppTheme();
-  const isRTL = true;
+  const { colors, tokens, isRTL, textAlign } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeSubcategory, setActiveSubcategory] = useState<string>("all");
@@ -397,7 +396,7 @@ const HomeScreen = () => {
   const error = storesError;
 
   return (
-    <SafeAreaView style={[styles.fullContainer, { backgroundColor: colors.bgBase }]}>
+    <SafeAreaView style={[styles.fullContainer, { backgroundColor: colors.bgBase, direction: isRTL ? 'rtl' : 'ltr' }]}>
       <StatusBar barStyle="dark-content" />
       <Stack.Screen
         options={{
@@ -415,7 +414,7 @@ const HomeScreen = () => {
         }}
       />
 
-      <ScrollView style={styles.container}>
+      <ScrollView style={[styles.container, { direction: isRTL ? 'rtl' : 'ltr' }]} contentContainerStyle={styles.pageContent}>
 
 
         {/* Search Bar */}
@@ -446,7 +445,7 @@ const HomeScreen = () => {
             contentContainerStyle={styles.heroListContent}
             bounces={false}
           />
-          <View style={[styles.dotsContainer, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+          <View style={styles.dotsContainer}>
             {heroSlides.map((_, index) => (
               <TouchableOpacity
                 key={index}
@@ -471,7 +470,7 @@ const HomeScreen = () => {
             onPress={() => router.push('/login')}
             activeOpacity={0.8}
           >
-            <View style={[styles.loginBannerContent, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <View style={styles.loginBannerContent}>
               <View style={styles.loginBannerText}>
                 <Typography variant="h3" align="right" color="brand">
                   مرحباً بك في سوق عين صفراء!
@@ -506,7 +505,7 @@ const HomeScreen = () => {
           onPress={() => router.push('/couriers')}
           activeOpacity={0.8}
         >
-          <View style={[styles.couriersBannerContent, { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' }]}>
+          <View style={styles.couriersBannerContent}>
             <View style={styles.couriersBannerText}>
               <Text style={[styles.couriersBannerTitle, { color: colors.textPrimary, fontWeight: '700', textAlign: 'right' }]}>الموصلون المتاحون</Text>
             </View>
@@ -533,8 +532,9 @@ const HomeScreen = () => {
           <>
             {/* Categories */}
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>الفئات</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+الفئات</Text>
+              <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
                 <TouchableOpacity key="all" onPress={() => { setActiveCategory("all"); setActiveSubcategory("all"); setSubcategories([]); }} style={[styles.categoryItem, { backgroundColor: activeCategory === "all" ? colors.primary + "18" : colors.bgSurface }]}>
                   <StoreIcon color={activeCategory === "all" ? colors.primary : colors.textSecondary} size={iconSizes.default} />
                   <Text style={[styles.categoryText, { color: activeCategory === "all" ? colors.primary : colors.textPrimary }]}>الكل</Text>
@@ -551,7 +551,7 @@ const HomeScreen = () => {
             {/* Subcategories */}
             {subcategories.length > 0 && (
               <View style={styles.section}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
+                <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
                   <TouchableOpacity key="all-sub" onPress={() => setActiveSubcategory("all")} style={[styles.categoryItem, { backgroundColor: activeSubcategory === "all" ? colors.primary + "18" : colors.bgSurface }]}>
                     <StoreIcon color={activeSubcategory === "all" ? colors.primary : colors.textSecondary} size={iconSizes.default} />
                     <Text style={[styles.categoryText, { color: activeSubcategory === "all" ? colors.primary : colors.textPrimary }]}>الكل</Text>
@@ -568,8 +568,9 @@ const HomeScreen = () => {
 
             {/* Featured Stores */}
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>المتاجر المميزة</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+المتاجر المميزة</Text>
+              <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                 {(searchQuery.length > 0 ? displayedStores.slice(0, 6) : allStores.filter(s => s.is_featured).slice(0, 6)).map((store: any) => (
                   <StoreCard
                     key={store.id}
@@ -592,8 +593,9 @@ const HomeScreen = () => {
             {/* New Stores */}
             {marketSections.showNewStores && (
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر جديدة</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+متاجر جديدة</Text>
+                <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                   {(searchQuery.length > 0 ? [] : newStoresData).map((store: any) => (
                     <StoreCard
                       key={store.id}
@@ -617,8 +619,9 @@ const HomeScreen = () => {
             {/* Nearby Stores (Placeholder) */}
             {marketSections.showAllStores && (
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>متاجر قريبة</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+متاجر قريبة</Text>
+                <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                   {displayedStores.slice(6, 9).map((store: any) => (
                     <StoreCard
                       key={store.id}
@@ -642,8 +645,9 @@ const HomeScreen = () => {
             {/* Special Offers (Placeholder / Promotions) */}
             {marketSections.showSpecialOffers && (
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>عروض خاصة</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+عروض خاصة</Text>
+                <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                   {displayedStores.filter((s: any) => s.is_featured).slice(6, 9).map((store: any) => (
                     <StoreCard
                       key={store.id}
@@ -667,8 +671,9 @@ const HomeScreen = () => {
             {/* Featured Products - Guest only */}
             {isGuest && products.length > 0 && (
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>منتجات شائعة</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+منتجات شائعة</Text>
+                <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                   {products.map((product: any, index: number) => (
                     <View key={product.id || product.key || index} style={styles.productCol}>
                       <ProductCard
@@ -723,17 +728,29 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: spacing.huge,
+    width: '100%',
+    alignItems: 'stretch',
+    direction: 'rtl',
+  },
+  pageContent: {
+    direction: 'rtl',
+    alignItems: 'stretch',
+    paddingBottom: spacing.xl,
   },
   sectionTitle: {
     ...typography.title,
+    alignSelf: 'stretch',
+    width: '100%',
     textAlign: 'right',
+    writingDirection: 'rtl',
     marginBottom: spacing.md,
-    marginHorizontal: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   categoriesContainer: {
     paddingHorizontal: spacing.lg,
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-around',
+    flexDirection: 'row',
+    direction: 'rtl',
+    justifyContent: 'flex-start',
   },
   categoryItem: {
     alignItems: 'center',
@@ -745,11 +762,17 @@ const styles = StyleSheet.create({
   categoryText: {
     ...typography.caption,
     marginTop: spacing.xs,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  horizontalRtl: {
+    direction: 'rtl',
   },
   storesScroll: {
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
+    direction: 'rtl',
   },
   productCol: {
     width: 160,
@@ -819,6 +842,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   dotsContainer: {
+    flexDirection: 'row',
+    direction: 'rtl',
     justifyContent: "center",
     alignItems: "center",
     marginTop: spacing.sm,
@@ -839,7 +864,8 @@ const styles = StyleSheet.create({
     ...shadows.small,
   },
   couriersBannerContent: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
+    direction: 'rtl',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -849,6 +875,8 @@ const styles = StyleSheet.create({
   couriersBannerTitle: {
     ...typography.title,
     fontWeight: '700',
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   couriersBannerIcon: {
     marginEnd: spacing.sm,
@@ -861,6 +889,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   loginBannerContent: {
+    flexDirection: 'row',
+    direction: 'rtl',
     alignItems: 'center',
     justifyContent: 'space-between',
   },

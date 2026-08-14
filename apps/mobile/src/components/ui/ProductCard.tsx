@@ -96,7 +96,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             numberOfLines={1}
             style={[
               styles.productTitle,
-              { color: colors.textPrimary, fontFamily: TOKENS.typography.families.arabic },
+              {
+                color: colors.textPrimary,
+                fontFamily: TOKENS.typography.families.arabic,
+                textAlign: isRTL ? 'right' : 'left',
+                writingDirection: isRTL ? 'rtl' : 'ltr',
+              },
             ]}
           >
             {actualName}
@@ -107,14 +112,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               numberOfLines={1}
               style={[
                 styles.storeSubtitle,
-                { color: colors.textSecondary, fontFamily: TOKENS.typography.families.arabic },
+                {
+                color: colors.textSecondary,
+                fontFamily: TOKENS.typography.families.arabic,
+                textAlign: isRTL ? 'right' : 'left',
+                writingDirection: isRTL ? 'rtl' : 'ltr',
+              },
               ]}
             >
               {storeName}
             </Text>
           ) : null}
 
-          <View style={[styles.priceRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <View style={styles.priceRow}>
             <Price amount={actualPrice} originalAmount={originalPrice} size="sm" variant="brand" />
             {unit && (
               <Text style={[styles.unitText, { color: colors.textDisabled }]}> / {unit}</Text>
@@ -192,7 +202,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         ) : null}
 
         {/* Price & Add Action */}
-        <View style={[styles.footerRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={styles.footerRow}>
           <Price amount={actualPrice} originalAmount={originalPrice} size="sm" variant="brand" />
 
           {onAddToCart && actualInStock ? (
@@ -255,8 +265,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 18,
     minHeight: 36,
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   footerRow: {
+    flexDirection: 'row',
+    direction: 'rtl',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: TOKENS.spacing.xs,
@@ -271,7 +285,8 @@ const styles = StyleSheet.create({
 
   // Horizontal Variant
   horizontalCard: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
+    direction: 'rtl',
     padding: TOKENS.spacing.sm,
     alignItems: 'center',
     marginVertical: TOKENS.spacing.xs,
@@ -288,17 +303,25 @@ const styles = StyleSheet.create({
   productTitle: {
     fontSize: TOKENS.typography.sizes.base,
     fontWeight: '700',
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   storeSubtitle: {
     fontSize: TOKENS.typography.sizes.xs,
     marginTop: 2,
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   priceRow: {
+    flexDirection: 'row',
+    direction: 'rtl',
     alignItems: 'baseline',
     marginTop: 6,
   },
   unitText: {
     fontSize: 11,
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   quickAddBtn: {
     width: 40,

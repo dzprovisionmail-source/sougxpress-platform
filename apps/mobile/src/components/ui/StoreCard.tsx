@@ -90,7 +90,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         />
 
         {/* Status Badges Header */}
-        <View style={[styles.badgesRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={styles.badgesRow}>
           <View
             style={[
               styles.statusBadge,
@@ -135,12 +135,17 @@ export const StoreCard: React.FC<StoreCardProps> = ({
 
       {/* Content Area */}
       <View style={styles.content}>
-        <View style={[styles.titleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={styles.titleRow}>
           <Text
             numberOfLines={1}
             style={[
               styles.storeName,
-              { color: colors.textPrimary, fontFamily: TOKENS.typography.families.arabic },
+              {
+                color: colors.textPrimary,
+                fontFamily: TOKENS.typography.families.arabic,
+                textAlign: isRTL ? 'right' : 'left',
+                writingDirection: isRTL ? 'rtl' : 'ltr',
+              },
             ]}
           >
             {actualName}
@@ -149,12 +154,17 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         </View>
 
         {/* Category & Address */}
-        <View style={[styles.metaRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={styles.metaRow}>
           <CategoryIcon category={actualCategory} size="xs" variant="plain" />
           <Text
             style={[
               styles.categoryText,
-              { color: colors.textSecondary, fontFamily: TOKENS.typography.families.arabic },
+              {
+                color: colors.textSecondary,
+                fontFamily: TOKENS.typography.families.arabic,
+                textAlign: isRTL ? 'right' : 'left',
+                writingDirection: isRTL ? 'rtl' : 'ltr',
+              },
             ]}
           >
             {displayCategory}
@@ -164,7 +174,12 @@ export const StoreCard: React.FC<StoreCardProps> = ({
               numberOfLines={1}
               style={[
                 styles.addressText,
-                { color: colors.textDisabled, fontFamily: TOKENS.typography.families.arabic },
+                {
+                color: colors.textDisabled,
+                fontFamily: TOKENS.typography.families.arabic,
+                textAlign: isRTL ? 'right' : 'left',
+                writingDirection: isRTL ? 'rtl' : 'ltr',
+              },
               ]}
             >
               • {actualAddress}
@@ -173,15 +188,15 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         </View>
 
         {/* Delivery Details Footer */}
-        <View style={[styles.footerRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-          <View style={[styles.infoPill, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={styles.footerRow}>
+          <View style={styles.infoPill}>
             <Clock size={13} color={colors.textSecondary} />
             <Text style={[styles.infoPillText, { color: colors.textSecondary }]}>
               {deliveryTime}
             </Text>
           </View>
 
-          <View style={[styles.infoPill, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <View style={styles.infoPill}>
             <Tag size={13} color={colors.primary} />
             <Text style={[styles.infoPillText, { color: colors.primary, fontWeight: '700' }]}>
               التوصيل: {typeof deliveryFee === 'number' ? `${deliveryFee} د.ج` : deliveryFee}
@@ -207,7 +222,9 @@ const styles = StyleSheet.create({
   badgesRow: {
     position: 'absolute',
     top: TOKENS.spacing.sm,
-    [I18nManager.isRTL ? 'left' : 'right']: TOKENS.spacing.sm,
+    end: TOKENS.spacing.sm,
+    flexDirection: 'row',
+    direction: 'rtl',
     gap: TOKENS.spacing.xs,
   },
   statusBadge: {
@@ -238,6 +255,8 @@ const styles = StyleSheet.create({
     paddingBottom: TOKENS.spacing.md,
   },
   titleRow: {
+    flexDirection: 'row',
+    direction: 'rtl',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
@@ -247,8 +266,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     flex: 1,
     marginEnd: 8,
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   metaRow: {
+    flexDirection: 'row',
+    direction: 'rtl',
     alignItems: 'center',
     gap: 4,
     marginBottom: TOKENS.spacing.sm,
@@ -256,23 +279,33 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: TOKENS.typography.sizes.xs,
     fontWeight: '600',
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   addressText: {
     fontSize: TOKENS.typography.sizes.xs,
     flex: 1,
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   footerRow: {
+    flexDirection: 'row',
+    direction: 'rtl',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 4,
   },
   infoPill: {
+    flexDirection: 'row',
+    direction: 'rtl',
     alignItems: 'center',
     gap: 4,
   },
   infoPillText: {
     fontSize: TOKENS.typography.sizes.xs,
     fontFamily: TOKENS.typography.families.arabic,
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
 });
 

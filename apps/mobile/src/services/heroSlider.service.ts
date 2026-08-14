@@ -239,18 +239,23 @@ export async function getMarketSectionSettings(): Promise<MarketSectionSettings>
 
 export async function updateMarketSectionSettings(settings: MarketSectionSettings): Promise<{ success: boolean; error?: string }> {
   try {
-    await supabase.from("platform_financial_settings").upsert(
-      { key: "market_show_special_offers", value: String(settings.showSpecialOffers), description: "Show special offers in market" },
-      { onConflict: "key" }
+    const updates = [
+      ["market_show_special_offers", settings.showSpecialOffers],
+      ["market_show_new_stores", settings.showNewStores],
+      ["market_show_all_stores", settings.showAllStores],
+    ] as const;
+
+    const results = await Promise.all(
+      updates.map(([key, value]) =>
+        supabase
+          .from("platform_financial_settings")
+          .update({ value: String(value) })
+          .eq("key", key)
+      )
     );
-    await supabase.from("platform_financial_settings").upsert(
-      { key: "market_show_new_stores", value: String(settings.showNewStores), description: "Show new stores in market" },
-      { onConflict: "key" }
-    );
-    await supabase.from("platform_financial_settings").upsert(
-      { key: "market_show_all_stores", value: String(settings.showAllStores), description: "Show all stores in market" },
-      { onConflict: "key" }
-    );
+
+    const failed = results.find(({ error }) => error);
+    if (failed?.error) throw failed.error;
     return { success: true };
   } catch (err: any) {
     console.error("updateMarketSectionSettings error:", err);
