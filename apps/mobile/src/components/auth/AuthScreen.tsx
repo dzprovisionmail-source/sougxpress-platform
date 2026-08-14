@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Typography, Input, Button, AinSefraZoneSelect, SimpleSelect, type SelectOption } from "../ui";
+import { Typography, Input, Button, AinSefraZoneSelect } from "../ui";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
@@ -63,12 +63,6 @@ const zoneLabelFor = (role: Role): string => {
   return "الحي";
 };
 
-const VEHICLE_TYPES: { value: string; label: string }[] = [
-  { value: "motorcycle", label: "دراجة نارية" },
-  { value: "car", label: "سيارة" },
-  { value: "lcv", label: "مركبة تجارية خفيفة" },
-];
-
 export const AuthScreen: React.FC<AuthScreenProps> = ({
   role,
   titleAr,
@@ -82,7 +76,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
-  const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
   // Zones
   const [zones, setZones] = useState<Zone[]>([]);
@@ -96,10 +89,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
   // Merchant-only
   const [businessName, setBusinessName] = useState("");
-
-  // Driver-only
-  const [vehicleType, setVehicleType] = useState("");
-  const [vehicleNumber, setVehicleNumber] = useState("");
 
   // Auth fields (always shown)
   const [email, setEmail] = useState("");
@@ -137,10 +126,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
-        await handleProvisioningAndGating(
-          session.user.id,
-          session.user.email ?? ""
-        );
+          await handleProvisioningAndGating(
+            session.user.id,
+            session.user.email ?? "",
+            session.user.user_metadata
+          );
       }
     } catch (error) {
       console.error("Session check error:", error);
@@ -151,8 +141,31 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
   const handleProvisioningAndGating = async (
     userId: string,
-    userEmail: string
+    userEmail: string,
+    userMetadata: Record<string, unknown> = {}
   ) => {
+    // Registration data may come from the current form, or from Auth metadata
+    // when a previous signup created auth.users but provisioning failed.
+    const metadataFullName =
+      typeof userMetadata.full_name === "string"
+        ? userMetadata.full_name.trim()
+        : [userMetadata.first_name, userMetadata.last_name]
+            .filter((value): value is string => typeof value === "string")
+            .join(" ")
+            .trim();
+    const provisioningFullName = fullName.trim() || metadataFullName;
+    const provisioningPhone =
+      phoneNumber.trim() ||
+      (typeof userMetadata.phone_number === "string"
+        ? userMetadata.phone_number.trim()
+        : "");
+    const provisioningZoneId =
+      selectedZoneId ||
+      (typeof userMetadata.zone_id === "string" ? userMetadata.zone_id : "");
+    const nameParts = provisioningFullName.split(/\s+/).filter(Boolean);
+    const provisioningFirstName = nameParts[0] || "موصل";
+    const provisioningLastName = nameParts.slice(1).join(" ") || "غير محدد";
+
     // 1. Check / Provision Profile
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -174,7 +187,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       console.log("[AuthScreen] Inserting profile for userId:", userId, "role:", role);
       const { error: insertError } = await supabase
         .from("profiles")
-        .upsert({ id: userId, role }, { onConflict: "id" })
+        .upsert(
+          {
+            id: userId,
+            role,
+            full_name: provisioningFullName || null,
+            email: userEmail || null,
+            phone: provisioningPhone || null,
+          },
+          { onConflict: "id" }
+        )
         .select()
         .single();
 
@@ -200,7 +222,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
     // 3. Provision role-specific entity (idempotent)
     // zone_id: only store if it's a real UUID (not a fallback name-based key)
-    const resolvedZoneId = isUUID(selectedZoneId) ? selectedZoneId : null;
+    const resolvedZoneId = isUUID(provisioningZoneId)
+      ? provisioningZoneId
+      : null;
 
     let status = "pending";
     try {
@@ -218,8 +242,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             .from("customers")
             .upsert({
               id: userId,
-              full_name: fullName || "مستخدم",
-              phone: phoneNumber || "",
+              first_name: provisioningFirstName,
+              last_name: provisioningLastName,
+              full_name: provisioningFullName || "مستخدم",
+              phone_number: provisioningPhone || null,
+              phone: provisioningPhone || null,
               email: userEmail,
               zone_id: resolvedZoneId,
               address: address.trim() || null,
@@ -247,10 +274,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             .from("merchants")
             .upsert({
               id: userId,
-              owner_full_name: fullName || "تاجر",
+              owner_full_name: provisioningFullName || "تاجر",
               business_name: bName,
-              phone: phoneNumber || "",
-              contact_phone: phoneNumber || "",
+              phone: provisioningPhone || "",
+              contact_phone: provisioningPhone || "",
               contact_email: userEmail,
               email: userEmail,
               zone_id: resolvedZoneId,
@@ -301,12 +328,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             .from("drivers")
             .insert({
               id: userId,
-              full_name: fullName || "موصل",
-              phone: phoneNumber || "",
+              first_name: provisioningFirstName,
+              last_name: provisioningLastName,
+              full_name: provisioningFullName || "موصل",
+              phone_number: provisioningPhone,
+              phone: provisioningPhone || null,
               email: userEmail,
               zone_id: resolvedZoneId,
-              vehicle_type: vehicleType.trim() || null,
-              license_plate: vehicleNumber.trim() || null,
               availability: "offline",
               status: "pending_review",
             });
@@ -346,7 +374,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         if (error) throw error;
         await handleProvisioningAndGating(
           data.user.id,
-          data.user.email ?? ""
+          data.user.email ?? "",
+          data.user.user_metadata
         );
       } else {
         // Registration validation
@@ -379,11 +408,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             emailRedirectTo: "sougxpress://auth/callback",
             data: {
               role,
-              full_name: fullName,
-              phone_number: phoneNumber,
+              full_name: fullName.trim(),
+              phone_number: phoneNumber.trim(),
               zone_id: isUUID(selectedZoneId) ? selectedZoneId : null,
               business_name:
-                role === "merchant" ? businessName : undefined,
+                role === "merchant" ? businessName.trim() : undefined,
             },
           },
         });
@@ -395,7 +424,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         let sessionData = data?.session;
 
         if (!sessionData) {
-          console.log("[AuthScreen] No session returned from signUp (Confirm email might be enabled or pending). Attempting explicit signInWithPassword...");
+          console.log("[AuthScreen] No session returned from signUp. Attempting the same password sign-in flow used by the other roles...");
           const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -415,7 +444,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
         await handleProvisioningAndGating(
           activeUserId,
-          activeUserEmail
+          activeUserEmail,
+          data?.user?.user_metadata ?? {}
         );
       }
     } catch (error: any) {
@@ -434,7 +464,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           if (recoverErr) throw recoverErr;
           await handleProvisioningAndGating(
             recoverData.user.id,
-            recoverData.user.email ?? ""
+            recoverData.user.email ?? "",
+            recoverData.user.user_metadata
           );
         } catch (recoverError: any) {
           console.error("[AuthScreen] retry recovery error:", recoverError);
@@ -458,35 +489,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
-    );
-  }
-
-  // ── Email confirmation screen ───────────────────────────────────
-  if (needsConfirmation) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
-        <View style={styles.statusContainer}>
-          <Typography variant="h1" align="center" style={styles.statusTitle}>
-            تأكيد البريد الإلكتروني
-          </Typography>
-          <Typography
-            variant="body"
-            color="secondary"
-            align="center"
-            style={styles.statusMessage}
-          >
-            تم إرسال رابط تأكيد إلى بريدك الإلكتروني. يرجى تأكيد الحساب ثم
-            تسجيل الدخول.
-          </Typography>
-          <Button
-            title="العودة لتسجيل الدخول"
-            onPress={() => {
-              setNeedsConfirmation(false);
-              setIsLogin(true);
-            }}
-          />
-        </View>
-      </SafeAreaView>
     );
   }
 
@@ -609,24 +611,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   </>
                 )}
 
-                {/* 4c. Driver — نوع المركبة (dropdown) + رقم تسجيل المركبة */}
-                {role === "driver" && (
-                  <>
-                    <SimpleSelect
-                      label="نوع المركبة"
-                      placeholder="اختر نوع المركبة"
-                      options={VEHICLE_TYPES}
-                      value={vehicleType}
-                      onChange={setVehicleType}
-                    />
-                    <Input
-                      label="رقم المركبة"
-                      placeholder="000-000-00"
-                      value={vehicleNumber}
-                      onChangeText={setVehicleNumber}
-                    />
-                  </>
-                )}
               </>
             )}
 
