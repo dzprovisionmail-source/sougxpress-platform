@@ -57,7 +57,7 @@ const useCheckout = () => {
     fetchUserData();
   }, []);
 
-  const handleConfirmOrder = async (): Promise<{ success: boolean; orderId?: string }> => {
+  const handleConfirmOrder = async (preferredDriverId?: string | null): Promise<{ success: boolean; orderId?: string }> => {
     if (isPreviewMode) {
       setError("وضع معاينة السوق مخصص للتصفح فقط.");
       return { success: false };
@@ -90,6 +90,7 @@ const useCheckout = () => {
       platform_commission_minor: Math.round(subtotal * 0.1),
       total_minor: total,
       notes,
+      driver_id: preferredDriverId || null,
       cartItems,
     };
 
