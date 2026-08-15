@@ -14,6 +14,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Typography, Card, Badge } from "@/components/ui";
+import { AinSefraZoneSelect } from "@/components/ui/AinSefraZoneSelect";
 import {
   MapPin, Plus, Trash2, Home, Briefcase,
   Map as MapIcon, ChevronRight, ChevronLeft, Check, Pencil, X,
@@ -58,6 +59,7 @@ const DEFAULT_FORM: AddressFormData = {
 function AddressFormModal({
   visible,
   initial,
+  zones,
   onSave,
   onClose,
   saving,
@@ -66,6 +68,7 @@ function AddressFormModal({
 }: {
   visible: boolean;
   initial: AddressFormData;
+  zones: { id: string; name: string }[];
   onSave: (data: AddressFormData) => void;
   onClose: () => void;
   saving: boolean;
@@ -79,7 +82,7 @@ function AddressFormModal({
     if (visible) setForm(initial);
   }, [visible, initial]);
 
-  const isValid = form.address_line1.trim().length > 0 && form.city.trim().length > 0;
+  const isValid = form.zone_id.trim().length > 0;
 
   const inputStyle = [
     styles.input,
@@ -124,62 +127,42 @@ function AddressFormModal({
                 />
               </View>
 
-              {/* Address line */}
+              {/* Zone selection (Required - from 28 Ain Sefra zones) */}
+              <View style={styles.fieldGroup}>
+                <AinSefraZoneSelect
+                  zones={zones}
+                  value={form.zone_id}
+                  onChange={(id) => setForm((f) => ({ ...f, zone_id: id }))}
+                  label="الحي (من أحياء عين الصفراء الـ 28) *"
+                />
+              </View>
+
+              {/* Address line (Optional) */}
               <View style={styles.fieldGroup}>
                 <Typography variant="caption" color="secondary" style={styles.fieldLabel}>
-                  العنوان التفصيلي *
+                  العنوان التفصيلي (اختياري)
                 </Typography>
                 <TextInput
                   style={inputStyle}
                   value={form.address_line1}
                   onChangeText={(v) => setForm((f) => ({ ...f, address_line1: v }))}
-                  placeholder="الشارع، الحي، رقم المبنى…"
+                  placeholder="الشارع، رقم المبنى، معلم بارز…"
                   placeholderTextColor={colors.textDisabled}
                   multiline
                   numberOfLines={2}
                 />
               </View>
 
-              {/* City */}
+              {/* City (Fixed local context) */}
               <View style={styles.fieldGroup}>
                 <Typography variant="caption" color="secondary" style={styles.fieldLabel}>
-                  المدينة *
+                  المدينة
                 </Typography>
-                <TextInput
-                  style={inputStyle}
-                  value={form.city}
-                  onChangeText={(v) => setForm((f) => ({ ...f, city: v }))}
-                  placeholder="المدينة"
-                  placeholderTextColor={colors.textDisabled}
-                />
-              </View>
-
-              {/* Country */}
-              <View style={styles.fieldGroup}>
-                <Typography variant="caption" color="secondary" style={styles.fieldLabel}>
-                  الدولة *
-                </Typography>
-                <TextInput
-                  style={inputStyle}
-                  value={form.country}
-                  onChangeText={(v) => setForm((f) => ({ ...f, country: v }))}
-                  placeholder="الدولة"
-                  placeholderTextColor={colors.textDisabled}
-                />
-              </View>
-
-              {/* Zone */}
-              <View style={styles.fieldGroup}>
-                <Typography variant="caption" color="secondary" style={styles.fieldLabel}>
-                  الحي *
-                </Typography>
-                <TextInput
-                  style={inputStyle}
-                  value={form.zone_id}
-                  onChangeText={(v) => setForm((f) => ({ ...f, zone_id: v }))}
-                  placeholder="مثال: Ain Sefra"
-                  placeholderTextColor={colors.textDisabled}
-                />
+                <View style={[styles.input, { backgroundColor: colors.bgElevated, justifyContent: 'center' }]}>
+                  <Typography variant="body" style={{ color: colors.textPrimary, textAlign: isRTL ? "right" : "left" }}>
+                    عين الصفراء (الجزائر)
+                  </Typography>
+                </View>
               </View>
             </ScrollView>
 
@@ -221,6 +204,7 @@ export default function CustomerAddressesScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [zones, setZones] = useState<{ id: string; name: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Modal state
@@ -230,7 +214,13 @@ export default function CustomerAddressesScreen() {
 
   useEffect(() => {
     fetchAddresses();
+    fetchZones();
   }, []);
+
+  const fetchZones = async () => {
+    const { data } = await supabase.from("zones").select("id, name").order("name");
+    if (data) setZones(data);
+  };
 
   // ── Data helpers ────────────────────────────────────────────────────────────
 
@@ -281,14 +271,14 @@ export default function CustomerAddressesScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const addressLine = form.address_line1.trim();
+      const addressLine = form.address_line1.trim() || "العنوان الرئيسي";
       const payload = {
         label: form.label.trim() || "عنوان",
         address_line1: addressLine,
         address_text: addressLine,  // keep in sync for older query paths
-        city: form.city.trim() || "عين صفراء",
-        country: form.country.trim() || "الجزائر",
-        zone_id: form.zone_id.trim() || null,
+        city: "عين صفراء",
+        country: "الجزائر",
+        zone_id: form.zone_id.trim(),
       };
 
       if (editingId) {
@@ -516,6 +506,7 @@ export default function CustomerAddressesScreen() {
       <AddressFormModal
         visible={modalVisible}
         initial={formInitial}
+        zones={zones}
         onSave={handleSave}
         onClose={() => setModalVisible(false)}
         saving={saving}
