@@ -19,6 +19,7 @@ import { getArabicCategoryName } from '@/config/storeCategories';
 import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
 import { getActiveHeroSlides, getHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
 import { supabase } from '@/lib/supabase';
+import DriverDashboardScreen from '../driver/dashboard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -395,6 +396,10 @@ const HomeScreen = () => {
   const displayedStores = searchQuery.length > 0 ? searchResults.stores : filteredStores;
   const loading = storesLoading || searchLoading || newStoresLoading;
   const error = storesError;
+
+  if (userRole === 'courier') {
+    return <DriverDashboardScreen />;
+  }
 
   return (
     <SafeAreaView style={[styles.fullContainer, { backgroundColor: colors.bgBase, direction: isRTL ? 'rtl' : 'ltr' }]}>

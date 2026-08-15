@@ -10,7 +10,7 @@ import { LOGO_ICON } from "@/constants/brand";
 
 import CustomerProfileScreen from "../customer/profile";
 import MerchantProfileScreen from "../merchant/profile";
-import DriverDashboardScreen from "../driver/dashboard";
+import DriverProfileScreen from '../driver/profile';
 
 type Role = 'customer' | 'courier' | 'merchant' | 'guest';
 
@@ -125,7 +125,7 @@ export default function ProfileGateway() {
     case 'customer':
       return <CustomerProfileScreen />;
     case 'courier':
-      return <DriverDashboardScreen />;
+      return <DriverProfileScreen />;
     case 'merchant':
       return <MerchantProfileScreen />;
     default:
