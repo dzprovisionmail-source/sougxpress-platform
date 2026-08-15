@@ -19,7 +19,7 @@ export interface CheckoutData {
 
 export const processCheckout = async (data: CheckoutData): Promise<{ success: boolean; orderId?: string; error?: string }> => {
   try {
-    // 1. Ensure authoritative totals are computed securely from cart items
+    // 1. Authoritative totals computation from cart items
     const computedSubtotal = data.cartItems.reduce((acc, item) => acc + (item.product.price_minor * item.quantity), 0);
     const deliveryFee = typeof data.delivery_fee_minor === 'number' ? data.delivery_fee_minor : 0;
     const platformCommission = typeof data.platform_commission_minor === 'number' 
@@ -31,14 +31,14 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
       throw new Error("مجموع الطلب غير صالح أو السلة فارغة.");
     }
 
-    // 2. Prepare order record with both legacy authoritative fields and newer aligned fields
+    // 2. Prepare order payload matching authoritative schema
     const orderPayload: any = {
       customer_id: data.customer_id,
       store_id: data.store_id,
       zone_id: data.zone_id,
       driver_id: data.driver_id || null,
       status: "pending",
-      order_total_minor: computedTotal, // Required by original schema NOT NULL constraint
+      order_total_minor: computedTotal,
       subtotal_minor: computedSubtotal,
       delivery_fee_minor: deliveryFee,
       platform_commission_minor: platformCommission,
@@ -52,18 +52,21 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
     const newOrder = await createOrder(orderPayload);
     if (!newOrder) throw new Error("فشل في إنشاء الطلب في قاعدة البيانات.");
 
-    // 3. Create Order Items with both unit_price_minor and price_at_order_minor
+    // 3. Create Order Items using price_at_order_minor (matching the actual Supabase schema cache)
     const orderItems: any[] = data.cartItems.map(item => ({
       order_id: newOrder.id,
       product_id: item.product.id,
       quantity: item.quantity,
-      unit_price_minor: item.product.price_minor,
-      price_at_order_minor: item.product.price_minor, // Required by original schema NOT NULL constraint
+      price_at_order_minor: item.product.price_minor,
       line_total_minor: item.product.price_minor * item.quantity,
     }));
 
     const createdItems = await createOrderItems(orderItems);
-    if (!createdItems) throw new Error("فشل في حفظ عناصر الطلب.");
+    if (!createdItems) {
+      // Rollback order if items fail
+      await supabase.from("orders").delete().eq("id", newOrder.id);
+      throw new Error("فشل في حفظ عناصر الطلب.");
+    }
 
     // 4. Create Order Status History
     const statusHistory: Omit<OrderStatusHistory, 'id' | 'created_at'> = {
@@ -74,9 +77,11 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
     };
 
     const createdHistory = await createOrderStatusHistory(statusHistory);
-    if (!createdHistory) throw new Error("فشل في تسجيل حالة الطلب الأولية.");
+    if (!createdHistory) {
+      console.warn("Status history creation failed non-critically, order and items are saved.");
+    }
 
-    // 5. If a preferred driver (driver_id) was selected, ensure a delivery assignment is linked or created if RLS / permissions allow
+    // 5. If a preferred driver is specified, insert delivery assignment
     if (data.driver_id) {
       try {
         await supabase.from("delivery_assignments").insert({
@@ -86,7 +91,7 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
           updated_at: new Date().toISOString(),
         });
       } catch (assignErr) {
-        console.warn("Could not insert delivery assignment directly (may require founder/admin RLS or trigger):", assignErr);
+        console.warn("Could not insert delivery assignment directly:", assignErr);
       }
     }
 
