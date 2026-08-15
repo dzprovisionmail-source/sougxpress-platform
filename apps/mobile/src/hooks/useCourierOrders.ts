@@ -45,11 +45,15 @@ const useCourierOrders = (courierId: string) => {
     fetchDeliveries();
 
     if (courierId) {
-      const { data } = subscribeToCourierDeliveries(courierId, () => {
+      const subRes = subscribeToCourierDeliveries(courierId, () => {
         fetchDeliveries();
       });
       return () => {
-        data.subscription.unsubscribe();
+        try {
+          subRes?.data?.subscription?.unsubscribe?.();
+        } catch (e) {
+          // Ignore unsubscribe errors safely
+        }
       };
     }
   }, [courierId, fetchDeliveries]);

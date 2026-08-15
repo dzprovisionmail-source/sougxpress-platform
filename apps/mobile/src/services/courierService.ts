@@ -24,29 +24,54 @@ export interface CourierProfileUpdate {
   vehicle_photo_url?: string | null;
   rating?: number;
   is_available?: boolean;
+  availability?: string;
 }
 
 /**
- * Fetches all couriers that are publicly available for delivery
- * (active OR mock), ordered by rating descending.
- *
- * If userId is provided, each courier will include `is_favorite`
- * reflecting whether that user has favorited the courier.
- * Guests receive `is_favorite = false`.
+ * Maps a database driver row to the standard Courier interface.
+ */
+function mapDriverRowToCourier(row: any): Courier {
+  return {
+    id: row.id,
+    user_id: row.user_id ?? row.id,
+    full_name: row.full_name || `${row.first_name || ""} ${row.last_name || ""}`.trim() || "موصل Soug-XPRESS",
+    phone_number: row.phone_number || row.phone || "",
+    bio: row.bio || `موصل معتمد في ${row.neighborhood || row.city || "عين صفراء"}`,
+    avatar_url: row.avatar_url || null,
+    vehicle_type: mapVehicleType(row.vehicle_type) as VehicleType,
+    vehicle_photo_url: row.vehicle_photo_url || null,
+    rating: Number(row.rating) || 5.0,
+    is_available: row.availability === "online" || row.is_available === true,
+    is_mock: row.is_demo === true,
+    is_verified: row.status === "active",
+    is_pinned: false,
+    display_order: 0,
+    show_on_home: row.status === "active" && (row.availability === "online" || row.is_available === true),
+    created_at: row.created_at || new Date().toISOString(),
+  };
+}
+
+/**
+ * Fetches all active & online couriers from the authoritative `drivers` table,
+ * ordered by rating descending.
  */
 export const getAvailableCouriers = async (
   userId?: string
 ): Promise<CourierServiceResponse<CourierWithFavorite[]>> => {
   try {
     const { data, error } = await supabase
-      .from("couriers")
+      .from("drivers")
       .select("*")
-      .or("is_available.eq.true,is_mock.eq.true")
+      .eq("status", "active")
+      .eq("is_suspended_for_debt", false)
       .order("rating", { ascending: false });
 
     if (error) throw error;
 
-    const couriers = (data as Courier[]) ?? [];
+    const rawRows = data ?? [];
+    const couriers = rawRows
+      .filter((r) => r.availability === "online" || r.is_available === true)
+      .map(mapDriverRowToCourier);
 
     if (!userId) {
       return { data: couriers.map((c) => ({ ...c, is_favorite: false })), error: null };
@@ -80,21 +105,22 @@ export const getAvailableCouriers = async (
 };
 
 /**
- * Retrieves full courier details including whether the current user
- * has this courier marked as a favorite.
+ * Retrieves full courier details by ID from `drivers` table.
  */
 export const getCourierById = async (
   courierId: string
 ): Promise<CourierServiceResponse<CourierWithFavorite>> => {
   try {
-    const { data: courier, error: courierError } = await supabase
-      .from("couriers")
+    const { data: row, error: courierError } = await supabase
+      .from("drivers")
       .select("*")
       .eq("id", courierId)
       .single();
 
     if (courierError) throw courierError;
-    if (!courier) return { data: null, error: "لم يتم العثور على الموصل" };
+    if (!row) return { data: null, error: "لم يتم العثور على الموصل" };
+
+    const courier = mapDriverRowToCourier(row);
 
     const { data: userData, error: userError } = await supabase.auth.getUser();
     const userId = userData?.user?.id;
@@ -115,7 +141,7 @@ export const getCourierById = async (
     }
 
     return {
-      data: { ...(courier as Courier), is_favorite } as CourierWithFavorite,
+      data: { ...courier, is_favorite } as CourierWithFavorite,
       error: null,
     };
   } catch (err: any) {
@@ -125,8 +151,7 @@ export const getCourierById = async (
 };
 
 /**
- * Validates and updates a courier profile. Only the owner
- * (auth.uid() === user_id) may update via the RLS UPDATE policy.
+ * Updates a driver/courier profile in the `drivers` table.
  */
 export const updateCourierProfile = async (
   courierId: string,
@@ -147,23 +172,21 @@ export const updateCourierProfile = async (
       return { data: null, error: "نوع المركبة غير صالح" };
     }
 
-    if (
-      payload.rating !== undefined &&
-      (payload.rating < 1.0 || payload.rating > 5.0)
-    ) {
-      return { data: null, error: "التقييم يجب أن يكون بين 1.0 و 5.0" };
+    const dbPayload: any = { ...payload };
+    if (payload.is_available !== undefined) {
+      dbPayload.availability = payload.is_available ? "online" : "offline";
     }
 
     const { data, error } = await supabase
-      .from("couriers")
-      .update(payload)
+      .from("drivers")
+      .update(dbPayload)
       .eq("id", courierId)
       .select()
       .single();
 
     if (error) throw error;
 
-    return { data: (data as Courier) ?? null, error: null };
+    return { data: data ? mapDriverRowToCourier(data) : null, error: null };
   } catch (err: any) {
     console.error("updateCourierProfile failed:", err);
     return { data: null, error: err?.message ?? "فشل تحديث ملف الموصل" };
@@ -171,8 +194,7 @@ export const updateCourierProfile = async (
 };
 
 /**
- * Toggles a courier in the current user's favorites list.
- * Inserts when absent, removes when present.
+ * Toggles a courier in the current user's favorites list (idempotent).
  */
 export const toggleFavoriteCourier = async (
   userId: string,
@@ -231,11 +253,6 @@ const uuid = (): string => {
   });
 };
 
-/**
- * Uploads an image to the `courier-assets` storage bucket and returns
- * the public URL. Falls back to a content-derived path when no filename
- * can be inferred from the blob.
- */
 export const uploadCourierImage = async (
   file: File | Blob,
   pathFolder: string
@@ -293,14 +310,14 @@ export const getCourierByUserId = async (
 ): Promise<CourierServiceResponse<Courier | null>> => {
   try {
     const { data, error } = await supabase
-      .from("couriers")
+      .from("drivers")
       .select("*")
-      .eq("user_id", userId)
+      .or(`id.eq.${userId},user_id.eq.${userId}`)
       .maybeSingle();
 
-    if (error) throw error;
+    if (error && error.code !== "PGRST116") throw error;
 
-    return { data: (data as Courier) ?? null, error: null };
+    return { data: data ? mapDriverRowToCourier(data) : null, error: null };
   } catch (err: any) {
     console.error("getCourierByUserId failed:", err);
     return { data: null, error: err?.message ?? "فشل جلب بيانات الموصل" };

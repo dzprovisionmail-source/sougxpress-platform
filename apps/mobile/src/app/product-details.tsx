@@ -27,6 +27,7 @@ import { Store as StoreIcon, Heart, Share2, ShoppingBag } from "lucide-react-nat
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
+import { addToCart } from "@/services/cart.service";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -96,32 +97,7 @@ export default function ProductDetailsScreen() {
         return;
       }
 
-      // Check for active cart
-      let { data: cart } = await supabase
-        .from("carts")
-        .select("id, store_id")
-        .eq("customer_id", user.id)
-        .maybeSingle();
-
-      if (!cart) {
-        const { data: newCart, error: cartErr } = await supabase
-          .from("carts")
-          .insert({ customer_id: user.id, store_id: store?.id })
-          .select()
-          .single();
-        if (cartErr) throw cartErr;
-        cart = newCart;
-      }
-
-      // Add item to cart_items
-      const { error: itemErr } = await supabase.from("cart_items").insert({
-        cart_id: cart.id,
-        product_id: product.id,
-        quantity,
-        special_instructions: specialNotes,
-      });
-
-      if (itemErr) throw itemErr;
+      await addToCart(product, quantity);
 
       Alert.alert("تمت الإضافة", "تمت إضافة المنتج بنجاح إلى سلة التسوق", [
         { text: "متابعة التسوق", style: "cancel" },
