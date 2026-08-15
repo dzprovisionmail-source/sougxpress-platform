@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -7,8 +7,8 @@ import useDriver from "@/hooks/useDriver";
 import useDriverOrders from "@/hooks/useDriverOrders";
 import { FIXED_DELIVERY_FEE_MINOR, PLATFORM_SHARE_RATE, computeEarningsSplit, formatCurrency } from "@/constants/earnings";
 import { TOKENS } from "@/constants/tokens";
+import { supabase } from "@/lib/supabase";
 
-const PLATFORM_RIP = "00799999000524201107";
 const APPROACHING_PAYMENT_DELIVERIES = 30;
 const PAYMENT_REQUIRED_DELIVERIES = 50;
 const COMMISSION_PER_DELIVERY_MINOR = Math.round(FIXED_DELIVERY_FEE_MINOR * PLATFORM_SHARE_RATE);
@@ -18,6 +18,28 @@ export default function CourierEarningsScreen() {
   const { userId } = useCurrentUserId();
   const { driver } = useDriver(userId || "");
   const { orders, loading } = useDriverOrders(userId || "", driver?.zone_id);
+  const [platformRip, setPlatformRip] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPlatformRip = async () => {
+      if (!driver || driver.delivery_count < 30) {
+        setPlatformRip(null);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from("platform_financial_settings")
+        .select("value")
+        .eq("key", "platform_baridimob_rip")
+        .maybeSingle();
+      
+      if (!error && data) {
+        setPlatformRip(data.value);
+      }
+    };
+    
+    fetchPlatformRip();
+  }, [driver?.delivery_count]);
 
   const deliveredOrders = useMemo(
     () =>
@@ -49,7 +71,8 @@ export default function CourierEarningsScreen() {
   const isPaymentApproaching = unpaidDeliveryCount >= APPROACHING_PAYMENT_DELIVERIES && !isPaymentRequired;
 
   const copyRip = async () => {
-    await Clipboard.setStringAsync(PLATFORM_RIP);
+    if (!platformRip) return;
+    await Clipboard.setStringAsync(platformRip);
     Alert.alert("تم النسخ", "تم نسخ رقم RIP الخاص بالمنصة إلى الحافظة.");
   };
 
@@ -120,18 +143,32 @@ export default function CourierEarningsScreen() {
         </View>
       )}
 
-      <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>تفاصيل الدفع عبر بريدي موب</Text>
-        <Text style={[styles.description, { color: colors.textSecondary }]}>حوّل المبلغ المستحق إلى حساب المنصة عبر بريدي موب، ثم أرسل إثبات الدفع إلى الإدارة للمراجعة.</Text>
-        <Text style={[styles.ripLabel, { color: colors.textSecondary }]}>RIP المنصة عبر بريدي موب</Text>
-        <View style={[styles.ripBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
-          <Text selectable style={[styles.ripText, { color: colors.textPrimary }]}>{PLATFORM_RIP}</Text>
-          <TouchableOpacity onPress={copyRip} style={[styles.copyButton, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.copyText, { color: colors.textOnBrand }]}>نسخ الرقم</Text>
-          </TouchableOpacity>
+      {platformRip ? (
+        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>تفاصيل الدفع عبر بريدي موب</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>حوّل المبلغ المستحق إلى حساب المنصة عبر بريدي موب، ثم أرسل إثبات الدفع إلى الإدارة للمراجعة.</Text>
+          <Text style={[styles.ripLabel, { color: colors.textSecondary }]}>RIP المنصة عبر بريدي موب</Text>
+          <View style={[styles.ripBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
+            <Text selectable style={[styles.ripText, { color: colors.textPrimary }]}>{platformRip}</Text>
+            <TouchableOpacity onPress={copyRip} style={[styles.copyButton, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.copyText, { color: colors.textOnBrand }]}>نسخ الرقم</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.footnote, { color: colors.textDisabled }]}>بعد تأكيد الإدارة للدفع، تُحدّث التوصيلات المسددة ويُرفع الحظر تلقائياً.</Text>
         </View>
-        <Text style={[styles.footnote, { color: colors.textDisabled }]}>بعد تأكيد الإدارة للدفع، تُحدّث التوصيلات المسددة ويُرفع الحظر تلقائياً.</Text>
-      </View>
+      ) : (
+        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle, opacity: 0.8 }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>تفاصيل الدفع</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>
+            سيظهر رقم حساب المنصة (RIP) هنا بمجرد وصولك إلى 30 توصيلة مكتملة.
+          </Text>
+          <View style={[styles.totalBox, { backgroundColor: colors.bgBase }]}>
+            <Text style={[styles.rowLabel, { color: colors.textSecondary, textAlign: 'center', width: '100%' }]}>
+              أكمل {Math.max(30 - deliveryCount, 0)} توصيلة إضافية لتفعيل خيارات الدفع.
+            </Text>
+          </View>
+        </View>
+      )}
 
       <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>ملخص الأرباح</Text>

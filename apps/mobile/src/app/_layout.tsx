@@ -22,16 +22,21 @@ export default function RootLayout() {
     let deactivateFn: (() => void) | null = null;
 
     if (__DEV__) {
-      try {
-        import("expo-keep-awake").then(({ activateKeepAwakeAsync, deactivateKeepAwake }) => {
+      // In some environments like Termux or certain Android versions, 
+      // keep-awake may fail. Wrap in a robust try-catch to prevent uncaught rejections.
+      const setupKeepAwake = async () => {
+        try {
+          const { activateKeepAwakeAsync, deactivateKeepAwake } = await import("expo-keep-awake");
           if (mounted) {
             deactivateFn = deactivateKeepAwake;
-            activateKeepAwakeAsync().catch(() => {});
+            // The promise from activateKeepAwakeAsync MUST be caught.
+            await activateKeepAwakeAsync();
           }
-        }).catch(() => {});
-      } catch (e) {
-        console.warn("Keep awake failed to load:", e);
-      }
+        } catch (e) {
+          // Silently fail as this is non-critical for app functionality.
+        }
+      };
+      void setupKeepAwake();
     }
 
     return () => {

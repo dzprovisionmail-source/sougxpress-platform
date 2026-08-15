@@ -199,8 +199,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         ? userMetadata.vehicle_type
         : "");
     const nameParts = provisioningFullName.split(/\s+/).filter(Boolean);
-    const provisioningFirstName = nameParts[0] || "موصل";
-    const provisioningLastName = nameParts.slice(1).join(" ") || "غير محدد";
+    const provisioningFirstName = (nameParts[0] || "موصل").trim();
+    const provisioningLastName = (nameParts.slice(1).join(" ") || "غير محدد").trim();
 
     if (role === "driver" && !provisioningVehicleType) {
       Alert.alert("نوع المركبة مطلوب", "يرجى اختيار نوع المركبة لإكمال تسجيل الموصل.");
@@ -288,9 +288,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             .from("customers")
             .upsert({
               id: userId,
-              first_name: provisioningFirstName,
-              last_name: provisioningLastName,
-              full_name: provisioningFullName || "مستخدم",
+              first_name: provisioningFirstName || "مستخدم",
+              last_name: provisioningLastName || "جديد",
+              full_name: provisioningFullName || "مستخدم جديد",
               phone_number: provisioningPhone || null,
               phone: provisioningPhone || null,
               email: userEmail,
@@ -376,11 +376,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             .from("drivers")
             .upsert({
               id: userId,
-              first_name: provisioningFirstName,
-              last_name: provisioningLastName,
-              full_name: provisioningFullName || "موصل",
-              phone_number: provisioningPhone,
-              phone: provisioningPhone || null,
+              first_name: provisioningFirstName || "موصل",
+              last_name: provisioningLastName || "جديد",
+              full_name: provisioningFullName || "موصل جديد",
+              phone_number: provisioningPhone || "",
+              phone: provisioningPhone || "",
               email: userEmail,
               vehicle_type: provisioningVehicleType || null,
               city: "Ain Sefra",

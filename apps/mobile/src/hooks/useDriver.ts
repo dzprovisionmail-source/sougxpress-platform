@@ -35,8 +35,9 @@ const useDriver = (driverId: string) => {
 
     void fetchDriverData();
 
-    const channel = supabase
-      .channel(`driver_profile:${driverId}`)
+    const channel = supabase.channel(`driver_profile:${driverId}`);
+    
+    channel
       .on(
         "postgres_changes",
         {
@@ -46,13 +47,22 @@ const useDriver = (driverId: string) => {
           filter: `id=eq.${driverId}`,
         },
         () => {
-          void fetchDriverData();
+          if (!cancelled) {
+            void fetchDriverData();
+          }
         }
-      )
-      .subscribe();
+      );
+
+    // Subscribe ONLY after registering all callbacks.
+    channel.subscribe((status) => {
+      if (status === 'CHANNEL_ERROR') {
+        console.warn(`Realtime channel error for driver_profile:${driverId}`);
+      }
+    });
 
     return () => {
       cancelled = true;
+      // Use removeChannel to properly clean up.
       void supabase.removeChannel(channel);
     };
   }, [driverId]);
