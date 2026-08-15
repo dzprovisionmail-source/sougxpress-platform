@@ -135,3 +135,12 @@ export const subscribeToDriverOrders = (driverId: string, callback: () => void) 
     callback
   );
 };
+
+export const subscribeToAvailableOrders = (callback: () => void) => {
+  return subscribeToTableChanges(
+    "available_assignments",
+    "delivery_assignments",
+    "driver_id=is.null",
+    callback
+  );
+};

@@ -52,6 +52,39 @@ export const updateOrderStatus = async (
 
     if (historyError) throw historyError;
 
+    // 3. Create Delivery Assignment if order is accepted or ready
+    if (newStatus === "accepted" || newStatus === "preparing" || newStatus === "ready_for_pickup") {
+      try {
+        // Fetch order details to get zone_id and preferred driver_id
+        const { data: orderData } = await supabase
+          .from("orders")
+          .select("id, driver_id, zone_id")
+          .eq("id", orderId)
+          .single();
+
+        if (orderData) {
+          // Check if assignment already exists
+          const { data: existingAssignment } = await supabase
+            .from("delivery_assignments")
+            .select("id")
+            .eq("order_id", orderId)
+            .single();
+
+          if (!existingAssignment) {
+            await supabase.from("delivery_assignments").insert({
+              order_id: orderId,
+              driver_id: orderData.driver_id || null, // Respect preferred driver if set
+              status: "pending",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          }
+        }
+      } catch (assignErr) {
+        console.warn("Failed to create delivery assignment:", assignErr);
+      }
+    }
+
     return true;
   } catch (error) {
     console.error("Error updating order status:", error);

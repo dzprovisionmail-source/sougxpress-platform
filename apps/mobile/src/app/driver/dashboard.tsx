@@ -37,7 +37,7 @@ export default function DriverDashboardScreen() {
     const todayOrders = orders.filter((o) => new Date(o.created_at).toDateString() === today);
     const completedToday = todayOrders.filter((o) => o.status === "delivered");
     const completedTotal = orders.filter((o) => o.status === "delivered");
-    const pending = orders.filter((o) => ["ready_for_pickup", "picked_up"].includes(o.status));
+    const pending = orders.filter((o) => ["accepted", "arrived_at_store", "picked_up", "out_for_delivery"].includes(o.assignment_status));
     const completedDeliveryCount = Math.max(driver?.delivery_count ?? 0, completedTotal.length);
     const earningsToday = computeEarningsSplit(completedToday.length).driverShareMinor;
     const totalSplit = computeEarningsSplit(completedDeliveryCount);
@@ -116,7 +116,7 @@ export default function DriverDashboardScreen() {
   const filters: { key: FilterKey; label: string; count: number }[] = [
     { key: "all", label: "الكل", count: filteredOrders.length },
     { key: "available", label: "متاحة", count: availableOrders.length },
-    { key: "active", label: "الجارية", count: orders.filter((o) => ["ready_for_pickup", "picked_up"].includes(o.status)).length },
+    { key: "active", label: "الجارية", count: orders.filter((o) => ["accepted", "arrived_at_store", "picked_up", "out_for_delivery"].includes(o.assignment_status)).length },
     { key: "completed", label: "المكتملة", count: orders.filter((o) => o.status === "delivered").length },
   ];
 
@@ -259,20 +259,26 @@ export default function DriverDashboardScreen() {
                       variant="caption"
                       style={{
                         color:
-                          order.status === "delivered"
+                          order.assignment_status === "delivered"
                             ? colors.success
-                            : order.status === "cancelled"
+                            : order.assignment_status === "cancelled" || order.assignment_status === "failed"
                             ? colors.error
                             : colors.warning,
                       }}
                     >
-                      {order.status === "ready_for_pickup"
-                        ? "جاهز للاستلام"
-                        : order.status === "picked_up"
+                      {order.assignment_status === "pending"
+                        ? "متاحة"
+                        : order.assignment_status === "accepted"
+                        ? "مقبولة"
+                        : order.assignment_status === "arrived_at_store"
+                        ? "في المتجر"
+                        : order.assignment_status === "picked_up"
+                        ? "تم الاستلام"
+                        : order.assignment_status === "out_for_delivery"
                         ? "في الطريق"
-                        : order.status === "delivered"
-                        ? "مكتمل"
-                        : order.status}
+                        : order.assignment_status === "delivered"
+                        ? "مكتملة"
+                        : order.assignment_status}
                     </WorkspaceText>
                   </View>
                   <WorkspaceText color="secondary" variant="caption" style={{ marginTop: tokens.spacing.xs }}>

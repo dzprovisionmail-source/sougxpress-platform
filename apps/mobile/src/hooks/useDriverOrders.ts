@@ -6,6 +6,7 @@ import {
   acceptOrder,
   updateDeliveryStatus,
   subscribeToDriverOrders,
+  subscribeToAvailableOrders,
 } from "../services/driver-orders.service";
 
 /**
@@ -46,11 +47,17 @@ const useDriverOrders = (driverId: string, zoneId?: string) => {
     fetchOrders();
 
     if (driverId) {
-      const unsubscribe = subscribeToDriverOrders(driverId, () => {
+      const unsubscribeMine = subscribeToDriverOrders(driverId, () => {
         fetchOrders();
       });
+      
+      const unsubscribeAvailable = subscribeToAvailableOrders(() => {
+        fetchOrders();
+      });
+
       return () => {
-        unsubscribe();
+        unsubscribeMine();
+        unsubscribeAvailable();
       };
     }
   }, [driverId, fetchOrders]);
