@@ -1,11 +1,9 @@
 import { LogBox, I18nManager } from "react-native";
 LogBox.ignoreLogs([
-  "Unable to activate keep awake",
   "SafeAreaView has been deprecated",
   "MediaTypeOptions` have been deprecated",
   "Method getInfoAsync imported from \"expo-file-system\" is deprecated"
 ]);
-import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
@@ -17,34 +15,6 @@ if (!I18nManager.isRTL) {
 }
 
 export default function RootLayout() {
-  useEffect(() => {
-    let mounted = true;
-    let deactivateFn: (() => void) | null = null;
-
-    if (__DEV__) {
-      // In some environments like Termux or certain Android versions, 
-      // keep-awake may fail. Wrap in a robust try-catch to prevent uncaught rejections.
-      const setupKeepAwake = async () => {
-        try {
-          const { activateKeepAwakeAsync, deactivateKeepAwake } = await import("expo-keep-awake");
-          if (mounted) {
-            deactivateFn = deactivateKeepAwake;
-            // The promise from activateKeepAwakeAsync MUST be caught.
-            await activateKeepAwakeAsync();
-          }
-        } catch (e) {
-          // Silently fail as this is non-critical for app functionality.
-        }
-      };
-      void setupKeepAwake();
-    }
-
-    return () => {
-      mounted = false;
-      if (deactivateFn) deactivateFn();
-    };
-  }, []);
-
   return (
     <ThemeProvider>
       <Stack screenOptions={{ headerShown: false }}>
