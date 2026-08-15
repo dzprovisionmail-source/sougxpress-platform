@@ -46,11 +46,11 @@ const useDriverOrders = (driverId: string, zoneId?: string) => {
     fetchOrders();
 
     if (driverId) {
-      const subscription = subscribeToDriverOrders(driverId, () => {
+      const unsubscribe = subscribeToDriverOrders(driverId, () => {
         fetchOrders();
       });
       return () => {
-        subscription.unsubscribe();
+        unsubscribe();
       };
     }
   }, [driverId, fetchOrders]);

@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { Order, OrderStatus } from "../types/schema-03-core";
+import { subscribeToTableChanges } from "../lib/realtime-registry";
 
 /**
  * Assignments currently for this driver.
@@ -127,12 +128,10 @@ export const updateDeliveryStatus = async (
 };
 
 export const subscribeToDriverOrders = (driverId: string, callback: () => void) => {
-  return supabase
-    .channel(`driver_assignments_${driverId}`)
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "delivery_assignments", filter: `driver_id=eq.${driverId}` },
-      callback
-    )
-    .subscribe();
+  return subscribeToTableChanges(
+    `driver_assignments_${driverId}`,
+    "delivery_assignments",
+    `driver_id=eq.${driverId}`,
+    callback
+  );
 };
