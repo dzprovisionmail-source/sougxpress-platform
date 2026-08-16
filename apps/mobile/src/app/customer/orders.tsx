@@ -40,6 +40,8 @@ interface OrderItem {
   id: string;
   status: string;
   order_total_minor: number;
+  subtotal_minor?: number;
+  delivery_fee_minor?: number;
   created_at: string;
   stores?: { name: string; id?: string };
   delivery_address_id?: string;
@@ -76,6 +78,8 @@ export default function CustomerOrdersScreen() {
           id,
           status,
           order_total_minor,
+          subtotal_minor,
+          delivery_fee_minor,
           created_at,
           stores ( id, name ),
           delivery_address_id,
@@ -277,7 +281,19 @@ export default function CustomerOrdersScreen() {
             </View>
 
             <View style={[styles.sheetRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-              <Typography variant="body" color="secondary">المبلغ الإجمالي</Typography>
+              <Typography variant="body" color="secondary">مجموع المنتجات</Typography>
+              <Price amount={selectedOrder.subtotal_minor || (selectedOrder.order_total_minor - (selectedOrder.delivery_fee_minor || 20000))} isMinor size="sm" />
+            </View>
+
+            <View style={[styles.sheetRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <Typography variant="body" color="secondary">رسوم التوصيل</Typography>
+              <Price amount={selectedOrder.delivery_fee_minor || 20000} isMinor size="sm" />
+            </View>
+
+            <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
+
+            <View style={[styles.sheetRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <Typography variant="body" color="secondary" style={{ fontWeight: 'bold' }}>المبلغ الإجمالي</Typography>
               <Price amount={selectedOrder.order_total_minor || 0} isMinor size="md" variant="brand" />
             </View>
 

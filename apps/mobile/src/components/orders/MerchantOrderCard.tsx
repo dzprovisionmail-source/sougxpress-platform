@@ -26,7 +26,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
   const isReady     = order.status === 'ready_for_pickup';
 
   const subtotalMinor = order.subtotal_minor ?? order.items?.reduce((acc: number, item: any) => acc + (item.line_total_minor || (item.quantity * item.price_at_order_minor)), 0) ?? order.total_minor;
-  const deliveryFeeMinor = order.delivery_fee_minor ?? 15000;
+  const deliveryFeeMinor = order.delivery_fee_minor ?? 20000; // Standard 200 DZD fee
   const totalMinor = order.total_minor ?? (subtotalMinor + deliveryFeeMinor);
 
   return (
