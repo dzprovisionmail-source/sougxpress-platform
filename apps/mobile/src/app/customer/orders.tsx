@@ -126,6 +126,7 @@ export default function CustomerOrdersScreen() {
       case "accepted":
       case "preparing":
       case "ready_for_pickup":
+      case "courier_assigned":
       case "out_for_delivery":
       case "picked_up":
         return "info";
@@ -149,6 +150,8 @@ export default function CustomerOrdersScreen() {
         return "جاري التحضير";
       case "ready_for_pickup":
         return "جاهز للاستلام";
+      case "courier_assigned":
+        return "تم تعيين موصل";
       case "out_for_delivery":
       case "picked_up":
         return "في الطريق إليك";
