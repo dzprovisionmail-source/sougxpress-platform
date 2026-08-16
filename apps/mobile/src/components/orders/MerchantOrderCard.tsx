@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import {
   User, MapPin, ShoppingCart, MessageSquare,
-  PlayCircle, PackageCheck, XCircle,
+  PlayCircle, PackageCheck, XCircle, Clock,
 } from 'lucide-react-native';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
@@ -24,7 +24,10 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
   const isAccepted  = order.status === 'accepted';
   const isPreparing = order.status === 'preparing';
   const isReady     = order.status === 'ready_for_pickup';
-  const canCancel   = isAccepted || isPreparing;
+
+  const subtotalMinor = order.subtotal_minor ?? order.items?.reduce((acc: number, item: any) => acc + (item.line_total_minor || (item.quantity * item.price_at_order_minor)), 0) ?? order.total_minor;
+  const deliveryFeeMinor = order.delivery_fee_minor ?? 15000;
+  const totalMinor = order.total_minor ?? (subtotalMinor + deliveryFeeMinor);
 
   return (
     <Card style={styles.card}>
@@ -32,58 +35,87 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
       <View style={styles.header}>
         <OrderStatusBadge status={order.status} />
         <View style={styles.orderIdContainer}>
-          <Text style={styles.orderId}>🧾 {order.id.slice(0, 8)}</Text>
-          <Text style={styles.timestamp}>{new Date(order.created_at).toLocaleTimeString('ar-DZ')}</Text>
+          <Text style={styles.orderId}>طلب #{order.id.slice(0, 8)}</Text>
+          <View style={styles.timeRow}>
+            <Clock size={12} color={colors.textSecondary} style={{ marginLeft: 4 }} />
+            <Text style={styles.timestamp}>{new Date(order.created_at).toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' })}</Text>
+          </View>
         </View>
       </View>
 
       <View style={styles.divider} />
 
-      {/* ── Info ── */}
+      {/* ── Customer & Address Info ── */}
       <View style={styles.infoRow}>
         <User size={iconSizes.small} color={colors.textSecondary} />
-        <Text style={styles.infoText}>{order.customer?.full_name || 'زبون'}</Text>
+        <Text style={styles.infoText}>الزبون: {order.customer?.full_name || 'زبون غير مسجل'}</Text>
       </View>
       <View style={styles.infoRow}>
         <MapPin size={iconSizes.small} color={colors.textSecondary} />
-        <Text style={styles.infoText}>{order.address?.address_text || 'العنوان غير متوفر'}</Text>
+        <Text style={styles.infoText}>العنوان: {order.address?.address_text || 'العنوان الافتراضي'}</Text>
       </View>
 
       <View style={styles.divider} />
 
-      <View style={styles.infoRow}>
-        <ShoppingCart size={iconSizes.small} color={colors.textSecondary} />
-        <Text style={styles.infoText}>قيمة الطلب: {(order.total_minor / 100).toFixed(2)} د.ج</Text>
-      </View>
-
-      {/* Items summary */}
-      {Array.isArray(order.items) && order.items.length > 0 && (
-        <View style={styles.itemsList}>
-          {order.items.slice(0, 3).map((item: any, idx: number) => (
-            <Text key={idx} style={styles.itemText}>
-              • {item.product?.name ?? 'منتج'} × {item.quantity}
-            </Text>
-          ))}
-          {order.items.length > 3 && (
-            <Text style={styles.itemText}>+ {order.items.length - 3} منتجات أخرى</Text>
-          )}
+      {/* ── Items Detailed List ── */}
+      <Text style={styles.sectionTitle}>محتويات السلة:</Text>
+      {Array.isArray(order.items) && order.items.length > 0 ? (
+        <View style={styles.itemsContainer}>
+          {order.items.map((item: any, idx: number) => {
+            const unitPriceDzd = (item.price_at_order_minor / 100).toFixed(2);
+            const lineTotalDzd = ((item.line_total_minor || (item.quantity * item.price_at_order_minor)) / 100).toFixed(2);
+            return (
+              <View key={idx} style={styles.itemRow}>
+                {item.product?.image_url ? (
+                  <Image source={{ uri: item.product.image_url }} style={styles.itemImage} />
+                ) : (
+                  <View style={[styles.itemImage, styles.placeholderImage]}><ShoppingCart size={14} color={colors.textSecondary} /></View>
+                )}
+                <View style={styles.itemDetails}>
+                  <Text style={styles.itemName}>{item.product?.name ?? 'منتج'}</Text>
+                  <Text style={styles.itemSubtext}>الكمية: ×{item.quantity} | السعر: {unitPriceDzd} د.ج</Text>
+                </View>
+                <Text style={styles.itemTotal}>{lineTotalDzd} د.ج</Text>
+              </View>
+            );
+          })}
         </View>
+      ) : (
+        <Text style={styles.noItemsText}>لا توجد تفاصيل للمنتجات</Text>
       )}
 
-      {order.notes && (
+      {order.special_instructions && (
         <View style={styles.notesContainer}>
           <MessageSquare size={iconSizes.small} color={colors.primary} />
-          <Text style={styles.notesText}>{order.notes}</Text>
+          <Text style={styles.notesText}>ملاحظات: {order.special_instructions}</Text>
         </View>
       )}
+
+      <View style={styles.divider} />
+
+      {/* ── Pricing Summary ── */}
+      <View style={styles.priceSummary}>
+        <View style={styles.priceRow}>
+          <Text style={styles.priceLabel}>مجموع المنتجات:</Text>
+          <Text style={styles.priceVal}>{(subtotalMinor / 100).toFixed(2)} د.ج</Text>
+        </View>
+        <View style={styles.priceRow}>
+          <Text style={styles.priceLabel}>رسوم التوصيل:</Text>
+          <Text style={styles.priceVal}>{(deliveryFeeMinor / 100).toFixed(2)} د.ج</Text>
+        </View>
+        <View style={[styles.priceRow, styles.grandTotalRow]}>
+          <Text style={styles.grandTotalLabel}>الإجمالي النهائي:</Text>
+          <Text style={styles.grandTotalVal}>{(totalMinor / 100).toFixed(2)} د.ج</Text>
+        </View>
+      </View>
 
       {/* ── Actions ── */}
       <View style={styles.actionsContainer}>
-        {/* Pending: accept or reject */}
+        {/* Pending: accept or reject/cancel */}
         {isNew && (
           <>
             <Button
-              title="✅ قبول"
+              title="✅ قبول الطلب"
               onPress={() => onUpdateStatus(order.id, 'accepted')}
               variant="primary"
               style={styles.actionButton}
@@ -101,7 +133,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
         {isAccepted && (
           <>
             <Button
-              title="بدء التحضير"
+              title="🚀 بدء التحضير"
               onPress={() => onUpdateStatus(order.id, 'preparing')}
               variant="primary"
               icon={<PlayCircle size={iconSizes.small} color={colors.white} />}
@@ -145,7 +177,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
           <View style={[styles.readyBanner, { backgroundColor: colors.success + '22' }]}>
             <PackageCheck size={iconSizes.small} color={colors.success} />
             <Text style={[styles.readyText, { color: colors.success }]}>
-              في انتظار السائق لاستلام الطلب
+              الطلب جاهز — في انتظار السائق لاستلامه
             </Text>
           </View>
         )}
@@ -159,15 +191,31 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   orderIdContainer: { alignItems: 'flex-end' },
   orderId: { ...typography.subtitle, color: colors.text, fontWeight: 'bold' },
+  timeRow: { flexDirection: 'row-reverse', alignItems: 'center', marginTop: 2 },
   timestamp: { ...typography.caption, color: colors.textSecondary },
   divider: { height: 1, backgroundColor: colors.divider, marginVertical: spacing.sm },
   infoRow: { flexDirection: 'row-reverse', alignItems: 'center', marginBottom: spacing.xs },
-  infoText: { ...typography.body, color: colors.text, marginRight: spacing.sm },
-  itemsList: { backgroundColor: colors.backgroundLight, borderRadius: radius.small, padding: spacing.sm, marginBottom: spacing.sm },
-  itemText: { ...typography.caption, color: colors.text, textAlign: 'right', marginBottom: 2 },
+  infoText: { ...typography.body, color: colors.text, marginRight: spacing.sm, textAlign: 'right' },
+  sectionTitle: { ...typography.subtitle, color: colors.text, fontWeight: '700', textAlign: 'right', marginBottom: spacing.xs },
+  itemsContainer: { backgroundColor: colors.backgroundLight, borderRadius: radius.small, padding: spacing.sm, marginBottom: spacing.sm },
+  itemRow: { flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  itemImage: { width: 36, height: 36, borderRadius: radius.small, marginLeft: spacing.sm },
+  placeholderImage: { backgroundColor: colors.divider, justifyContent: 'center', alignItems: 'center' },
+  itemDetails: { flex: 1, alignItems: 'flex-end' },
+  itemName: { ...typography.body, fontWeight: '600', color: colors.text, textAlign: 'right' },
+  itemSubtext: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  itemTotal: { ...typography.body, fontWeight: 'bold', color: colors.primary },
+  noItemsText: { ...typography.caption, color: colors.textSecondary, textAlign: 'right', marginBottom: spacing.sm },
   notesContainer: { flexDirection: 'row-reverse', alignItems: 'flex-start', backgroundColor: colors.backgroundLight,
     padding: spacing.sm, borderRadius: radius.small, marginTop: spacing.sm },
   notesText: { ...typography.caption, color: colors.text, marginRight: spacing.sm, flex: 1, textAlign: 'right' },
+  priceSummary: { backgroundColor: colors.backgroundLight, padding: spacing.sm, borderRadius: radius.small, marginBottom: spacing.sm },
+  priceRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 4 },
+  priceLabel: { ...typography.caption, color: colors.textSecondary },
+  priceVal: { ...typography.caption, color: colors.text, fontWeight: '600' },
+  grandTotalRow: { borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: 4, marginTop: 4 },
+  grandTotalLabel: { ...typography.body, fontWeight: 'bold', color: colors.text },
+  grandTotalVal: { ...typography.body, fontWeight: 'bold', color: colors.primary },
   actionsContainer: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginTop: spacing.md, gap: spacing.sm, flexWrap: 'wrap' },
   actionButton: { flex: 1, minWidth: 100 },
   preparingContainer: { width: '100%', flexDirection: 'column', gap: spacing.sm },

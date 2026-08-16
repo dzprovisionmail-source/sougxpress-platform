@@ -1,4 +1,3 @@
-
 import { supabase } from "../lib/supabase";
 import { Order, OrderItem, OrderStatus, OrderStatusHistory } from "../types/schema-03-core";
 
@@ -15,7 +14,18 @@ export const getMerchantOrders = async (merchantId: string): Promise<Order[]> =>
 
   const { data, error } = await supabase
     .from("orders")
-    .select("*, customer:customers(full_name), address:customer_addresses(address_text)")
+    .select(`
+      *,
+      customer:customers(full_name),
+      address:customer_addresses(address_text),
+      items:order_items(
+        id,
+        quantity,
+        price_at_order_minor,
+        line_total_minor,
+        product:products(id, name, image_url)
+      )
+    `)
     .in("store_id", storeIds)
     .order("created_at", { ascending: false });
 
