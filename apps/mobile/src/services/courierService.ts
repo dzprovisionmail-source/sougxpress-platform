@@ -223,6 +223,17 @@ export const toggleFavoriteCourier = async (
       return { data: { is_favorite: false }, error: null };
     }
 
+    // Check count before insert (Limit: 2)
+    const { count, error: countError } = await supabase
+      .from("favorite_couriers")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (countError) throw countError;
+    if (count !== null && count >= 2) {
+      return { data: null, error: "لا يمكنك إضافة أكثر من موصلين مفضلين (الحد الأقصى: 2)" };
+    }
+
     const { error: insertError } = await supabase
       .from("favorite_couriers")
       .insert({ user_id: userId, courier_id: courierId });
