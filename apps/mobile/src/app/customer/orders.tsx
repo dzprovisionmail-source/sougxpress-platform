@@ -9,6 +9,7 @@ import {
   Alert,
   Linking,
   I18nManager,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -31,10 +32,23 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  Bike,
+  Star,
+  UserCheck,
 } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
+
+interface CourierInfo {
+  id: string;
+  full_name: string;
+  phone: string;
+  avatar_url?: string;
+  vehicle_type?: string;
+  rating?: number;
+  delivery_count?: number;
+}
 
 interface OrderItem {
   id: string;
@@ -46,6 +60,11 @@ interface OrderItem {
   stores?: { name: string; id?: string };
   delivery_address_id?: string;
   notes?: string;
+  delivery_assignments?: {
+    status: string;
+    driver_id: string;
+    drivers?: CourierInfo;
+  }[];
 }
 
 export default function CustomerOrdersScreen() {
@@ -57,6 +76,7 @@ export default function CustomerOrdersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
+  const [favoriteCourierIds, setFavoriteCourierIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
@@ -72,6 +92,17 @@ export default function CustomerOrdersScreen() {
         return;
       }
 
+      // Fetch favorite couriers
+      const { data: favs } = await supabase
+        .from("favorite_couriers")
+        .select("courier_id")
+        .eq("user_id", user.id);
+
+      if (favs) {
+        setFavoriteCourierIds(favs.map((f: any) => f.courier_id));
+      }
+
+      // Fetch orders with store, address, and delivery assignments with driver info
       const { data, error: fetchError } = await supabase
         .from("orders")
         .select(`
@@ -83,7 +114,20 @@ export default function CustomerOrdersScreen() {
           created_at,
           stores ( id, name ),
           delivery_address_id,
-          notes
+          notes,
+          delivery_assignments (
+            status,
+            driver_id,
+            drivers:driver_id (
+              id,
+              full_name,
+              phone,
+              avatar_url,
+              vehicle_type,
+              rating,
+              delivery_count
+            )
+          )
         `)
         .eq("customer_id", user.id)
         .order("created_at", { ascending: false });
@@ -93,7 +137,8 @@ export default function CustomerOrdersScreen() {
     } catch (err) {
       console.error("Error fetching orders:", err);
       setError("حدث خطأ أثناء تحميل الطلبات");
-    } finally {      setLoading(false);
+    } finally {
+      setLoading(false);
       setRefreshing(false);
     }
   }, []);
@@ -101,10 +146,15 @@ export default function CustomerOrdersScreen() {
   useEffect(() => {
     fetchOrders();
     const channel = supabase
-      .channel("customer_orders")
+      .channel("customer_orders_all")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
+        () => fetchOrders()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "delivery_assignments" },
         () => fetchOrders()
       )
       .subscribe();
@@ -120,7 +170,8 @@ export default function CustomerOrdersScreen() {
   }, [fetchOrders]);
 
   const getStatusBadgeVariant = (status: string): "warning" | "info" | "success" | "error" | "default" => {
-    switch (status) {      case "pending":
+    switch (status) {
+      case "pending":
         return "warning";
       case "confirmed":
       case "accepted":
@@ -141,7 +192,8 @@ export default function CustomerOrdersScreen() {
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {      case "pending":
+    switch (status) {
+      case "pending":
         return "قيد الانتظار";
       case "confirmed":
       case "accepted":
@@ -167,6 +219,10 @@ export default function CustomerOrdersScreen() {
   };
 
   const renderOrderItem = ({ item }: { item: OrderItem }) => {
+    const assignment = item.delivery_assignments?.[0];
+    const courier = assignment?.drivers;
+    const isFavorite = courier ? favoriteCourierIds.includes(courier.id) : false;
+
     return (
       <Card key={item.id} style={styles.orderCard}>
         {/* Order Header */}
@@ -186,6 +242,44 @@ export default function CustomerOrdersScreen() {
             variant={getStatusBadgeVariant(item.status)}
           />
         </View>
+
+        {/* Assigned Courier Preview Banner if assigned */}
+        {courier && (
+          <View style={[styles.courierBanner, { backgroundColor: colors.bgSurface, flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            <View style={[styles.courierInfoLeft, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <View style={[styles.courierAvatarContainer, { backgroundColor: colors.primary + '20' }]}>
+                {courier.avatar_url ? (
+                  <Image source={{ uri: courier.avatar_url }} style={styles.courierAvatar} />
+                ) : (
+                  <Bike size={16} color={colors.primary} />
+                )}
+              </View>
+              <View>
+                <View style={[styles.courierNameRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                  <Typography variant="body" style={{ fontWeight: 'bold' }}>{courier.full_name || "موصل طلبات"}</Typography>
+                  {isFavorite && (
+                    <View style={[styles.favoriteBadge, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                      <Star size={12} color="#f59e0b" fill="#f59e0b" />
+                      <Typography variant="caption" style={{ color: '#d97706', fontSize: 10, fontWeight: 'bold' }}>مفضل</Typography>
+                    </View>
+                  )}
+                </View>
+                <Typography variant="caption" color="secondary">
+                  الموصل المنفذ للطلب • تقييم ({courier.rating || '5.0'})
+                </Typography>
+              </View>
+            </View>
+
+            {courier.phone && (
+              <TouchableOpacity
+                onPress={() => Linking.openURL(`tel:${courier.phone}`)}
+                style={[styles.callButton, { backgroundColor: colors.primary }]}
+              >
+                <Phone size={14} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
 
@@ -227,6 +321,10 @@ export default function CustomerOrdersScreen() {
       </View>
     );
   }
+
+  const selectedAssignment = selectedOrder?.delivery_assignments?.[0];
+  const selectedCourier = selectedAssignment?.drivers;
+  const isSelectedFavorite = selectedCourier ? favoriteCourierIds.includes(selectedCourier.id) : false;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
@@ -275,6 +373,44 @@ export default function CustomerOrdersScreen() {
                 variant={getStatusBadgeVariant(selectedOrder.status)}
               />
             </View>
+
+            {/* Courier Section in Bottom Sheet */}
+            {selectedCourier ? (
+              <View style={[styles.sheetCourierCard, { backgroundColor: colors.bgSurface }]}>
+                <View style={[styles.sheetCourierHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                  <Bike size={20} color={colors.primary} />
+                  <Typography variant="h3">الموصل المنفذ للطلب</Typography>
+                  {isSelectedFavorite && (
+                    <View style={[styles.favoriteBadge, { flexDirection: isRTL ? "row-reverse" : "row", marginLeft: 'auto' }]}>
+                      <Star size={12} color="#f59e0b" fill="#f59e0b" />
+                      <Typography variant="caption" style={{ color: '#d97706', fontSize: 10, fontWeight: 'bold' }}>مفضل</Typography>
+                    </View>
+                  )}
+                </View>
+                <View style={[styles.sheetCourierDetails, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                  <View>
+                    <Typography variant="body" style={{ fontWeight: 'bold' }}>{selectedCourier.full_name}</Typography>
+                    <Typography variant="caption" color="secondary">
+                      مركبة: {selectedCourier.vehicle_type || 'دراجة'} • عدد التوصيلات: {selectedCourier.delivery_count || 0}
+                    </Typography>
+                  </View>
+                  {selectedCourier.phone && (
+                    <Button
+                      title="اتصال"
+                      onPress={() => Linking.openURL(`tel:${selectedCourier.phone}`)}
+                      size="sm"
+                      icon={<Phone size={14} color="#fff" />}
+                    />
+                  )}
+                </View>
+              </View>
+            ) : (
+              <View style={[styles.sheetCourierCard, { backgroundColor: colors.bgSurface }]}>
+                <Typography variant="caption" color="secondary" align="center">
+                  جاري تعيين موصل مناسب من منظومة التوصيل...
+                </Typography>
+              </View>
+            )}
 
             <View style={[styles.sheetRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
               <Typography variant="body" color="secondary">تاريخ الطلب</Typography>
@@ -345,6 +481,49 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: TOKENS.spacing.xs,
   },
+  courierBanner: {
+    marginTop: TOKENS.spacing.sm,
+    padding: TOKENS.spacing.sm,
+    borderRadius: TOKENS.radius.sm,
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  courierInfoLeft: {
+    alignItems: "center",
+    gap: TOKENS.spacing.sm,
+    flex: 1,
+  },
+  courierAvatarContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  courierAvatar: {
+    width: 32,
+    height: 32,
+  },
+  courierNameRow: {
+    alignItems: "center",
+    gap: TOKENS.spacing.xs,
+  },
+  favoriteBadge: {
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignItems: 'center',
+    gap: 2,
+  },
+  callButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   divider: {
     height: 1,
     marginVertical: TOKENS.spacing.sm,
@@ -361,6 +540,19 @@ const styles = StyleSheet.create({
     paddingVertical: TOKENS.spacing.md,
   },
   sheetRow: {
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  sheetCourierCard: {
+    padding: TOKENS.spacing.md,
+    borderRadius: TOKENS.radius.sm,
+    gap: TOKENS.spacing.sm,
+  },
+  sheetCourierHeader: {
+    alignItems: "center",
+    gap: TOKENS.spacing.xs,
+  },
+  sheetCourierDetails: {
     justifyContent: "space-between",
     alignItems: "center",
   },
