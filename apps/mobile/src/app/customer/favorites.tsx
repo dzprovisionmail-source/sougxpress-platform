@@ -29,12 +29,12 @@ export default function CustomerFavoritesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [favorites, setFavorites] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"products" | "stores">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "stores" | "couriers">("products");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFavorites();
-  }, []);
+  }, [activeTab]);
 
   const fetchFavorites = async () => {
     try {
@@ -49,28 +49,53 @@ export default function CustomerFavoritesScreen() {
         return;
       }
 
-      const { data, error: fetchError } = await supabase
-        .from("customer_favorites")
-        .select(`
-          id,
-          created_at,
-          products (
+      if (activeTab === "couriers") {
+        const { data, error: fetchError } = await supabase
+          .from("favorite_couriers")
+          .select(`
             id,
-            name,
-            price_minor,
-            image_url,
-            is_available,
-            stores ( name )
-          )
-        `)
-        .eq("customer_id", user.id);
+            created_at,
+            drivers:courier_id (
+              id,
+              full_name,
+              avatar_url,
+              rating,
+              delivery_count,
+              vehicle_type,
+              status,
+              availability,
+              is_available
+            )
+          `)
+          .eq("user_id", user.id);
 
-      if (fetchError) throw fetchError;
-      setFavorites(data || []);
+        if (fetchError) throw fetchError;
+        setFavorites(data || []);
+      } else {
+        const { data, error: fetchError } = await supabase
+          .from("customer_favorites")
+          .select(`
+            id,
+            created_at,
+            products (
+              id,
+              name,
+              price_minor,
+              image_url,
+              is_available,
+              stores ( name )
+            )
+          `)
+          .eq("customer_id", user.id);
+
+        if (fetchError) throw fetchError;
+        setFavorites(data || []);
+      }
     } catch (err: any) {
       console.error("Error fetching favorites:", err);
       setError("حدث خطأ أثناء تحميل المفضلة");
-    } finally {      setLoading(false);
+    } finally {
+      setLoading(false);
       setRefreshing(false);
     }
   };
@@ -82,8 +107,9 @@ export default function CustomerFavoritesScreen() {
 
   const handleRemoveFavorite = async (favoriteId: string) => {
     try {
+      const table = activeTab === "couriers" ? "favorite_couriers" : "customer_favorites";
       const { error: deleteError } = await supabase
-        .from("customer_favorites")
+        .from(table)
         .delete()
         .eq("id", favoriteId);
       if (deleteError) throw deleteError;
@@ -139,7 +165,25 @@ export default function CustomerFavoritesScreen() {
               fontWeight: activeTab === "stores" ? "700" : "500",
             }}
           >
-            المتاجر المحفوظة
+            المتاجر
+          </Typography>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setActiveTab("couriers")}
+          style={[
+            styles.tabItem,
+            activeTab === "couriers" && { borderBottomColor: colors.primary, borderBottomWidth: 2 },
+          ]}
+        >
+          <Typography
+            variant="button"
+            style={{
+              color: activeTab === "couriers" ? colors.primary : colors.textSecondary,
+              fontWeight: activeTab === "couriers" ? "700" : "500",
+            }}
+          >
+            الموصلون
           </Typography>
         </TouchableOpacity>
       </View>
@@ -158,6 +202,39 @@ export default function CustomerFavoritesScreen() {
         ) : (
           <View style={styles.grid}>
             {favorites.map((item) => {
+              if (activeTab === "couriers") {
+                const driver = item.drivers;
+                if (!driver) return null;
+                return (
+                  <View key={item.id} style={styles.cardWrapper}>
+                    <TouchableOpacity
+                      onPress={() => router.push({ pathname: "/courier/[id]", params: { id: driver.id } })}
+                      style={[styles.courierCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
+                    >
+                      <Avatar uri={driver.avatar_url} name={driver.full_name} size="lg" />
+                      <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
+                        {driver.full_name}
+                      </Typography>
+                      <Typography variant="caption" color="secondary" align="center">
+                        {driver.vehicle_type === 'motorcycle' ? 'دراجة نارية' : 
+                         driver.vehicle_type === 'car' ? 'سيارة' : 
+                         driver.vehicle_type === 'bicycle' ? 'دراجة' : 'موصل'}
+                      </Typography>
+                      <View style={styles.ratingRow}>
+                        <Star size={12} color="#FFD700" fill="#FFD700" />
+                        <Typography variant="caption" style={{ marginLeft: 4 }}>{driver.rating || '5.0'}</Typography>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleRemoveFavorite(item.id)}
+                        style={styles.removeBtn}
+                      >
+                        <Heart size={16} color={colors.error} fill={colors.error} />
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+                  </View>
+                );
+              }
+              
               const product = item.products;
               if (!product) return null;
               return (
@@ -207,5 +284,23 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     width: "48%",
+  },
+  courierCard: {
+    padding: TOKENS.spacing.md,
+    borderRadius: TOKENS.radius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  removeBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    padding: 4,
   },
 });

@@ -100,6 +100,8 @@ export default function CustomerOrdersScreen() {
 
       if (favs) {
         setFavoriteCourierIds(favs.map((f: any) => f.courier_id));
+      } else {
+        setFavoriteCourierIds([]);
       }
 
       // Fetch orders with store, address, and delivery assignments with driver info
