@@ -1,5 +1,6 @@
-import { Redirect } from "expo-router";
+import React from "react";
+import UnifiedMerchantStoreDashboard from "@/app/merchant/store";
 
-export default function MyStoreTabRedirect() {
-  return <Redirect href="/merchant/store" />;
+export default function MyStoreTabScreen() {
+  return <UnifiedMerchantStoreDashboard />;
 }

@@ -1,112 +1,141 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import { View, FlatList, TouchableOpacity } from "react-native";
+import { RefreshCcw, ClipboardList } from "lucide-react-native";
+
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import useMerchantOrders from "@/hooks/useMerchantOrders";
-import { TOKENS } from "@/constants/tokens";
-import { ClipboardList, Package } from "lucide-react-native";
+import { OrderStatus } from "@/types/schema-03-core";
+import MerchantOrderCard from "@/components/orders/MerchantOrderCard";
+import {
+  WorkspaceScreen,
+  WorkspaceText,
+  LoadingState,
+  EmptyState,
+} from "@/features/workspace/ui";
 
-export default function MerchantOrdersScreen() {
-  const router = useRouter();
+type TabKey = "new" | "preparing" | "ready" | "completed" | "cancelled";
+
+const TAB_STATUSES: Record<TabKey, OrderStatus[]> = {
+  new: ["pending"],
+  preparing: ["accepted", "preparing"],
+  ready: ["ready_for_pickup"],
+  completed: ["picked_up", "delivered"],
+  cancelled: ["cancelled", "disputed"],
+};
+
+export default function MerchantOrdersTabScreen() {
   const { colors, tokens } = useAppTheme();
   const { userId } = useCurrentUserId();
-  const { orders, loading } = useMerchantOrders(userId || "");
+  const [activeTab, setActiveTab] = useState<TabKey>("new");
+  const { orders, loading, updateStatus, refreshOrders } = useMerchantOrders(
+    userId ?? ""
+  );
 
-  const statusLabel = (status: string) => {
-    switch (status) {
-      case "pending": return "قيد الانتظار";
-      case "confirmed": return "مؤكد";
-      case "preparing": return "جاري التحضير";
-      case "ready_for_pickup": return "جاهز للاستلام";
-      case "out_for_delivery": return "في الطريق";
-      case "delivered": return "تم التوصيل";
-      case "cancelled": return "ملغى";
-      default: return status;
-    }
+  const filteredOrders = orders.filter((order) =>
+    TAB_STATUSES[activeTab].includes(order.status)
+  );
+
+  const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
+    await updateStatus(orderId, newStatus);
   };
 
-  if (loading) {
+  const tabs: { key: TabKey; label: string }[] = [
+    {
+      key: "new",
+      label: `الجديدة${orders.filter((o) => o.status === "pending").length > 0 ? ` (${orders.filter((o) => o.status === "pending").length})` : ""}`,
+    },
+    { key: "preparing", label: "التحضير" },
+    { key: "ready", label: "الجاهزة" },
+    { key: "completed", label: "المكتملة" },
+    { key: "cancelled", label: "الملغية" },
+  ];
+
+  if (loading && orders.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <WorkspaceScreen>
+        <LoadingState message="جاري تحميل الطلبات..." />
+      </WorkspaceScreen>
     );
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <Text style={[styles.title, { color: colors.textPrimary }]}>الطلبات</Text>
+    <WorkspaceScreen>
+      {/* Tab bar */}
+      <View
+        style={{
+          backgroundColor: colors.bgElevated,
+          borderBottomColor: colors.borderSubtle,
+          borderBottomWidth: 1,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row-reverse",
+            padding: tokens.spacing.xs,
+          }}
+        >
+          {tabs.map((tab) => {
+            const active = tab.key === activeTab;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                onPress={() => setActiveTab(tab.key)}
+                style={{
+                  flex: 1,
+                  paddingVertical: tokens.spacing.sm,
+                  alignItems: "center",
+                  borderBottomWidth: 2,
+                  borderBottomColor: active
+                    ? colors.primary
+                    : "transparent",
+                }}
+              >
+                <WorkspaceText
+                  variant="caption"
+                  color={active ? "brand" : "secondary"}
+                  style={{
+                    fontWeight: active ? "700" : "400",
+                    fontSize: 12,
+                  }}
+                >
+                  {tab.label}
+                </WorkspaceText>
+              </TouchableOpacity>
+            );
+          })}
 
-      {orders.length === 0 ? (
-        <View style={styles.center}>
-          <ClipboardList size={48} color={colors.textSecondary} />
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>لا توجد طلبات حتى الآن</Text>
-        </View>
-      ) : (
-        orders.map((order: any) => (
-          <View
-            key={order.id}
-            style={[styles.orderCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
+          {/* Refresh button */}
+          <TouchableOpacity
+            onPress={refreshOrders}
+            style={{
+              padding: tokens.spacing.sm,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
           >
-            <View style={styles.orderHeader}>
-              <Text style={[styles.orderId, { color: colors.textPrimary }]}>
-                طلب #{order.id.slice(0, 8)}
-              </Text>
-              <Text style={[styles.orderStatus, { color: colors.primary }]}>
-                {statusLabel(order.status)}
-              </Text>
-            </View>
-            <Text style={[styles.orderTotal, { color: colors.textSecondary }]}>
-              المجموع: {order.order_total_minor ? `${order.order_total_minor / 100} د.ج` : "غير محدد"}
-            </Text>
-          </View>
-        ))
+            <RefreshCcw size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {filteredOrders.length === 0 ? (
+        <EmptyState message="لا توجد طلبات في هذا القسم." />
+      ) : (
+        <FlatList
+          data={filteredOrders}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <MerchantOrderCard
+              order={item}
+              onUpdateStatus={handleStatusUpdate}
+            />
+          )}
+          contentContainerStyle={{ paddingVertical: tokens.spacing.md }}
+          refreshing={loading}
+          onRefresh={refreshOrders}
+        />
       )}
-    </ScrollView>
+    </WorkspaceScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: TOKENS.spacing.lg,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: TOKENS.spacing.lg,
-    textAlign: "right",
-  },
-  center: {
-    alignItems: "center",
-    marginTop: TOKENS.spacing.xl,
-  },
-  emptyText: {
-    marginTop: TOKENS.spacing.md,
-    fontSize: 16,
-  },
-  orderCard: {
-    padding: TOKENS.spacing.md,
-    borderRadius: TOKENS.radius.md,
-    borderWidth: 1,
-    marginBottom: TOKENS.spacing.sm,
-  },
-  orderHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: TOKENS.spacing.xs,
-  },
-  orderId: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  orderStatus: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  orderTotal: {
-    fontSize: 14,
-  },
-});

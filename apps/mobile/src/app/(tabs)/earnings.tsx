@@ -18,28 +18,23 @@ export default function CourierEarningsScreen() {
   const { userId } = useCurrentUserId();
   const { driver } = useDriver(userId || "");
   const { orders, loading } = useDriverOrders(userId || "", driver?.zone_id);
-  const [platformRip, setPlatformRip] = useState<string | null>(null);
+  const [platformRip, setPlatformRip] = useState<string>("00799999000524201107");
 
   useEffect(() => {
     const fetchPlatformRip = async () => {
-      if (!driver || driver.delivery_count < 30) {
-        setPlatformRip(null);
-        return;
-      }
-      
       const { data, error } = await supabase
         .from("platform_financial_settings")
         .select("value")
         .eq("key", "platform_baridimob_rip")
         .maybeSingle();
       
-      if (!error && data) {
+      if (!error && data?.value) {
         setPlatformRip(data.value);
       }
     };
     
     fetchPlatformRip();
-  }, [driver?.delivery_count]);
+  }, []);
 
   const deliveredOrders = useMemo(
     () =>
@@ -49,8 +44,6 @@ export default function CourierEarningsScreen() {
     [orders]
   );
 
-  // Commission is earned from the first completed delivery; 30 deliveries is
-  // only an approaching-payment notice, never a visibility threshold.
   const completedDeliveryCount = Math.max(driver?.delivery_count ?? 0, deliveredOrders.length);
   const totals = computeEarningsSplit(completedDeliveryCount);
   const availableBalance = totals.driverShareMinor;
@@ -88,7 +81,7 @@ export default function CourierEarningsScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.bgBase }]} contentContainerStyle={styles.content}>
       <Text style={[styles.title, { color: colors.textPrimary }]}>الأرباح وعمولة المنصة</Text>
-      <Text style={[styles.description, { color: colors.textSecondary }]}>تُحتسب حصة المنصة من أول توصيلة مكتملة، ولا تنتظر بلوغ 30 توصيلة.</Text>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>تُحتسب حصة المنصة من أول توصيلة مكتملة.</Text>
 
       <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Text style={[styles.label, { color: colors.textSecondary }]}>الرصيد المتاح</Text>
@@ -107,7 +100,7 @@ export default function CourierEarningsScreen() {
 
       <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.primary }]}>
         <Text style={[styles.sectionTitle, { color: colors.primary }]}>عمولة المنصة — 20% من كل توصيل</Text>
-        <Text style={[styles.description, { color: colors.textSecondary }]}>هذه العمولة تُحسب تلقائياً من أجرة التوصيل الثابتة، ولا يمكن تعديلها من تطبيق الموصل.</Text>
+        <Text style={[styles.description, { color: colors.textSecondary }]}>هذه العمولة تُحسب تلقائياً من أجرة التوصيل الثابتة.</Text>
         <View style={styles.row}>
           <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>أجرة التوصيل</Text>
           <Text style={[styles.rowValue, { color: colors.textPrimary }]}>{formatCurrency(FIXED_DELIVERY_FEE_MINOR)}</Text>
@@ -143,32 +136,19 @@ export default function CourierEarningsScreen() {
         </View>
       )}
 
-      {platformRip ? (
-        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>تفاصيل الدفع عبر بريدي موب</Text>
-          <Text style={[styles.description, { color: colors.textSecondary }]}>حوّل المبلغ المستحق إلى حساب المنصة عبر بريدي موب، ثم أرسل إثبات الدفع إلى الإدارة للمراجعة.</Text>
-          <Text style={[styles.ripLabel, { color: colors.textSecondary }]}>RIP المنصة عبر بريدي موب</Text>
-          <View style={[styles.ripBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
-            <Text selectable style={[styles.ripText, { color: colors.textPrimary }]}>{platformRip}</Text>
-            <TouchableOpacity onPress={copyRip} style={[styles.copyButton, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.copyText, { color: colors.textOnBrand }]}>نسخ الرقم</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.footnote, { color: colors.textDisabled }]}>بعد تأكيد الإدارة للدفع، تُحدّث التوصيلات المسددة ويُرفع الحظر تلقائياً.</Text>
+      {/* Platform RIP is always visible */}
+      <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>تفاصيل الدفع عبر بريدي موب</Text>
+        <Text style={[styles.description, { color: colors.textSecondary }]}>حوّل المبلغ المستحق إلى حساب المنصة عبر بريدي موب، ثم أرسل إثبات الدفع إلى الإدارة للمراجعة.</Text>
+        <Text style={[styles.ripLabel, { color: colors.textSecondary }]}>RIP المنصة عبر بريدي موب</Text>
+        <View style={[styles.ripBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
+          <Text selectable style={[styles.ripText, { color: colors.textPrimary }]}>{platformRip}</Text>
+          <TouchableOpacity onPress={copyRip} style={[styles.copyButton, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.copyText, { color: colors.textOnBrand }]}>نسخ الرقم</Text>
+          </TouchableOpacity>
         </View>
-      ) : (
-        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle, opacity: 0.8 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>تفاصيل الدفع</Text>
-          <Text style={[styles.description, { color: colors.textSecondary }]}>
-            سيظهر رقم حساب المنصة (RIP) هنا بمجرد وصولك إلى 30 توصيلة مكتملة.
-          </Text>
-          <View style={[styles.totalBox, { backgroundColor: colors.bgBase }]}>
-            <Text style={[styles.rowLabel, { color: colors.textSecondary, textAlign: 'center', width: '100%' }]}>
-              أكمل {Math.max(30 - deliveryCount, 0)} توصيلة إضافية لتفعيل خيارات الدفع.
-            </Text>
-          </View>
-        </View>
-      )}
+        <Text style={[styles.footnote, { color: colors.textDisabled }]}>بعد تأكيد الإدارة للدفع، تُحدّث التوصيلات المسددة ويُرفع الحظر تلقائياً.</Text>
+      </View>
 
       <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>ملخص الأرباح</Text>
