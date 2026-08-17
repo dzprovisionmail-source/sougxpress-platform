@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Star, Heart, ChevronRight, ChevronLeft } from "lucide-react-native";
+import { Star, Heart, ChevronRight, ChevronLeft, Users } from "lucide-react-native";
 import {
   Typography,
   ProductCard,
@@ -27,34 +27,91 @@ import { getArabicCategoryName } from "@/config/storeCategories";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-export default function CustomerFavoritesScreen() {
+export default function FavoritesGatewayScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [role, setRole] = useState<"customer" | "merchant">("customer");
+  
+  // Customer state
   const [favorites, setFavorites] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"products" | "stores" | "couriers">("products");
-  const [error, setError] = useState<string | null>(null);
+
+  // Merchant state
+  const [merchantFavorites, setMerchantFavorites] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchFavorites();
+    checkRoleAndFetch();
   }, [activeTab]);
 
-  const fetchFavorites = async () => {
+  const checkRoleAndFetch = async () => {
     try {
       setLoading(true);
-      setError(null);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setLoading(false);
         setRefreshing(false);
         return;
       }
 
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const userRole = profile?.role === "merchant" ? "merchant" : "customer";
+      setRole(userRole);
+
+      if (userRole === "merchant") {
+        await fetchMerchantFavorites(user.id);
+      } else {
+        await fetchCustomerFavorites(user.id);
+      }
+    } catch (err) {
+      console.error("Error in favorites gateway:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const fetchMerchantFavorites = async (userId: string) => {
+    try {
+      const { data: favs, error: fetchError } = await supabase
+        .from("merchant_favorites")
+        .select("id, target_id")
+        .eq("merchant_id", userId)
+        .eq("target_type", "customer");
+
+      if (fetchError) throw fetchError;
+
+      if (favs && favs.length > 0) {
+        const customerIds = favs.map(f => f.target_id);
+        const { data: customerData, error: customerError } = await supabase
+          .from("customers")
+          .select("id, full_name, avatar_url, phone, neighborhood")
+          .in("id", customerIds);
+        
+        if (customerError) throw customerError;
+        
+        setMerchantFavorites(favs.map(f => ({
+          ...f,
+          customer: customerData.find(c => c.id === f.target_id)
+        })).filter(f => !!f.customer));
+      } else {
+        setMerchantFavorites([]);
+      }
+    } catch (err) {
+      console.error("Error fetching merchant favorites:", err);
+    }
+  };
+
+  const fetchCustomerFavorites = async (userId: string) => {
+    try {
       if (activeTab === "couriers") {
         const { data, error: fetchError } = await supabase
           .from("favorite_couriers")
@@ -72,12 +129,11 @@ export default function CustomerFavoritesScreen() {
               availability
             )
           `)
-          .eq("user_id", user.id);
+          .eq("user_id", userId);
 
         if (fetchError) throw fetchError;
         setFavorites(data || []);
       } else if (activeTab === "products") {
-        // Fetch products using the product_id column which has a FK
         const { data, error: fetchError } = await supabase
           .from("customer_favorites")
           .select(`
@@ -93,17 +149,16 @@ export default function CustomerFavoritesScreen() {
               stores:store_id ( name )
             )
           `)
-          .eq("customer_id", user.id)
+          .eq("customer_id", userId)
           .not("product_id", "is", null);
 
         if (fetchError) throw fetchError;
         setFavorites(data || []);
       } else if (activeTab === "stores") {
-        // Since there's no FK for target_id to stores, we fetch IDs then details
         const { data: favs, error: fetchError } = await supabase
           .from("customer_favorites")
           .select("id, target_id")
-          .eq("customer_id", user.id)
+          .eq("customer_id", userId)
           .eq("target_type", "store");
 
         if (fetchError) throw fetchError;
@@ -125,21 +180,17 @@ export default function CustomerFavoritesScreen() {
           setFavorites([]);
         }
       }
-    } catch (err: any) {
-      console.error("Error fetching favorites:", err);
-      setError("حدث خطأ أثناء تحميل المفضلة");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+    } catch (err) {
+      console.error("Error fetching customer favorites:", err);
     }
   };
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchFavorites();
+    checkRoleAndFetch();
   };
 
-  const handleRemoveFavorite = async (favoriteId: string) => {
+  const handleRemoveCustomerFavorite = async (favoriteId: string) => {
     try {
       const table = activeTab === "couriers" ? "favorite_couriers" : "customer_favorites";
       const { error: deleteError } = await supabase
@@ -153,6 +204,19 @@ export default function CustomerFavoritesScreen() {
     }
   };
 
+  const handleRemoveMerchantFavorite = async (favoriteId: string) => {
+    try {
+      const { error: deleteError } = await supabase
+        .from("merchant_favorites")
+        .delete()
+        .eq("id", favoriteId);
+      if (deleteError) throw deleteError;
+      setMerchantFavorites((prev) => prev.filter((f) => f.id !== favoriteId));
+    } catch (err) {
+      console.error("Error removing merchant favorite:", err);
+    }
+  };
+
   if (loading && !refreshing) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
@@ -161,16 +225,68 @@ export default function CustomerFavoritesScreen() {
     );
   }
 
+  // RENDER MERCHANT FAVORITES (Customers)
+  if (role === "merchant") {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
+        <Header title="الزبائن المفضلون" />
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+          }
+        >
+          {merchantFavorites.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
+              <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }}>
+                لا يوجد زبائن مفضلون بعد
+              </Typography>
+            </View>
+          ) : (
+            <View style={styles.list}>
+              {merchantFavorites.map((item) => {
+                const customer = item.customer;
+                if (!customer) return null;
+                return (
+                  <View 
+                    key={item.id} 
+                    style={[styles.customerCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
+                  >
+                    <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                      <Avatar uri={customer.avatar_url} name={customer.full_name} size="lg" />
+                      <View style={[styles.infoContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                        <Typography variant="subtitle" style={{ fontWeight: '700' }}>
+                          {customer.full_name}
+                        </Typography>
+                        <Typography variant="caption" color="secondary">
+                          {customer.neighborhood || "بدون عنوان"}
+                        </Typography>
+                        <Typography variant="caption" color="secondary">
+                          {customer.phone || "بدون هاتف"}
+                        </Typography>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleRemoveMerchantFavorite(item.id)}
+                        style={styles.removeBtn}
+                      >
+                        <Heart size={20} color={colors.error} fill={colors.error} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // RENDER CUSTOMER FAVORITES (Products, Stores, Couriers)
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
-      <Header 
-        title="المفضلة" 
-        leftContent={
-          <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
-            {isRTL ? <ChevronRight size={24} color={colors.textPrimary} /> : <ChevronLeft size={24} color={colors.textPrimary} />}
-          </TouchableOpacity>
-        } 
-      />
+      <Header title="المفضلة" />
 
       {/* Tabs Switcher */}
       <View style={[styles.tabBar, { borderBottomColor: colors.borderSubtle, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
@@ -266,7 +382,7 @@ export default function CustomerFavoritesScreen() {
                         <Typography variant="caption" style={{ marginLeft: 4 }}>{driver.rating || '5.0'}</Typography>
                       </View>
                       <TouchableOpacity
-                        onPress={() => handleRemoveFavorite(item.id)}
+                        onPress={() => handleRemoveCustomerFavorite(item.id)}
                         style={styles.removeBtn}
                       >
                         <Heart size={16} color={colors.error} fill={colors.error} />
@@ -281,21 +397,21 @@ export default function CustomerFavoritesScreen() {
                 if (!store) return null;
                 return (
                   <View key={item.id} style={{ width: '100%', marginBottom: TOKENS.spacing.md }}>
-	                    <StoreCard
-	                      id={store.id}
-	                      name={store.name}
-	                      category={getArabicCategoryName(store.main_category || store.category)}
-	                      subcategory={store.sub_category}
-	                      rating={store.rating?.toString() || "0.0"}
-	                      coverImage={store.cover_url}
-	                      logoImage={store.logo_url}
-	                      isOpen={store.status === "active"}
-	                      isFeatured={store.is_featured}
-	                      isFavorite={true}
-	                      onToggleFavorite={() => handleRemoveFavorite(item.id)}
-	                      address={store.address_line1 ?? store.city ?? ""}
-	                      onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
-	                    />
+                    <StoreCard
+                      id={store.id}
+                      name={store.name}
+                      category={getArabicCategoryName(store.main_category || store.category)}
+                      subcategory={store.sub_category}
+                      rating={store.rating?.toString() || "0.0"}
+                      coverImage={store.cover_url}
+                      logoImage={store.logo_url}
+                      isOpen={store.status === "active"}
+                      isFeatured={store.is_featured}
+                      isFavorite={true}
+                      onToggleFavorite={() => handleRemoveCustomerFavorite(item.id)}
+                      address={store.address_line1 ?? store.city ?? ""}
+                      onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
+                    />
                   </View>
                 );
               }
@@ -311,7 +427,7 @@ export default function CustomerFavoritesScreen() {
                     image={product.image_url}
                     storeName={product.stores?.name || "متجر"}
                     isFavorite={true}
-                    onToggleFavorite={() => handleRemoveFavorite(item.id)}
+                    onToggleFavorite={() => handleRemoveCustomerFavorite(item.id)}
                     onPress={() =>
                       router.push({ pathname: "/product-details", params: { id: product.id } })
                     }
@@ -371,4 +487,26 @@ const styles = StyleSheet.create({
     padding: 4,
     zIndex: 10,
   },
+  list: {
+    gap: TOKENS.spacing.md,
+  },
+  customerCard: {
+    padding: TOKENS.spacing.md,
+    borderRadius: TOKENS.radius.md,
+    borderWidth: 1,
+  },
+  cardHeader: {
+    alignItems: 'center',
+    gap: TOKENS.spacing.md,
+  },
+  infoContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 100,
+  }
 });

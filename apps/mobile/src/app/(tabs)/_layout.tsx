@@ -87,7 +87,7 @@ export default function TabLayout() {
     merchant: [
       { name: 'home', title: 'الرئيسية', Icon: Home },
       { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
-      { name: 'products', title: 'المنتجات', Icon: Package },
+      { name: 'favorites', title: 'المفضلة', Icon: Heart },
       { name: 'my-store', title: 'المتجر', Icon: Store },
       { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
     ],
