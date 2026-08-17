@@ -10,12 +10,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Star, Heart } from "lucide-react-native";
 import {
   Typography,
   ProductCard,
   StoreCard,
   EmptyState,
   Header,
+  Avatar,
 } from "@/components/ui";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
