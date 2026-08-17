@@ -21,6 +21,17 @@ export const toggleFavorite = async (
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { isFavorite: false, error: 'Login required' };
 
+    // Check user role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile?.role === 'driver') {
+      return toggleCourierFavorite(targetType as CourierFavoriteTargetType, targetId);
+    }
+
     // Check if exists
     const { data: existing, error: fetchError } = await supabase
       .from('customer_favorites')
@@ -304,6 +315,14 @@ export interface CourierFavoritesHubData {
     stores: CourierFavoriteCard[];
     customers: CourierFavoriteCard[];
   };
+  interestedCustomers: {
+    id: string;
+    customer_id: string;
+    created_at: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    neighborhood: string | null;
+  }[];
   candidates: {
     stores: CourierFavoriteCard[];
     customers: CourierFavoriteCard[];
@@ -419,7 +438,7 @@ export const getCourierFavoritesHub = async (
       if (favorite.target_type === 'customer') customerIds.add(favorite.target_id);
     });
 
-    const [storesResult, customersResult] = await Promise.all([
+    const [storesResult, customersResult, interestedResult] = await Promise.all([
       storeIds.size === 0
         ? Promise.resolve({ data: [], error: null })
         : supabase
@@ -427,10 +446,14 @@ export const getCourierFavoritesHub = async (
             .select('id, name, logo_url, cover_url, address_line1, city, category, main_category, rating, is_open, status')
             .in('id', Array.from(storeIds)),
       supabase.rpc('get_courier_relationship_customers', { p_courier_id: courierId }),
+      supabase.rpc('get_courier_interested_customers', { p_courier_id: courierId }),
     ]);
 
     if (storesResult.error) throw storesResult.error;
     if (customersResult.error) throw customersResult.error;
+    if (interestedResult.error) {
+      console.error('Error fetching interested customers for courier:', interestedResult.error);
+    }
 
     const favoriteByKey = new Map(
       (favoriteRows || []).map((favorite: any) => [
@@ -469,6 +492,7 @@ export const getCourierFavoritesHub = async (
           stores: storeCards.filter(card => card.isFavorite),
           customers: customerCards.filter(card => card.isFavorite),
         },
+        interestedCustomers: interestedResult.data || [],
         candidates: {
           stores: storeCards,
           customers: customerCards,
