@@ -28,6 +28,7 @@ import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import { addToCart } from "@/services/cart.service";
+import { toggleFavorite, checkIfFavorite } from "@/services/favorite.service";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -50,8 +51,31 @@ export default function ProductDetailsScreen() {
   useEffect(() => {
     if (id) {
       fetchProductDetails();
+      checkIfProductFavorite();
     }
   }, [id]);
+
+  const checkIfProductFavorite = async () => {
+    if (id) {
+      const fav = await checkIfFavorite('product', id);
+      setIsFavorite(fav);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (id) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert("مطلوب تسجيل الدخول", "يرجى تسجيل الدخول لإضافة المنتج للمفضلة", [
+          { text: "إلغاء", style: "cancel" },
+          { text: "تسجيل الدخول", onPress: () => router.push("/login") },
+        ]);
+        return;
+      }
+      const { isFavorite: nextFav, error } = await toggleFavorite('product', id);
+      if (!error) setIsFavorite(nextFav);
+    }
+  };
 
   const fetchProductDetails = async () => {
     try {
@@ -158,9 +182,18 @@ export default function ProductDetailsScreen() {
         {/* Product Header & Title */}
         <View style={styles.sectionCard}>
           <View style={[styles.rowBetween, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Typography variant="h1" align="right" style={{ flex: 1 }}>
-              {product.name}
-            </Typography>
+            <View style={{ flex: 1, flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
+              <Typography variant="h1" align="right" style={{ flex: 1 }}>
+                {product.name}
+              </Typography>
+              <TouchableOpacity onPress={handleToggleFavorite} style={{ padding: 4 }}>
+                <Heart 
+                  size={24} 
+                  color={isFavorite ? colors.error : colors.textPrimary} 
+                  fill={isFavorite ? colors.error : "transparent"} 
+                />
+              </TouchableOpacity>
+            </View>
             <Badge
               label={product.is_available !== false ? "متوفر" : "غير متوفر"}
               variant={product.is_available !== false ? "success" : "error"}

@@ -8,7 +8,7 @@ import {
   ViewStyle,
   I18nManager,
 } from 'react-native';
-import { Clock, MapPin, Tag } from 'lucide-react-native';
+import { Clock, MapPin, Tag, Heart } from 'lucide-react-native';
 import { Card } from './Card';
 import { Rating } from './Rating';
 import { ImageFallback } from './ImageFallback';
@@ -31,6 +31,8 @@ export interface StoreCardProps {
   deliveryFee?: number | string;
   isOpen?: boolean;
   isFeatured?: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
   address?: string;
   onPress?: (id?: string) => void;
   style?: StyleProp<ViewStyle>;
@@ -50,6 +52,8 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   deliveryFee = '200 د.ج',
   isOpen,
   isFeatured = false,
+  isFavorite = false,
+  onToggleFavorite,
   address,
   onPress,
   style,
@@ -108,6 +112,31 @@ export const StoreCard: React.FC<StoreCardProps> = ({
             </View>
           )}
         </View>
+
+        {/* Favorite Button */}
+        {onToggleFavorite && (
+          <TouchableOpacity
+            style={[
+              styles.favoriteButton,
+              { 
+                backgroundColor: colors.bgSurface,
+                left: isRTL ? TOKENS.spacing.sm : undefined,
+                right: isRTL ? undefined : TOKENS.spacing.sm,
+              }
+            ]}
+            onPress={(e) => {
+              e.stopPropagation();
+              onToggleFavorite();
+            }}
+            activeOpacity={0.7}
+          >
+            <Heart
+              size={18}
+              color={isFavorite ? colors.error : colors.textSecondary}
+              fill={isFavorite ? colors.error : "transparent"}
+            />
+          </TouchableOpacity>
+        )}
 
         {/* Floating Store Logo */}
         <View
@@ -306,6 +335,17 @@ const styles = StyleSheet.create({
     fontFamily: TOKENS.typography.families.arabic,
     textAlign: 'right',
     writingDirection: 'rtl',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: TOKENS.spacing.sm,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...TOKENS.shadows.small,
+    zIndex: 10,
   },
 });
 

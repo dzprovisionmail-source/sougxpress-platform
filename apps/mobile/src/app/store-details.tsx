@@ -24,7 +24,8 @@ import {
   Rating,
   Badge,
 } from "@/components/ui";
-import { Clock, MapPin, Tag, ShoppingBag, Store as StoreIcon } from "lucide-react-native";
+import { Clock, MapPin, Tag, ShoppingBag, Store as StoreIcon, Heart } from "lucide-react-native";
+import { toggleFavorite, checkIfFavorite, getFavoriteIds } from "@/services/favorite.service";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -51,6 +52,8 @@ export default function StoreDetailsScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const [currentUserRole, setCurrentUserRole] = useState<string | undefined>(undefined);
   const [viewingMediaItem, setViewingMediaItem] = useState<any>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -63,10 +66,14 @@ export default function StoreDetailsScreen() {
           .eq("id", user.id)
           .maybeSingle();
         setCurrentUserRole(profileData?.role ?? undefined);
+        
+        // Fetch favorites
+        checkIfStoreFavorite();
+        fetchFavoriteProducts();
       }
     };
     checkAuth();
-  }, []);
+  }, [id]);
 
   useEffect(() => {
     if (!id) {
@@ -75,6 +82,34 @@ export default function StoreDetailsScreen() {
     }
     fetchStoreData();
   }, [id]);
+
+  const checkIfStoreFavorite = async () => {
+    if (id) {
+      const fav = await checkIfFavorite('store', id);
+      setIsFavorite(fav);
+    }
+  };
+
+  const fetchFavoriteProducts = async () => {
+    const ids = await getFavoriteIds('product');
+    setFavoriteProductIds(ids);
+  };
+
+  const handleToggleStoreFavorite = async () => {
+    if (id) {
+      const { isFavorite: nextFav, error } = await toggleFavorite('store', id);
+      if (!error) setIsFavorite(nextFav);
+    }
+  };
+
+  const handleToggleProductFavorite = async (productId: string) => {
+    const { isFavorite: nextFav, error } = await toggleFavorite('product', productId);
+    if (!error) {
+      setFavoriteProductIds(prev => 
+        nextFav ? [...prev, productId] : prev.filter(pid => pid !== productId)
+      );
+    }
+  };
 
   const fetchStoreData = async () => {
     try {
@@ -219,9 +254,20 @@ export default function StoreDetailsScreen() {
             <Avatar uri={store.logo_url} name={store.name} type="store" size="lg" />
           </View>
 
-          <Typography variant="h1" align="center" style={{ marginTop: TOKENS.spacing.xs }}>
-            {store.name}
-          </Typography>
+          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', marginTop: TOKENS.spacing.xs, gap: 8 }}>
+            <Typography variant="h1" align="center">
+              {store.name}
+            </Typography>
+            {currentUserId && (
+              <TouchableOpacity onPress={handleToggleStoreFavorite} style={{ padding: 4 }}>
+                <Heart 
+                  size={24} 
+                  color={isFavorite ? colors.error : colors.textPrimary} 
+                  fill={isFavorite ? colors.error : "transparent"} 
+                />
+              </TouchableOpacity>
+            )}
+          </View>
 
           <Typography variant="caption" color="secondary" align="center" style={{ marginTop: 2 }}>
             {store.category || "متجر في عين صفراء"}
@@ -400,6 +446,8 @@ export default function StoreDetailsScreen() {
                   image={p.image_url}
                   storeName={store.name}
                   inStock={p.is_available !== false}
+                  isFavorite={favoriteProductIds.includes(p.id)}
+                  onToggleFavorite={currentUserId ? () => handleToggleProductFavorite(p.id) : undefined}
                   onPress={() =>
                     router.push({ pathname: "/product-details", params: { id: p.id } })
                   }

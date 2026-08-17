@@ -281,25 +281,21 @@ export default function CustomerFavoritesScreen() {
                 if (!store) return null;
                 return (
                   <View key={item.id} style={{ width: '100%', marginBottom: TOKENS.spacing.md }}>
-                    <StoreCard
-                      id={store.id}
-                      name={store.name}
-                      category={getArabicCategoryName(store.main_category || store.category)}
-                      subcategory={store.sub_category}
-                      rating={store.rating?.toString() || "0.0"}
-                      coverImage={store.cover_url}
-                      logoImage={store.logo_url}
-                      isOpen={store.status === "active"}
-                      isFeatured={store.is_featured}
-                      address={store.address_line1 ?? store.city ?? ""}
-                      onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
-                    />
-                    <TouchableOpacity
-                      onPress={() => handleRemoveFavorite(item.id)}
-                      style={[styles.removeBtn, { top: 12, right: 12, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 12 }]}
-                    >
-                      <Heart size={18} color={colors.error} fill={colors.error} />
-                    </TouchableOpacity>
+	                    <StoreCard
+	                      id={store.id}
+	                      name={store.name}
+	                      category={getArabicCategoryName(store.main_category || store.category)}
+	                      subcategory={store.sub_category}
+	                      rating={store.rating?.toString() || "0.0"}
+	                      coverImage={store.cover_url}
+	                      logoImage={store.logo_url}
+	                      isOpen={store.status === "active"}
+	                      isFeatured={store.is_featured}
+	                      isFavorite={true}
+	                      onToggleFavorite={() => handleRemoveFavorite(item.id)}
+	                      address={store.address_line1 ?? store.city ?? ""}
+	                      onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
+	                    />
                   </View>
                 );
               }

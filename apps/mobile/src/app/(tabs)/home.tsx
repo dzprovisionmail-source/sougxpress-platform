@@ -14,6 +14,7 @@ import { shadows } from '@/design/shadows';
 
 import { useStores, useSearch, useNewStores } from '@/hooks/useStores';
 import useCart from '@/hooks/useCart';
+import { toggleFavorite, getFavoriteIds } from '@/services/favorite.service';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
 import { getArabicCategoryName } from '@/config/storeCategories';
 import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
@@ -76,6 +77,8 @@ const HomeScreen = () => {
   const [isGuest, setIsGuest] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
+  const [favoriteStoreIds, setFavoriteStoreIds] = useState<string[]>([]);
+  const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
@@ -95,10 +98,41 @@ const HomeScreen = () => {
       setCategories(cats);
     });
     fetchProducts();
+    fetchFavorites();
     getMarketSectionSettings().then((res) => {
       setMarketSections(res);
     });
   }, []);
+
+  const fetchFavorites = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const [storeIds, productIds] = await Promise.all([
+        getFavoriteIds('store'),
+        getFavoriteIds('product')
+      ]);
+      setFavoriteStoreIds(storeIds);
+      setFavoriteProductIds(productIds);
+    }
+  };
+
+  const handleToggleStoreFavorite = async (storeId: string) => {
+    const { isFavorite, error } = await toggleFavorite('store', storeId);
+    if (!error) {
+      setFavoriteStoreIds(prev => 
+        isFavorite ? [...prev, storeId] : prev.filter(id => id !== storeId)
+      );
+    }
+  };
+
+  const handleToggleProductFavorite = async (productId: string) => {
+    const { isFavorite, error } = await toggleFavorite('product', productId);
+    if (!error) {
+      setFavoriteProductIds(prev => 
+        isFavorite ? [...prev, productId] : prev.filter(id => id !== productId)
+      );
+    }
+  };
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -594,6 +628,8 @@ const HomeScreen = () => {
                     logoImage={store.logo_url}
                     isOpen={store.is_open ?? store.status === "active"}
                     isFeatured={store.is_featured}
+	                    isFavorite={favoriteStoreIds.includes(store.id)}
+	                    onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
                     address={store.address_line1 ?? store.city ?? ""}
                     onPress={() => handleStorePress(store.id)}
                   />
@@ -619,6 +655,8 @@ const HomeScreen = () => {
                       logoImage={store.logo_url}
                       isOpen={store.is_open ?? store.status === "active"}
                       isFeatured={store.is_featured}
+	                    isFavorite={favoriteStoreIds.includes(store.id)}
+	                    onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
                       address={store.address_line1 ?? store.city ?? ""}
                       onPress={() => handleStorePress(store.id)}
                     />
@@ -645,6 +683,8 @@ const HomeScreen = () => {
                       logoImage={store.logo_url}
                       isOpen={store.is_open ?? store.status === "active"}
                       isFeatured={store.is_featured}
+	                    isFavorite={favoriteStoreIds.includes(store.id)}
+	                    onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
                       address={store.address_line1 ?? store.city ?? ""}
                       onPress={() => handleStorePress(store.id)}
                     />
@@ -671,6 +711,8 @@ const HomeScreen = () => {
                       logoImage={store.logo_url}
                       isOpen={store.is_open ?? store.status === "active"}
                       isFeatured={store.is_featured}
+	                    isFavorite={favoriteStoreIds.includes(store.id)}
+	                    onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
                       address={store.address_line1 ?? store.city ?? ""}
                       onPress={() => handleStorePress(store.id)}
                     />
@@ -691,11 +733,13 @@ const HomeScreen = () => {
                         id={product.id}
                         name={product.name}
                         price={product.price_minor ? product.price_minor / 100 : 0}
-                        image={product.image_url}
-                        storeName={product.stores?.name}
-                        onPress={() =>
-                          router.push({ pathname: "/product-details", params: { id: product.id } })
-                        }
+	                        image={product.image_url}
+	                        storeName={product.stores?.name}
+	                        isFavorite={favoriteProductIds.includes(product.id)}
+	                        onToggleFavorite={isGuest ? undefined : () => handleToggleProductFavorite(product.id)}
+	                        onPress={() =>
+	                          router.push({ pathname: "/product-details", params: { id: product.id } })
+	                        }
                       />
                     </View>
                   ))}
