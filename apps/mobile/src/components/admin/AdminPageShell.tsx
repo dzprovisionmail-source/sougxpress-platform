@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   ViewStyle,
@@ -14,7 +13,7 @@ import {
   Image,
   Alert,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ArrowRight, Bell, CircleUserRound, LogOut } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
