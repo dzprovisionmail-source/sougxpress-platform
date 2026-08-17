@@ -136,19 +136,28 @@ export default function CourierEarningsScreen() {
         </View>
       )}
 
-      {/* Platform RIP is always visible */}
-      <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>تفاصيل الدفع عبر بريدي موب</Text>
-        <Text style={[styles.description, { color: colors.textSecondary }]}>حوّل المبلغ المستحق إلى حساب المنصة عبر بريدي موب، ثم أرسل إثبات الدفع إلى الإدارة للمراجعة.</Text>
-        <Text style={[styles.ripLabel, { color: colors.textSecondary }]}>RIP المنصة عبر بريدي موب</Text>
-        <View style={[styles.ripBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
-          <Text selectable style={[styles.ripText, { color: colors.textPrimary }]}>{platformRip}</Text>
-          <TouchableOpacity onPress={copyRip} style={[styles.copyButton, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.copyText, { color: colors.textOnBrand }]}>نسخ الرقم</Text>
-          </TouchableOpacity>
+      {/* Platform RIP visibility: only after 30 deliveries */}
+      {deliveryCount >= 30 ? (
+        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>تفاصيل الدفع عبر بريدي موب</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>حوّل المبلغ المستحق إلى حساب المنصة عبر بريدي موب، ثم أرسل إثبات الدفع إلى الإدارة للمراجعة.</Text>
+          <Text style={[styles.ripLabel, { color: colors.textSecondary }]}>RIP المنصة عبر بريدي موب</Text>
+          <View style={[styles.ripBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
+            <Text selectable style={[styles.ripText, { color: colors.textPrimary }]}>{platformRip}</Text>
+            <TouchableOpacity onPress={copyRip} style={[styles.copyButton, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.copyText, { color: colors.textOnBrand }]}>نسخ الرقم</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.footnote, { color: colors.textDisabled }]}>بعد تأكيد الإدارة للدفع، تُحدّث التوصيلات المسددة ويُرفع الحظر تلقائياً.</Text>
         </View>
-        <Text style={[styles.footnote, { color: colors.textDisabled }]}>بعد تأكيد الإدارة للدفع، تُحدّث التوصيلات المسددة ويُرفع الحظر تلقائياً.</Text>
-      </View>
+      ) : (
+        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle, opacity: 0.8 }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>تفاصيل الدفع عبر بريدي موب</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>
+            تظهر تفاصيل الدفع عبر بريدي موب (RIP) تلقائياً عند إتمام 30 توصيلة (أتممت {deliveryCount} من 30 توصيلة).
+          </Text>
+        </View>
+      )}
 
       <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>ملخص الأرباح</Text>
