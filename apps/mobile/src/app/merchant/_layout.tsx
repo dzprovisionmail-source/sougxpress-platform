@@ -11,6 +11,7 @@ export default function MerchantLayout() {
       <Stack.Screen name="notifications" />
       <Stack.Screen name="earnings" />
       <Stack.Screen name="profile" />
+      <Stack.Screen name="favorites" />
     </Stack>
   );
 }

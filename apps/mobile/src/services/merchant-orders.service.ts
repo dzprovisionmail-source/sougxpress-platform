@@ -103,12 +103,16 @@ export const updateOrderStatus = async (
 };
 
 export const subscribeToMerchantOrders = (merchantId: string, callback: () => void) => {
-  return supabase
-    .channel(`merchant_orders_${merchantId}`)
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "orders" },
-      callback
-    )
-    .subscribe();
+  const channel = supabase.channel(`merchant_orders_${merchantId}`);
+
+  // Register every Realtime listener before subscribing. The returned channel
+  // is intentionally kept for useMerchantOrders cleanup via unsubscribe().
+  channel.on(
+    "postgres_changes",
+    { event: "*", schema: "public", table: "orders" },
+    callback
+  );
+
+  channel.subscribe();
+  return channel;
 };
