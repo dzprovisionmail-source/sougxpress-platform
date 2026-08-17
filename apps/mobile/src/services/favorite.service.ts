@@ -259,3 +259,221 @@ export const getInterestedCustomersForStore = async (storeId: string): Promise<I
     return [];
   }
 };
+
+
+/**
+ * Courier-owned favorites. This is intentionally separate from
+ * `favorite_couriers`, which belongs to the customer -> courier relationship.
+ */
+export type CourierFavoriteTargetType = 'store' | 'customer';
+
+export interface CourierFavoriteCard {
+  id: string;
+  target_id: string;
+  target_type: CourierFavoriteTargetType;
+  created_at: string | null;
+  isFavorite: boolean;
+  store?: {
+    id: string;
+    name: string;
+    logo_url: string | null;
+    cover_url: string | null;
+    address_line1: string;
+    city: string;
+    category: string;
+    main_category: string | null;
+    rating: number | null;
+    is_open: boolean;
+    status: string;
+  };
+  customer?: {
+    id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    neighborhood: string | null;
+    address: string | null;
+  };
+}
+
+export interface CourierFavoritesHubData {
+  favorites: {
+    stores: CourierFavoriteCard[];
+    customers: CourierFavoriteCard[];
+  };
+  candidates: {
+    stores: CourierFavoriteCard[];
+    customers: CourierFavoriteCard[];
+  };
+}
+
+const courierError = (message: string) => ({
+  data: null,
+  error: message,
+});
+
+/**
+ * Toggles a courier's preferred store or customer.
+ * The authenticated user must be a `driver` and must own the drivers row.
+ */
+export const toggleCourierFavorite = async (
+  targetType: CourierFavoriteTargetType,
+  targetId: string,
+): Promise<{ isFavorite: boolean; error: any }> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { isFavorite: false, error: 'Login required' };
+    if (!targetId) return { isFavorite: false, error: 'Target required' };
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (profileError) throw profileError;
+    if (profile?.role !== 'driver') {
+      return { isFavorite: false, error: 'Driver access required' };
+    }
+
+    const { data: driver, error: driverError } = await supabase
+      .from('drivers')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (driverError) throw driverError;
+    if (!driver) return { isFavorite: false, error: 'Courier profile not found' };
+
+    const { data: existing, error: fetchError } = await supabase
+      .from('courier_favorites')
+      .select('id')
+      .eq('courier_id', user.id)
+      .eq('target_type', targetType)
+      .eq('target_id', targetId)
+      .maybeSingle();
+    if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+    if (existing) {
+      const { error: deleteError } = await supabase
+        .from('courier_favorites')
+        .delete()
+        .eq('id', existing.id)
+        .eq('courier_id', user.id);
+      if (deleteError) throw deleteError;
+      return { isFavorite: false, error: null };
+    }
+
+    const { error: insertError } = await supabase
+      .from('courier_favorites')
+      .insert({
+        courier_id: user.id,
+        target_type: targetType,
+        target_id: targetId,
+      });
+    if (insertError) throw insertError;
+    return { isFavorite: true, error: null };
+  } catch (err) {
+    console.error(`Error toggling courier ${targetType} favorite:`, err);
+    return { isFavorite: false, error: err };
+  }
+};
+
+/**
+ * Loads favorite stores/customers and the real stores/customers connected to
+ * the courier's own delivery history. Customer results come from a
+ * security-definer function that never returns phone fields.
+ */
+export const getCourierFavoritesHub = async (
+  courierId: string,
+): Promise<{ data: CourierFavoritesHubData | null; error: any }> => {
+  try {
+    if (!courierId) return courierError('Courier id required');
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== courierId) return courierError('Courier access required');
+
+    const { data: favoriteRows, error: favoritesError } = await supabase
+      .from('courier_favorites')
+      .select('id, target_type, target_id, created_at')
+      .eq('courier_id', courierId)
+      .order('created_at', { ascending: false });
+    if (favoritesError) throw favoritesError;
+
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('delivery_assignments')
+      .select('order:orders(customer_id, store_id)')
+      .eq('driver_id', courierId);
+    if (assignmentsError) throw assignmentsError;
+
+    const storeIds = new Set<string>();
+    const customerIds = new Set<string>();
+    (assignments || []).forEach((assignment: any) => {
+      const order = Array.isArray(assignment.order) ? assignment.order[0] : assignment.order;
+      if (order?.store_id) storeIds.add(order.store_id);
+      if (order?.customer_id) customerIds.add(order.customer_id);
+    });
+    (favoriteRows || []).forEach((favorite: any) => {
+      if (favorite.target_type === 'store') storeIds.add(favorite.target_id);
+      if (favorite.target_type === 'customer') customerIds.add(favorite.target_id);
+    });
+
+    const [storesResult, customersResult] = await Promise.all([
+      storeIds.size === 0
+        ? Promise.resolve({ data: [], error: null })
+        : supabase
+            .from('stores')
+            .select('id, name, logo_url, cover_url, address_line1, city, category, main_category, rating, is_open, status')
+            .in('id', Array.from(storeIds)),
+      supabase.rpc('get_courier_relationship_customers', { p_courier_id: courierId }),
+    ]);
+
+    if (storesResult.error) throw storesResult.error;
+    if (customersResult.error) throw customersResult.error;
+
+    const favoriteByKey = new Map(
+      (favoriteRows || []).map((favorite: any) => [
+        `${favorite.target_type}:${favorite.target_id}`,
+        favorite,
+      ]),
+    );
+
+    const storeCards: CourierFavoriteCard[] = (storesResult.data || []).map((store: any) => {
+      const favorite = favoriteByKey.get(`store:${store.id}`) as any;
+      return {
+        id: favorite?.id || store.id,
+        target_id: store.id,
+        target_type: 'store',
+        created_at: favorite?.created_at || null,
+        isFavorite: !!favorite,
+        store,
+      };
+    });
+
+    const customerCards: CourierFavoriteCard[] = (customersResult.data || []).map((customer: any) => {
+      const favorite = favoriteByKey.get(`customer:${customer.id}`) as any;
+      return {
+        id: favorite?.id || customer.id,
+        target_id: customer.id,
+        target_type: 'customer',
+        created_at: favorite?.created_at || null,
+        isFavorite: !!favorite,
+        customer,
+      };
+    });
+
+    return {
+      data: {
+        favorites: {
+          stores: storeCards.filter(card => card.isFavorite),
+          customers: customerCards.filter(card => card.isFavorite),
+        },
+        candidates: {
+          stores: storeCards,
+          customers: customerCards,
+        },
+      },
+      error: null,
+    };
+  } catch (err) {
+    console.error('Error fetching courier favorites hub:', err);
+    return { data: null, error: err };
+  }
+};

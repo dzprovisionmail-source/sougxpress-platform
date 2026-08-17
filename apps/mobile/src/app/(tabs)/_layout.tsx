@@ -94,6 +94,7 @@ export default function TabLayout() {
     courier: [
       { name: 'home', title: 'الرئيسية', Icon: Home },
       { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+      { name: 'favorites', title: 'المفضلة', Icon: Heart },
       { name: 'deliveries', title: 'التوصيلات', Icon: Bike },
       { name: 'earnings', title: 'الأرباح', Icon: Wallet },
       { name: 'profile', title: 'حسابي', Icon: CircleUserRound },

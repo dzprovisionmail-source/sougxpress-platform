@@ -25,6 +25,12 @@ import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import { getArabicCategoryName } from "@/config/storeCategories";
+import {
+  getCourierFavoritesHub,
+  toggleCourierFavorite,
+  type CourierFavoriteCard,
+  type CourierFavoriteTargetType,
+} from "@/services/favorite.service";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -38,8 +44,8 @@ export default function FavoritesGatewayScreen() {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [role, setRole] = useState<"customer" | "merchant">("customer");
-  
+  const [role, setRole] = useState<"customer" | "merchant" | "courier">("customer");
+
   // Customer state
   const [favorites, setFavorites] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"products" | "stores" | "couriers">("products");
@@ -50,9 +56,21 @@ export default function FavoritesGatewayScreen() {
   const [merchantActiveTab, setMerchantActiveTab] = useState<"interested" | "favorites">("interested");
   const [selectedMerchantCustomer, setSelectedMerchantCustomer] = useState<any | null>(null);
 
+  // Courier state: courier-owned favorites are separate from customer -> courier favorites.
+  const [courierActiveTab, setCourierActiveTab] = useState<"stores" | "customers">("stores");
+  const [courierFavorites, setCourierFavorites] = useState<{
+    stores: CourierFavoriteCard[];
+    customers: CourierFavoriteCard[];
+  }>({ stores: [], customers: [] });
+  const [courierCandidates, setCourierCandidates] = useState<{
+    stores: CourierFavoriteCard[];
+    customers: CourierFavoriteCard[];
+  }>({ stores: [], customers: [] });
+  const [courierBusyTarget, setCourierBusyTarget] = useState<string | null>(null);
+
   useEffect(() => {
     checkRoleAndFetch();
-  }, [activeTab]);
+  }, [activeTab, courierActiveTab]);
 
   const checkRoleAndFetch = async () => {
     try {
@@ -70,11 +88,17 @@ export default function FavoritesGatewayScreen() {
         .eq("id", user.id)
         .maybeSingle();
 
-      const userRole = profile?.role === "merchant" ? "merchant" : "customer";
+      const userRole = profile?.role === "merchant"
+        ? "merchant"
+        : profile?.role === "driver"
+          ? "courier"
+          : "customer";
       setRole(userRole);
 
       if (userRole === "merchant") {
         await fetchMerchantData(user.id);
+      } else if (userRole === "courier") {
+        await fetchCourierData(user.id);
       } else {
         await fetchCustomerFavorites(user.id);
       }
@@ -167,6 +191,45 @@ export default function FavoritesGatewayScreen() {
       await fetchMerchantData((await supabase.auth.getUser()).data.user?.id || "");
     } catch (err) {
       console.error("Error adding merchant favorite:", err);
+    }
+  };
+
+  const fetchCourierData = async (courierId: string) => {
+    const { data, error } = await getCourierFavoritesHub(courierId);
+    if (error || !data) {
+      setCourierFavorites({ stores: [], customers: [] });
+      setCourierCandidates({ stores: [], customers: [] });
+      if (error) throw error;
+      return;
+    }
+    setCourierFavorites(data.favorites);
+    setCourierCandidates(data.candidates);
+  };
+
+  const handleToggleCourierFavorite = async (
+    targetType: CourierFavoriteTargetType,
+    targetId: string,
+  ) => {
+    const busyKey = `${targetType}:${targetId}`;
+    if (courierBusyTarget === busyKey) return;
+
+    try {
+      setCourierBusyTarget(busyKey);
+      const { error } = await toggleCourierFavorite(targetType, targetId);
+      if (error) throw error;
+
+      const { data: authData } = await supabase.auth.getUser();
+      const courierId = authData.user?.id;
+      if (!courierId) throw new Error("Courier session not found");
+
+      const { data, error: refreshError } = await getCourierFavoritesHub(courierId);
+      if (refreshError || !data) throw refreshError || new Error("Unable to refresh courier favorites");
+      setCourierFavorites(data.favorites);
+      setCourierCandidates(data.candidates);
+    } catch (err) {
+      console.error("Error toggling courier favorite:", err);
+    } finally {
+      setCourierBusyTarget(null);
     }
   };
 
@@ -282,6 +345,214 @@ export default function FavoritesGatewayScreen() {
       <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
+    );
+  }
+
+  // RENDER COURIER FAVORITES (Preferred Stores & Customers)
+  if (role === "courier") {
+    const currentFavorites = courierActiveTab === "stores"
+      ? courierFavorites.stores
+      : courierFavorites.customers;
+    const currentCandidates = courierActiveTab === "stores"
+      ? courierCandidates.stores.filter(item => !item.isFavorite)
+      : courierCandidates.customers.filter(item => !item.isFavorite);
+
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
+        <Header title="مفضلة الموصل" />
+
+        <View style={[styles.tabBar, { borderBottomColor: colors.borderSubtle, flexDirection: isRTL ? "row-reverse" : "row" }]}>
+          <TouchableOpacity
+            onPress={() => setCourierActiveTab("stores")}
+            style={[
+              styles.tabItem,
+              courierActiveTab === "stores" && { borderBottomColor: colors.primary, borderBottomWidth: 2 },
+            ]}
+          >
+            <Typography
+              variant="button"
+              style={{
+                color: courierActiveTab === "stores" ? colors.primary : colors.textSecondary,
+                fontWeight: courierActiveTab === "stores" ? "700" : "500",
+              }}
+            >
+              المتاجر ({courierFavorites.stores.length})
+            </Typography>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setCourierActiveTab("customers")}
+            style={[
+              styles.tabItem,
+              courierActiveTab === "customers" && { borderBottomColor: colors.primary, borderBottomWidth: 2 },
+            ]}
+          >
+            <Typography
+              variant="button"
+              style={{
+                color: courierActiveTab === "customers" ? colors.primary : colors.textSecondary,
+                fontWeight: courierActiveTab === "customers" ? "700" : "500",
+              }}
+            >
+              الزبائن ({courierFavorites.customers.length})
+            </Typography>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+          }
+        >
+          <Typography variant="caption" color="secondary" align="right" style={styles.sectionDescription}>
+            تظهر هنا العلاقات المرتبطة بتوصيلاتك الفعلية فقط. لا يتم عرض أرقام هواتف الزبائن.
+          </Typography>
+
+          {currentFavorites.length > 0 && (
+            <>
+              <Typography variant="subtitle" style={styles.sectionTitle}>
+                المفضلة
+              </Typography>
+              <View style={courierActiveTab === "stores" ? styles.list : styles.grid}>
+                {currentFavorites.map((item) => {
+                  const busy = courierBusyTarget === `${item.target_type}:${item.target_id}`;
+                  if (courierActiveTab === "stores" && item.store) {
+                    const store = item.store;
+                    return (
+                      <View key={item.id} style={styles.courierStoreItem}>
+                        <StoreCard
+                          id={store.id}
+                          name={store.name}
+                          category={getArabicCategoryName(store.main_category || store.category)}
+                          rating={store.rating?.toString() || "0.0"}
+                          coverImage={store.cover_url}
+                          logoImage={store.logo_url}
+                          isOpen={store.status === "active" || store.is_open}
+                          isFeatured={false}
+                          isFavorite={true}
+                          onToggleFavorite={() => handleToggleCourierFavorite("store", store.id)}
+                          address={store.address_line1 || store.city}
+                          onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
+                        />
+                        {busy && <ActivityIndicator size="small" color={colors.primary} style={styles.cardActivity} />}
+                      </View>
+                    );
+                  }
+
+                  if (courierActiveTab === "customers" && item.customer) {
+                    const customer = item.customer;
+                    return (
+                      <View key={item.id} style={styles.cardWrapper}>
+                        <View style={[styles.customerFavoriteCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
+                          <Avatar uri={customer.avatar_url} name={customer.full_name || "زبون"} size="lg" />
+                          <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
+                            {customer.full_name || "زبون"}
+                          </Typography>
+                          <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
+                            {customer.neighborhood || customer.address || "بدون عنوان"}
+                          </Typography>
+                          <TouchableOpacity
+                            onPress={() => handleToggleCourierFavorite("customer", customer.id)}
+                            style={styles.removeBtn}
+                            disabled={busy}
+                          >
+                            {busy ? (
+                              <ActivityIndicator size="small" color={colors.primary} />
+                            ) : (
+                              <Heart size={16} color={colors.error} fill={colors.error} />
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  }
+                  return null;
+                })}
+              </View>
+            </>
+          )}
+
+          {currentFavorites.length === 0 && currentCandidates.length === 0 && (
+            <View style={styles.emptyContainer}>
+              <Heart size={64} color={colors.textDisabled} strokeWidth={1.5} />
+              <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }} align="center">
+                لا توجد علاقات متاحة بعد
+              </Typography>
+              <Typography variant="caption" color="secondary" style={{ marginTop: 8 }} align="center">
+                ستظهر المتاجر والزبائن هنا بعد تنفيذ توصيلات حقيقية.
+              </Typography>
+            </View>
+          )}
+
+          {currentCandidates.length > 0 && (
+            <>
+              <Typography variant="subtitle" style={styles.sectionTitle}>
+                علاقات التوصيل
+              </Typography>
+              <Typography variant="caption" color="secondary" style={styles.sectionDescription}>
+                أضف العلاقة إلى مفضلتك لتصل إليها بسرعة في التوصيلات القادمة.
+              </Typography>
+              <View style={courierActiveTab === "stores" ? styles.list : styles.grid}>
+                {currentCandidates.map((item) => {
+                  const busy = courierBusyTarget === `${item.target_type}:${item.target_id}`;
+                  if (courierActiveTab === "stores" && item.store) {
+                    const store = item.store;
+                    return (
+                      <View key={item.id} style={styles.courierStoreItem}>
+                        <StoreCard
+                          id={store.id}
+                          name={store.name}
+                          category={getArabicCategoryName(store.main_category || store.category)}
+                          rating={store.rating?.toString() || "0.0"}
+                          coverImage={store.cover_url}
+                          logoImage={store.logo_url}
+                          isOpen={store.status === "active" || store.is_open}
+                          isFeatured={false}
+                          isFavorite={false}
+                          onToggleFavorite={() => handleToggleCourierFavorite("store", store.id)}
+                          address={store.address_line1 || store.city}
+                          onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
+                        />
+                        {busy && <ActivityIndicator size="small" color={colors.primary} style={styles.cardActivity} />}
+                      </View>
+                    );
+                  }
+
+                  if (courierActiveTab === "customers" && item.customer) {
+                    const customer = item.customer;
+                    return (
+                      <View key={item.id} style={styles.cardWrapper}>
+                        <View style={[styles.customerFavoriteCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
+                          <Avatar uri={customer.avatar_url} name={customer.full_name || "زبون"} size="lg" />
+                          <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
+                            {customer.full_name || "زبون"}
+                          </Typography>
+                          <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
+                            {customer.neighborhood || customer.address || "بدون عنوان"}
+                          </Typography>
+                          <TouchableOpacity
+                            onPress={() => handleToggleCourierFavorite("customer", customer.id)}
+                            style={[styles.removeBtn, { backgroundColor: colors.primary + "15" }]}
+                            disabled={busy}
+                          >
+                            {busy ? (
+                              <ActivityIndicator size="small" color={colors.primary} />
+                            ) : (
+                              <Heart size={16} color={colors.primary} />
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  }
+                  return null;
+                })}
+              </View>
+            </>
+          )}
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -740,10 +1011,29 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  sectionTitle: {
+    marginTop: TOKENS.spacing.lg,
+    marginBottom: TOKENS.spacing.sm,
+    textAlign: "right",
+  },
+  sectionDescription: {
+    marginBottom: TOKENS.spacing.sm,
+    lineHeight: 20,
+  },
+  courierStoreItem: {
+    width: "100%",
+    marginBottom: TOKENS.spacing.md,
+    position: "relative",
+  },
+  cardActivity: {
+    position: "absolute",
+    top: TOKENS.spacing.md,
+    right: TOKENS.spacing.md,
+  },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 100,
   }
 });
