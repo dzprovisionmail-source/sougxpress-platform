@@ -42,13 +42,24 @@ export const toggleFavorite = async (
       if (deleteError) throw deleteError;
       return { isFavorite: false, error: null };
     } else {
-      // Ensure customer record exists to avoid foreign key violation
-      await supabase.from('customers').upsert({
+      // Ensure customer record exists with all NOT NULL constraints to avoid foreign key violation
+      const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'الزبون جديد';
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || 'الزبون';
+      const lastName = nameParts.slice(1).join(' ') || 'جديد';
+
+      const { error: customerError } = await supabase.from('customers').upsert({
         id: user.id,
-        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'الزبون',
-        phone: user.user_metadata?.phone || '',
-        neighborhood: user.user_metadata?.neighborhood || 'أين السعرة',
-      }, { onConflict: 'id', ignoreDuplicates: true });
+        first_name: firstName,
+        last_name: lastName,
+        full_name: fullName,
+        email: user.email || `${user.id}@sougxpress.local`,
+        status: 'active',
+        phone: user.user_metadata?.phone || null,
+        phone_number: user.user_metadata?.phone || null,
+      }, { onConflict: 'id' });
+
+      if (customerError) throw customerError;
 
       // Add
       const { error: insertError } = await supabase
