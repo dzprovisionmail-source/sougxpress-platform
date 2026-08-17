@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Package,
   Wallet,
+  Heart,
 } from 'lucide-react-native';
 
 type Role = 'guest' | 'customer' | 'courier' | 'merchant';
@@ -77,8 +78,8 @@ export default function TabLayout() {
       { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
     ],
     customer: [
-      { name: 'home', title: 'الرئيسية', Icon: Home },
-      { name: 'market', title: 'السوق', Icon: Store },
+      { name: 'home', title: 'Soug-XPRESS', Icon: Home },
+      { name: 'favorites', title: 'المفضلة', Icon: Heart },
       { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
       { name: 'cart', title: 'السلة', Icon: ShoppingCart },
       { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
@@ -167,7 +168,7 @@ export default function TabLayout() {
         <Tabs.Screen name="orders-courier" options={{ href: null }} />
         <Tabs.Screen name="driver" options={{ href: null }} />
         <Tabs.Screen name="store" options={{ href: null }} />
-        <Tabs.Screen name="favorites" options={{ href: null }} />
+        <Tabs.Screen name="favorites" options={getTabOptions('favorites')} />
         <Tabs.Screen name="couriers" options={{ href: null }} />
         <Tabs.Screen name="courier/[id]" options={{ href: null }} />
       </Tabs>

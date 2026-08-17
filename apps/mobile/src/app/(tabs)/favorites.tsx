@@ -77,13 +77,11 @@ export default function CustomerFavoritesScreen() {
         if (fetchError) throw fetchError;
         setFavorites(data || []);
       } else if (activeTab === "products") {
-        // Try generic target_type first, fallback to product_id join
+        // Fetch products using the product_id column which has a FK
         const { data, error: fetchError } = await supabase
           .from("customer_favorites")
           .select(`
             id,
-            target_type,
-            target_id,
             product_id,
             products:product_id (
               id,
@@ -91,41 +89,41 @@ export default function CustomerFavoritesScreen() {
               price_minor,
               image_url,
               is_available,
-              stores ( name )
+              store_id,
+              stores:store_id ( name )
             )
           `)
           .eq("customer_id", user.id)
-          .or("target_type.eq.product,product_id.is.not.null");
+          .not("product_id", "is", null);
 
         if (fetchError) throw fetchError;
         setFavorites(data || []);
       } else if (activeTab === "stores") {
-        const { data, error: fetchError } = await supabase
+        // Since there's no FK for target_id to stores, we fetch IDs then details
+        const { data: favs, error: fetchError } = await supabase
           .from("customer_favorites")
-          .select(`
-            id,
-            target_type,
-            target_id,
-            stores:target_id (
-              id,
-              name,
-              main_category,
-              category,
-              sub_category,
-              rating,
-              cover_url,
-              logo_url,
-              status,
-              is_featured,
-              address_line1,
-              city
-            )
-          `)
+          .select("id, target_id")
           .eq("customer_id", user.id)
           .eq("target_type", "store");
 
         if (fetchError) throw fetchError;
-        setFavorites(data || []);
+
+        if (favs && favs.length > 0) {
+          const storeIds = favs.map(f => f.target_id);
+          const { data: storeData, error: storeError } = await supabase
+            .from("stores")
+            .select("*")
+            .in("id", storeIds);
+          
+          if (storeError) throw storeError;
+          
+          setFavorites(favs.map(f => ({
+            ...f,
+            stores: storeData.find(s => s.id === f.target_id)
+          })).filter(f => !!f.stores));
+        } else {
+          setFavorites([]);
+        }
       }
     } catch (err: any) {
       console.error("Error fetching favorites:", err);
