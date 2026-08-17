@@ -27,9 +27,12 @@ import { supabase } from "@/lib/supabase";
 import { getArabicCategoryName } from "@/config/storeCategories";
 import {
   getCourierFavoritesHub,
+  getMerchantFavoriteCouriers,
   toggleCourierFavorite,
+  toggleMerchantFavorite,
   type CourierFavoriteCard,
   type CourierFavoriteTargetType,
+  type MerchantFavoriteCourier,
 } from "@/services/favorite.service";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -53,7 +56,9 @@ export default function FavoritesGatewayScreen() {
   // Merchant state
   const [merchantFavorites, setMerchantFavorites] = useState<any[]>([]);
   const [interestedCustomers, setInterestedCustomers] = useState<any[]>([]);
-  const [merchantActiveTab, setMerchantActiveTab] = useState<"interested" | "favorites">("interested");
+  const [merchantFavoriteCouriers, setMerchantFavoriteCouriers] = useState<MerchantFavoriteCourier[]>([]);
+  const [merchantCourierCandidates, setMerchantCourierCandidates] = useState<MerchantFavoriteCourier[]>([]);
+  const [merchantActiveTab, setMerchantActiveTab] = useState<"interested" | "favorites" | "couriers">("interested");
   const [selectedMerchantCustomer, setSelectedMerchantCustomer] = useState<any | null>(null);
 
   // Courier state: courier-owned favorites are separate from customer -> courier favorites.
@@ -114,6 +119,16 @@ export default function FavoritesGatewayScreen() {
     try {
       setMerchantFavorites([]);
       setInterestedCustomers([]);
+      setMerchantFavoriteCouriers([]);
+      setMerchantCourierCandidates([]);
+
+      const { data: courierData, error: courierError } = await getMerchantFavoriteCouriers(userId);
+      if (courierError || !courierData) {
+        console.error("Error fetching merchant favorite couriers:", courierError);
+      } else {
+        setMerchantFavoriteCouriers(courierData.favorites);
+        setMerchantCourierCandidates(courierData.candidates);
+      }
 
       // A merchant may own more than one store. Never use maybeSingle() here:
       // Phase 2 must read interest for every store owned by the authenticated merchant.
@@ -191,6 +206,24 @@ export default function FavoritesGatewayScreen() {
       await fetchMerchantData((await supabase.auth.getUser()).data.user?.id || "");
     } catch (err) {
       console.error("Error adding merchant favorite:", err);
+    }
+  };
+
+  const handleToggleMerchantCourierFavorite = async (courierId: string) => {
+    try {
+      const { error } = await toggleMerchantFavorite(courierId, "courier");
+      if (error) throw error;
+
+      const { data: authData } = await supabase.auth.getUser();
+      const merchantId = authData.user?.id;
+      if (!merchantId) throw new Error("Merchant session not found");
+
+      const { data, error: refreshError } = await getMerchantFavoriteCouriers(merchantId);
+      if (refreshError || !data) throw refreshError || new Error("Unable to refresh merchant courier favorites");
+      setMerchantFavoriteCouriers(data.favorites);
+      setMerchantCourierCandidates(data.candidates);
+    } catch (err) {
+      console.error("Error toggling merchant courier favorite:", err);
     }
   };
 
@@ -601,6 +634,24 @@ export default function FavoritesGatewayScreen() {
               زبائني المفضلون ({merchantFavorites.length})
             </Typography>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setMerchantActiveTab("couriers")}
+            style={[
+              styles.tabItem,
+              merchantActiveTab === "couriers" && { borderBottomColor: colors.primary, borderBottomWidth: 2 },
+            ]}
+          >
+            <Typography
+              variant="button"
+              style={{
+                color: merchantActiveTab === "couriers" ? colors.primary : colors.textSecondary,
+                fontWeight: merchantActiveTab === "couriers" ? "700" : "500",
+              }}
+            >
+              الموصلون ({merchantFavoriteCouriers.length})
+            </Typography>
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -609,7 +660,82 @@ export default function FavoritesGatewayScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
           }
         >
-          {merchantActiveTab === "interested" ? (
+          {merchantActiveTab === "couriers" ? (
+            merchantCourierCandidates.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
+                <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }}>
+                  لا يوجد موصلون نشطون حالياً
+                </Typography>
+              </View>
+            ) : (
+              <View style={styles.merchantCourierList}>
+                <Typography variant="caption" color="secondary" align="right" style={{ marginBottom: TOKENS.spacing.sm }}>
+                  اختر الموصلين المفضلين لتسهيل التعاون في طلباتك القادمة
+                </Typography>
+                {merchantCourierCandidates.map((item) => {
+                  const courier = item.courier;
+                  const vehicleLabel = courier.vehicle_type === "motorcycle"
+                    ? "دراجة نارية"
+                    : courier.vehicle_type === "car"
+                      ? "سيارة"
+                      : courier.vehicle_type === "bicycle"
+                        ? "دراجة"
+                        : courier.vehicle_type || "موصل";
+
+                  return (
+                    <View
+                      key={item.id}
+                      style={[
+                        styles.merchantCourierCard,
+                        { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle },
+                      ]}
+                    >
+                      <Avatar uri={courier.avatar_url} name={courier.full_name || "موصل"} size="lg" />
+                      <View style={styles.merchantCourierDetails}>
+                        <Typography variant="subtitle" numberOfLines={1}>
+                          {courier.full_name || "موصل Soug-XPRESS"}
+                        </Typography>
+                        <Typography variant="caption" color="secondary" numberOfLines={1}>
+                          {courier.neighborhood || "عين صفراء"} · {vehicleLabel}
+                        </Typography>
+                        <View style={styles.ratingRow}>
+                          <Star size={13} color="#FFD700" fill="#FFD700" />
+                          <Typography variant="caption" style={{ marginLeft: 4 }}>
+                            {courier.rating === null ? "—" : Number(courier.rating).toFixed(1)}
+                          </Typography>
+                          <Typography variant="caption" color="secondary" style={{ marginLeft: 12 }}>
+                            {courier.delivery_count ?? 0} توصيلات
+                          </Typography>
+                        </View>
+                        <Typography
+                          variant="caption"
+                          style={{ color: courier.availability === "online" ? colors.success : colors.textSecondary }}
+                        >
+                          {courier.availability === "online" ? "متاح الآن" : "غير متاح حالياً"}
+                        </Typography>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleToggleMerchantCourierFavorite(courier.id)}
+                        style={[
+                          styles.merchantCourierFavoriteButton,
+                          { borderColor: item.isFavorite ? colors.error : colors.primary },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={item.isFavorite ? "إزالة الموصل من المفضلة" : "إضافة الموصل إلى المفضلة"}
+                      >
+                        <Heart
+                          size={22}
+                          color={item.isFavorite ? colors.error : colors.primary}
+                          fill={item.isFavorite ? colors.error : "transparent"}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            )
+          ) : merchantActiveTab === "interested" ? (
             interestedCustomers.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
@@ -948,9 +1074,36 @@ const styles = StyleSheet.create({
     padding: TOKENS.spacing.md,
     borderRadius: TOKENS.radius.md,
     borderWidth: 1,
-    alignItems: 'center',
-    position: 'relative',
+    alignItems: "center",
+    position: "relative",
     minHeight: 190,
+  },
+  merchantCourierList: {
+    width: "100%",
+  },
+  merchantCourierCard: {
+    width: "100%",
+    minHeight: 112,
+    borderRadius: TOKENS.radius.md,
+    borderWidth: 1,
+    padding: TOKENS.spacing.md,
+    marginBottom: TOKENS.spacing.sm,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: TOKENS.spacing.sm,
+  },
+  merchantCourierDetails: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  merchantCourierFavoriteButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   viewProfileButton: {
     marginTop: TOKENS.spacing.sm,

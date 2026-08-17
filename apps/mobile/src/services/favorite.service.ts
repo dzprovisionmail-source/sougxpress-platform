@@ -133,19 +133,22 @@ export const getFavoriteIds = async (targetType: FavoriteType): Promise<string[]
  * Merchant Favorites Logic
  */
 
+export type MerchantFavoriteTargetType = 'customer' | 'courier';
+
 export interface MerchantFavorite {
   id: string;
   merchant_id: string;
   target_id: string;
-  target_type: 'customer';
+  target_type: MerchantFavoriteTargetType;
   created_at: string;
 }
 
 /**
- * Toggles a merchant favorite (currently only customers).
+ * Toggles a merchant-owned customer or courier favorite.
  */
 export const toggleMerchantFavorite = async (
-  targetId: string
+  targetId: string,
+  targetType: MerchantFavoriteTargetType = 'customer',
 ): Promise<{ isFavorite: boolean; error: any }> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -157,6 +160,7 @@ export const toggleMerchantFavorite = async (
       .select('id')
       .eq('merchant_id', user.id)
       .eq('target_id', targetId)
+      .eq('target_type', targetType)
       .maybeSingle();
 
     if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
@@ -176,7 +180,7 @@ export const toggleMerchantFavorite = async (
         .from('merchant_favorites')
         .insert({
           merchant_id: user.id,
-          target_type: 'customer',
+          target_type: targetType,
           target_id: targetId
         });
 
@@ -474,6 +478,90 @@ export const getCourierFavoritesHub = async (
     };
   } catch (err) {
     console.error('Error fetching courier favorites hub:', err);
+    return { data: null, error: err };
+  }
+};
+
+
+export interface MerchantFavoriteCourier {
+  id: string;
+  target_id: string;
+  created_at: string | null;
+  courier: {
+    id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    rating: number | null;
+    delivery_count: number | null;
+    vehicle_type: string | null;
+    status: string | null;
+    availability: string | null;
+    neighborhood: string | null;
+  };
+  isFavorite: boolean;
+}
+
+export interface MerchantFavoriteCouriersData {
+  favorites: MerchantFavoriteCourier[];
+  candidates: MerchantFavoriteCourier[];
+}
+
+/**
+ * Loads the merchant's favorite couriers and the real active courier directory.
+ * Phone numbers are deliberately omitted from both the select and the return type.
+ */
+export const getMerchantFavoriteCouriers = async (
+  merchantId: string,
+): Promise<{ data: MerchantFavoriteCouriersData | null; error: any }> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== merchantId) return { data: null, error: 'Merchant access required' };
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', merchantId)
+      .maybeSingle();
+    if (profileError) throw profileError;
+    if (profile?.role !== 'merchant') return { data: null, error: 'Merchant access required' };
+
+    const { data: favoriteRows, error: favoritesError } = await supabase
+      .from('merchant_favorites')
+      .select('id, target_id, created_at')
+      .eq('merchant_id', merchantId)
+      .eq('target_type', 'courier')
+      .order('created_at', { ascending: false });
+    if (favoritesError) throw favoritesError;
+
+    const { data: couriers, error: couriersError } = await supabase
+      .from('drivers')
+      .select('id, full_name, avatar_url, rating, delivery_count, vehicle_type, status, availability, neighborhood')
+      .eq('status', 'active')
+      .eq('is_suspended_for_debt', false)
+      .order('rating', { ascending: false });
+    if (couriersError) throw couriersError;
+
+    const favoriteById = new Map((favoriteRows || []).map(row => [row.target_id, row]));
+    const cards: MerchantFavoriteCourier[] = (couriers || []).map(courier => {
+      const favorite = favoriteById.get(courier.id);
+      return {
+        id: favorite?.id || courier.id,
+        target_id: courier.id,
+        created_at: favorite?.created_at || null,
+        courier,
+        isFavorite: !!favorite,
+      };
+    });
+
+    return {
+      data: {
+        favorites: cards.filter(card => card.isFavorite),
+        candidates: cards,
+      },
+      error: null,
+    };
+  } catch (err) {
+    console.error('Error fetching merchant favorite couriers:', err);
     return { data: null, error: err };
   }
 };
