@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import {
   User, MapPin, ShoppingCart, MessageSquare,
-  PlayCircle, PackageCheck, XCircle, Clock,
+  PlayCircle, PackageCheck, XCircle, Clock, Heart,
 } from 'lucide-react-native';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
@@ -13,6 +13,8 @@ import { OrderStatus } from '@/types/schema-03-core';
 import { Card, Button } from '@/components/ui';
 import OrderStatusBadge from './OrderStatusBadge';
 import PreparationTimer from './PreparationTimer';
+import { toggleMerchantFavorite, getMerchantFavoriteCustomerIds } from '@/services/favorite.service';
+import { useState, useEffect } from 'react';
 
 interface MerchantOrderCardProps {
   order: any;
@@ -20,6 +22,23 @@ interface MerchantOrderCardProps {
 }
 
 const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateStatus }) => {
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    if (order.customer?.id) {
+      getMerchantFavoriteCustomerIds().then(ids => {
+        setIsFavorite(ids.includes(order.customer.id));
+      });
+    }
+  }, [order.customer?.id]);
+
+  const handleToggleFavorite = async () => {
+    if (!order.customer?.id) return;
+    const { isFavorite: newStatus, error } = await toggleMerchantFavorite(order.customer.id);
+    if (!error) {
+      setIsFavorite(newStatus);
+    }
+  };
   const isNew       = order.status === 'pending';
   const isAccepted  = order.status === 'accepted';
   const isPreparing = order.status === 'preparing';
@@ -46,9 +65,16 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
       <View style={styles.divider} />
 
       {/* ── Customer & Address Info ── */}
-      <View style={styles.infoRow}>
-        <User size={iconSizes.small} color={colors.textSecondary} />
-        <Text style={styles.infoText}>الزبون: {order.customer?.full_name || 'زبون غير مسجل'}</Text>
+      <View style={[styles.infoRow, { justifyContent: 'space-between' }]}>
+        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1 }}>
+          <User size={iconSizes.small} color={colors.textSecondary} />
+          <Text style={styles.infoText}>الزبون: {order.customer?.full_name || 'زبون غير مسجل'}</Text>
+        </View>
+        {order.customer?.id && (
+          <TouchableOpacity onPress={handleToggleFavorite} style={{ padding: 4 }}>
+            <Heart size={20} color={isFavorite ? colors.error : colors.textSecondary} fill={isFavorite ? colors.error : 'transparent'} />
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.infoRow}>
         <MapPin size={iconSizes.small} color={colors.textSecondary} />

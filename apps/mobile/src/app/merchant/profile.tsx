@@ -18,6 +18,7 @@ import {
   X,
   Shield,
   Bell,
+  Heart,
 } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -237,6 +238,20 @@ export default function MerchantProfileScreen() {
             label="نسبة العمولة"
             value={`${merchant?.commission_rate ?? 0}%`}
             isLast
+          />
+        </SectionCard>
+
+        {/* Favorites shortcut */}
+        <SectionCard>
+          <SectionTitle
+            icon={<Heart color={colors.primary} size={tokens.spacing.lg} />}
+          >
+            الزبائن المفضلون
+          </SectionTitle>
+          <WorkspaceButton
+            title="عرض الزبائن المفضلين"
+            variant="outline"
+            onPress={() => router.push("/merchant/favorites")}
           />
         </SectionCard>
 
