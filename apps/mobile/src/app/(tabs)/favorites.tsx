@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Star, Heart, ChevronRight, ChevronLeft, Users } from "lucide-react-native";
+import { Star, Heart, ChevronRight, ChevronLeft, Users, MessageCircle, Search } from "lucide-react-native";
 import {
   Typography,
   ProductCard,
@@ -661,19 +661,19 @@ export default function FavoritesGatewayScreen() {
           }
         >
           {merchantActiveTab === "couriers" ? (
-            merchantCourierCandidates.length === 0 ? (
+            merchantFavoriteCouriers.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
                 <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }}>
-                  لا يوجد موصلون نشطون حالياً
+                  قائمة الموصلين المفضلين فارغة
+                </Typography>
+                <Typography variant="caption" color="secondary" align="center" style={{ marginTop: 8, paddingHorizontal: 40 }}>
+                  يمكنك إضافة الموصلين للمفضلة من خلال تفاصيل الطلبات أو البحث عنهم.
                 </Typography>
               </View>
             ) : (
               <View style={styles.merchantCourierList}>
-                <Typography variant="caption" color="secondary" align="right" style={{ marginBottom: TOKENS.spacing.sm }}>
-                  اختر الموصلين المفضلين لتسهيل التعاون في طلباتك القادمة
-                </Typography>
-                {merchantCourierCandidates.map((item) => {
+                {merchantFavoriteCouriers.map((item) => {
                   const courier = item.courier;
                   const vehicleLabel = courier.vehicle_type === "motorcycle"
                     ? "دراجة نارية"
@@ -693,43 +693,51 @@ export default function FavoritesGatewayScreen() {
                     >
                       <Avatar uri={courier.avatar_url} name={courier.full_name || "موصل"} size="lg" />
                       <View style={styles.merchantCourierDetails}>
-                        <Typography variant="subtitle" numberOfLines={1}>
+                        <Typography variant="subtitle" numberOfLines={1} style={{ fontWeight: '700' }}>
                           {courier.full_name || "موصل Soug-XPRESS"}
                         </Typography>
                         <Typography variant="caption" color="secondary" numberOfLines={1}>
                           {courier.neighborhood || "عين صفراء"} · {vehicleLabel}
                         </Typography>
                         <View style={styles.ratingRow}>
-                          <Star size={13} color="#FFD700" fill="#FFD700" />
-                          <Typography variant="caption" style={{ marginLeft: 4 }}>
-                            {courier.rating === null ? "—" : Number(courier.rating).toFixed(1)}
+                          <Star size={12} color="#FFD700" fill="#FFD700" />
+                          <Typography variant="caption" style={{ marginLeft: 4, fontWeight: '600' }}>
+                            {courier.rating === null ? "5.0" : Number(courier.rating).toFixed(1)}
                           </Typography>
-                          <Typography variant="caption" color="secondary" style={{ marginLeft: 12 }}>
-                            {courier.delivery_count ?? 0} توصيلات
+                          <Typography variant="caption" color="secondary" style={{ marginLeft: 8 }}>
+                            ({courier.delivery_count ?? 0} توصيلة)
                           </Typography>
                         </View>
-                        <Typography
-                          variant="caption"
-                          style={{ color: courier.availability === "online" ? colors.success : colors.textSecondary }}
-                        >
-                          {courier.availability === "online" ? "متاح الآن" : "غير متاح حالياً"}
-                        </Typography>
+                        <View style={[styles.statusBadge, { backgroundColor: courier.availability === "online" ? colors.success + '15' : colors.textSecondary + '15' }]}>
+                          <View style={[styles.statusDot, { backgroundColor: courier.availability === "online" ? colors.success : colors.textSecondary }]} />
+                          <Typography
+                            variant="caption"
+                            style={{ color: courier.availability === "online" ? colors.success : colors.textSecondary, fontSize: 10, fontWeight: '600' }}
+                          >
+                            {courier.availability === "online" ? "متاح الآن" : "غير متصل"}
+                          </Typography>
+                        </View>
                       </View>
-                      <TouchableOpacity
-                        onPress={() => handleToggleMerchantCourierFavorite(courier.id)}
-                        style={[
-                          styles.merchantCourierFavoriteButton,
-                          { borderColor: item.isFavorite ? colors.error : colors.primary },
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={item.isFavorite ? "إزالة الموصل من المفضلة" : "إضافة الموصل إلى المفضلة"}
-                      >
-                        <Heart
-                          size={22}
-                          color={item.isFavorite ? colors.error : colors.primary}
-                          fill={item.isFavorite ? colors.error : "transparent"}
-                        />
-                      </TouchableOpacity>
+                      
+                      <View style={styles.merchantActionColumn}>
+                        <TouchableOpacity
+                          onPress={() => handleToggleMerchantCourierFavorite(courier.id)}
+                          style={styles.merchantMiniActionBtn}
+                        >
+                          <Heart
+                            size={20}
+                            color={colors.error}
+                            fill={colors.error}
+                          />
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                          style={[styles.merchantMiniActionBtn, { marginTop: 8, opacity: 0.5 }]}
+                          disabled={true}
+                        >
+                          <MessageCircle size={20} color={colors.primary} />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   );
                 })}
@@ -754,32 +762,41 @@ export default function FavoritesGatewayScreen() {
                     <View key={item.id} style={styles.cardWrapper}>
                       <View style={[styles.customerFavoriteCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
                         <Avatar uri={customer.avatar_url} name={customer.full_name} size="lg" />
-                        <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
+                        <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8, fontWeight: '700' }}>
                           {customer.full_name}
                         </Typography>
                         <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
-                          {customer.neighborhood || "بدون عنوان"}
+                          {customer.neighborhood || "عين صفراء"}
                         </Typography>
-                        <TouchableOpacity
-                          onPress={() => setSelectedMerchantCustomer(customer)}
-                          style={styles.viewProfileButton}
-                        >
-                          <Typography variant="caption" style={{ color: colors.primary, fontWeight: "700" }}>
-                            عرض الحساب
-                          </Typography>
-                        </TouchableOpacity>
-                        {isAlreadyFav ? (
-                          <View style={styles.removeBtn}>
-                            <Heart size={16} color={colors.error} fill={colors.error} />
-                          </View>
-                        ) : (
+                        
+                        <View style={styles.merchantCardActions}>
                           <TouchableOpacity
-                            onPress={() => handleAddMerchantFavorite(customer.id)}
-                            style={[styles.removeBtn, { backgroundColor: colors.primary + '15' }]}
+                            onPress={() => setSelectedMerchantCustomer(customer)}
+                            style={[styles.merchantActionBtn, { borderColor: colors.borderSubtle }]}
                           >
-                            <Heart size={16} color={colors.primary} />
+                            <Search size={14} color={colors.textSecondary} />
                           </TouchableOpacity>
-                        )}
+                          
+                          {isAlreadyFav ? (
+                            <View style={[styles.merchantActionBtn, { borderColor: 'transparent' }]}>
+                              <Heart size={16} color={colors.error} fill={colors.error} />
+                            </View>
+                          ) : (
+                            <TouchableOpacity
+                              onPress={() => handleAddMerchantFavorite(customer.id)}
+                              style={[styles.merchantActionBtn, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}
+                            >
+                              <Heart size={16} color={colors.primary} />
+                            </TouchableOpacity>
+                          )}
+                          
+                          <TouchableOpacity
+                            style={[styles.merchantActionBtn, { borderColor: colors.borderSubtle, opacity: 0.5 }]}
+                            disabled={true}
+                          >
+                            <MessageCircle size={14} color={colors.primary} />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
                   );
@@ -803,26 +820,35 @@ export default function FavoritesGatewayScreen() {
                     <View key={item.id} style={styles.cardWrapper}>
                       <View style={[styles.customerFavoriteCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
                         <Avatar uri={customer.avatar_url} name={customer.full_name} size="lg" />
-                        <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
+                        <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8, fontWeight: '700' }}>
                           {customer.full_name}
                         </Typography>
                         <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
-                          {customer.neighborhood || "بدون عنوان"}
+                          {customer.neighborhood || "عين صفراء"}
                         </Typography>
-                        <TouchableOpacity
-                          onPress={() => setSelectedMerchantCustomer(customer)}
-                          style={styles.viewProfileButton}
-                        >
-                          <Typography variant="caption" style={{ color: colors.primary, fontWeight: "700" }}>
-                            عرض الحساب
-                          </Typography>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() => handleRemoveMerchantFavorite(item.id)}
-                          style={styles.removeBtn}
-                        >
-                          <Heart size={16} color={colors.error} fill={colors.error} />
-                        </TouchableOpacity>
+                        
+                        <View style={styles.merchantCardActions}>
+                          <TouchableOpacity
+                            onPress={() => setSelectedMerchantCustomer(customer)}
+                            style={[styles.merchantActionBtn, { borderColor: colors.borderSubtle }]}
+                          >
+                            <Search size={14} color={colors.textSecondary} />
+                          </TouchableOpacity>
+                          
+                          <TouchableOpacity
+                            onPress={() => handleRemoveMerchantFavorite(item.id)}
+                            style={[styles.merchantActionBtn, { borderColor: colors.error + '30', backgroundColor: colors.error + '05' }]}
+                          >
+                            <Heart size={16} color={colors.error} fill={colors.error} />
+                          </TouchableOpacity>
+                          
+                          <TouchableOpacity
+                            style={[styles.merchantActionBtn, { borderColor: colors.borderSubtle, opacity: 0.5 }]}
+                            disabled={true}
+                          >
+                            <MessageCircle size={14} color={colors.primary} />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
                   );
@@ -1083,27 +1109,63 @@ const styles = StyleSheet.create({
   },
   merchantCourierCard: {
     width: "100%",
-    minHeight: 112,
+    minHeight: 100,
     borderRadius: TOKENS.radius.md,
     borderWidth: 1,
     padding: TOKENS.spacing.md,
     marginBottom: TOKENS.spacing.sm,
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: TOKENS.spacing.sm,
+    gap: TOKENS.spacing.md,
   },
   merchantCourierDetails: {
     flex: 1,
     alignItems: "flex-end",
+    gap: 2,
+  },
+  merchantActionColumn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingLeft: 4,
+  },
+  merchantMiniActionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.02)',
+  },
+  merchantCardActions: {
+    flexDirection: 'row-reverse',
+    marginTop: TOKENS.spacing.md,
+    gap: TOKENS.spacing.sm,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  merchantActionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusBadge: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginTop: 4,
     gap: 4,
   },
-  merchantCourierFavoriteButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   viewProfileButton: {
     marginTop: TOKENS.spacing.sm,
