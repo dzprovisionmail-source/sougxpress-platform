@@ -42,6 +42,14 @@ export const toggleFavorite = async (
       if (deleteError) throw deleteError;
       return { isFavorite: false, error: null };
     } else {
+      // Ensure customer record exists to avoid foreign key violation
+      await supabase.from('customers').upsert({
+        id: user.id,
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'الزبون',
+        phone: user.user_metadata?.phone || '',
+        neighborhood: user.user_metadata?.neighborhood || 'أين السعرة',
+      }, { onConflict: 'id', ignoreDuplicates: true });
+
       // Add
       const { error: insertError } = await supabase
         .from('customer_favorites')
