@@ -28,7 +28,7 @@ import { getArabicCategoryName } from "@/config/storeCategories";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 /**
- * Verified Favorites Gateway Screen
+ * Verified Favorites Gateway Screen - Phase 2 & 3 Commercial Cycle
  */
 export default function FavoritesGatewayScreen() {
   const router = useRouter();
