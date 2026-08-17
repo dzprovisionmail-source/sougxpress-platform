@@ -191,3 +191,52 @@ export const getMerchantFavoriteCustomerIds = async (): Promise<string[]> => {
     return [];
   }
 };
+
+/**
+ * Gets customers who favorited a specific store (Phase 2).
+ */
+export interface InterestedCustomerItem {
+  id: string; // customer_favorites record id
+  customer_id: string;
+  created_at: string;
+  customer?: {
+    id: string;
+    full_name: string;
+    avatar_url: string;
+    phone: string;
+    neighborhood: string;
+  };
+}
+
+export const getInterestedCustomersForStore = async (storeId: string): Promise<InterestedCustomerItem[]> => {
+  try {
+    if (!storeId) return [];
+
+    const { data: favs, error: fetchError } = await supabase
+      .from('customer_favorites')
+      .select('id, customer_id, created_at')
+      .eq('target_type', 'store')
+      .eq('target_id', storeId);
+
+    if (fetchError) throw fetchError;
+    if (!favs || favs.length === 0) return [];
+
+    const customerIds = favs.map(f => f.customer_id);
+    const { data: customerData, error: customerError } = await supabase
+      .from('customers')
+      .select('id, full_name, avatar_url, phone, neighborhood')
+      .in('id', customerIds);
+
+    if (customerError) throw customerError;
+
+    return favs.map(f => ({
+      id: f.id,
+      customer_id: f.customer_id,
+      created_at: f.created_at,
+      customer: customerData?.find(c => c.id === f.customer_id),
+    })).filter(item => !!item.customer);
+  } catch (err) {
+    console.error('Error fetching interested customers for store:', err);
+    return [];
+  }
+};

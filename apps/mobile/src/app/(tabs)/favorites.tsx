@@ -45,6 +45,8 @@ export default function FavoritesGatewayScreen() {
 
   // Merchant state
   const [merchantFavorites, setMerchantFavorites] = useState<any[]>([]);
+  const [interestedCustomers, setInterestedCustomers] = useState<any[]>([]);
+  const [merchantActiveTab, setMerchantActiveTab] = useState<"interested" | "favorites">("interested");
 
   useEffect(() => {
     checkRoleAndFetch();
@@ -70,7 +72,7 @@ export default function FavoritesGatewayScreen() {
       setRole(userRole);
 
       if (userRole === "merchant") {
-        await fetchMerchantFavorites(user.id);
+        await fetchMerchantData(user.id);
       } else {
         await fetchCustomerFavorites(user.id);
       }
@@ -82,8 +84,18 @@ export default function FavoritesGatewayScreen() {
     }
   };
 
-  const fetchMerchantFavorites = async (userId: string) => {
+  const fetchMerchantData = async (userId: string) => {
     try {
+      // 1. Get merchant's store
+      const { data: storeData } = await supabase
+        .from("stores")
+        .select("id")
+        .eq("merchant_id", userId)
+        .maybeSingle();
+
+      const storeId = storeData?.id;
+
+      // 2. Fetch merchant favorites
       const { data: favs, error: fetchError } = await supabase
         .from("merchant_favorites")
         .select("id, target_id")
@@ -92,24 +104,64 @@ export default function FavoritesGatewayScreen() {
 
       if (fetchError) throw fetchError;
 
+      let favList: any[] = [];
       if (favs && favs.length > 0) {
         const customerIds = favs.map(f => f.target_id);
-        const { data: customerData, error: customerError } = await supabase
+        const { data: customerData } = await supabase
           .from("customers")
           .select("id, full_name, avatar_url, phone, neighborhood")
           .in("id", customerIds);
         
-        if (customerError) throw customerError;
-        
-        setMerchantFavorites(favs.map(f => ({
+        favList = favs.map(f => ({
           ...f,
-          customer: customerData.find(c => c.id === f.target_id)
-        })).filter(f => !!f.customer));
+          customer: customerData?.find(c => c.id === f.target_id)
+        })).filter(f => !!f.customer);
+      }
+      setMerchantFavorites(favList);
+
+      // 3. Fetch interested customers (Phase 2: customers who favorited this store)
+      if (storeId) {
+        const { data: interestedFavs } = await supabase
+          .from("customer_favorites")
+          .select("id, customer_id, created_at")
+          .eq("target_type", "store")
+          .eq("target_id", storeId);
+
+        if (interestedFavs && interestedFavs.length > 0) {
+          const intCustomerIds = interestedFavs.map(f => f.customer_id);
+          const { data: intCustomerData } = await supabase
+            .from("customers")
+            .select("id, full_name, avatar_url, phone, neighborhood")
+            .in("id", intCustomerIds);
+
+          setInterestedCustomers(interestedFavs.map(f => ({
+            ...f,
+            customer: intCustomerData?.find(c => c.id === f.customer_id)
+          })).filter(f => !!f.customer));
+        } else {
+          setInterestedCustomers([]);
+        }
       } else {
-        setMerchantFavorites([]);
+        setInterestedCustomers([]);
       }
     } catch (err) {
-      console.error("Error fetching merchant favorites:", err);
+      console.error("Error fetching merchant data:", err);
+    }
+  };
+
+  const handleAddMerchantFavorite = async (customerId: string) => {
+    try {
+      const { error } = await supabase
+        .from("merchant_favorites")
+        .insert({
+          merchant_id: (await supabase.auth.getUser()).data.user?.id,
+          target_type: "customer",
+          target_id: customerId,
+        });
+      if (error) throw error;
+      await fetchMerchantData((await supabase.auth.getUser()).data.user?.id || "");
+    } catch (err) {
+      console.error("Error adding merchant favorite:", err);
     }
   };
 
@@ -228,58 +280,153 @@ export default function FavoritesGatewayScreen() {
     );
   }
 
-  // RENDER MERCHANT FAVORITES (Customers)
+  // RENDER MERCHANT FAVORITES (Interested & Favorites)
   if (role === "merchant") {
+    const favoriteCustomerIds = merchantFavorites.map(f => f.target_id);
+
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
-        <Header title="الزبائن المفضلون" />
+        <Header title="إدارة الزبائن والمفضلة" />
+        
+        {/* Merchant Tabs Switcher */}
+        <View style={[styles.tabBar, { borderBottomColor: colors.borderSubtle, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <TouchableOpacity
+            onPress={() => setMerchantActiveTab("interested")}
+            style={[
+              styles.tabItem,
+              merchantActiveTab === "interested" && { borderBottomColor: colors.primary, borderBottomWidth: 2 },
+            ]}
+          >
+            <Typography
+              variant="button"
+              style={{
+                color: merchantActiveTab === "interested" ? colors.primary : colors.textSecondary,
+                fontWeight: merchantActiveTab === "interested" ? "700" : "500",
+              }}
+            >
+              الزبائن المهتمون ({interestedCustomers.length})
+            </Typography>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setMerchantActiveTab("favorites")}
+            style={[
+              styles.tabItem,
+              merchantActiveTab === "favorites" && { borderBottomColor: colors.primary, borderBottomWidth: 2 },
+            ]}
+          >
+            <Typography
+              variant="button"
+              style={{
+                color: merchantActiveTab === "favorites" ? colors.primary : colors.textSecondary,
+                fontWeight: merchantActiveTab === "favorites" ? "700" : "500",
+              }}
+            >
+              زبائني المفضلون ({merchantFavorites.length})
+            </Typography>
+          </TouchableOpacity>
+        </View>
+
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
           }
         >
-          {merchantFavorites.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
-              <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }}>
-                لا يوجد زبائن مفضلون بعد
-              </Typography>
-            </View>
-          ) : (
-            <View style={styles.list}>
-              {merchantFavorites.map((item) => {
-                const customer = item.customer;
-                if (!customer) return null;
-                return (
-                  <View 
-                    key={item.id} 
-                    style={[styles.customerCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
-                  >
-                    <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                      <Avatar uri={customer.avatar_url} name={customer.full_name} size="lg" />
-                      <View style={[styles.infoContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-                        <Typography variant="subtitle" style={{ fontWeight: '700' }}>
-                          {customer.full_name}
-                        </Typography>
-                        <Typography variant="caption" color="secondary">
-                          {customer.neighborhood || "بدون عنوان"}
-                        </Typography>
-                        <Typography variant="caption" color="secondary">
-                          {customer.phone || "بدون هاتف"}
-                        </Typography>
+          {merchantActiveTab === "interested" ? (
+            interestedCustomers.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
+                <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }}>
+                  لا يوجد زبائن فضلوا متجرك بعد
+                </Typography>
+              </View>
+            ) : (
+              <View style={styles.list}>
+                {interestedCustomers.map((item) => {
+                  const customer = item.customer;
+                  if (!customer) return null;
+                  const isAlreadyFav = favoriteCustomerIds.includes(customer.id);
+
+                  return (
+                    <View 
+                      key={item.id} 
+                      style={[styles.customerCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
+                    >
+                      <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                        <Avatar uri={customer.avatar_url} name={customer.full_name} size="lg" />
+                        <View style={[styles.infoContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                          <Typography variant="subtitle" style={{ fontWeight: '700' }}>
+                            {customer.full_name}
+                          </Typography>
+                          <Typography variant="caption" color="secondary">
+                            {customer.neighborhood || "بدون عنوان"}
+                          </Typography>
+                          <Typography variant="caption" color="secondary">
+                            {customer.phone || "بدون هاتف"}
+                          </Typography>
+                        </View>
+                        {isAlreadyFav ? (
+                          <View style={styles.removeBtn}>
+                            <Heart size={20} color={colors.error} fill={colors.error} />
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            onPress={() => handleAddMerchantFavorite(customer.id)}
+                            style={[styles.removeBtn, { backgroundColor: colors.primary + '15' }]}
+                          >
+                            <Heart size={20} color={colors.primary} />
+                          </TouchableOpacity>
+                        )}
                       </View>
-                      <TouchableOpacity
-                        onPress={() => handleRemoveMerchantFavorite(item.id)}
-                        style={styles.removeBtn}
-                      >
-                        <Heart size={20} color={colors.error} fill={colors.error} />
-                      </TouchableOpacity>
                     </View>
-                  </View>
-                );
-              })}
-            </View>
+                  );
+                })}
+              </View>
+            )
+          ) : (
+            merchantFavorites.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
+                <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }}>
+                  لا يوجد زبائن مفضلون بعد
+                </Typography>
+              </View>
+            ) : (
+              <View style={styles.list}>
+                {merchantFavorites.map((item) => {
+                  const customer = item.customer;
+                  if (!customer) return null;
+                  return (
+                    <View 
+                      key={item.id} 
+                      style={[styles.customerCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
+                    >
+                      <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                        <Avatar uri={customer.avatar_url} name={customer.full_name} size="lg" />
+                        <View style={[styles.infoContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                          <Typography variant="subtitle" style={{ fontWeight: '700' }}>
+                            {customer.full_name}
+                          </Typography>
+                          <Typography variant="caption" color="secondary">
+                            {customer.neighborhood || "بدون عنوان"}
+                          </Typography>
+                          <Typography variant="caption" color="secondary">
+                            {customer.phone || "بدون هاتف"}
+                          </Typography>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => handleRemoveMerchantFavorite(item.id)}
+                          style={styles.removeBtn}
+                        >
+                          <Heart size={20} color={colors.error} fill={colors.error} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )
           )}
         </ScrollView>
       </SafeAreaView>
