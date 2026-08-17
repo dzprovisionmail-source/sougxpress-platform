@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Modal,
   I18nManager,
   Dimensions,
 } from "react-native";
@@ -47,6 +48,7 @@ export default function FavoritesGatewayScreen() {
   const [merchantFavorites, setMerchantFavorites] = useState<any[]>([]);
   const [interestedCustomers, setInterestedCustomers] = useState<any[]>([]);
   const [merchantActiveTab, setMerchantActiveTab] = useState<"interested" | "favorites">("interested");
+  const [selectedMerchantCustomer, setSelectedMerchantCustomer] = useState<any | null>(null);
 
   useEffect(() => {
     checkRoleAndFetch();
@@ -361,9 +363,14 @@ export default function FavoritesGatewayScreen() {
                         <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
                           {customer.neighborhood || "بدون عنوان"}
                         </Typography>
-                        <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
-                          {customer.phone || "بدون هاتف"}
-                        </Typography>
+                        <TouchableOpacity
+                          onPress={() => setSelectedMerchantCustomer(customer)}
+                          style={styles.viewProfileButton}
+                        >
+                          <Typography variant="caption" style={{ color: colors.primary, fontWeight: "700" }}>
+                            عرض الحساب
+                          </Typography>
+                        </TouchableOpacity>
                         {isAlreadyFav ? (
                           <View style={styles.removeBtn}>
                             <Heart size={16} color={colors.error} fill={colors.error} />
@@ -405,9 +412,14 @@ export default function FavoritesGatewayScreen() {
                         <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
                           {customer.neighborhood || "بدون عنوان"}
                         </Typography>
-                        <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
-                          {customer.phone || "بدون هاتف"}
-                        </Typography>
+                        <TouchableOpacity
+                          onPress={() => setSelectedMerchantCustomer(customer)}
+                          style={styles.viewProfileButton}
+                        >
+                          <Typography variant="caption" style={{ color: colors.primary, fontWeight: "700" }}>
+                            عرض الحساب
+                          </Typography>
+                        </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => handleRemoveMerchantFavorite(item.id)}
                           style={styles.removeBtn}
@@ -422,6 +434,49 @@ export default function FavoritesGatewayScreen() {
             )
           )}
         </ScrollView>
+
+        <Modal
+          visible={selectedMerchantCustomer !== null}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setSelectedMerchantCustomer(null)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={[styles.profileModal, { backgroundColor: colors.bgElevated }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
+                <Typography variant="title">حساب الزبون</Typography>
+                <TouchableOpacity
+                  onPress={() => setSelectedMerchantCustomer(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="إغلاق حساب الزبون"
+                >
+                  <Typography variant="button" style={{ color: colors.primary }}>
+                    إغلاق
+                  </Typography>
+                </TouchableOpacity>
+              </View>
+
+              {selectedMerchantCustomer && (
+                <View style={styles.profileContent}>
+                  <Avatar
+                    uri={selectedMerchantCustomer.avatar_url}
+                    name={selectedMerchantCustomer.full_name}
+                    size="lg"
+                  />
+                  <Typography variant="title" align="center" style={{ marginTop: TOKENS.spacing.md }}>
+                    {selectedMerchantCustomer.full_name}
+                  </Typography>
+                  <Typography variant="caption" color="secondary" align="center" style={{ marginTop: TOKENS.spacing.sm }}>
+                    العنوان
+                  </Typography>
+                  <Typography variant="subtitle" align="center">
+                    {selectedMerchantCustomer.neighborhood || "بدون عنوان"}
+                  </Typography>
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     );
   }
@@ -625,6 +680,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
     minHeight: 190,
+  },
+  viewProfileButton: {
+    marginTop: TOKENS.spacing.sm,
+    paddingHorizontal: TOKENS.spacing.sm,
+    paddingVertical: 4,
+    borderRadius: TOKENS.radius.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 152, 0, 0.45)',
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+  },
+  profileModal: {
+    borderTopLeftRadius: TOKENS.radius.lg,
+    borderTopRightRadius: TOKENS.radius.lg,
+    paddingBottom: TOKENS.spacing.xl,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: TOKENS.spacing.lg,
+    paddingVertical: TOKENS.spacing.md,
+    borderBottomWidth: 1,
+  },
+  profileContent: {
+    alignItems: 'center',
+    paddingHorizontal: TOKENS.spacing.lg,
+    paddingTop: TOKENS.spacing.xl,
   },
   ratingRow: {
     flexDirection: 'row',
