@@ -51,9 +51,19 @@ export default function ChatListScreen() {
 
   const renderConversationItem = ({ item }: { item: Conversation }) => {
     const other = item.other_participant;
-    const lastMessage = item.last_message_at 
-      ? new Date(item.last_message_at).toLocaleDateString("ar-DZ")
+    const lastMessageTime = item.last_message?.created_at || item.last_message_at;
+    const timeStr = lastMessageTime 
+      ? new Date(lastMessageTime).toLocaleTimeString("ar-DZ", { hour: '2-digit', minute: '2-digit' })
       : "";
+
+    // Identity Mapping: Use Store Name for Merchants
+    const displayName = other?.role === 'merchant' && other.store_name 
+      ? other.store_name 
+      : (other?.full_name || "مستخدم");
+      
+    const displayAvatar = other?.role === 'merchant' && other.store_logo
+      ? other.store_logo
+      : other?.avatar_url;
 
     return (
       <TouchableOpacity
@@ -61,17 +71,17 @@ export default function ChatListScreen() {
         onPress={() => router.push(`/chat/${item.id}`)}
       >
         <Avatar
-          uri={other?.avatar_url || undefined}
-          name={other?.full_name || "?"}
+          uri={displayAvatar || undefined}
+          name={displayName}
           size={50}
         />
         <View style={styles.convInfo}>
           <View style={styles.convHeader}>
             <Typography variant="h3" style={{ color: colors.textPrimary }}>
-              {other?.full_name || "مستخدم"}
+              {displayName}
             </Typography>
             <Typography variant="caption" style={{ color: colors.textSecondary }}>
-              {lastMessage}
+              {timeStr}
             </Typography>
           </View>
           
@@ -81,8 +91,10 @@ export default function ChatListScreen() {
               numberOfLines={1} 
               style={{ color: colors.textSecondary, flex: 1, textAlign: isRTL ? "right" : "left" }}
             >
-              {item.relationship_type === 'customer_merchant' ? "متجر" : 
-               item.relationship_type === 'customer_courier' ? "موصل" : "تنسيق توصيل"}
+              {item.last_message?.content || (
+                item.relationship_type === 'customer_merchant' ? "متجر" : 
+                item.relationship_type === 'customer_courier' ? "موصل" : "تنسيق توصيل"
+              )}
             </Typography>
             
             {item.reference_id && (

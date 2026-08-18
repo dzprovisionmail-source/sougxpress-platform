@@ -29,7 +29,9 @@ import {
   subscribeToMessages,
   markAsRead,
   getOrderContext,
+  getConversationById,
   Message,
+  Conversation,
 } from "@/services/chat.service";
 // Remove date-fns imports to avoid dependency issues
 
@@ -43,7 +45,7 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [inputText, setInputText] = useState("");
-  const [otherUser, setOtherUser] = useState<any>(null);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
   const [orderContext, setOrderContext] = useState<any>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -64,19 +66,11 @@ export default function ChatScreen() {
       .single();
     if (profile) setCurrentUserRole(profile.role);
 
-    // Fetch conversation details to get other participant
-    const { data: conv } = await supabase
-      .from("chat_conversations")
-      .select(`
-        *,
-        p1:participant_one(id, full_name, avatar_url, role),
-        p2:participant_two(id, full_name, avatar_url, role)
-      `)
-      .eq("id", conversationId)
-      .single();
+    // Fetch conversation details with enhanced identity mapping
+    const { data: conv, error } = await getConversationById(conversationId);
 
-    if (conv) {
-      setOtherUser(conv.participant_one === user.id ? conv.p2 : conv.p1);
+    if (!error && conv) {
+      setConversation(conv);
       if (conv.reference_id) {
         const { data: order } = await getOrderContext(conv.reference_id);
         setOrderContext(order);
@@ -249,12 +243,17 @@ export default function ChatScreen() {
       return map[status] || status;
     };
 
+    const isCourierChat = currentUserRole === 'driver';
+
     return (
       <View style={[styles.orderCard, { backgroundColor: colors.bgSurface, borderBottomColor: colors.borderSubtle }]}>
         <View style={styles.orderCardHeader}>
           <Package size={20} color={colors.primary} />
           <Typography variant="h3" style={{ color: colors.textPrimary, marginHorizontal: 8 }}>
-            طلب من {orderContext.store_name}
+            {isCourierChat 
+              ? `طلب من ${orderContext.store_name} للزبون ${orderContext.customer_name}`
+              : `طلب من ${orderContext.store_name}`
+            }
           </Typography>
         </View>
         <View style={styles.orderCardBody}>
@@ -280,14 +279,23 @@ export default function ChatScreen() {
     );
   }
 
+  const other = conversation?.other_participant;
+  const displayName = other?.role === 'merchant' && other.store_name 
+    ? other.store_name 
+    : (other?.full_name || "محادثة");
+    
+  const displayAvatar = other?.role === 'merchant' && other.store_logo
+    ? other.store_logo
+    : other?.avatar_url;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
       <Header 
-        title={otherUser?.full_name || "محادثة"} 
+        title={displayName} 
         rightContent={
           <Avatar 
-            uri={otherUser?.avatar_url} 
-            name={otherUser?.full_name || "?"} 
+            uri={displayAvatar || undefined} 
+            name={displayName} 
             size={36} 
           />
         }

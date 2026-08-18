@@ -15,6 +15,8 @@ export interface Conversation {
     full_name: string | null;
     avatar_url: string | null;
     role: string;
+    store_name?: string | null;
+    store_logo?: string | null;
   };
   last_message?: {
     content: string;
@@ -41,28 +43,91 @@ export const getConversations = async (): Promise<{ data: Conversation[] | null;
     if (!user) throw new Error("Not authenticated");
 
     const { data, error } = await supabase
-      .from("chat_conversations")
-      .select(`
-        *,
-        p1:participant_one(id, full_name, avatar_url, role),
-        p2:participant_two(id, full_name, avatar_url, role)
-      `)
+      .from("v_chat_conversations_list")
+      .select("*")
       .or(`participant_one.eq.${user.id},participant_two.eq.${user.id}`)
-      .order("last_message_at", { ascending: false });
+      .order("last_message_at", { ascending: false, nullsFirst: false });
 
     if (error) throw error;
 
     const formattedData = data.map((conv: any) => {
-      const otherParticipant = conv.participant_one === user.id ? conv.p2 : conv.p1;
+      const isP1 = conv.participant_one === user.id;
+      const other = {
+        id: isP1 ? conv.participant_two : conv.participant_one,
+        full_name: isP1 ? conv.p2_full_name : conv.p1_full_name,
+        avatar_url: isP1 ? conv.p2_avatar_url : conv.p1_avatar_url,
+        role: isP1 ? conv.p2_role : conv.p1_role,
+        store_name: isP1 ? conv.p2_store_name : conv.p1_store_name,
+        store_logo: isP1 ? conv.p2_store_logo : conv.p1_store_logo,
+      };
+
       return {
-        ...conv,
-        other_participant: otherParticipant,
+        id: conv.id,
+        participant_one: conv.participant_one,
+        participant_two: conv.participant_two,
+        relationship_type: conv.relationship_type,
+        reference_id: conv.reference_id,
+        last_message_at: conv.last_message_at,
+        created_at: conv.created_at,
+        other_participant: other,
+        last_message: conv.last_message_content ? {
+          content: conv.last_message_content,
+          created_at: conv.last_message_time
+        } : undefined
       };
     });
 
     return { data: formattedData, error: null };
-  } catch (err) {
+    } catch (err) {
     console.error("Error fetching conversations:", err);
+    return { data: null, error: err };
+  }
+};
+
+/**
+ * Fetches a single conversation by ID with enhanced identity mapping.
+ */
+export const getConversationById = async (id: string): Promise<{ data: Conversation | null; error: any }> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const { data, error } = await supabase
+      .from("v_chat_conversations_list")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+
+    const isP1 = data.participant_one === user.id;
+    const other = {
+      id: isP1 ? data.participant_two : data.participant_one,
+      full_name: isP1 ? data.p2_full_name : data.p1_full_name,
+      avatar_url: isP1 ? data.p2_avatar_url : data.p1_avatar_url,
+      role: isP1 ? data.p2_role : data.p1_role,
+      store_name: isP1 ? data.p2_store_name : data.p1_store_name,
+      store_logo: isP1 ? data.p2_store_logo : data.p1_store_logo,
+    };
+
+    const formatted: Conversation = {
+      id: data.id,
+      participant_one: data.participant_one,
+      participant_two: data.participant_two,
+      relationship_type: data.relationship_type as RelationshipType,
+      reference_id: data.reference_id,
+      last_message_at: data.last_message_at,
+      created_at: data.created_at,
+      other_participant: other,
+      last_message: data.last_message_content ? {
+        content: data.last_message_content,
+        created_at: data.last_message_time
+      } : undefined
+    };
+
+    return { data: formatted, error: null };
+  } catch (err) {
+    console.error("Error fetching conversation by ID:", err);
     return { data: null, error: err };
   }
 };

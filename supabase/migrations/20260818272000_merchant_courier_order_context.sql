@@ -6,10 +6,12 @@ CREATE OR REPLACE VIEW public.v_chat_order_context AS
 SELECT 
     o.id AS order_id,
     o.customer_id,
+    c.full_name AS customer_name,
     o.store_id,
     s.name AS store_name,
     s.merchant_id,
     da.driver_id,
+    p_d.full_name AS driver_name,
     o.status AS order_status,
     da.status AS delivery_status,
     o.total_minor,
@@ -17,7 +19,9 @@ SELECT
     o.created_at
 FROM public.orders o
 JOIN public.stores s ON o.store_id = s.id
-LEFT JOIN public.delivery_assignments da ON o.id = da.order_id;
+JOIN public.profiles c ON o.customer_id = c.id
+LEFT JOIN public.delivery_assignments da ON o.id = da.order_id
+LEFT JOIN public.profiles p_d ON da.driver_id = p_d.id;
 
 -- 2. Grant select on view to authenticated users
 GRANT SELECT ON public.v_chat_order_context TO authenticated;
