@@ -103,10 +103,20 @@ export const checkIfFavorite = async (
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
+    // Check user role to determine which table to query
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const table = profile?.role === 'driver' ? 'courier_favorites' : 'customer_favorites';
+    const idField = profile?.role === 'driver' ? 'courier_id' : 'customer_id';
+
     const { data, error } = await supabase
-      .from('customer_favorites')
+      .from(table)
       .select('id')
-      .eq('customer_id', user.id)
+      .eq(idField, user.id)
       .eq('target_type', targetType)
       .eq('target_id', targetId)
       .maybeSingle();
@@ -126,10 +136,20 @@ export const getFavoriteIds = async (targetType: FavoriteType): Promise<string[]
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
+    // Check user role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const table = profile?.role === 'driver' ? 'courier_favorites' : 'customer_favorites';
+    const idField = profile?.role === 'driver' ? 'courier_id' : 'customer_id';
+
     const { data, error } = await supabase
-      .from('customer_favorites')
+      .from(table)
       .select('target_id')
-      .eq('customer_id', user.id)
+      .eq(idField, user.id)
       .eq('target_type', targetType);
 
     if (error) throw error;

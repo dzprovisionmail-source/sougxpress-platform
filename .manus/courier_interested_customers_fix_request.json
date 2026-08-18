@@ -1,0 +1,5 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "name": "fix_courier_interested_customers_rpc_v2",
+  "query": "-- Fix the RPC to ensure customers who haven't filled their profile yet still show up for the courier.\n-- We join with profiles to get the name, and left join with customers for location and avatar data.\n\nBEGIN;\n\nCREATE OR REPLACE FUNCTION public.get_courier_interested_customers(p_courier_id UUID)\nRETURNS TABLE (\n    id UUID,\n    customer_id UUID,\n    created_at TIMESTAMPTZ,\n    full_name TEXT,\n    avatar_url TEXT,\n    neighborhood TEXT\n)\nLANGUAGE sql\nSECURITY DEFINER\nSTABLE\nSET search_path = public\nAS $$\n    SELECT \n        fc.id,\n        fc.user_id as customer_id,\n        fc.created_at,\n        COALESCE(p.full_name, 'زبون جديد') as full_name,\n        c.avatar_url,\n        c.neighborhood\n    FROM public.favorite_couriers fc\n    JOIN public.profiles p ON p.id = fc.user_id\n    LEFT JOIN public.customers c ON c.id = fc.user_id\n    WHERE fc.courier_id = p_courier_id;\n$$;\n\nCOMMIT;"
+}

@@ -594,17 +594,19 @@ export default function FavoritesGatewayScreen() {
             </>
           )}
 
-          {courierCandidates.stores.length > 0 && (
+          {/* Delivery Relationships / Candidates Section */}
+          {(courierActiveTab === "stores" ? courierCandidates.stores : courierCandidates.customers).length > 0 && (
             <>
               <Typography variant="subtitle" style={styles.sectionTitle}>
-                علاقات التوصيل
+                {courierActiveTab === "stores" ? "متاجر تعاملت معها" : "زبائن تعاملت معهم"}
               </Typography>
               <Typography variant="caption" color="secondary" style={styles.sectionDescription}>
                 أضف العلاقة إلى مفضلتك لتصل إليها بسرعة في التوصيلات القادمة.
               </Typography>
               <View style={courierActiveTab === "stores" ? styles.list : styles.grid}>
-                {courierCandidates.stores.map((item) => {
+                {(courierActiveTab === "stores" ? courierCandidates.stores : courierCandidates.customers).map((item) => {
                   const busy = courierBusyTarget === `${item.target_type}:${item.target_id}`;
+                  
                   if (courierActiveTab === "stores" && item.store) {
                     const store = item.store;
                     return (
@@ -618,7 +620,7 @@ export default function FavoritesGatewayScreen() {
                           logoImage={store.logo_url}
                           isOpen={store.status === "active" || store.is_open}
                           isFeatured={false}
-                          isFavorite={false}
+                          isFavorite={item.isFavorite}
                           onToggleFavorite={() => handleToggleCourierFavorite("store", store.id)}
                           address={store.address_line1 || store.city}
                           onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
@@ -642,13 +644,13 @@ export default function FavoritesGatewayScreen() {
                           </Typography>
                           <TouchableOpacity
                             onPress={() => handleToggleCourierFavorite("customer", customer.id)}
-                            style={[styles.removeBtn, { backgroundColor: colors.primary + "15" }]}
+                            style={[styles.removeBtn, { backgroundColor: item.isFavorite ? colors.primary + "15" : colors.bgBase }]}
                             disabled={busy}
                           >
                             {busy ? (
                               <ActivityIndicator size="small" color={colors.primary} />
                             ) : (
-                              <Heart size={16} color={colors.primary} />
+                              <Heart size={16} color={item.isFavorite ? colors.primary : colors.textDisabled} fill={item.isFavorite ? colors.primary : "none"} />
                             )}
                           </TouchableOpacity>
                         </View>

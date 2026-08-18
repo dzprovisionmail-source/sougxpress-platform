@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT id, full_name, role FROM public.profiles LIMIT 20"
+}

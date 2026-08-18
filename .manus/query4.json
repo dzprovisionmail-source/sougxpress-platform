@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT id, full_name, role, updated_at FROM public.profiles WHERE role = 'driver' ORDER BY updated_at DESC LIMIT 5"
+}

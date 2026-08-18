@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT * FROM public.favorite_couriers WHERE courier_id = '4570e2c4-c7eb-4688-9e52-840b53357553'"
+}

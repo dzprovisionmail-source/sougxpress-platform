@@ -1,0 +1,5 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "name": "fix_courier_interested_customers_rpc_v5",
+  "query": "-- Drop and recreate the RPC to ensure ANY user (customer or merchant) who favorited the courier shows up.\n\nBEGIN;\n\nDROP FUNCTION IF EXISTS public.get_courier_interested_customers(UUID);\n\nCREATE OR REPLACE FUNCTION public.get_courier_interested_customers(p_courier_id UUID)\nRETURNS TABLE (\n    id UUID,\n    customer_id UUID,\n    created_at TIMESTAMPTZ,\n    full_name TEXT,\n    avatar_url TEXT,\n    neighborhood TEXT,\n    role TEXT\n)\nLANGUAGE sql\nSECURITY DEFINER\nSTABLE\nSET search_path = public\nAS $$\n    SELECT \n        fc.id,\n        fc.user_id as customer_id,\n        fc.created_at,\n        COALESCE(p.full_name, 'مستخدم جديد') as full_name,\n        COALESCE(c.avatar_url, m.logo_url) as avatar_url,\n        COALESCE(c.neighborhood, m.address) as neighborhood,\n        p.role\n    FROM public.favorite_couriers fc\n    JOIN public.profiles p ON p.id = fc.user_id\n    LEFT JOIN public.customers c ON c.id = fc.user_id\n    LEFT JOIN public.merchants m ON m.id = fc.user_id\n    WHERE fc.courier_id = p_courier_id;\n$$;\n\nCOMMIT;"
+}
