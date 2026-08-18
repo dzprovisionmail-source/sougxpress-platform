@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import {
   User, MapPin, ShoppingCart, MessageSquare,
-  PlayCircle, PackageCheck, XCircle, Clock, Heart,
+  PlayCircle, PackageCheck, XCircle, Clock, Heart, MessageCircle,
 } from 'lucide-react-native';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
@@ -15,6 +15,8 @@ import OrderStatusBadge from './OrderStatusBadge';
 import PreparationTimer from './PreparationTimer';
 import { toggleMerchantFavorite, getMerchantFavoriteCustomerIds } from '@/services/favorite.service';
 import { useState, useEffect } from 'react';
+import { getOrCreateConversation } from '@/services/chat.service';
+import { useRouter } from 'expo-router';
 
 interface MerchantOrderCardProps {
   order: any;
@@ -22,6 +24,7 @@ interface MerchantOrderCardProps {
 }
 
 const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateStatus }) => {
+  const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
@@ -37,6 +40,23 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
     const { isFavorite: newStatus, error } = await toggleMerchantFavorite(order.customer.id);
     if (!error) {
       setIsFavorite(newStatus);
+    }
+  };
+
+  const handleStartChat = async () => {
+    if (!order.customer?.id) return;
+    try {
+      const { data: conversationId, error } = await getOrCreateConversation(
+        order.customer.id,
+        "customer_merchant",
+        order.id
+      );
+      if (error) throw error;
+      if (conversationId) {
+        router.push(`/chat/${conversationId}`);
+      }
+    } catch (err) {
+      console.error("Error starting chat:", err);
     }
   };
   const isNew       = order.status === 'pending';
@@ -71,9 +91,14 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
           <Text style={styles.infoText}>الزبون: {order.customer?.full_name || 'زبون غير مسجل'}</Text>
         </View>
         {order.customer?.id && (
-          <TouchableOpacity onPress={handleToggleFavorite} style={{ padding: 4 }}>
-            <Heart size={20} color={isFavorite ? colors.error : colors.textSecondary} fill={isFavorite ? colors.error : 'transparent'} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity onPress={handleStartChat} style={{ padding: 4 }}>
+              <MessageCircle size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleToggleFavorite} style={{ padding: 4 }}>
+              <Heart size={20} color={isFavorite ? colors.error : colors.textSecondary} fill={isFavorite ? colors.error : 'transparent'} />
+            </TouchableOpacity>
+          </View>
         )}
       </View>
       <View style={styles.infoRow}>

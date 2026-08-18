@@ -34,6 +34,7 @@ import {
   type CourierFavoriteTargetType,
   type MerchantFavoriteCourier,
 } from "@/services/favorite.service";
+import { getOrCreateConversation, type RelationshipType } from "@/services/chat.service";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -377,6 +378,22 @@ export default function FavoritesGatewayScreen() {
     }
   };
 
+  const handleStartChat = async (otherUserId: string, relationshipType: RelationshipType, referenceId?: string) => {
+    try {
+      const { data: conversationId, error } = await getOrCreateConversation(
+        otherUserId,
+        relationshipType,
+        referenceId || null
+      );
+      if (error) throw error;
+      if (conversationId) {
+        router.push(`/chat/${conversationId}`);
+      }
+    } catch (err) {
+      console.error("Error starting chat:", err);
+    }
+  };
+
   if (loading && !refreshing) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
@@ -459,7 +476,7 @@ export default function FavoritesGatewayScreen() {
 
           {courierActiveTab === "interested" && (
             <>
-              <Typography variant="subtitle" style={styles.sectionTitle}>
+              <Typography variant="h3" style={styles.sectionTitle}>
                 الزبائن الذين وضعوك في المفضلة ({courierInterestedCustomers.length})
               </Typography>
               {courierInterestedCustomers.length > 0 ? (
@@ -468,7 +485,7 @@ export default function FavoritesGatewayScreen() {
                     <View key={item.id} style={styles.cardWrapper}>
                       <View style={[styles.customerFavoriteCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
                         <Avatar uri={item.avatar_url} name={item.full_name || "زبون"} size="lg" />
-                        <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
+                        <Typography variant="h3" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
                           {item.full_name || "زبون"}
                         </Typography>
                         <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
@@ -486,7 +503,7 @@ export default function FavoritesGatewayScreen() {
               ) : (
                 <View style={styles.emptyContainer}>
                   <Heart size={48} color={colors.textSecondary} style={{ marginBottom: 12 }} />
-                  <Typography variant="subtitle" align="center" color="secondary">
+                  <Typography variant="h3" align="center" color="secondary">
                     لا يوجد زبائن مهتمون بعد
                   </Typography>
                   <Typography variant="caption" align="center" color="secondary" style={{ marginTop: 4 }}>
@@ -499,7 +516,7 @@ export default function FavoritesGatewayScreen() {
 
           {courierActiveTab === "customers" && (
             <>
-              <Typography variant="subtitle" style={styles.sectionTitle}>
+              <Typography variant="h3" style={styles.sectionTitle}>
                 زبائني المفضلون ({courierFavorites.customers.length})
               </Typography>
               {courierFavorites.customers.length > 0 ? (
@@ -512,23 +529,31 @@ export default function FavoritesGatewayScreen() {
                       <View key={item.id} style={styles.cardWrapper}>
                         <View style={[styles.customerFavoriteCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
                           <Avatar uri={customer.avatar_url} name={customer.full_name || "زبون"} size="lg" />
-                          <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
+                          <Typography variant="h3" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
                             {customer.full_name || "زبون"}
                           </Typography>
                           <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
                             {customer.neighborhood || customer.address || "بدون عنوان"}
                           </Typography>
-                          <TouchableOpacity
-                            onPress={() => handleToggleCourierFavorite("customer", customer.id)}
-                            style={styles.removeBtn}
-                            disabled={busy}
-                          >
-                            {busy ? (
-                              <ActivityIndicator size="small" color={colors.primary} />
-                            ) : (
-                              <Heart size={16} color={colors.error} fill={colors.error} />
-                            )}
-                          </TouchableOpacity>
+                          <View style={styles.cardActionsRow}>
+                            <TouchableOpacity
+                              onPress={() => handleStartChat(customer.id, "customer_courier")}
+                              style={[styles.miniActionBtn, { backgroundColor: colors.primary + "10" }]}
+                            >
+                              <MessageCircle size={16} color={colors.primary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={() => handleToggleCourierFavorite("customer", customer.id)}
+                              style={styles.removeBtn}
+                              disabled={busy}
+                            >
+                              {busy ? (
+                                <ActivityIndicator size="small" color={colors.primary} />
+                              ) : (
+                                <Heart size={16} color={colors.error} fill={colors.error} />
+                              )}
+                            </TouchableOpacity>
+                          </View>
                         </View>
                       </View>
                     );
@@ -537,7 +562,7 @@ export default function FavoritesGatewayScreen() {
               ) : (
                 <View style={styles.emptyContainer}>
                   <Heart size={48} color={colors.textSecondary} style={{ marginBottom: 12 }} />
-                  <Typography variant="subtitle" align="center" color="secondary">
+                  <Typography variant="h3" align="center" color="secondary">
                     لا توجد زبائن مفضلون بعد
                   </Typography>
                   <Typography variant="caption" align="center" color="secondary" style={{ marginTop: 4 }}>
@@ -550,7 +575,7 @@ export default function FavoritesGatewayScreen() {
 
           {courierActiveTab === "stores" && (
             <>
-              <Typography variant="subtitle" style={styles.sectionTitle}>
+              <Typography variant="h3" style={styles.sectionTitle}>
                 المتاجر المفضلة ({courierFavorites.stores.length})
               </Typography>
               {courierFavorites.stores.length > 0 ? (
@@ -572,6 +597,7 @@ export default function FavoritesGatewayScreen() {
                           isFeatured={false}
                           isFavorite={true}
                           onToggleFavorite={() => handleToggleCourierFavorite("store", store.id)}
+                          onChatPress={() => handleStartChat(store.merchant_id, "merchant_courier")}
                           address={store.address_line1 || store.city}
                           onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
                         />
@@ -583,7 +609,7 @@ export default function FavoritesGatewayScreen() {
               ) : (
                 <View style={styles.emptyContainer}>
                   <Heart size={48} color={colors.textSecondary} style={{ marginBottom: 12 }} />
-                  <Typography variant="subtitle" align="center" color="secondary">
+                  <Typography variant="h3" align="center" color="secondary">
                     لا توجد متاجر مفضلة بعد
                   </Typography>
                   <Typography variant="caption" align="center" color="secondary" style={{ marginTop: 4 }}>
@@ -597,7 +623,7 @@ export default function FavoritesGatewayScreen() {
           {/* Delivery Relationships / Candidates Section */}
           {(courierActiveTab === "stores" ? courierCandidates.stores : courierCandidates.customers).length > 0 && (
             <>
-              <Typography variant="subtitle" style={styles.sectionTitle}>
+              <Typography variant="h3" style={styles.sectionTitle}>
                 {courierActiveTab === "stores" ? "متاجر تعاملت معها" : "زبائن تعاملت معهم"}
               </Typography>
               <Typography variant="caption" color="secondary" style={styles.sectionDescription}>
@@ -622,6 +648,7 @@ export default function FavoritesGatewayScreen() {
                           isFeatured={false}
                           isFavorite={item.isFavorite}
                           onToggleFavorite={() => handleToggleCourierFavorite("store", store.id)}
+                          onChatPress={() => handleStartChat(store.merchant_id, "merchant_courier")}
                           address={store.address_line1 || store.city}
                           onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
                         />
@@ -636,23 +663,31 @@ export default function FavoritesGatewayScreen() {
                       <View key={item.id} style={styles.cardWrapper}>
                         <View style={[styles.customerFavoriteCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
                           <Avatar uri={customer.avatar_url} name={customer.full_name || "زبون"} size="lg" />
-                          <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
+                          <Typography variant="h3" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
                             {customer.full_name || "زبون"}
                           </Typography>
                           <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
                             {customer.neighborhood || customer.address || "بدون عنوان"}
                           </Typography>
-                          <TouchableOpacity
-                            onPress={() => handleToggleCourierFavorite("customer", customer.id)}
-                            style={[styles.removeBtn, { backgroundColor: item.isFavorite ? colors.primary + "15" : colors.bgBase }]}
-                            disabled={busy}
-                          >
-                            {busy ? (
-                              <ActivityIndicator size="small" color={colors.primary} />
-                            ) : (
-                              <Heart size={16} color={item.isFavorite ? colors.primary : colors.textDisabled} fill={item.isFavorite ? colors.primary : "none"} />
-                            )}
-                          </TouchableOpacity>
+                          <View style={styles.cardActionsRow}>
+                            <TouchableOpacity
+                              onPress={() => handleStartChat(customer.id, "customer_courier")}
+                              style={[styles.miniActionBtn, { backgroundColor: colors.primary + "10" }]}
+                            >
+                              <MessageCircle size={16} color={colors.primary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={() => handleToggleCourierFavorite("customer", customer.id)}
+                              style={[styles.removeBtn, { backgroundColor: item.isFavorite ? colors.primary + "15" : colors.bgBase }]}
+                              disabled={busy}
+                            >
+                              {busy ? (
+                                <ActivityIndicator size="small" color={colors.primary} />
+                              ) : (
+                                <Heart size={16} color={item.isFavorite ? colors.primary : colors.textDisabled} fill={item.isFavorite ? colors.primary : "none"} />
+                              )}
+                            </TouchableOpacity>
+                          </View>
                         </View>
                       </View>
                     );
@@ -742,7 +777,7 @@ export default function FavoritesGatewayScreen() {
             merchantFavoriteCouriers.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
-                <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }}>
+                <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
                   قائمة الموصلين المفضلين فارغة
                 </Typography>
                 <Typography variant="caption" color="secondary" align="center" style={{ marginTop: 8, paddingHorizontal: 40 }}>
@@ -771,7 +806,7 @@ export default function FavoritesGatewayScreen() {
                     >
                       <Avatar uri={courier.avatar_url} name={courier.full_name || "موصل"} size="lg" />
                       <View style={styles.merchantCourierDetails}>
-                        <Typography variant="subtitle" numberOfLines={1} style={{ fontWeight: '700' }}>
+                        <Typography variant="h3" numberOfLines={1} style={{ fontWeight: '700' }}>
                           {courier.full_name || "موصل Soug-XPRESS"}
                         </Typography>
                         <Typography variant="caption" color="secondary" numberOfLines={1}>
@@ -810,8 +845,8 @@ export default function FavoritesGatewayScreen() {
                         </TouchableOpacity>
                         
                         <TouchableOpacity
-                          style={[styles.merchantMiniActionBtn, { marginTop: 8, opacity: 0.5 }]}
-                          disabled={true}
+                          style={[styles.merchantMiniActionBtn, { marginTop: 8 }]}
+                          onPress={() => handleStartChat(courier.id, "merchant_courier")}
                         >
                           <MessageCircle size={20} color={colors.primary} />
                         </TouchableOpacity>
@@ -825,7 +860,7 @@ export default function FavoritesGatewayScreen() {
             interestedCustomers.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
-                <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }}>
+                <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
                   لا يوجد زبائن فضلوا متجرك بعد
                 </Typography>
               </View>
@@ -840,7 +875,7 @@ export default function FavoritesGatewayScreen() {
                     <View key={item.id} style={styles.cardWrapper}>
                       <View style={[styles.customerFavoriteCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
                         <Avatar uri={customer.avatar_url} name={customer.full_name} size="lg" />
-                        <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8, fontWeight: '700' }}>
+                        <Typography variant="h3" align="center" numberOfLines={1} style={{ marginTop: 8, fontWeight: '700' }}>
                           {customer.full_name}
                         </Typography>
                         <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
@@ -869,8 +904,8 @@ export default function FavoritesGatewayScreen() {
                           )}
                           
                           <TouchableOpacity
-                            style={[styles.merchantActionBtn, { borderColor: colors.borderSubtle, opacity: 0.5 }]}
-                            disabled={true}
+                            onPress={() => handleStartChat(customer.id, "customer_merchant")}
+                            style={[styles.merchantActionBtn, { borderColor: colors.borderSubtle }]}
                           >
                             <MessageCircle size={14} color={colors.primary} />
                           </TouchableOpacity>
@@ -885,7 +920,7 @@ export default function FavoritesGatewayScreen() {
             merchantFavorites.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
-                <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }}>
+                <Typography variant="h3" color="secondary" style={{ marginTop: 16 }}>
                   لا يوجد زبائن مفضلون بعد
                 </Typography>
               </View>
@@ -898,7 +933,7 @@ export default function FavoritesGatewayScreen() {
                     <View key={item.id} style={styles.cardWrapper}>
                       <View style={[styles.customerFavoriteCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
                         <Avatar uri={customer.avatar_url} name={customer.full_name} size="lg" />
-                        <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8, fontWeight: '700' }}>
+                        <Typography variant="h3" align="center" numberOfLines={1} style={{ marginTop: 8, fontWeight: '700' }}>
                           {customer.full_name}
                         </Typography>
                         <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
@@ -921,8 +956,8 @@ export default function FavoritesGatewayScreen() {
                           </TouchableOpacity>
                           
                           <TouchableOpacity
-                            style={[styles.merchantActionBtn, { borderColor: colors.borderSubtle, opacity: 0.5 }]}
-                            disabled={true}
+                            onPress={() => handleStartChat(customer.id, "customer_merchant")}
+                            style={[styles.merchantActionBtn, { borderColor: colors.borderSubtle }]}
                           >
                             <MessageCircle size={14} color={colors.primary} />
                           </TouchableOpacity>
@@ -945,7 +980,7 @@ export default function FavoritesGatewayScreen() {
           <View style={styles.modalBackdrop}>
             <View style={[styles.profileModal, { backgroundColor: colors.bgElevated }]}>
               <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-                <Typography variant="title">حساب الزبون</Typography>
+                <Typography variant="h2">حساب الزبون</Typography>
                 <TouchableOpacity
                   onPress={() => setSelectedMerchantCustomer(null)}
                   accessibilityRole="button"
@@ -964,13 +999,13 @@ export default function FavoritesGatewayScreen() {
                     name={selectedMerchantCustomer.full_name}
                     size="lg"
                   />
-                  <Typography variant="title" align="center" style={{ marginTop: TOKENS.spacing.md }}>
+                  <Typography variant="h2" align="center" style={{ marginTop: TOKENS.spacing.md }}>
                     {selectedMerchantCustomer.full_name}
                   </Typography>
                   <Typography variant="caption" color="secondary" align="center" style={{ marginTop: TOKENS.spacing.sm }}>
                     العنوان
                   </Typography>
-                  <Typography variant="subtitle" align="center">
+                  <Typography variant="h3" align="center">
                     {selectedMerchantCustomer.neighborhood || "بدون عنوان"}
                   </Typography>
                 </View>
@@ -1068,7 +1103,7 @@ export default function FavoritesGatewayScreen() {
                       style={[styles.courierCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
                     >
                       <Avatar uri={driver.avatar_url} name={driver.full_name} size="lg" />
-                      <Typography variant="subtitle" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
+                      <Typography variant="h3" align="center" numberOfLines={1} style={{ marginTop: 8 }}>
                         {driver.full_name}
                       </Typography>
                       <Typography variant="caption" color="secondary" align="center">
@@ -1108,6 +1143,7 @@ export default function FavoritesGatewayScreen() {
                       isFeatured={store.is_featured}
                       isFavorite={true}
                       onToggleFavorite={() => handleRemoveCustomerFavorite(item.id)}
+                      onChatPress={() => handleStartChat(store.merchant_id, "customer_merchant")}
                       address={store.address_line1 ?? store.city ?? ""}
                       onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
                     />
@@ -1322,6 +1358,23 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: TOKENS.spacing.md,
     right: TOKENS.spacing.md,
+  },
+  cardActionsRow: {
+    flexDirection: "row",
+    marginTop: TOKENS.spacing.md,
+    gap: TOKENS.spacing.sm,
+    width: "100%",
+    justifyContent: "center",
+  },
+  miniActionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.02)",
   },
   emptyContainer: {
     flex: 1,

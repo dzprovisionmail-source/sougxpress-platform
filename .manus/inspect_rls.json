@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT tablename, policyname, permissive, roles, cmd, qual FROM pg_policies WHERE tablename IN ('customer_favorites', 'merchant_favorites', 'favorite_couriers', 'courier_favorites', 'orders', 'delivery_assignments')"
+}

@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT tablename, policyname, permissive, roles, cmd, qual FROM pg_policies WHERE tablename IN ('chat_conversations', 'chat_messages', 'conversations', 'messages');"
+}

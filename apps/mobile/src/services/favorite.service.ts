@@ -320,6 +320,7 @@ export interface CourierFavoriteCard {
     rating: number | null;
     is_open: boolean;
     status: string;
+    merchant_id?: string;
   };
   customer?: {
     id: string;
@@ -463,7 +464,7 @@ export const getCourierFavoritesHub = async (
         ? Promise.resolve({ data: [], error: null })
         : supabase
             .from('stores')
-            .select('id, name, logo_url, cover_url, address_line1, city, category, main_category, rating, is_open, status')
+            .select('id, name, logo_url, cover_url, address_line1, city, category, main_category, rating, is_open, status, merchant_id')
             .in('id', Array.from(storeIds)),
       supabase.rpc('get_courier_relationship_customers', { p_courier_id: courierId }),
       supabase.rpc('get_courier_interested_customers', { p_courier_id: courierId }),

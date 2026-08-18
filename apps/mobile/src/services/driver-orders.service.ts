@@ -12,9 +12,9 @@ export const getDriverOrders = async (driverId: string): Promise<any[]> => {
       *,
       order:orders (
         *,
-        store:stores (name, zone:zones (city)),
+        store:stores (id, name, merchant_id, zone:zones (city)),
         address:customer_addresses (address_text, latitude, longitude),
-        customer:customers (full_name, phone)
+        customer:customers (id, full_name, phone)
       )
     `)
     .eq("driver_id", driverId)
@@ -43,9 +43,9 @@ export const getAvailableOrders = async (zoneId: string): Promise<any[]> => {
       *,
       order:orders (
         *,
-        store:stores (name, zone:zones (city)),
+        store:stores (id, name, merchant_id, zone:zones (city)),
         address:customer_addresses (address_text, latitude, longitude),
-        customer:customers (full_name, phone)
+        customer:customers (id, full_name, phone)
       )
     `)
     .eq("status", "pending")

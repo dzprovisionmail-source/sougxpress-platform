@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT routine_name FROM information_schema.routines WHERE routine_schema = 'public' AND routine_name IN ('can_start_chat', 'get_or_create_chat_conversation'); SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('chat_conversations', 'chat_messages');"
+}

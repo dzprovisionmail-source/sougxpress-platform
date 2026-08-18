@@ -16,6 +16,8 @@ import {
   EmptyState,
 } from "@/features/workspace/ui";
 import { DeliveryStatus } from "@/services/courier-delivery.service";
+import { getOrCreateConversation } from "@/services/chat.service";
+import { useRouter } from "expo-router";
 
 type TabKey = "available" | "active" | "completed";
 
@@ -117,6 +119,7 @@ function DeliveryCard({
   onReject?: () => void;
   onAdvance?: (status: DeliveryStatus) => void;
 }) {
+  const router = useRouter();
   const { colors, tokens } = useAppTheme();
   const status = order.assignment_status as DeliveryStatus;
   const nextStatus = NEXT_STATUS[status];
@@ -155,6 +158,23 @@ function DeliveryCard({
     if (customerPhone) {
       const cleanPhone = customerPhone.replace(/^0/, "");
       Linking.openURL(`whatsapp://send?phone=+213${cleanPhone}`);
+    }
+  };
+
+  const handleStartChat = async (targetUserId: string, type: "customer_courier" | "merchant_courier") => {
+    if (!targetUserId) return;
+    try {
+      const { data: conversationId, error } = await getOrCreateConversation(
+        targetUserId,
+        type,
+        order.id
+      );
+      if (error) throw error;
+      if (conversationId) {
+        router.push(`/chat/${conversationId}`);
+      }
+    } catch (err) {
+      console.error("Error starting chat:", err);
     }
   };
 
@@ -240,6 +260,26 @@ function DeliveryCard({
 
       <View style={{ flexDirection: "row-reverse", marginTop: tokens.spacing.md, gap: tokens.spacing.sm, flexWrap: "wrap" }}>
         <TouchableOpacity
+          onPress={() => handleStartChat(order.store?.merchant_id, "merchant_courier")}
+          style={{
+            flex: 1,
+            flexDirection: "row-reverse",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: tokens.spacing.sm,
+            borderRadius: tokens.radius.sm,
+            borderWidth: 1,
+            borderColor: colors.primary + "30",
+            backgroundColor: colors.primary + "08",
+            minWidth: 80,
+          }}
+        >
+          <MessageCircle size={16} color={colors.primary} />
+          <WorkspaceText color="primary" style={{ marginRight: 4 }} variant="caption">
+            شات المتجر
+          </WorkspaceText>
+        </TouchableOpacity>
+        <TouchableOpacity
           onPress={handleOpenMerchantLocation}
           style={{
             flex: 1,
@@ -255,7 +295,7 @@ function DeliveryCard({
         >
           <Store size={16} color={colors.textSecondary} />
           <WorkspaceText color="secondary" style={{ marginRight: 4 }} variant="caption">
-            المتجر
+            موقع المتجر
           </WorkspaceText>
         </TouchableOpacity>
         <TouchableOpacity
@@ -319,6 +359,25 @@ function DeliveryCard({
             <Phone size={16} color={colors.textSecondary} />
             <WorkspaceText color="secondary" variant="caption" style={{ marginRight: 4 }}>
               اتصال
+            </WorkspaceText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleStartChat(order.customer?.id, "customer_courier")}
+            style={{
+              flex: 1,
+              flexDirection: "row-reverse",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: tokens.spacing.sm,
+              borderRadius: tokens.radius.sm,
+              borderWidth: 1,
+              borderColor: colors.primary,
+              backgroundColor: colors.primary + "08",
+            }}
+          >
+            <MessageCircle size={16} color={colors.primary} />
+            <WorkspaceText color="primary" variant="caption" style={{ marginRight: 4 }}>
+              شات الزبون
             </WorkspaceText>
           </TouchableOpacity>
           <TouchableOpacity

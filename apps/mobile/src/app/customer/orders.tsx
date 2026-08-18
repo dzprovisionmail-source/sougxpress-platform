@@ -39,6 +39,8 @@ import {
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
+import { getOrCreateConversation } from "@/services/chat.service";
+import { MessageCircle } from "lucide-react-native";
 
 interface CourierInfo {
   id: string;
@@ -57,7 +59,7 @@ interface OrderItem {
   subtotal_minor?: number;
   delivery_fee_minor?: number;
   created_at: string;
-  stores?: { name: string; id?: string };
+  stores?: { name: string; id?: string; merchant_id?: string };
   delivery_address_id?: string;
   notes?: string;
   delivery_assignments?: {
@@ -114,7 +116,7 @@ export default function CustomerOrdersScreen() {
           subtotal_minor,
           delivery_fee_minor,
           created_at,
-          stores ( id, name ),
+          stores ( id, name, merchant_id ),
           delivery_address_id,
           notes,
           delivery_assignments (
@@ -170,6 +172,23 @@ export default function CustomerOrdersScreen() {
     setRefreshing(true);
     fetchOrders();
   }, [fetchOrders]);
+
+  const handleStartChat = async (targetUserId: string, type: "customer_merchant" | "customer_courier", orderId?: string) => {
+    if (!targetUserId) return;
+    try {
+      const { data: conversationId, error } = await getOrCreateConversation(
+        targetUserId,
+        type,
+        orderId || null
+      );
+      if (error) throw error;
+      if (conversationId) {
+        router.push(`/chat/${conversationId}`);
+      }
+    } catch (err) {
+      console.error("Error starting chat:", err);
+    }
+  };
 
   const getStatusBadgeVariant = (status: string): "warning" | "info" | "success" | "error" | "default" => {
     switch (status) {
@@ -272,14 +291,22 @@ export default function CustomerOrdersScreen() {
               </View>
             </View>
 
-            {courier.phone && (
+            <View style={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 8 }}>
               <TouchableOpacity
-                onPress={() => Linking.openURL(`tel:${courier.phone}`)}
-                style={[styles.callButton, { backgroundColor: colors.primary }]}
+                onPress={() => handleStartChat(courier.id, "customer_courier", item.id)}
+                style={[styles.callButton, { backgroundColor: colors.primary + '20' }]}
               >
-                <Phone size={14} color="#fff" />
+                <MessageCircle size={14} color={colors.primary} />
               </TouchableOpacity>
-            )}
+              {courier.phone && (
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(`tel:${courier.phone}`)}
+                  style={[styles.callButton, { backgroundColor: colors.primary }]}
+                >
+                  <Phone size={14} color="#fff" />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
 
@@ -300,15 +327,24 @@ export default function CustomerOrdersScreen() {
               size="sm"
             />
             {item.stores?.id && (
-              <Button
-                title="إعادة الطلب"
-                onPress={() =>
-                  router.push({ pathname: "/store-details", params: { id: item.stores?.id } })
-                }
-                variant="outline"
-                size="sm"
-                icon={<RotateCcw size={14} color={colors.primary} />}
-              />
+              <>
+                <Button
+                  title="شات المتجر"
+                  onPress={() => handleStartChat(item.stores?.merchant_id as string, "customer_merchant", item.id)}
+                  variant="outline"
+                  size="sm"
+                  icon={<MessageCircle size={14} color={colors.primary} />}
+                />
+                <Button
+                  title="إعادة الطلب"
+                  onPress={() =>
+                    router.push({ pathname: "/store-details", params: { id: item.stores?.id } })
+                  }
+                  variant="outline"
+                  size="sm"
+                  icon={<RotateCcw size={14} color={colors.primary} />}
+                />
+              </>
             )}
           </View>
         </View>
@@ -396,14 +432,23 @@ export default function CustomerOrdersScreen() {
                       مركبة: {selectedCourier.vehicle_type || 'دراجة'} • عدد التوصيلات: {selectedCourier.delivery_count || 0}
                     </Typography>
                   </View>
-                  {selectedCourier.phone && (
+                  <View style={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 8 }}>
                     <Button
-                      title="اتصال"
-                      onPress={() => Linking.openURL(`tel:${selectedCourier.phone}`)}
+                      title="شات"
+                      onPress={() => handleStartChat(selectedCourier.id, "customer_courier", selectedOrder.id)}
                       size="sm"
-                      icon={<Phone size={14} color="#fff" />}
+                      variant="outline"
+                      icon={<MessageCircle size={14} color={colors.primary} />}
                     />
-                  )}
+                    {selectedCourier.phone && (
+                      <Button
+                        title="اتصال"
+                        onPress={() => Linking.openURL(`tel:${selectedCourier.phone}`)}
+                        size="sm"
+                        icon={<Phone size={14} color="#fff" />}
+                      />
+                    )}
+                  </View>
                 </View>
               </View>
             ) : (

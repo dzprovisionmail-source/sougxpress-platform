@@ -16,7 +16,7 @@ export const getMerchantOrders = async (merchantId: string): Promise<Order[]> =>
     .from("orders")
     .select(`
       *,
-      customer:customers(full_name),
+      customer:customers(id, full_name),
       address:customer_addresses(address_text),
       items:order_items(
         id,

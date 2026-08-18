@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'merchant_favorites'; SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'courier_favorites';"
+}
