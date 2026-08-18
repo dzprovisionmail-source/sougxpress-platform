@@ -26,6 +26,15 @@ export const getMerchantOrders = async (merchantId: string): Promise<Order[]> =>
         product:products(id, name, image_url)
       )
     `)
+    .select(`
+      *,
+      delivery_assignments(
+        id,
+        status,
+        driver_id,
+        courier:profiles!delivery_assignments_driver_id_fkey(id, full_name, avatar_url)
+      )
+    `)
     .in("store_id", storeIds)
     .order("created_at", { ascending: false });
 

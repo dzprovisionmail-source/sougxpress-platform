@@ -27,6 +27,10 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // Extract courier info from delivery assignments
+  const assignment = order.delivery_assignments?.[0];
+  const courier = assignment?.courier;
+
   useEffect(() => {
     if (order.customer?.id) {
       getMerchantFavoriteCustomerIds().then(ids => {
@@ -59,6 +63,24 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
       console.error("Error starting chat:", err);
     }
   };
+
+  const handleStartCourierChat = async () => {
+    if (!courier?.id) return;
+    try {
+      const { data: conversationId, error } = await getOrCreateConversation(
+        courier.id,
+        "merchant_courier",
+        order.id
+      );
+      if (error) throw error;
+      if (conversationId) {
+        router.push(`/chat/${conversationId}`);
+      }
+    } catch (err) {
+      console.error("Error starting courier chat:", err);
+    }
+  };
+
   const isNew       = order.status === 'pending';
   const isAccepted  = order.status === 'accepted';
   const isPreparing = order.status === 'preparing';
@@ -101,6 +123,19 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
           </View>
         )}
       </View>
+
+      {/* ── Courier Info (Merchant-Courier Chat) ── */}
+      {courier && (
+        <View style={[styles.infoRow, { justifyContent: 'space-between', marginTop: spacing.xs }]}>
+          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1 }}>
+            <Clock size={iconSizes.small} color={colors.textSecondary} />
+            <Text style={styles.infoText}>الموصل: {courier.full_name}</Text>
+          </View>
+          <TouchableOpacity onPress={handleStartCourierChat} style={{ padding: 4 }}>
+            <MessageSquare size={20} color={colors.accent || colors.primary} />
+          </TouchableOpacity>
+        </View>
+      )}
       <View style={styles.infoRow}>
         <MapPin size={iconSizes.small} color={colors.textSecondary} />
         <Text style={styles.infoText}>العنوان: {order.address?.address_text || 'العنوان الافتراضي'}</Text>

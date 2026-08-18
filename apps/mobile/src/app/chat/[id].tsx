@@ -18,6 +18,7 @@ import {
   Typography,
   Header,
   Avatar,
+  Button,
 } from "@/components/ui";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -44,7 +45,9 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState("");
   const [otherUser, setOtherUser] = useState<any>(null);
   const [orderContext, setOrderContext] = useState<any>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   
   const flatListRef = useRef<FlatList>(null);
 
@@ -52,6 +55,14 @@ export default function ChatScreen() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setCurrentUserId(user.id);
+
+    // Get current user role from profiles
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    if (profile) setCurrentUserRole(profile.role);
 
     // Fetch conversation details to get other participant
     const { data: conv } = await supabase
@@ -149,6 +160,95 @@ export default function ChatScreen() {
   const OrderContextCard = () => {
     if (!orderContext) return null;
 
+    const handleMerchantUpdate = async (newStatus: string) => {
+      if (!orderContext || updatingStatus) return;
+      setUpdatingStatus(true);
+      try {
+        const { error } = await supabase
+          .from("orders")
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq("id", orderContext.order_id);
+        if (error) throw error;
+        // Refresh context
+        const { data: updated } = await getOrderContext(orderContext.order_id);
+        if (updated) setOrderContext(updated);
+      } catch (err) {
+        console.error("Error updating order status from chat:", err);
+      } finally {
+        setUpdatingStatus(false);
+      }
+    };
+
+    const handleCourierUpdate = async (newStatus: string) => {
+      if (!orderContext || updatingStatus) return;
+      setUpdatingStatus(true);
+      try {
+        const { error } = await supabase
+          .from("delivery_assignments")
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq("order_id", orderContext.order_id);
+        if (error) throw error;
+        // Refresh context
+        const { data: updated } = await getOrderContext(orderContext.order_id);
+        if (updated) setOrderContext(updated);
+      } catch (err) {
+        console.error("Error updating delivery status from chat:", err);
+      } finally {
+        setUpdatingStatus(false);
+      }
+    };
+
+    const renderActionButtons = () => {
+      if (currentUserRole === "merchant") {
+        if (orderContext.order_status === "pending") {
+          return (
+            <View style={styles.orderActions}>
+              <Button title="قبول الطلب" onPress={() => handleMerchantUpdate("accepted")} size="sm" style={{ flex: 1 }} />
+              <Button title="رفض" variant="danger" onPress={() => handleMerchantUpdate("cancelled")} size="sm" style={{ flex: 1 }} />
+            </View>
+          );
+        }
+        if (orderContext.order_status === "accepted") {
+          return <Button title="بدء التحضير" onPress={() => handleMerchantUpdate("preparing")} size="sm" style={{ marginTop: 8 }} />;
+        }
+        if (orderContext.order_status === "preparing") {
+          return <Button title="جاهز للاستلام" onPress={() => handleMerchantUpdate("ready_for_pickup")} size="sm" style={{ marginTop: 8 }} />;
+        }
+      }
+
+      if (currentUserRole === "driver") {
+        const dStatus = orderContext.delivery_status;
+        if (dStatus === "accepted") {
+          return <Button title="وصلت للمتجر" onPress={() => handleCourierUpdate("arrived_at_store")} size="sm" style={{ marginTop: 8 }} />;
+        }
+        if (dStatus === "arrived_at_store") {
+          return <Button title="تم الاستلام" onPress={() => handleCourierUpdate("picked_up")} size="sm" style={{ marginTop: 8 }} />;
+        }
+        if (dStatus === "picked_up") {
+          return <Button title="بدء التوصيل" onPress={() => handleCourierUpdate("out_for_delivery")} size="sm" style={{ marginTop: 8 }} />;
+        }
+        if (dStatus === "out_for_delivery") {
+          return <Button title="تم التسليم" onPress={() => handleCourierUpdate("delivered")} size="sm" style={{ marginTop: 8 }} />;
+        }
+      }
+      return null;
+    };
+
+    const getStatusLabel = (status: string) => {
+      const map: any = {
+        pending: "جديد",
+        accepted: "مقبول",
+        preparing: "قيد التحضير",
+        ready_for_pickup: "جاهز للاستلام",
+        picked_up: "تم الاستلام",
+        delivered: "تم التوصيل",
+        cancelled: "مرفوض",
+        arrived_at_store: "في المتجر",
+        out_for_delivery: "في الطريق"
+      };
+      return map[status] || status;
+    };
+
     return (
       <View style={[styles.orderCard, { backgroundColor: colors.bgSurface, borderBottomColor: colors.borderSubtle }]}>
         <View style={styles.orderCardHeader}>
@@ -160,13 +260,14 @@ export default function ChatScreen() {
         <View style={styles.orderCardBody}>
           <View style={styles.orderStatusItem}>
             <Typography variant="caption" style={{ color: colors.textSecondary }}>حالة الطلب:</Typography>
-            <Typography variant="body" style={{ color: colors.primary, fontWeight: "600" }}>{orderContext.order_status}</Typography>
+            <Typography variant="body" style={{ color: colors.primary, fontWeight: "600", marginLeft: 4 }}>{getStatusLabel(orderContext.order_status)}</Typography>
           </View>
           <View style={styles.orderStatusItem}>
             <Typography variant="caption" style={{ color: colors.textSecondary }}>حالة التوصيل:</Typography>
-            <Typography variant="body" style={{ color: colors.secondary || colors.primary }}>{orderContext.delivery_status || "قيد التجهيز"}</Typography>
+            <Typography variant="body" style={{ color: colors.accent || colors.primary, marginLeft: 4 }}>{getStatusLabel(orderContext.delivery_status || "pending")}</Typography>
           </View>
         </View>
+        {renderActionButtons()}
       </View>
     );
   };
@@ -303,5 +404,10 @@ const styles = StyleSheet.create({
   orderStatusItem: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  orderActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
   },
 });
