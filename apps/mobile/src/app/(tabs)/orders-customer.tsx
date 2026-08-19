@@ -113,7 +113,7 @@ export default function CustomerOrdersScreen() {
           created_at,
           stores ( id, name, merchant_id ),
           delivery_address_id,
-          notes,
+          special_instructions,
           delivery_assignments (
             status,
             driver_id,

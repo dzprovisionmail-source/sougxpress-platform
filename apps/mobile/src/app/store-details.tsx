@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Alert } from 'react-native';
 import {
   View,
   ScrollView,
@@ -23,9 +23,11 @@ import {
   Avatar,
   Rating,
   Badge,
+  Button,
 } from "@/components/ui";
-import { Clock, MapPin, Tag, ShoppingBag, Store as StoreIcon, Heart } from "lucide-react-native";
+import { Clock, MapPin, Tag, ShoppingBag, Store as StoreIcon, Heart, MessageCircle } from "lucide-react-native";
 import { toggleFavorite, checkIfFavorite, getFavoriteIds } from "@/services/favorite.service";
+import { getOrCreateConversation } from "@/services/chat.service";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -54,6 +56,7 @@ export default function StoreDetailsScreen() {
   const [viewingMediaItem, setViewingMediaItem] = useState<any>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
+  const [startingChat, setStartingChat] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -99,6 +102,49 @@ export default function StoreDetailsScreen() {
     if (id) {
       const { isFavorite: nextFav, error } = await toggleFavorite('store', id);
       if (!error) setIsFavorite(nextFav);
+    }
+  };
+
+  const handleStartChat = async () => {
+    if (!currentUserId) {
+      Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لبدء محادثة");
+      return;
+    }
+
+    if (!store?.merchant_id) {
+      Alert.alert("خطأ", "تعذر العثور على مالك المتجر");
+      return;
+    }
+
+    if (currentUserId === store.merchant_id) {
+      Alert.alert("تنبيه", "أنت مالك هذا المتجر");
+      return;
+    }
+
+    try {
+      setStartingChat(true);
+      // Determine relationship type based on current user role
+      const relationshipType = currentUserRole === "driver" ? "merchant_courier" : "customer_merchant";
+      
+      const { data: conversationId, error } = await getOrCreateConversation(
+        store.merchant_id,
+        relationshipType
+      );
+      
+      if (error) {
+        console.error("Chat error:", error);
+        Alert.alert("خطأ", "لا توجد علاقة تجارية مؤهلة لبدء محادثة (يجب أن يكون المتجر في المفضلة أو لديك طلب نشط معه)");
+        return;
+      }
+      
+      if (conversationId) {
+        router.push(`/chat/${conversationId}`);
+      }
+    } catch (err) {
+      console.error("Error starting chat:", err);
+      Alert.alert("خطأ", "فشل بدء المحادثة");
+    } finally {
+      setStartingChat(false);
     }
   };
 
@@ -254,19 +300,33 @@ export default function StoreDetailsScreen() {
             <Avatar uri={store.logo_url} name={store.name} type="store" size="lg" />
           </View>
 
-          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', marginTop: TOKENS.spacing.xs, gap: 8 }}>
+          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', marginTop: TOKENS.spacing.xs, gap: 12 }}>
             <Typography variant="h1" align="center">
               {store.name}
             </Typography>
-            {currentUserId && (
-              <TouchableOpacity onPress={handleToggleStoreFavorite} style={{ padding: 4 }}>
-                <Heart 
-                  size={24} 
-                  color={isFavorite ? colors.error : colors.textPrimary} 
-                  fill={isFavorite ? colors.error : "transparent"} 
-                />
-              </TouchableOpacity>
-            )}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              {currentUserId && (
+                <TouchableOpacity onPress={handleToggleStoreFavorite} style={{ padding: 4 }}>
+                  <Heart 
+                    size={24} 
+                    color={isFavorite ? colors.error : colors.textPrimary} 
+                    fill={isFavorite ? colors.error : "transparent"} 
+                  />
+                </TouchableOpacity>
+              )}
+              {currentUserId && currentUserId !== store.merchant_id && (
+                <TouchableOpacity onPress={handleStartChat} style={{ padding: 4 }}>
+                  {startingChat ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <MessageCircle 
+                      size={24} 
+                      color={colors.primary} 
+                    />
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           <Typography variant="caption" color="secondary" align="center" style={{ marginTop: 2 }}>
@@ -286,6 +346,18 @@ export default function StoreDetailsScreen() {
               {store.description}
             </Typography>
           ) : null}
+          
+          {/* Main Action Buttons */}
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 16, paddingHorizontal: 20 }}>
+             <Button 
+                title="دردشة مع المتجر"
+                variant="outline"
+                loading={startingChat}
+                icon={<MessageCircle size={18} color={colors.primary} />}
+                onPress={handleStartChat}
+                style={{ flex: 1 }}
+             />
+          </View>
         </View>
 
         {/* Media Section: Photos / Videos Tabs (above products) */}
@@ -399,109 +471,109 @@ export default function StoreDetailsScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[styles.categoriesScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
           >
-            {categories.map((cat) => {
-              const active = cat === selectedCategory;
-              return (
-                <TouchableOpacity activeOpacity={0.8}
-                  key={cat}
-                  onPress={() => setSelectedCategory(cat)}
-                  style={[
-                    styles.categoryPill,
-                    {
-                      backgroundColor: active ? colors.primary : colors.bgSurface,
-                      borderColor: active ? colors.primary : colors.borderSubtle,
-                    },
-                  ]}
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                onPress={() => setSelectedCategory(cat)}
+                style={[
+                  styles.categoryChip,
+                  { backgroundColor: selectedCategory === cat ? colors.primary : colors.bgElevated },
+                  { borderColor: colors.borderSubtle, borderWidth: 1 }
+                ]}
+              >
+                <Typography
+                  variant="caption"
+                  style={{ color: selectedCategory === cat ? "#fff" : colors.textPrimary }}
                 >
-                  <Typography
-                    variant="caption"
-                    style={{
-                      color: active ? colors.textOnBrand : colors.textPrimary,
-                      fontWeight: active ? "700" : "500",
-                    }}
-                  >
-                    {cat}
-                  </Typography>
-                </TouchableOpacity>
-              );
-            })}
+                  {cat}
+                </Typography>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         )}
 
         {/* Products Grid */}
-        {filteredProducts.length === 0 ? (
-          <EmptyState
-            type="no-data"
-            title="لا توجد منتجات مطابقة"
-            description="جرب البحث باسم منتج آخر أو اختيار تصنيف مختلف"
-          />
-        ) : (
-          <View style={styles.productsGrid}>
-            {filteredProducts.map((p) => (
-              <View key={p.id} style={styles.productCardCol}>
+        <View style={styles.productsGrid}>
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
+              <View key={product.id} style={styles.productCardWrapper}>
                 <ProductCard
-                  id={p.id}
-                  name={p.name}
-                  price={p.price_minor ? p.price_minor / 100 : 0}
-                  image={p.image_url}
-                  storeName={store.name}
-                  inStock={p.is_available !== false}
-                  isFavorite={favoriteProductIds.includes(p.id)}
-                  onToggleFavorite={currentUserId ? () => handleToggleProductFavorite(p.id) : undefined}
-                  onPress={() =>
-                    router.push({ pathname: "/product-details", params: { id: p.id } })
-                  }
+                  id={product.id}
+                  name={product.name}
+                  price={product.price_minor / 100}
+                  image={product.image_url}
+                  isFavorite={favoriteProductIds.includes(product.id)}
+                  onToggleFavorite={() => handleToggleProductFavorite(product.id)}
+                  onPress={() => router.push({ pathname: "/product-details", params: { id: product.id } })}
                 />
               </View>
-            ))}
-          </View>
-        )}
+            ))
+          ) : (
+            <EmptyState
+              type="no-products"
+              description={searchQuery ? "لا توجد منتجات تطابق بحثك" : "لا توجد منتجات في هذا القسم"}
+            />
+          )}
+        </View>
       </ScrollView>
 
-      {viewingMediaItem ? (
+      {/* Media Viewer */}
+      {viewingMediaItem && (
         <MediaViewerModal
           visible={!!viewingMediaItem}
+          item={viewingMediaItem}
           onClose={() => setViewingMediaItem(null)}
-          mediaItem={viewingMediaItem}
-          store={store}
-          currentUserId={currentUserId}
-          currentUserRole={currentUserRole}
-          onLikeUpdate={fetchStoreData}
         />
-      ) : null}
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  safeArea: {
+    flex: 1,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   scrollContent: {
-    paddingBottom: TOKENS.spacing['3xl'],
+    paddingBottom: TOKENS.spacing.xl,
   },
   coverWrapper: {
-    width: "100%",
     paddingHorizontal: TOKENS.spacing.md,
+    marginTop: TOKENS.spacing.md,
+    marginBottom: TOKENS.spacing.md,
   },
   storeCardInfo: {
     marginHorizontal: TOKENS.spacing.md,
-    marginTop: -50,
+    padding: TOKENS.spacing.lg,
     borderRadius: TOKENS.radius.lg,
-    padding: TOKENS.spacing.sm,
     borderWidth: 1,
-    alignItems: "center",
-    ...TOKENS.shadows.small,
+    alignItems: 'center',
   },
   avatarRow: {
-    marginTop: -36,
+    marginTop: -TOKENS.spacing.xl - TOKENS.spacing.md,
+    marginBottom: TOKENS.spacing.xs,
+    borderWidth: 4,
+    borderColor: '#fff',
+    borderRadius: TOKENS.radius.full,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   metaBadgesRow: {
-    alignItems: "center",
-    gap: TOKENS.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: TOKENS.spacing.md,
     marginTop: TOKENS.spacing.sm,
   },
   storeDesc: {
-    marginTop: TOKENS.spacing.sm,
+    marginTop: TOKENS.spacing.md,
     lineHeight: 20,
   },
   searchSection: {
@@ -513,19 +585,20 @@ const styles = StyleSheet.create({
     paddingVertical: TOKENS.spacing.md,
     gap: TOKENS.spacing.sm,
   },
-  categoryPill: {
+  categoryChip: {
     paddingHorizontal: TOKENS.spacing.md,
-    paddingVertical: TOKENS.spacing.sm,
+    paddingVertical: TOKENS.spacing.xs,
     borderRadius: TOKENS.radius.full,
-    borderWidth: 1,
+    marginRight: 8,
   },
   productsGrid: {
-    flexDirection: "row-reverse",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: TOKENS.spacing.md,
-    gap: TOKENS.spacing.sm,
+    marginTop: TOKENS.spacing.sm,
   },
-  productCardCol: {
-    width: "48%",
+  productCardWrapper: {
+    width: '50%',
+    padding: 4,
   },
 });

@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Phone, Star, Share2, Heart, Image as ImageIcon, ClipboardList, TrendingUp } from "lucide-react-native";
+import { ArrowLeft, Phone, Star, Share2, Heart, Image as ImageIcon, ClipboardList, TrendingUp, MessageCircle } from "lucide-react-native";
 import {
   Typography,
   Avatar,
@@ -29,6 +29,7 @@ import { TOKENS } from "@/constants/tokens";
 import { getCourierById, toggleFavoriteCourier } from "@/services/courierService";
 import { supabase } from "@/lib/supabase";
 import { getVehicleIcon, isCourierAvailable, vehicleLabel } from "@/utils/courier.utils";
+import { getOrCreateConversation } from "@/services/chat.service";
 
 const isRTL = I18nManager.isRTL;
 
@@ -99,9 +100,11 @@ const getStyles = (colors: ReturnType<typeof useAppTheme>["colors"]) =>
       flexDirection: "row",
       gap: TOKENS.spacing.md,
       marginTop: TOKENS.spacing.lg,
+      flexWrap: "wrap",
     },
     actionBtn: {
       flex: 1,
+      minWidth: "45%",
     },
     futureSection: {
       padding: TOKENS.spacing.lg,
@@ -153,11 +156,21 @@ export default function CourierProfile() {
   const [courier, setCourier] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | undefined>(undefined);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [startingChat, setStartingChat] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUserId(user.id);
+      if (user) {
+        setUserId(user.id);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+        setUserRole(profile?.role || null);
+      }
     };
     checkAuth();
   }, []);
@@ -174,17 +187,41 @@ export default function CourierProfile() {
     load();
   }, [id]);
 
-  const handleCall = () => {
-    if (courier?.phone_number) {
-      Linking.openURL(`tel:${courier.phone_number}`).catch(() => {
-        Alert.alert("خطأ", "لا يمكن فتح تطبيق الاتصال");
-      });
+  const handleStartChat = async () => {
+    if (!userId) {
+      Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لبدء محادثة");
+      return;
     }
-  };
+    
+    if (userId === courier.id) {
+      Alert.alert("تنبيه", "لا يمكنك بدء محادثة مع نفسك");
+      return;
+    }
 
-  const handleMessage = () => {
-    if (courier?.phone_number) {
-      Alert.alert("مراسلة", `فتح محادثة مع ${courier.full_name}`);
+    try {
+      setStartingChat(true);
+      // Determine relationship type based on current user role
+      const relationshipType = userRole === "merchant" ? "merchant_courier" : "customer_courier";
+      
+      const { data: conversationId, error } = await getOrCreateConversation(
+        courier.id,
+        relationshipType
+      );
+      
+      if (error) {
+        console.error("Chat error:", error);
+        Alert.alert("خطأ", "لا توجد علاقة تجارية مؤهلة لبدء محادثة (يجب أن يكون الموصل في المفضلة أو لديه طلب نشط)");
+        return;
+      }
+      
+      if (conversationId) {
+        router.push(`/chat/${conversationId}`);
+      }
+    } catch (err) {
+      console.error("Error starting chat:", err);
+      Alert.alert("خطأ", "فشل بدء المحادثة");
+    } finally {
+      setStartingChat(false);
     }
   };
 
@@ -196,14 +233,7 @@ export default function CourierProfile() {
     const previousIsFavorite = courier.is_favorite;
     setCourier((prev: any) => ({ ...prev, is_favorite: !prev.is_favorite }));
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      const currentUserId = userData?.user?.id;
-      if (!currentUserId) {
-        Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لإضافة الموصل إلى المفضلة");
-        setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));
-        return;
-      }
-      const { error } = await toggleFavoriteCourier(currentUserId, courier.id);
+      const { error } = await toggleFavoriteCourier(userId, courier.id);
       if (error) {
         Alert.alert("خطأ", error);
         setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));
@@ -333,15 +363,16 @@ export default function CourierProfile() {
           </View>
         ) : null}
 
+        {/* Contact Info - Phone Hidden as per Privacy Rules */}
         <View style={styles.section}>
           <SectionHeader title="جهة الاتصال" />
-          <TouchableOpacity onPress={handleCall} activeOpacity={0.8}>
-            <View style={styles.contactRow}>
-              <Phone size={18} color={colors.primary} />
-              <Typography style={{ flex: 1, textAlign: isRTL ? "right" : "left" }}>{courier.phone_number}</Typography>
-              <Badge variant="accent" label="اتصال" />
-            </View>
-          </TouchableOpacity>
+          <View style={styles.contactRow}>
+            <MessageCircle size={18} color={colors.primary} />
+            <Typography style={{ flex: 1, textAlign: isRTL ? "right" : "left" }}>
+              تواصل مع الموصل عبر الدردشة الآمنة
+            </Typography>
+            <Badge variant="accent" label="آمن" />
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -370,31 +401,19 @@ export default function CourierProfile() {
           </Card>
         </View>
 
-        <View style={styles.section}>
-          <SectionHeader title="سجل التوصيلات" icon={<ClipboardList size={18} color={colors.primary} />} />
-          <Card variant="outlined" style={styles.futureSection}>
-            <ClipboardList size={32} color={colors.textDisabled} />
-            <Typography variant="body" color="secondary" align="center">
-              ستظهر سجل التوصيلات هنا
-            </Typography>
-            <Typography variant="caption" color="secondary" align="center">
-              قريباً
-            </Typography>
-          </Card>
-        </View>
-
         <View style={[styles.actions, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <Button
-            title="اتصال"
-            icon={<Phone size={18} color={colors.textOnBrand} />}
-            onPress={handleCall}
+            title="بدء دردشة"
+            loading={startingChat}
+            icon={<MessageCircle size={18} color={colors.textOnBrand} />}
+            onPress={handleStartChat}
             style={styles.actionBtn}
-            accessibilityLabel="اتصال بالموصل"
+            accessibilityLabel="بدء دردشة مع الموصل"
           />
           <Button
             title={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
             variant="outline"
-            icon={<Heart size={18} color={colors.primary} />}
+            icon={<Heart size={18} color={courier.is_favorite ? colors.error : colors.primary} fill={courier.is_favorite ? colors.error : "none"} />}
             onPress={handleToggleFavorite}
             style={styles.actionBtn}
             disabled={!userId}
