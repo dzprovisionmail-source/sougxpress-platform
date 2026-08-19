@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT routine_name, specific_name, data_type FROM information_schema.routines WHERE routine_name = 'get_or_create_chat_conversation'; SELECT parameter_name, data_type, parameter_mode FROM information_schema.parameters WHERE specific_name IN (SELECT specific_name FROM information_schema.routines WHERE routine_name = 'get_or_create_chat_conversation') ORDER BY ordinal_position;"
+}

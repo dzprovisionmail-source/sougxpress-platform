@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT 'table_chat_conversations' as object, count(*) > 0 as exists FROM information_schema.tables WHERE table_name = 'chat_conversations' UNION ALL SELECT 'function_can_start_chat', count(*) > 0 FROM information_schema.routines WHERE routine_name = 'can_start_chat' UNION ALL SELECT 'view_v_chat_order_context', count(*) > 0 FROM information_schema.views WHERE table_name = 'v_chat_order_context' UNION ALL SELECT 'view_v_chat_conversations_list', count(*) > 0 FROM information_schema.views WHERE table_name = 'v_chat_conversations_list';"
+}
