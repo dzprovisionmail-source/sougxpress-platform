@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT * FROM pg_policies WHERE tablename = 'orders';"
+}

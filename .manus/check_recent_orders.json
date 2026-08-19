@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT id, customer_id, store_id, status, created_at FROM public.orders ORDER BY created_at DESC LIMIT 5;"
+}

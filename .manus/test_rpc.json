@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "SELECT public.get_or_create_chat_conversation('a2705061-42cb-4b29-b2d7-f1c922501071', 'customer_merchant', 'da40cdbf-d3a8-4792-9e97-05235ee2d4d3');"
+}

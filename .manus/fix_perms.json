@@ -1,0 +1,4 @@
+{
+  "project_id": "pmxydehrctwvawjbhrhl",
+  "query": "GRANT EXECUTE ON FUNCTION public.get_or_create_chat_conversation(UUID, TEXT, UUID) TO anon, authenticated, service_role; GRANT EXECUTE ON FUNCTION public.can_start_chat(UUID, UUID, TEXT, UUID) TO anon, authenticated, service_role; NOTIFY pgrst, 'reload schema';"
+}
