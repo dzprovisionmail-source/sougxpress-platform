@@ -69,7 +69,7 @@ export const CourierSelectionModal: React.FC<CourierSelectionModalProps> = ({
   const renderDriver = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.driverCard}
-      onPress={() => handleAssign(item.id)}
+      onPress={() => handleAssign(item.driver_id)}
       disabled={!!assigning}
     >
       <View style={styles.driverInfo}>
@@ -92,7 +92,7 @@ export const CourierSelectionModal: React.FC<CourierSelectionModalProps> = ({
         </View>
       </View>
       <View style={styles.actionIcon}>
-        {assigning === item.id ? (
+        {assigning === item.driver_id ? (
           <ActivityIndicator size="small" color={colors.primary} />
         ) : (
           <CheckCircle2 size={24} color={colors.primary} />
@@ -119,7 +119,7 @@ export const CourierSelectionModal: React.FC<CourierSelectionModalProps> = ({
         <FlatList
           data={drivers}
           renderItem={renderDriver}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.driver_id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
