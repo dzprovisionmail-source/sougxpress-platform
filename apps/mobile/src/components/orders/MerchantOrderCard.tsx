@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Linking, Alert, ActivityIndicator } from 'react-native';
 import {
   User, MapPin, ShoppingCart, MessageSquare,
   PlayCircle, PackageCheck, XCircle, Clock, Heart, MessageCircle, Phone,
@@ -16,7 +16,6 @@ import PreparationTimer from './PreparationTimer';
 import { toggleMerchantFavorite, getMerchantFavoriteCustomerIds } from '@/services/favorite.service';
 import { useState, useEffect } from 'react';
 import { getOrCreateConversation, getCommercialPhone, logCallPress } from '@/services/chat.service';
-import { Linking, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CourierSelectionModal } from './CourierSelectionModal';
 
@@ -28,10 +27,9 @@ interface MerchantOrderCardProps {
 const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateStatus }) => {
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
-  const [calling, setCalling] = useState<string | null>(null); // 'customer' | 'courier'
+  const [calling, setCalling] = useState<string | null>(null);
   const [showCourierModal, setShowCourierModal] = useState(false);
 
-  // Extract courier info from delivery assignments
   const assignment = order.delivery_assignments?.[0];
   const courier = assignment?.driver;
 
@@ -46,25 +44,17 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
   const handleToggleFavorite = async () => {
     if (!order.customer?.id) return;
     const { isFavorite: newStatus, error } = await toggleMerchantFavorite(order.customer.id);
-    if (!error) {
-      setIsFavorite(newStatus);
-    }
+    if (!error) setIsFavorite(newStatus);
   };
 
   const handleStartChat = async () => {
     if (!order.customer?.id) return;
     try {
-      const { data: conversationId, error } = await getOrCreateConversation(
-        order.customer.id,
-        "customer_merchant",
-        order.id
-      );
+      const { data: conversationId, error } = await getOrCreateConversation(order.customer.id, 'customer_merchant', order.id);
       if (error) throw error;
-      if (conversationId) {
-        router.push(`/chat/${conversationId}`);
-      }
+      if (conversationId) router.push(`/chat/${conversationId}`);
     } catch (err) {
-      console.error("Error starting chat:", err);
+      console.error('Error starting chat:', err);
     }
   };
 
@@ -72,56 +62,45 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
     const driverId = courier?.id;
     if (!driverId) return;
     try {
-      const { data: conversationId, error } = await getOrCreateConversation(
-        driverId,
-        "merchant_courier",
-        order.id
-      );
+      const { data: conversationId, error } = await getOrCreateConversation(driverId, 'merchant_courier', order.id);
       if (error) throw error;
-      if (conversationId) {
-        router.push(`/chat/${conversationId}`);
-      }
+      if (conversationId) router.push(`/chat/${conversationId}`);
     } catch (err) {
-      console.error("Error starting courier chat:", err);
+      console.error('Error starting courier chat:', err);
     }
   };
 
   const handleCall = async (targetRole: 'customer' | 'courier', receiverId: string) => {
     if (!order.id || !receiverId || calling) return;
-    
     setCalling(targetRole);
     try {
       const { data: phone, error } = await getCommercialPhone(order.id, targetRole);
-      
       if (error || !phone) {
-        Alert.alert("تنبيه", "لا يمكن استرجاع رقم الهاتف في هذه المرحلة أو أن العلاقة التجارية غير نشطة.");
+        Alert.alert('تنبيه', 'لا يمكن استرجاع رقم الهاتف في هذه المرحلة أو أن العلاقة التجارية غير نشطة.');
         return;
       }
-
       const relationshipType = targetRole === 'customer' ? 'customer_merchant' : 'merchant_courier';
       await logCallPress(order.id, receiverId, relationshipType);
-
       Linking.openURL(`tel:${phone}`);
     } catch (err) {
-      console.error("Error handling call:", err);
-      Alert.alert("خطأ", "حدث خطأ أثناء محاولة الاتصال.");
+      console.error('Error handling call:', err);
+      Alert.alert('خطأ', 'حدث خطأ أثناء محاولة الاتصال.');
     } finally {
       setCalling(null);
     }
   };
 
-  const isNew       = order.status === 'pending';
-  const isAccepted  = order.status === 'accepted';
+  const isNew = order.status === 'pending';
+  const isAccepted = order.status === 'accepted';
   const isPreparing = order.status === 'preparing';
-  const isReady     = order.status === 'ready_for_pickup';
+  const isReady = order.status === 'ready_for_pickup';
 
   const subtotalMinor = order.subtotal_minor ?? order.items?.reduce((acc: number, item: any) => acc + (item.line_total_minor || (item.quantity * item.price_at_order_minor)), 0) ?? order.total_minor;
-  const deliveryFeeMinor = order.delivery_fee_minor ?? 20000; // Standard 200 DZD fee
+  const deliveryFeeMinor = order.delivery_fee_minor ?? 20000;
   const totalMinor = order.total_minor ?? (subtotalMinor + deliveryFeeMinor);
 
   return (
     <Card style={styles.card}>
-      {/* ── Header ── */}
       <View style={styles.header}>
         <OrderStatusBadge status={order.status} />
         <View style={styles.orderIdContainer}>
@@ -135,7 +114,6 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
 
       <View style={styles.divider} />
 
-      {/* ── Customer & Address Info ── */}
       <View style={[styles.infoRow, { justifyContent: 'space-between' }]}>
         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1 }}>
           <User size={iconSizes.small} color={colors.textSecondary} />
@@ -143,16 +121,8 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
         </View>
         {order.customer?.id && (
           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
-            <TouchableOpacity 
-              onPress={() => handleCall('customer', order.customer.id)} 
-              style={{ padding: 4 }}
-              disabled={calling === 'customer'}
-            >
-              {calling === 'customer' ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Phone size={20} color={colors.primary} />
-              )}
+            <TouchableOpacity onPress={() => handleCall('customer', order.customer.id)} style={{ padding: 4 }} disabled={calling === 'customer'}>
+              {calling === 'customer' ? <ActivityIndicator size="small" color={colors.primary} /> : <Phone size={20} color={colors.primary} />}
             </TouchableOpacity>
             <TouchableOpacity onPress={handleStartChat} style={{ padding: 4 }}>
               <MessageCircle size={20} color={colors.primary} />
@@ -164,7 +134,6 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
         )}
       </View>
 
-      {/* ── Courier Info (Merchant-Courier Chat) ── */}
       {courier && (
         <View style={[styles.infoRow, { justifyContent: 'space-between', marginTop: spacing.xs }]}>
           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1 }}>
@@ -172,16 +141,8 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
             <Text style={styles.infoText}>الموصل: {courier.full_name || `${courier.first_name} ${courier.last_name}`}</Text>
           </View>
           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
-            <TouchableOpacity 
-              onPress={() => handleCall('courier', courier.id)} 
-              style={{ padding: 4 }}
-              disabled={calling === 'courier'}
-            >
-              {calling === 'courier' ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Phone size={20} color={colors.primary} />
-              )}
+            <TouchableOpacity onPress={() => handleCall('courier', courier.id)} style={{ padding: 4 }} disabled={calling === 'courier'}>
+              {calling === 'courier' ? <ActivityIndicator size="small" color={colors.primary} /> : <Phone size={20} color={colors.primary} />}
             </TouchableOpacity>
             <TouchableOpacity onPress={handleStartCourierChat} style={{ padding: 4 }}>
               <MessageSquare size={20} color={colors.accent || colors.primary} />
@@ -189,14 +150,13 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
           </View>
         </View>
       )}
+
       <View style={styles.infoRow}>
         <MapPin size={iconSizes.small} color={colors.textSecondary} />
         <Text style={styles.infoText}>العنوان: {order.address?.address_text || 'العنوان الافتراضي'}</Text>
       </View>
 
       <View style={styles.divider} />
-
-      {/* ── Items Detailed List ── */}
       <Text style={styles.sectionTitle}>محتويات السلة:</Text>
       {Array.isArray(order.items) && order.items.length > 0 ? (
         <View style={styles.itemsContainer}>
@@ -205,11 +165,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
             const lineTotalDzd = ((item.line_total_minor || (item.quantity * item.price_at_order_minor)) / 100).toFixed(2);
             return (
               <View key={idx} style={styles.itemRow}>
-                {item.product?.image_url ? (
-                  <Image source={{ uri: item.product.image_url }} style={styles.itemImage} />
-                ) : (
-                  <View style={[styles.itemImage, styles.placeholderImage]}><ShoppingCart size={14} color={colors.textSecondary} /></View>
-                )}
+                {item.product?.image_url ? <Image source={{ uri: item.product.image_url }} style={styles.itemImage} /> : <View style={[styles.itemImage, styles.placeholderImage]}><ShoppingCart size={14} color={colors.textSecondary} /></View>}
                 <View style={styles.itemDetails}>
                   <Text style={styles.itemName}>{item.product?.name ?? 'منتج'}</Text>
                   <Text style={styles.itemSubtext}>الكمية: ×{item.quantity} | السعر: {unitPriceDzd} د.ج</Text>
@@ -219,9 +175,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
             );
           })}
         </View>
-      ) : (
-        <Text style={styles.noItemsText}>لا توجد تفاصيل للمنتجات</Text>
-      )}
+      ) : <Text style={styles.noItemsText}>لا توجد تفاصيل للمنتجات</Text>}
 
       {order.special_instructions && (
         <View style={styles.notesContainer}>
@@ -231,114 +185,45 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
       )}
 
       <View style={styles.divider} />
-
-      {/* ── Pricing Summary ── */}
       <View style={styles.priceSummary}>
-        <View style={styles.priceRow}>
-          <Text style={styles.priceLabel}>مجموع المنتجات:</Text>
-          <Text style={styles.priceVal}>{(subtotalMinor / 100).toFixed(2)} د.ج</Text>
-        </View>
-        <View style={styles.priceRow}>
-          <Text style={styles.priceLabel}>رسوم التوصيل:</Text>
-          <Text style={styles.priceVal}>{(deliveryFeeMinor / 100).toFixed(2)} د.ج</Text>
-        </View>
-        <View style={[styles.priceRow, styles.grandTotalRow]}>
-          <Text style={styles.grandTotalLabel}>الإجمالي النهائي:</Text>
-          <Text style={styles.grandTotalVal}>{(totalMinor / 100).toFixed(2)} د.ج</Text>
-        </View>
+        <View style={styles.priceRow}><Text style={styles.priceLabel}>مجموع المنتجات:</Text><Text style={styles.priceVal}>{(subtotalMinor / 100).toFixed(2)} د.ج</Text></View>
+        <View style={styles.priceRow}><Text style={styles.priceLabel}>رسوم التوصيل:</Text><Text style={styles.priceVal}>{(deliveryFeeMinor / 100).toFixed(2)} د.ج</Text></View>
+        <View style={[styles.priceRow, styles.grandTotalRow]}><Text style={styles.grandTotalLabel}>الإجمالي النهائي:</Text><Text style={styles.grandTotalVal}>{(totalMinor / 100).toFixed(2)} د.ج</Text></View>
       </View>
 
-      {/* ── Actions ── */}
       <View style={styles.actionsContainer}>
-        {/* Pending: accept or reject/cancel */}
-        {isNew && (
-          <>
-            <Button
-              title="✅ قبول الطلب"
-              onPress={() => onUpdateStatus(order.id, 'accepted')}
-              variant="primary"
-              style={styles.actionButton}
-            />
-            <Button
-              title="❌ رفض"
-              onPress={() => onUpdateStatus(order.id, 'cancelled')}
-              variant="danger"
-              style={styles.actionButton}
-            />
-          </>
-        )}
+        {isNew && <>
+          <Button title="✅ قبول الطلب" onPress={() => onUpdateStatus(order.id, 'accepted')} variant="primary" style={styles.actionButton} />
+          <Button title="❌ رفض" onPress={() => onUpdateStatus(order.id, 'cancelled')} variant="danger" style={styles.actionButton} />
+        </>}
 
-        {/* Accepted: start preparing (+ cancel) */}
-        {isAccepted && (
-          <>
-            <Button
-              title="🚀 بدء التحضير"
-              onPress={() => onUpdateStatus(order.id, 'preparing')}
-              variant="primary"
-              icon={<PlayCircle size={iconSizes.small} color={colors.white} />}
-              style={styles.actionButton}
-            />
-            <Button
-              title="إلغاء"
-              onPress={() => onUpdateStatus(order.id, 'cancelled')}
-              variant="danger"
-              icon={<XCircle size={iconSizes.small} color={colors.white} />}
-              style={styles.actionButton}
-            />
-          </>
-        )}
+        {isAccepted && <>
+          <Button title="🚀 بدء التحضير" onPress={() => onUpdateStatus(order.id, 'preparing')} variant="primary" icon={<PlayCircle size={iconSizes.small} color={colors.white} />} style={styles.actionButton} />
+          <Button title="إلغاء" onPress={() => onUpdateStatus(order.id, 'cancelled')} variant="danger" icon={<XCircle size={iconSizes.small} color={colors.white} />} style={styles.actionButton} />
+        </>}
 
-        {/* Preparing: mark ready (+ cancel) */}
         {isPreparing && (
           <View style={styles.preparingContainer}>
             <PreparationTimer startTime={order.updated_at} />
             <View style={styles.preparingActions}>
-              <Button
-                title="📦 جاهز للاستلام"
-                onPress={() => onUpdateStatus(order.id, 'ready_for_pickup')}
-                variant="primary"
-                icon={<PackageCheck size={iconSizes.small} color={colors.white} />}
-                style={styles.actionButton}
-              />
-              <Button
-                title="إلغاء"
-                onPress={() => onUpdateStatus(order.id, 'cancelled')}
-                variant="danger"
-                icon={<XCircle size={iconSizes.small} color={colors.white} />}
-                style={styles.actionButton}
-              />
+              <Button title="📦 جاهز للاستلام" onPress={() => onUpdateStatus(order.id, 'ready_for_pickup')} variant="primary" icon={<PackageCheck size={iconSizes.small} color={colors.white} />} style={styles.actionButton} />
+              <Button title="إلغاء" onPress={() => onUpdateStatus(order.id, 'cancelled')} variant="danger" icon={<XCircle size={iconSizes.small} color={colors.white} />} style={styles.actionButton} />
             </View>
           </View>
         )}
 
-        {/* Ready: waiting for driver — info only */}
         {isReady && (
           <View style={styles.readyActionsContainer}>
             <View style={[styles.readyBanner, { backgroundColor: colors.success + '22', flex: 1 }]}>
               <PackageCheck size={iconSizes.small} color={colors.success} />
-              <Text style={[styles.readyText, { color: colors.success }]}>
-                الطلب جاهز — في انتظار السائق
-              </Text>
+              <Text style={[styles.readyText, { color: colors.success }]}>الطلب جاهز — مرحلة التوصيل</Text>
             </View>
-            {!courier && (
-              <Button
-                title="إسناد لموصل"
-                onPress={() => setShowCourierModal(true)}
-                variant="outline"
-                size="sm"
-                style={styles.assignButton}
-              />
-            )}
+            {!courier && <Button title="🚚 مرحلة التوصيل" onPress={() => setShowCourierModal(true)} variant="outline" size="sm" style={styles.assignButton} />}
           </View>
         )}
       </View>
 
-      <CourierSelectionModal
-        visible={showCourierModal}
-        onClose={() => setShowCourierModal(false)}
-        orderId={order.id}
-        onAssigned={() => onUpdateStatus(order.id, order.status)}
-      />
+      <CourierSelectionModal visible={showCourierModal} onClose={() => setShowCourierModal(false)} orderId={order.id} onAssigned={() => onUpdateStatus(order.id, order.status)} />
     </Card>
   );
 };
@@ -363,8 +248,7 @@ const styles = StyleSheet.create({
   itemSubtext: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
   itemTotal: { ...typography.body, fontWeight: 'bold', color: colors.primary },
   noItemsText: { ...typography.caption, color: colors.textSecondary, textAlign: 'right', marginBottom: spacing.sm },
-  notesContainer: { flexDirection: 'row-reverse', alignItems: 'flex-start', backgroundColor: colors.backgroundLight,
-    padding: spacing.sm, borderRadius: radius.small, marginTop: spacing.sm },
+  notesContainer: { flexDirection: 'row-reverse', alignItems: 'flex-start', backgroundColor: colors.backgroundLight, padding: spacing.sm, borderRadius: radius.small, marginTop: spacing.sm },
   notesText: { ...typography.caption, color: colors.text, marginRight: spacing.sm, flex: 1, textAlign: 'right' },
   priceSummary: { backgroundColor: colors.backgroundLight, padding: spacing.sm, borderRadius: radius.small, marginBottom: spacing.sm },
   priceRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 4 },
@@ -378,8 +262,7 @@ const styles = StyleSheet.create({
   preparingContainer: { width: '100%', flexDirection: 'column', gap: spacing.sm },
   preparingActions: { flexDirection: 'row-reverse', gap: spacing.sm },
   readyActionsContainer: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm, width: '100%' },
-  readyBanner: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm,
-    padding: spacing.sm, borderRadius: radius.small, flex: 1, justifyContent: 'center' },
+  readyBanner: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderRadius: radius.small, flex: 1, justifyContent: 'center' },
   readyText: { ...typography.caption, fontWeight: '600' },
   assignButton: { minWidth: 100, height: 40 },
 });
