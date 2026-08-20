@@ -24,15 +24,12 @@ export const getMerchantOrders = async (merchantId: string): Promise<Order[]> =>
         price_at_order_minor,
         line_total_minor,
         product:products(id, name, image_url)
-      )
-    `)
-    .select(`
-      *,
+      ),
       delivery_assignments(
         id,
         status,
         driver_id,
-        courier:profiles!delivery_assignments_driver_id_fkey(id, full_name, avatar_url)
+        driver:drivers(id, first_name, last_name, vehicle_type, rating)
       )
     `)
     .in("store_id", storeIds)
