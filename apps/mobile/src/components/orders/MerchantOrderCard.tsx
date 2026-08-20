@@ -115,6 +115,29 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
   const isPreparing = order.status === 'preparing';
   const isReady     = order.status === 'ready_for_pickup';
 
+  const deliveryPhaseLabel = (() => {
+    if (!assignment) return isReady ? 'بانتظار اختيار الموصل' : 'لم يتم إسناد التوصيل بعد';
+    switch (assignment.status) {
+      case 'pending':
+        return courier ? 'في انتظار قبول الموصل' : 'العرض متاح للموصلين';
+      case 'accepted':
+        return 'الموصل قبل الطلب';
+      case 'arrived_at_store':
+        return 'الموصل وصل إلى المتجر';
+      case 'picked_up':
+        return 'تم استلام الطلب من المتجر';
+      case 'out_for_delivery':
+        return 'الطلب قيد التوصيل';
+      case 'delivered':
+        return 'تم تسليم الطلب';
+      case 'cancelled':
+      case 'failed':
+        return 'تعذر إتمام التوصيل';
+      default:
+        return 'حالة التوصيل قيد المتابعة';
+    }
+  })();
+
   const subtotalMinor = order.subtotal_minor ?? order.items?.reduce((acc: number, item: any) => acc + (item.line_total_minor || (item.quantity * item.price_at_order_minor)), 0) ?? order.total_minor;
   const deliveryFeeMinor = order.delivery_fee_minor ?? 20000; // Standard 200 DZD fee
   const totalMinor = order.total_minor ?? (subtotalMinor + deliveryFeeMinor);
@@ -314,15 +337,18 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
         {/* Ready: waiting for driver — info only */}
         {isReady && (
           <View style={styles.readyActionsContainer}>
-            <View style={[styles.readyBanner, { backgroundColor: colors.success + '22', flex: 1 }]}>
+            <View style={[styles.readyBanner, { backgroundColor: colors.success + '22' }]}>
               <PackageCheck size={iconSizes.small} color={colors.success} />
-              <Text style={[styles.readyText, { color: colors.success }]}>
-                الطلب جاهز — في انتظار السائق
-              </Text>
+              <View style={styles.readyBannerText}>
+                <Text style={[styles.readyText, { color: colors.success }]}>
+                  {courier ? 'تم تعيين الموصل' : 'الطلب جاهز للتوصيل'}
+                </Text>
+                <Text style={styles.deliveryPhaseText}>{deliveryPhaseLabel}</Text>
+              </View>
             </View>
             {!courier && (
               <Button
-                title="إسناد لموصل"
+                title="اختيار موصل للطلب"
                 onPress={() => setShowCourierModal(true)}
                 variant="outline"
                 size="sm"
@@ -377,11 +403,13 @@ const styles = StyleSheet.create({
   actionButton: { flex: 1, minWidth: 100 },
   preparingContainer: { width: '100%', flexDirection: 'column', gap: spacing.sm },
   preparingActions: { flexDirection: 'row-reverse', gap: spacing.sm },
-  readyActionsContainer: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm, width: '100%' },
+  readyActionsContainer: { width: '100%', gap: spacing.sm },
   readyBanner: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm,
-    padding: spacing.sm, borderRadius: radius.small, flex: 1, justifyContent: 'center' },
-  readyText: { ...typography.caption, fontWeight: '600' },
-  assignButton: { minWidth: 100, height: 40 },
+    padding: spacing.sm, borderRadius: radius.small, width: '100%', justifyContent: 'center' },
+  readyBannerText: { flex: 1, alignItems: 'flex-end' },
+  readyText: { ...typography.caption, fontWeight: '700', textAlign: 'right' },
+  deliveryPhaseText: { ...typography.caption, color: colors.textSecondary, marginTop: 2, textAlign: 'right' },
+  assignButton: { width: '100%', minWidth: 0, height: 44 },
 });
 
 export default MerchantOrderCard;

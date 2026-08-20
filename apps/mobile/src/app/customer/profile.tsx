@@ -47,6 +47,11 @@ export default function CustomerProfileScreen() {
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", email: "" });
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [orderStats, setOrderStats] = useState({
+    totalPurchasesMinor: 0,
+    completedOrders: 0,
+    linkedDeliveries: 0,
+  });
 
   useEffect(() => {
     fetchProfile();
@@ -71,6 +76,29 @@ export default function CustomerProfileScreen() {
 
       if (customerError) throw customerError;
       setProfile(customerData);
+
+      const { data: orderData, error: orderStatsError } = await supabase
+        .from("orders")
+        .select("status, order_total_minor, delivery_assignments(id)")
+        .eq("customer_id", user.id);
+
+      if (orderStatsError) throw orderStatsError;
+
+      const customerOrders = (orderData ?? []) as Array<{
+        status: string;
+        order_total_minor: number | null;
+        delivery_assignments?: Array<{ id: string }> | null;
+      }>;
+      setOrderStats({
+        totalPurchasesMinor: customerOrders
+          .filter((order) => order.status !== "cancelled")
+          .reduce((total, order) => total + (order.order_total_minor ?? 0), 0),
+        completedOrders: customerOrders.filter((order) => order.status === "delivered").length,
+        linkedDeliveries: customerOrders.reduce(
+          (total, order) => total + (order.delivery_assignments?.length ?? 0),
+          0
+        ),
+      });
 
       const { data: addressData } = await supabase
         .from("customer_addresses")
@@ -249,7 +277,32 @@ export default function CustomerProfileScreen() {
           <Typography variant="h1" align="right" style={styles.headerTitle}>حسابي</Typography>
         </View>
 
-        {/* Profile Card */}
+        {/* Commercial activity */}
+        <Card style={styles.statsCard}>
+          <Typography variant="h3" align="right" style={styles.statsTitle}>نشاطي التجاري</Typography>
+          <View style={[styles.statsGrid, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            <View style={styles.statItem}>
+              <Typography variant="caption" color="secondary" align="center">إجمالي المشتريات</Typography>
+              <Typography variant="h3" align="center" style={{ color: colors.primary }}>
+                {(orderStats.totalPurchasesMinor / 100).toFixed(2)} د.ج
+              </Typography>
+            </View>
+            <View style={styles.statItem}>
+              <Typography variant="caption" color="secondary" align="center">طلبات مكتملة</Typography>
+              <Typography variant="h3" align="center" style={{ color: colors.success }}>
+                {orderStats.completedOrders}
+              </Typography>
+            </View>
+            <View style={styles.statItem}>
+              <Typography variant="caption" color="secondary" align="center">توصيلات مرتبطة</Typography>
+              <Typography variant="h3" align="center" style={{ color: colors.info }}>
+                {orderStats.linkedDeliveries}
+              </Typography>
+            </View>
+          </View>
+        </Card>
+
+        {/* Business info */}
         <Card style={styles.profileCard}>
           <View style={[styles.profileInfo, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <TouchableOpacity onPress={handleAvatarUpload} disabled={uploadingAvatar}>
@@ -471,7 +524,24 @@ const styles = StyleSheet.create({
   content: { padding: TOKENS.spacing.lg },
   header: { marginBottom: TOKENS.spacing.xl, paddingTop: TOKENS.spacing.md },
   headerTitle: { color: TOKENS.colors.brandPrimary },
-  profileCard: { padding: TOKENS.spacing.lg, marginBottom: TOKENS.spacing.xl },
+    statsCard: {
+    marginBottom: TOKENS.spacing.md,
+    padding: TOKENS.spacing.md,
+  },
+  statsTitle: {
+    marginBottom: TOKENS.spacing.sm,
+  },
+  statsGrid: {
+    gap: TOKENS.spacing.sm,
+  },
+  statItem: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+    paddingVertical: TOKENS.spacing.sm,
+  },
+  profileCard: {
+ padding: TOKENS.spacing.lg, marginBottom: TOKENS.spacing.xl },
   profileInfo: { alignItems: "center", gap: TOKENS.spacing.lg },
   profileText: { flex: 1, gap: 2 },
   nameRow: { alignItems: "center", gap: TOKENS.spacing.xs },

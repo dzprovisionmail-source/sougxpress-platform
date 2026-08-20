@@ -60,9 +60,10 @@ export default function MerchantDashboardScreen() {
     );
     const pending = orders.filter((o) => o.status === "pending");
     const active = orders.filter((o) =>
-      ["accepted", "preparing", "ready_for_pickup"].includes(o.status)
+      ["accepted", "preparing", "ready_for_pickup", "courier_assigned", "picked_up", "out_for_delivery"].includes(o.status)
     );
     const completed = orders.filter((o) => o.status === "delivered");
+    const cancelled = orders.filter((o) => o.status === "cancelled");
     const revenueToday = todayOrders
       .filter((o) => o.status !== "cancelled")
       .reduce((sum, o) => sum + ((o as any).order_total_minor ?? (o as any).subtotal_minor ?? 0), 0);
@@ -72,6 +73,8 @@ export default function MerchantDashboardScreen() {
       pendingCount: pending.length,
       activeCount: active.length,
       completedCount: completed.length,
+      completedDeliveryCount: completed.length,
+      cancelledCount: cancelled.length,
       revenueToday,
     };
   }, [orders]);
@@ -205,6 +208,16 @@ export default function MerchantDashboardScreen() {
               label="مكتملة"
               value={String(stats.completedCount)}
               accent={colors.success}
+            />
+            <StatCard
+              label="توصيلات مكتملة"
+              value={String(stats.completedDeliveryCount)}
+              accent={colors.secondary}
+            />
+            <StatCard
+              label="ملغاة"
+              value={String(stats.cancelledCount)}
+              accent={colors.error}
             />
           </StatGrid>
           <WorkspaceButton

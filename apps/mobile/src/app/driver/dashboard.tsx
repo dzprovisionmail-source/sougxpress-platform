@@ -37,6 +37,7 @@ export default function DriverDashboardScreen() {
     const todayOrders = orders.filter((o) => new Date(o.created_at).toDateString() === today);
     const completedToday = todayOrders.filter((o) => o.status === "delivered");
     const completedTotal = orders.filter((o) => o.status === "delivered");
+    const cancelledTotal = orders.filter((o) => o.status === "cancelled" || o.assignment_status === "cancelled");
     const pending = orders.filter((o) => ["accepted", "arrived_at_store", "picked_up", "out_for_delivery"].includes(o.assignment_status));
     const completedDeliveryCount = Math.max(driver?.delivery_count ?? 0, completedTotal.length);
     const earningsToday = computeEarningsSplit(completedToday.length).driverShareMinor;
@@ -54,6 +55,7 @@ export default function DriverDashboardScreen() {
       totalEarnings,
       platformEarnings,
       availableCount,
+      cancelledCount: cancelledTotal.length,
     };
   }, [driver?.delivery_count, orders, availableOrders]);
 
@@ -189,6 +191,7 @@ export default function DriverDashboardScreen() {
           </StatGrid>
           <StatGrid>
             <StatCard label="إجمالي التوصيلات" value={String(stats.totalDeliveries)} accent={colors.secondary} />
+            <StatCard label="ملغاة" value={String(stats.cancelledCount)} accent={colors.error} />
             <StatCard label="طلبات متاحة" value={String(stats.availableCount)} accent={colors.info} />
           </StatGrid>
         </SectionCard>
