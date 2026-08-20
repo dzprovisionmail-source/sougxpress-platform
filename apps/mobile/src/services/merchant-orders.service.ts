@@ -122,3 +122,28 @@ export const subscribeToMerchantOrders = (merchantId: string, callback: () => vo
   channel.subscribe();
   return channel;
 };
+
+export const getAvailableDriversForOrder = async (orderId: string): Promise<any[]> => {
+  const { data, error } = await supabase.rpc("get_available_drivers_for_merchant", {
+    p_order_id: orderId
+  });
+
+  if (error) {
+    console.error("Error fetching available drivers:", error);
+    return [];
+  }
+  return data || [];
+};
+
+export const assignDriverToOrder = async (orderId: string, driverId: string): Promise<boolean> => {
+  const { data, error } = await supabase.rpc("merchant_assign_driver", {
+    p_order_id: orderId,
+    p_driver_id: driverId
+  });
+
+  if (error) {
+    console.error("Error assigning driver:", error);
+    return false;
+  }
+  return !!data;
+};

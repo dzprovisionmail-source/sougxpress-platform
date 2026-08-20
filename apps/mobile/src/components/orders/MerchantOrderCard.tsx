@@ -18,6 +18,7 @@ import { useState, useEffect } from 'react';
 import { getOrCreateConversation, getCommercialPhone, logCallPress } from '@/services/chat.service';
 import { Linking, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { CourierSelectionModal } from './CourierSelectionModal';
 
 interface MerchantOrderCardProps {
   order: any;
@@ -28,10 +29,11 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
   const [calling, setCalling] = useState<string | null>(null); // 'customer' | 'courier'
+  const [showCourierModal, setShowCourierModal] = useState(false);
 
   // Extract courier info from delivery assignments
   const assignment = order.delivery_assignments?.[0];
-  const courier = assignment?.courier;
+  const courier = assignment?.driver;
 
   useEffect(() => {
     if (order.customer?.id) {
@@ -67,10 +69,11 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
   };
 
   const handleStartCourierChat = async () => {
-    if (!courier?.id) return;
+    const driverId = courier?.id;
+    if (!driverId) return;
     try {
       const { data: conversationId, error } = await getOrCreateConversation(
-        courier.id,
+        driverId,
         "merchant_courier",
         order.id
       );
@@ -166,7 +169,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
         <View style={[styles.infoRow, { justifyContent: 'space-between', marginTop: spacing.xs }]}>
           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1 }}>
             <Clock size={iconSizes.small} color={colors.textSecondary} />
-            <Text style={styles.infoText}>الموصل: {courier.full_name}</Text>
+            <Text style={styles.infoText}>الموصل: {courier.full_name || `${courier.first_name} ${courier.last_name}`}</Text>
           </View>
           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
             <TouchableOpacity 
@@ -310,14 +313,32 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
 
         {/* Ready: waiting for driver — info only */}
         {isReady && (
-          <View style={[styles.readyBanner, { backgroundColor: colors.success + '22' }]}>
-            <PackageCheck size={iconSizes.small} color={colors.success} />
-            <Text style={[styles.readyText, { color: colors.success }]}>
-              الطلب جاهز — في انتظار السائق لاستلامه
-            </Text>
+          <View style={styles.readyActionsContainer}>
+            <View style={[styles.readyBanner, { backgroundColor: colors.success + '22', flex: 1 }]}>
+              <PackageCheck size={iconSizes.small} color={colors.success} />
+              <Text style={[styles.readyText, { color: colors.success }]}>
+                الطلب جاهز — في انتظار السائق
+              </Text>
+            </View>
+            {!courier && (
+              <Button
+                title="إسناد لموصل"
+                onPress={() => setShowCourierModal(true)}
+                variant="outline"
+                size="sm"
+                style={styles.assignButton}
+              />
+            )}
           </View>
         )}
       </View>
+
+      <CourierSelectionModal
+        visible={showCourierModal}
+        onClose={() => setShowCourierModal(false)}
+        orderId={order.id}
+        onAssigned={() => onUpdateStatus(order.id, order.status)}
+      />
     </Card>
   );
 };
@@ -356,9 +377,11 @@ const styles = StyleSheet.create({
   actionButton: { flex: 1, minWidth: 100 },
   preparingContainer: { width: '100%', flexDirection: 'column', gap: spacing.sm },
   preparingActions: { flexDirection: 'row-reverse', gap: spacing.sm },
+  readyActionsContainer: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm, width: '100%' },
   readyBanner: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm,
-    padding: spacing.sm, borderRadius: radius.small, width: '100%', justifyContent: 'center' },
+    padding: spacing.sm, borderRadius: radius.small, flex: 1, justifyContent: 'center' },
   readyText: { ...typography.caption, fontWeight: '600' },
+  assignButton: { minWidth: 100, height: 40 },
 });
 
 export default MerchantOrderCard;
