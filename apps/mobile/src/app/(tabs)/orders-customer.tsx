@@ -144,8 +144,9 @@ export default function CustomerOrdersScreen() {
 
   useEffect(() => {
     fetchOrders();
-    const channel = supabase
-      .channel("customer_orders_all")
+    const channel = supabase.channel("customer_orders_all");
+
+    channel
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
