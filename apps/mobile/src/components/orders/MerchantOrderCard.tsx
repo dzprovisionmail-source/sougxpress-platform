@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import {
   User, MapPin, ShoppingCart, MessageSquare,
-  PlayCircle, PackageCheck, XCircle, Clock, Heart, MessageCircle,
+  PlayCircle, PackageCheck, XCircle, Clock, Heart, MessageCircle, Phone,
 } from 'lucide-react-native';
 import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
@@ -15,7 +15,8 @@ import OrderStatusBadge from './OrderStatusBadge';
 import PreparationTimer from './PreparationTimer';
 import { toggleMerchantFavorite, getMerchantFavoriteCustomerIds } from '@/services/favorite.service';
 import { useState, useEffect } from 'react';
-import { getOrCreateConversation } from '@/services/chat.service';
+import { getOrCreateConversation, getCommercialPhone, logCallPress } from '@/services/chat.service';
+import { Linking, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 
 interface MerchantOrderCardProps {
@@ -26,6 +27,7 @@ interface MerchantOrderCardProps {
 const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateStatus }) => {
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
+  const [calling, setCalling] = useState<string | null>(null); // 'customer' | 'courier'
 
   // Extract courier info from delivery assignments
   const assignment = order.delivery_assignments?.[0];
@@ -81,6 +83,30 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
     }
   };
 
+  const handleCall = async (targetRole: 'customer' | 'courier', receiverId: string) => {
+    if (!order.id || !receiverId || calling) return;
+    
+    setCalling(targetRole);
+    try {
+      const { data: phone, error } = await getCommercialPhone(order.id, targetRole);
+      
+      if (error || !phone) {
+        Alert.alert("تنبيه", "لا يمكن استرجاع رقم الهاتف في هذه المرحلة أو أن العلاقة التجارية غير نشطة.");
+        return;
+      }
+
+      const relationshipType = targetRole === 'customer' ? 'customer_merchant' : 'merchant_courier';
+      await logCallPress(order.id, receiverId, relationshipType);
+
+      Linking.openURL(`tel:${phone}`);
+    } catch (err) {
+      console.error("Error handling call:", err);
+      Alert.alert("خطأ", "حدث خطأ أثناء محاولة الاتصال.");
+    } finally {
+      setCalling(null);
+    }
+  };
+
   const isNew       = order.status === 'pending';
   const isAccepted  = order.status === 'accepted';
   const isPreparing = order.status === 'preparing';
@@ -114,6 +140,17 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
         </View>
         {order.customer?.id && (
           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity 
+              onPress={() => handleCall('customer', order.customer.id)} 
+              style={{ padding: 4 }}
+              disabled={calling === 'customer'}
+            >
+              {calling === 'customer' ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Phone size={20} color={colors.primary} />
+              )}
+            </TouchableOpacity>
             <TouchableOpacity onPress={handleStartChat} style={{ padding: 4 }}>
               <MessageCircle size={20} color={colors.primary} />
             </TouchableOpacity>
@@ -131,9 +168,22 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
             <Clock size={iconSizes.small} color={colors.textSecondary} />
             <Text style={styles.infoText}>الموصل: {courier.full_name}</Text>
           </View>
-          <TouchableOpacity onPress={handleStartCourierChat} style={{ padding: 4 }}>
-            <MessageSquare size={20} color={colors.accent || colors.primary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity 
+              onPress={() => handleCall('courier', courier.id)} 
+              style={{ padding: 4 }}
+              disabled={calling === 'courier'}
+            >
+              {calling === 'courier' ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Phone size={20} color={colors.primary} />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleStartCourierChat} style={{ padding: 4 }}>
+              <MessageSquare size={20} color={colors.accent || colors.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
       <View style={styles.infoRow}>

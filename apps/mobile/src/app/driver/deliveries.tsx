@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, FlatList, TouchableOpacity, Alert, Linking } from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, FlatList, TouchableOpacity, Alert, Linking, ActivityIndicator, RefreshControl } from "react-native";
 import { MapPin, ShoppingCart, Store, Navigation, X, Phone, MessageCircle } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -16,7 +16,7 @@ import {
   EmptyState,
 } from "@/features/workspace/ui";
 import { DeliveryStatus } from "@/services/courier-delivery.service";
-import { getOrCreateConversation } from "@/services/chat.service";
+import { getOrCreateConversation, getCommercialPhone, logCallPress } from "@/services/chat.service";
 import { useRouter } from "expo-router";
 
 type TabKey = "available" | "active" | "completed";
@@ -127,7 +127,7 @@ function DeliveryCard({
   const storeCity = order.store?.zone?.city;
   const lat = order.address?.latitude;
   const lng = order.address?.longitude;
-  const customerPhone = order.customer?.phone || "";
+  const [calling, setCalling] = useState<string | null>(null);
 
   const currentStepIndex = STATUS_FLOW.indexOf(status);
 
@@ -148,15 +148,34 @@ function DeliveryCard({
     }
   };
 
-  const handleCall = () => {
-    if (customerPhone) {
-      Linking.openURL(`tel:${customerPhone}`);
+  const handleCall = async (targetRole: 'customer' | 'merchant', receiverId: string) => {
+    if (!order.id || !receiverId || calling) return;
+    
+    setCalling(targetRole);
+    try {
+      const { data: phone, error } = await getCommercialPhone(order.id, targetRole);
+      
+      if (error || !phone) {
+        Alert.alert("تنبيه", "لا يمكن استرجاع رقم الهاتف في هذه المرحلة أو أن العلاقة التجارية غير نشطة.");
+        return;
+      }
+
+      const relationshipType = targetRole === 'customer' ? 'customer_courier' : 'merchant_courier';
+      await logCallPress(order.id, receiverId, relationshipType);
+
+      Linking.openURL(`tel:${phone}`);
+    } catch (err) {
+      console.error("Error handling call:", err);
+      Alert.alert("خطأ", "حدث خطأ أثناء محاولة الاتصال.");
+    } finally {
+      setCalling(null);
     }
   };
 
-  const handleWhatsApp = () => {
-    if (customerPhone) {
-      const cleanPhone = customerPhone.replace(/^0/, "");
+  const handleWhatsApp = async () => {
+    const { data: phone } = await getCommercialPhone(order.id, 'customer');
+    if (phone) {
+      const cleanPhone = phone.replace(/^0/, "");
       Linking.openURL(`whatsapp://send?phone=+213${cleanPhone}`);
     }
   };
@@ -186,7 +205,7 @@ function DeliveryCard({
   };
 
   const handleReject = () => {
-    Alert.alert("رفض التوصيلة", "هل أنت متأكد من رفض cette التوصيلة؟", [
+    Alert.alert("رفض التوصيلة", "هل أنت متأكد من رفض هذه التوصيلة؟", [
       { text: "إلغاء", style: "cancel" },
       { text: "رفض", style: "destructive", onPress: onReject },
     ]);
@@ -279,6 +298,35 @@ function DeliveryCard({
             شات المتجر
           </WorkspaceText>
         </TouchableOpacity>
+
+        {order.store?.merchant_id && (
+          <TouchableOpacity
+            onPress={() => handleCall('merchant', order.store.merchant_id)}
+            disabled={calling === 'merchant'}
+            style={{
+              flex: 1,
+              flexDirection: "row-reverse",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: tokens.spacing.sm,
+              borderRadius: tokens.radius.sm,
+              borderWidth: 1,
+              borderColor: colors.primary + "30",
+              backgroundColor: colors.primary + "08",
+              minWidth: 80,
+            }}
+          >
+            {calling === 'merchant' ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Phone size={16} color={colors.primary} />
+            )}
+            <WorkspaceText color="primary" style={{ marginRight: 4 }} variant="caption">
+              اتصال بالمتجر
+            </WorkspaceText>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           onPress={handleOpenMerchantLocation}
           style={{
@@ -298,124 +346,122 @@ function DeliveryCard({
             موقع المتجر
           </WorkspaceText>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleOpenCustomerLocation}
-          disabled={lat == null || lng == null}
-          style={{
-            flex: 1,
-            flexDirection: "row-reverse",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: tokens.spacing.sm,
-            borderRadius: tokens.radius.sm,
-            borderWidth: 1,
-            borderColor: colors.borderSubtle,
-            opacity: lat == null || lng == null ? 0.5 : 1,
-            minWidth: 80,
-          }}
-        >
-          <MapPin size={16} color={colors.textSecondary} />
-          <WorkspaceText color="secondary" style={{ marginRight: 4 }} variant="caption">
-            الزبون
-          </WorkspaceText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleNavigate}
-          disabled={lat == null || lng == null}
-          style={{
-            flex: 1,
-            flexDirection: "row-reverse",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: tokens.spacing.sm,
-            borderRadius: tokens.radius.sm,
-            backgroundColor: colors.primary,
-            opacity: lat == null || lng == null ? 0.5 : 1,
-            minWidth: 80,
-          }}
-        >
-          <Navigation size={16} color={colors.textOnBrand} />
-          <WorkspaceText style={{ marginRight: 4, color: colors.textOnBrand }} variant="caption">
-            ملاحة
-          </WorkspaceText>
-        </TouchableOpacity>
       </View>
 
-      {status !== "pending" && status !== "delivered" && status !== "cancelled" && (
-        <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.sm, marginTop: tokens.spacing.sm }}>
-          <TouchableOpacity
-            onPress={handleCall}
-            style={{
-              flex: 1,
-              flexDirection: "row-reverse",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: tokens.spacing.sm,
-              borderRadius: tokens.radius.sm,
-              borderWidth: 1,
-              borderColor: colors.borderSubtle,
-            }}
-          >
-            <Phone size={16} color={colors.textSecondary} />
-            <WorkspaceText color="secondary" variant="caption" style={{ marginRight: 4 }}>
-              اتصال
-            </WorkspaceText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleStartChat(order.customer?.id, "customer_courier")}
-            style={{
-              flex: 1,
-              flexDirection: "row-reverse",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: tokens.spacing.sm,
-              borderRadius: tokens.radius.sm,
-              borderWidth: 1,
-              borderColor: colors.primary,
-              backgroundColor: colors.primary + "08",
-            }}
-          >
-            <MessageCircle size={16} color={colors.primary} />
-            <WorkspaceText color="primary" variant="caption" style={{ marginRight: 4 }}>
-              شات الزبون
-            </WorkspaceText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleWhatsApp}
-            style={{
-              flex: 1,
-              flexDirection: "row-reverse",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: tokens.spacing.sm,
-              borderRadius: tokens.radius.sm,
-              borderWidth: 1,
-              borderColor: colors.success,
-            }}
-          >
-            <MessageCircle size={16} color={colors.success} />
-            <WorkspaceText color="success" variant="caption" style={{ marginRight: 4 }}>
-              واتساب
-            </WorkspaceText>
-          </TouchableOpacity>
+      {status !== "pending" && status !== "delivered" && status !== "cancelled" && status !== "failed" && (
+        <View style={{ marginTop: tokens.spacing.sm, borderTopWidth: 1, borderTopColor: colors.borderSubtle, paddingTop: tokens.spacing.sm }}>
+          <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.sm, flexWrap: "wrap" }}>
+            <TouchableOpacity
+              onPress={() => handleCall('customer', order.customer?.id)}
+              disabled={calling === 'customer'}
+              style={{
+                flex: 1,
+                flexDirection: "row-reverse",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: tokens.spacing.sm,
+                borderRadius: tokens.radius.sm,
+                borderWidth: 1,
+                borderColor: colors.primary + "30",
+                backgroundColor: colors.primary + "08",
+                minWidth: 80,
+              }}
+            >
+              {calling === 'customer' ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Phone size={16} color={colors.primary} />
+              )}
+              <WorkspaceText color="primary" style={{ marginRight: 4 }} variant="caption">
+                اتصال بالزبون
+              </WorkspaceText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => handleStartChat(order.customer?.id, "customer_courier")}
+              style={{
+                flex: 1,
+                flexDirection: "row-reverse",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: tokens.spacing.sm,
+                borderRadius: tokens.radius.sm,
+                borderWidth: 1,
+                borderColor: colors.primary + "30",
+                backgroundColor: colors.primary + "08",
+                minWidth: 80,
+              }}
+            >
+              <MessageCircle size={16} color={colors.primary} />
+              <WorkspaceText color="primary" style={{ marginRight: 4 }} variant="caption">
+                شات الزبون
+              </WorkspaceText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleWhatsApp}
+              style={{
+                flex: 1,
+                flexDirection: "row-reverse",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: tokens.spacing.sm,
+                borderRadius: tokens.radius.sm,
+                borderWidth: 1,
+                borderColor: colors.success + "30",
+                backgroundColor: colors.success + "08",
+                minWidth: 80,
+              }}
+            >
+              <MessageCircle size={16} color={colors.success} />
+              <WorkspaceText style={{ color: colors.success, marginRight: 4 }} variant="caption">
+                واتساب
+              </WorkspaceText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleNavigate}
+              style={{
+                flex: 1,
+                flexDirection: "row-reverse",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: tokens.spacing.sm,
+                borderRadius: tokens.radius.sm,
+                borderWidth: 1,
+                borderColor: colors.info + "30",
+                backgroundColor: colors.info + "08",
+                minWidth: 80,
+              }}
+            >
+              <Navigation size={16} color={colors.info} />
+              <WorkspaceText style={{ color: colors.info, marginRight: 4 }} variant="caption">
+                موقع الزبون
+              </WorkspaceText>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
-      {status === "pending" && onAccept && (
-        <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.sm, marginTop: tokens.spacing.md }}>
-          <WorkspaceButton title="قبول التوصيلة" onPress={handleAccept} style={{ flex: 1 }} />
+      {status === "pending" && (
+        <View style={{ flexDirection: "row-reverse", marginTop: tokens.spacing.md, gap: tokens.spacing.sm }}>
+          <WorkspaceButton
+            title={NEXT_LABEL.pending!}
+            onPress={handleAccept}
+            style={{ flex: 1 }}
+          />
           <WorkspaceButton
             title="تجاهل"
             variant="outline"
-            icon={<X color={colors.primary} size={16} />}
-            onPress={onReject}
+            onPress={handleReject}
             style={{ flex: 1 }}
           />
         </View>
       )}
-      {status !== "pending" && status !== "delivered" && status !== "cancelled" && status !== "failed" && onAdvance && nextStatus && (
+
+      {status !== "pending" && status !== "delivered" && status !== "cancelled" && status !== "failed" && nextStatus && (
         <WorkspaceButton
-          title={NEXT_LABEL[status] || "تحديث الحالة"}
+          title={NEXT_LABEL[status]!}
           onPress={handleAdvance}
           style={{ marginTop: tokens.spacing.md }}
         />
@@ -425,123 +471,81 @@ function DeliveryCard({
 }
 
 export default function DriverDeliveriesScreen() {
-  const { colors, tokens } = useAppTheme();
   const { userId } = useCurrentUserId();
-  const { driver } = useDriver(userId || "");
+  const { orders, availableOrders, loading, refreshOrders, acceptOrder, updateStatus } = useDriverOrders(userId || "");
   const [activeTab, setActiveTab] = useState<TabKey>("active");
-  const [ignoredIds, setIgnoredIds] = useState<Set<string>>(new Set());
-  const { orders, availableOrders, loading, acceptOrder, updateStatus, refreshOrders } = useDriverOrders(
-    userId || "",
-    driver?.zone_id
+
+  const activeDeliveries = orders.filter(o => 
+    ["accepted", "arrived_at_store", "picked_up", "out_for_delivery"].includes(o.assignment_status)
+  );
+  
+  const completedDeliveries = orders.filter(o => 
+    ["delivered", "cancelled", "failed"].includes(o.assignment_status)
   );
 
-  const activeOrders = orders.filter((o) => ["accepted", "arrived_at_store", "picked_up", "out_for_delivery"].includes(o.assignment_status));
-  const completedOrders = orders.filter((o) => o.assignment_status === "delivered");
-  const visibleAvailableOrders = availableOrders.filter((o) => !ignoredIds.has(o.assignment_id));
-
   const tabs: { key: TabKey; label: string; count: number }[] = [
-    { key: "available", label: "المتاحة", count: visibleAvailableOrders.length },
-    { key: "active", label: "الجارية", count: activeOrders.length },
-    { key: "completed", label: "المكتملة", count: completedOrders.length },
+    { key: "active", label: "النشطة", count: activeDeliveries.length },
+    { key: "available", label: "المتاحة", count: availableOrders.length },
+    { key: "completed", label: "المكتملة", count: completedDeliveries.length },
   ];
 
-  const dataForTab =
-    activeTab === "available" ? visibleAvailableOrders : activeTab === "active" ? activeOrders : completedOrders;
+  const renderContent = () => {
+    const data =
+      activeTab === "active"
+        ? activeDeliveries
+        : activeTab === "available"
+        ? availableOrders
+        : completedDeliveries;
 
-  const handleIgnore = (id: string) => {
-    setIgnoredIds((prev) => new Set(prev).add(id));
-  };
-
-  const handleAccept = async (id: string) => {
-    const success = await acceptOrder(id);
-    if (success) {
-      setActiveTab("active");
-      refreshOrders();
-    } else {
-      Alert.alert("خطأ", "فشل قبول التوصيلة. ربما تم قبولها من قبل موصل آخر.");
+    if (loading && data.length === 0) {
+      return <LoadingState message="جاري التحميل..." />;
     }
-  };
 
-  const handleAdvance = async (id: string, nextStatus: DeliveryStatus) => {
-    const success = await updateStatus(id, nextStatus);
-    if (success) {
-      refreshOrders();
-    } else {
-      Alert.alert("خطأ", "فشل تحديث حالة التوصيلة.");
-    }
-  };
-
-  if (loading && orders.length === 0 && availableOrders.length === 0) {
     return (
-      <WorkspaceScreen>
-        <LoadingState message="جari تحميل التوصيلات..." />
-      </WorkspaceScreen>
-    );
-  }
-
-  return (
-    <WorkspaceScreen>
-      <View
-        style={{
-          flexDirection: "row-reverse",
-          backgroundColor: colors.bgElevated,
-          borderBottomColor: colors.borderSubtle,
-          borderBottomWidth: 1,
-          padding: tokens.spacing.sm,
-        }}
-      >
-        {tabs.map((tab) => {
-          const active = tab.key === activeTab;
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              onPress={() => setActiveTab(tab.key)}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                paddingVertical: tokens.spacing.sm,
-                borderBottomWidth: active ? 2 : 0,
-                borderBottomColor: colors.primary,
-              }}
-            >
-              <WorkspaceText
-                variant="caption"
-                style={{
-                  color: active ? colors.primary : colors.textSecondary,
-                  fontWeight: active ? "700" : "400",
-                }}
-              >
-                {`${tab.label} (${tab.count})`}
-              </WorkspaceText>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
       <FlatList
-        data={dataForTab}
-        keyExtractor={(item) => item.assignment_id}
+        data={data}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <DeliveryCard
             order={item}
-            onAccept={activeTab === "available" ? () => handleAccept(item.assignment_id) : undefined}
-            onReject={activeTab === "available" ? () => handleIgnore(item.assignment_id) : undefined}
-            onAdvance={activeTab === "active" ? (status) => handleAdvance(item.assignment_id, status) : undefined}
+            onAccept={() => acceptOrder(item.assignment_id)}
+            onReject={() => {}}
+            onAdvance={(status) => updateStatus(item.assignment_id, status)}
           />
         )}
-        contentContainerStyle={{ padding: tokens.spacing.md, paddingBottom: 100 }}
-        ListEmptyComponent={
-          <EmptyState
-            message={
-              activeTab === "available"
-                ? "لا توجد طلبات متاحة في منطقتك حالياً"
-                : activeTab === "active"
-                ? "ليس لديك أي توصيلات جارية حالياً"
-                : "لم تقم بإكمال أي توصيلات بعد"
-            }
-          />
-        }
+        contentContainerStyle={{ padding: 16 }}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refreshOrders} />}
+        ListEmptyComponent={<EmptyState message="لا توجد توصيلات في هذا القسم" />}
       />
+    );
+  };
+
+  return (
+    <WorkspaceScreen>
+      <View style={{ flexDirection: "row-reverse", padding: 8, backgroundColor: "white", borderBottomWidth: 1, borderBottomColor: "#eee" }}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab.key}
+            onPress={() => setActiveTab(tab.key)}
+            style={{
+              flex: 1,
+              paddingVertical: 8,
+              alignItems: "center",
+              borderBottomWidth: 2,
+              borderBottomColor: activeTab === tab.key ? "#007AFF" : "transparent",
+            }}
+          >
+            <WorkspaceText
+              variant="caption"
+              color={activeTab === tab.key ? "primary" : "secondary"}
+              style={{ fontWeight: activeTab === tab.key ? "700" : "400" }}
+            >
+              {`${tab.label} (${tab.count})`}
+            </WorkspaceText>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {renderContent()}
     </WorkspaceScreen>
   );
 }

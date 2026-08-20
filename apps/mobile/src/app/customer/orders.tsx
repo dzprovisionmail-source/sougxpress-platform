@@ -39,7 +39,7 @@ import {
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
-import { getOrCreateConversation } from "@/services/chat.service";
+import { getOrCreateConversation, getCommercialPhone, logCallPress } from "@/services/chat.service";
 import { MessageCircle } from "lucide-react-native";
 
 interface CourierInfo {
@@ -80,6 +80,7 @@ export default function CustomerOrdersScreen() {
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
   const [favoriteCourierIds, setFavoriteCourierIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [calling, setCalling] = useState<string | null>(null); // orderId-role
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -187,6 +188,31 @@ export default function CustomerOrdersScreen() {
       }
     } catch (err) {
       console.error("Error starting chat:", err);
+    }
+  };
+
+  const handleCall = async (orderId: string, targetRole: 'merchant' | 'courier', receiverId: string) => {
+    if (!orderId || !receiverId || calling) return;
+    
+    const callKey = `${orderId}-${targetRole}`;
+    setCalling(callKey);
+    try {
+      const { data: phone, error } = await getCommercialPhone(orderId, targetRole);
+      
+      if (error || !phone) {
+        Alert.alert("تنبيه", "لا يمكن استرجاع رقم الهاتف في هذه المرحلة أو أن العلاقة التجارية غير نشطة.");
+        return;
+      }
+
+      const relationshipType = targetRole === 'merchant' ? 'customer_merchant' : 'customer_courier';
+      await logCallPress(orderId, receiverId, relationshipType);
+
+      Linking.openURL(`tel:${phone}`);
+    } catch (err) {
+      console.error("Error handling call:", err);
+      Alert.alert("خطأ", "حدث خطأ أثناء محاولة الاتصال.");
+    } finally {
+      setCalling(null);
     }
   };
 
@@ -298,14 +324,17 @@ export default function CustomerOrdersScreen() {
               >
                 <MessageCircle size={14} color={colors.primary} />
               </TouchableOpacity>
-              {courier.phone && (
-                <TouchableOpacity
-                  onPress={() => Linking.openURL(`tel:${courier.phone}`)}
-                  style={[styles.callButton, { backgroundColor: colors.primary }]}
-                >
+              <TouchableOpacity
+                onPress={() => handleCall(item.id, 'courier', courier.id)}
+                style={[styles.callButton, { backgroundColor: colors.primary }]}
+                disabled={calling === `${item.id}-courier`}
+              >
+                {calling === `${item.id}-courier` ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
                   <Phone size={14} color="#fff" />
-                </TouchableOpacity>
-              )}
+                )}
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -335,6 +364,16 @@ export default function CustomerOrdersScreen() {
                   size="sm"
                   icon={<MessageCircle size={14} color={colors.primary} />}
                 />
+                {item.stores?.merchant_id && (
+                  <Button
+                    title="اتصال"
+                    onPress={() => handleCall(item.id, 'merchant', item.stores?.merchant_id as string)}
+                    variant="outline"
+                    size="sm"
+                    loading={calling === `${item.id}-merchant`}
+                    icon={<Phone size={14} color={colors.primary} />}
+                  />
+                )}
                 <Button
                   title="إعادة الطلب"
                   onPress={() =>

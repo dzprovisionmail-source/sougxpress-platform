@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   TextInput,
   View,
+  Linking,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -25,6 +27,7 @@ import {
   Wifi,
   WifiOff,
   X,
+  Phone,
 } from "lucide-react-native";
 
 import { Typography, Header, Avatar, Button } from "@/components/ui";
@@ -39,6 +42,8 @@ import {
   markAsRead,
   getOrderContext,
   getConversationById,
+  getCommercialPhone,
+  logCallPress,
   Message,
   Conversation,
 } from "@/services/chat.service";
@@ -91,6 +96,7 @@ export default function ChatScreen() {
   const [otherAvailability, setOtherAvailability] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showCommercialActions, setShowCommercialActions] = useState(true);
+  const [calling, setCalling] = useState(false);
 
   const currentUserIdRef = useRef<string | null>(null);
   const flatListRef = useRef<FlatList<Message>>(null);
@@ -292,6 +298,38 @@ export default function ChatScreen() {
     }
   };
 
+  const handleCall = async () => {
+    if (!orderContext?.order_id || !conversation?.other_participant?.id || calling) return;
+    
+    setCalling(true);
+    try {
+      let targetRole: 'customer' | 'merchant' | 'courier' = 'customer';
+      const otherRole = conversation.other_participant.role;
+      if (otherRole === 'merchant') targetRole = 'merchant';
+      else if (otherRole === 'driver' || otherRole === 'courier') targetRole = 'courier';
+      
+      const { data: phone, error } = await getCommercialPhone(orderContext.order_id, targetRole);
+      
+      if (error || !phone) {
+        Alert.alert("تنبيه", "لا يمكن استرجاع رقم الهاتف في هذه المرحلة أو أن العلاقة التجارية غير نشطة.");
+        return;
+      }
+
+      await logCallPress(
+        orderContext.order_id, 
+        conversation.other_participant.id, 
+        conversation.relationship_type
+      );
+
+      Linking.openURL(`tel:${phone}`);
+    } catch (err) {
+      console.error("Error handling call:", err);
+      Alert.alert("خطأ", "حدث خطأ أثناء محاولة الاتصال.");
+    } finally {
+      setCalling(false);
+    }
+  };
+
   const renderOrderActions = () => {
     if (!orderContext || !showCommercialActions) return null;
 
@@ -420,6 +458,19 @@ export default function ChatScreen() {
         }
         rightContent={
           <View style={styles.headerIdentity}>
+            {orderContext?.order_id && (
+              <TouchableOpacity 
+                onPress={handleCall} 
+                style={[styles.callHeaderButton, { backgroundColor: colors.primary + '15' }]}
+                disabled={calling}
+              >
+                {calling ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Phone size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            )}
             {isCourierConversation ? (
               otherAvailability === "online" ? <Wifi size={16} color={colors.success} /> : <WifiOff size={16} color={colors.textSecondary} />
             ) : null}
@@ -533,7 +584,14 @@ const styles = StyleSheet.create({
   headerIdentity: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    gap: 12,
+  },
+  callHeaderButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   availabilityBanner: {
     minHeight: 34,

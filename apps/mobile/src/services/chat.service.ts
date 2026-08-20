@@ -193,6 +193,52 @@ export const sendMessage = async (conversationId: string, content: string): Prom
 /**
  * Gets or creates a conversation using the secure RPC.
  */
+/**
+ * Retrieves the commercial contact phone number for a specific order and target role.
+ * Uses the secure get_commercial_contact_phone RPC.
+ */
+export const getCommercialPhone = async (
+  orderId: string,
+  targetRole: 'customer' | 'merchant' | 'courier'
+): Promise<{ data: string | null; error: any }> => {
+  try {
+    const { data, error } = await supabase.rpc('get_commercial_contact_phone', {
+      p_order_id: orderId,
+      p_target_role: targetRole
+    });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error fetching commercial phone:", err);
+    return { data: null, error: err };
+  }
+};
+
+/**
+ * Logs a call button press event for audit purposes.
+ * Uses the secure log_call_button_press RPC.
+ */
+export const logCallPress = async (
+  orderId: string,
+  receiverId: string,
+  relationshipType: string
+): Promise<{ error: any }> => {
+  try {
+    const { error } = await supabase.rpc('log_call_button_press', {
+      p_order_id: orderId,
+      p_receiver_id: receiverId,
+      p_relationship_type: relationshipType
+    });
+
+    if (error) throw error;
+    return { error: null };
+  } catch (err) {
+    console.error("Error logging call press:", err);
+    return { error: err };
+  }
+};
+
 export const getOrCreateConversation = async (
   otherUserId: string,
   relationshipType: RelationshipType,
