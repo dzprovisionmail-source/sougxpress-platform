@@ -20,6 +20,7 @@ import {
   EmptyState,
   Header,
   Avatar,
+  Button,
 } from "@/components/ui";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -61,6 +62,7 @@ export default function FavoritesGatewayScreen() {
   const [merchantCourierCandidates, setMerchantCourierCandidates] = useState<MerchantFavoriteCourier[]>([]);
   const [merchantActiveTab, setMerchantActiveTab] = useState<"interested" | "favorites" | "couriers">("interested");
   const [selectedMerchantCustomer, setSelectedMerchantCustomer] = useState<any | null>(null);
+  const [startingChat, setStartingChat] = useState<string | null>(null);
 
   // Courier state: courier-owned favorites are separate from customer -> courier favorites.
   const [courierActiveTab, setCourierActiveTab] = useState<"interested" | "stores" | "customers">("interested");
@@ -379,7 +381,9 @@ export default function FavoritesGatewayScreen() {
   };
 
   const handleStartChat = async (otherUserId: string, relationshipType: RelationshipType, referenceId?: string) => {
+    if (startingChat) return;
     try {
+      setStartingChat(otherUserId);
       const { data: conversationId, error } = await getOrCreateConversation(
         otherUserId,
         relationshipType,
@@ -391,6 +395,8 @@ export default function FavoritesGatewayScreen() {
       }
     } catch (err) {
       console.error("Error starting chat:", err);
+    } finally {
+      setStartingChat(null);
     }
   };
 
@@ -535,25 +541,28 @@ export default function FavoritesGatewayScreen() {
                           <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
                             {customer.neighborhood || customer.address || "بدون عنوان"}
                           </Typography>
-                          <View style={styles.cardActionsRow}>
-                            <TouchableOpacity
-                              onPress={() => handleStartChat(customer.id, "customer_courier")}
-                              style={[styles.miniActionBtn, { backgroundColor: colors.primary + "10" }]}
-                            >
-                              <MessageCircle size={16} color={colors.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              onPress={() => handleToggleCourierFavorite("customer", customer.id)}
-                              style={styles.removeBtn}
-                              disabled={busy}
-                            >
-                              {busy ? (
-                                <ActivityIndicator size="small" color={colors.primary} />
-                              ) : (
-                                <Heart size={16} color={colors.error} fill={colors.error} />
-                              )}
-                            </TouchableOpacity>
-                          </View>
+                          <TouchableOpacity
+                          onPress={() => handleToggleCourierFavorite("customer", customer.id)}
+                          style={styles.removeBtn}
+                          disabled={busy}
+                        >
+                          {busy ? (
+                            <ActivityIndicator size="small" color={colors.primary} />
+                          ) : (
+                            <Heart size={16} color={colors.error} fill={colors.error} />
+                          )}
+                        </TouchableOpacity>
+                        <View style={styles.ctaWrapper}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            title="دردشة"
+                            onPress={() => handleStartChat(customer.id, "customer_courier")}
+                            icon={<MessageCircle size={14} color={colors.primary} />}
+                            loading={startingChat === customer.id}
+                            style={{ width: '100%' }}
+                          />
+                        </View>
                         </View>
                       </View>
                     );
@@ -669,24 +678,27 @@ export default function FavoritesGatewayScreen() {
                           <Typography variant="caption" color="secondary" align="center" numberOfLines={1}>
                             {customer.neighborhood || customer.address || "بدون عنوان"}
                           </Typography>
-                          <View style={styles.cardActionsRow}>
-                            <TouchableOpacity
+                          <TouchableOpacity
+                            onPress={() => handleToggleCourierFavorite("customer", customer.id)}
+                            style={[styles.removeBtn, { backgroundColor: item.isFavorite ? colors.primary + "15" : colors.bgBase }]}
+                            disabled={busy}
+                          >
+                            {busy ? (
+                              <ActivityIndicator size="small" color={colors.primary} />
+                            ) : (
+                              <Heart size={16} color={item.isFavorite ? colors.primary : colors.textDisabled} fill={item.isFavorite ? colors.primary : "none"} />
+                            )}
+                          </TouchableOpacity>
+                          <View style={styles.ctaWrapper}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="دردشة"
                               onPress={() => handleStartChat(customer.id, "customer_courier")}
-                              style={[styles.miniActionBtn, { backgroundColor: colors.primary + "10" }]}
-                            >
-                              <MessageCircle size={16} color={colors.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              onPress={() => handleToggleCourierFavorite("customer", customer.id)}
-                              style={[styles.removeBtn, { backgroundColor: item.isFavorite ? colors.primary + "15" : colors.bgBase }]}
-                              disabled={busy}
-                            >
-                              {busy ? (
-                                <ActivityIndicator size="small" color={colors.primary} />
-                              ) : (
-                                <Heart size={16} color={item.isFavorite ? colors.primary : colors.textDisabled} fill={item.isFavorite ? colors.primary : "none"} />
-                              )}
-                            </TouchableOpacity>
+                              icon={<MessageCircle size={14} color={colors.primary} />}
+                              loading={startingChat === customer.id}
+                              style={{ width: '100%' }}
+                            />
                           </View>
                         </View>
                       </View>
@@ -844,12 +856,15 @@ export default function FavoritesGatewayScreen() {
                           />
                         </TouchableOpacity>
                         
-                        <TouchableOpacity
-                          style={[styles.merchantMiniActionBtn, { marginTop: 8 }]}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          title="دردشة"
                           onPress={() => handleStartChat(courier.id, "merchant_courier")}
-                        >
-                          <MessageCircle size={20} color={colors.primary} />
-                        </TouchableOpacity>
+                          icon={<MessageCircle size={16} color={colors.primary} />}
+                          loading={startingChat === courier.id}
+                          style={{ marginTop: 8, paddingHorizontal: 12 }}
+                        />
                       </View>
                     </View>
                   );
@@ -902,13 +917,17 @@ export default function FavoritesGatewayScreen() {
                               <Heart size={16} color={colors.primary} />
                             </TouchableOpacity>
                           )}
-                          
-                          <TouchableOpacity
+                        </View>
+                        <View style={[styles.ctaWrapper, { marginTop: 8 }]}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            title="دردشة مع الزبون"
                             onPress={() => handleStartChat(customer.id, "customer_merchant")}
-                            style={[styles.merchantActionBtn, { borderColor: colors.borderSubtle }]}
-                          >
-                            <MessageCircle size={14} color={colors.primary} />
-                          </TouchableOpacity>
+                            icon={<MessageCircle size={14} color={colors.primary} />}
+                            loading={startingChat === customer.id}
+                            style={{ width: '100%' }}
+                          />
                         </View>
                       </View>
                     </View>
@@ -954,13 +973,17 @@ export default function FavoritesGatewayScreen() {
                           >
                             <Heart size={16} color={colors.error} fill={colors.error} />
                           </TouchableOpacity>
-                          
-                          <TouchableOpacity
+                        </View>
+                        <View style={[styles.ctaWrapper, { marginTop: 8 }]}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            title="دردشة مع الزبون"
                             onPress={() => handleStartChat(customer.id, "customer_merchant")}
-                            style={[styles.merchantActionBtn, { borderColor: colors.borderSubtle }]}
-                          >
-                            <MessageCircle size={14} color={colors.primary} />
-                          </TouchableOpacity>
+                            icon={<MessageCircle size={14} color={colors.primary} />}
+                            loading={startingChat === customer.id}
+                            style={{ width: '100%' }}
+                          />
                         </View>
                       </View>
                     </View>
@@ -1115,6 +1138,17 @@ export default function FavoritesGatewayScreen() {
                         <Star size={12} color="#FFD700" fill="#FFD700" />
                         <Typography variant="caption" style={{ marginLeft: 4 }}>{driver.rating || '5.0'}</Typography>
                       </View>
+                      <View style={[styles.ctaWrapper, { marginTop: 12 }]}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          title="دردشة"
+                          onPress={() => handleStartChat(driver.id, "customer_courier")}
+                          icon={<MessageCircle size={14} color={colors.primary} />}
+                          loading={startingChat === driver.id}
+                          style={{ width: '100%' }}
+                        />
+                      </View>
                       <TouchableOpacity
                         onPress={() => handleRemoveCustomerFavorite(item.id)}
                         style={styles.removeBtn}
@@ -1208,7 +1242,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     position: 'relative',
-    height: 160,
+    minHeight: 200,
   },
   customerFavoriteCard: {
     padding: TOKENS.spacing.md,
@@ -1216,7 +1250,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     position: "relative",
-    minHeight: 190,
+    minHeight: 220,
+  },
+  ctaWrapper: {
+    width: '100%',
+    marginTop: 'auto',
   },
   merchantCourierList: {
     width: "100%",

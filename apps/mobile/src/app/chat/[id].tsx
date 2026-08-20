@@ -1,25 +1,34 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  StyleSheet,
-  View,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
+  FlatList,
   I18nManager,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Send, Package, Info } from "lucide-react-native";
 import {
-  Typography,
-  Header,
-  Avatar,
-  Button,
-} from "@/components/ui";
+  ArrowRight,
+  Check,
+  CheckCheck,
+  Clock3,
+  Info,
+  MessageCircle,
+  RefreshCw,
+  Send,
+  Wifi,
+  WifiOff,
+  X,
+} from "lucide-react-native";
+
+import { Typography, Header, Avatar, Button } from "@/components/ui";
+import OrderContextCard, { ChatOrderContext } from "@/components/chat/OrderContextCard";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
@@ -33,240 +42,345 @@ import {
   Message,
   Conversation,
 } from "@/services/chat.service";
-// Remove date-fns imports to avoid dependency issues
+
+const AVAILABILITY_LABEL: Record<string, string> = {
+  online: "متاح الآن",
+  offline: "غير متصل",
+  on_delivery: "في توصيلة",
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  merchant: "التاجر",
+  driver: "الموصل",
+  courier: "الموصل",
+  customer: "الزبون",
+};
+
+const statusLabel = (status?: string | null) => {
+  const labels: Record<string, string> = {
+    pending: "جديد",
+    accepted: "مقبول",
+    preparing: "قيد التحضير",
+    ready_for_pickup: "جاهز للاستلام",
+    arrived_at_store: "في المتجر",
+    picked_up: "تم الاستلام",
+    out_for_delivery: "في الطريق",
+    delivered: "تم التسليم",
+    cancelled: "ملغى",
+    rejected: "مرفوض",
+  };
+  return status ? labels[status] || status : "غير متوفر";
+};
+
+const createClientId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 export default function ChatScreen() {
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
-  
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [inputText, setInputText] = useState("");
   const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [orderContext, setOrderContext] = useState<any>(null);
+  const [orderContext, setOrderContext] = useState<ChatOrderContext | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [otherAvailability, setOtherAvailability] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  
-  const flatListRef = useRef<FlatList>(null);
+  const [showCommercialActions, setShowCommercialActions] = useState(true);
 
-  const fetchInitialData = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    setCurrentUserId(user.id);
+  const currentUserIdRef = useRef<string | null>(null);
+  const flatListRef = useRef<FlatList<Message>>(null);
 
-    // Get current user role from profiles
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-    if (profile) setCurrentUserRole(profile.role);
-
-    // Fetch conversation details with enhanced identity mapping
-    const { data: conv, error } = await getConversationById(conversationId);
-
-    if (!error && conv) {
-      setConversation(conv);
-      if (conv.reference_id) {
-        const { data: order } = await getOrderContext(conv.reference_id);
-        setOrderContext(order);
+  const mergeServerMessage = useCallback((serverMessage: Message) => {
+    setMessages((previous) => {
+      const serverRow = { ...serverMessage, delivery_state: "sent" as const };
+      const exactIndex = previous.findIndex((message) => message.id === serverMessage.id);
+      if (exactIndex >= 0) {
+        const next = [...previous];
+        next[exactIndex] = { ...next[exactIndex], ...serverRow };
+        return next;
       }
+
+      // Realtime may arrive before the INSERT request resolves. Replace the
+      // matching local bubble instead of rendering the same message twice.
+      const optimisticIndex = previous.findIndex(
+        (message) =>
+          message.delivery_state === "sending" &&
+          message.sender_id === serverMessage.sender_id &&
+          message.content === serverMessage.content
+      );
+      if (optimisticIndex >= 0) {
+        const next = [...previous];
+        next[optimisticIndex] = serverRow;
+        return next;
+      }
+
+      return [...previous, serverRow];
+    });
+  }, []);
+
+  const fetchCourierAvailability = useCallback(async (participant: Conversation["other_participant"]) => {
+    if (!participant || (participant.role !== "driver" && participant.role !== "courier")) {
+      setOtherAvailability(null);
+      return;
     }
 
-    // Fetch messages
-    const { data: msgs } = await getMessages(conversationId);
-    if (msgs) setMessages(msgs);
-    
-    setLoading(false);
-    markAsRead(conversationId);
-  }, [conversationId]);
+    const { data } = await supabase
+      .from("drivers")
+      .select("availability")
+      .or(`id.eq.${participant.id},user_id.eq.${participant.id}`)
+      .maybeSingle();
+
+    setOtherAvailability(data?.availability || null);
+  }, []);
+
+  const fetchInitialData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || !conversationId) return;
+
+      currentUserIdRef.current = user.id;
+      setCurrentUserId(user.id);
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      setCurrentUserRole(profile?.role || null);
+
+      const { data: conv, error: conversationError } = await getConversationById(conversationId);
+      if (conversationError) throw conversationError;
+
+      if (conv) {
+        setConversation(conv);
+        await fetchCourierAvailability(conv.other_participant);
+        if (conv.reference_id) {
+          const { data: order } = await getOrderContext(conv.reference_id);
+          setOrderContext((order as ChatOrderContext | null) || null);
+        } else {
+          setOrderContext(null);
+        }
+      }
+
+      const { data: loadedMessages, error: messagesError } = await getMessages(conversationId);
+      if (messagesError) throw messagesError;
+      setMessages((loadedMessages || []).map((message) => ({ ...message, delivery_state: "sent" as const })));
+      await markAsRead(conversationId);
+    } catch (error) {
+      console.error("Error loading chat:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [conversationId, fetchCourierAvailability]);
 
   useEffect(() => {
-    fetchInitialData();
-    
-    const unsubscribe = subscribeToMessages(conversationId, (newMsg) => {
-      setMessages((prev) => {
-        if (prev.find(m => m.id === newMsg.id)) return prev;
-        return [...prev, newMsg];
-      });
-      if (newMsg.sender_id !== currentUserId) {
-        markAsRead(conversationId);
+    if (!conversationId) return;
+    void fetchInitialData();
+
+    const unsubscribe = subscribeToMessages(conversationId, (newMessage) => {
+      mergeServerMessage(newMessage);
+      if (newMessage.sender_id !== currentUserIdRef.current) {
+        void markAsRead(conversationId);
       }
     });
 
-    return () => unsubscribe();
-  }, [conversationId, fetchInitialData, currentUserId]);
+    return unsubscribe;
+  }, [conversationId, fetchInitialData, mergeServerMessage]);
+
+  const persistMessage = async (clientId: string, text: string) => {
+    const { data, error } = await sendMessage(conversationId, text);
+    if (error || !data) {
+      setMessages((previous) =>
+        previous.map((message) =>
+          message.client_id === clientId
+            ? {
+                ...message,
+                delivery_state: "failed" as const,
+                delivery_error: "تعذر إرسال الرسالة. اضغط لإعادة المحاولة.",
+              }
+            : message
+        )
+      );
+      return;
+    }
+
+    mergeServerMessage({ ...data, client_id: clientId });
+  };
 
   const handleSend = async () => {
-    if (!inputText.trim() || sending) return;
-    
     const text = inputText.trim();
+    if (!text || sending || !currentUserId || !conversationId) return;
+
+    const clientId = createClientId();
+    const optimisticMessage: Message = {
+      id: clientId,
+      client_id: clientId,
+      conversation_id: conversationId,
+      sender_id: currentUserId,
+      content: text,
+      is_read: true,
+      created_at: new Date().toISOString(),
+      delivery_state: "sending",
+    };
+
+    setMessages((previous) => [...previous, optimisticMessage]);
     setInputText("");
+    Keyboard.dismiss();
     setSending(true);
-    
-    const { data, error } = await sendMessage(conversationId, text);
-    if (error) {
-      console.error("Error sending message:", error);
-      // Optional: Show error to user
+    try {
+      await persistMessage(clientId, text);
+    } finally {
+      setSending(false);
     }
-    setSending(false);
+  };
+
+  const handleRetry = async (message: Message) => {
+    const clientId = message.client_id || message.id;
+    setMessages((previous) =>
+      previous.map((item) =>
+        item.id === message.id ? { ...item, delivery_state: "sending", delivery_error: undefined } : item
+      )
+    );
+    await persistMessage(clientId, message.content);
+  };
+
+  const updateOrderContext = async () => {
+    if (!conversation?.reference_id) return;
+    const { data } = await getOrderContext(conversation.reference_id);
+    if (data) setOrderContext(data as ChatOrderContext);
+  };
+
+  const handleMerchantUpdate = async (newStatus: string) => {
+    if (!orderContext || updatingStatus) return;
+    setUpdatingStatus(true);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("id", orderContext.order_id);
+      if (error) throw error;
+      await updateOrderContext();
+    } catch (error) {
+      console.error("Error updating order status from chat:", error);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleCourierUpdate = async (newStatus: string) => {
+    if (!orderContext || updatingStatus) return;
+    setUpdatingStatus(true);
+    try {
+      const { error } = await supabase
+        .from("delivery_assignments")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("order_id", orderContext.order_id);
+      if (error) throw error;
+      await updateOrderContext();
+    } catch (error) {
+      console.error("Error updating delivery status from chat:", error);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const renderOrderActions = () => {
+    if (!orderContext || !showCommercialActions) return null;
+
+    if (currentUserRole === "merchant") {
+      if (orderContext.order_status === "pending") {
+        return (
+          <View style={styles.orderActions}>
+            <Button title="قبول الطلب" onPress={() => handleMerchantUpdate("accepted")} size="sm" style={styles.flexButton} loading={updatingStatus} />
+            <Button title="رفض" variant="danger" onPress={() => handleMerchantUpdate("cancelled")} size="sm" style={styles.flexButton} disabled={updatingStatus} />
+          </View>
+        );
+      }
+      if (orderContext.order_status === "accepted") {
+        return <Button title="بدء التحضير" onPress={() => handleMerchantUpdate("preparing")} size="sm" style={styles.actionButton} loading={updatingStatus} />;
+      }
+      if (orderContext.order_status === "preparing") {
+        return <Button title="جاهز للاستلام" onPress={() => handleMerchantUpdate("ready_for_pickup")} size="sm" style={styles.actionButton} loading={updatingStatus} />;
+      }
+    }
+
+    if (currentUserRole === "driver" || currentUserRole === "courier") {
+      const deliveryStatus = orderContext.delivery_status;
+      if (deliveryStatus === "accepted") {
+        return <Button title="وصلت للمتجر" onPress={() => handleCourierUpdate("arrived_at_store")} size="sm" style={styles.actionButton} loading={updatingStatus} />;
+      }
+      if (deliveryStatus === "arrived_at_store") {
+        return <Button title="تم الاستلام" onPress={() => handleCourierUpdate("picked_up")} size="sm" style={styles.actionButton} loading={updatingStatus} />;
+      }
+      if (deliveryStatus === "picked_up") {
+        return <Button title="بدء التوصيل" onPress={() => handleCourierUpdate("out_for_delivery")} size="sm" style={styles.actionButton} loading={updatingStatus} />;
+      }
+      if (deliveryStatus === "out_for_delivery") {
+        return <Button title="تم التسليم" onPress={() => handleCourierUpdate("delivered")} size="sm" style={styles.actionButton} loading={updatingStatus} />;
+      }
+    }
+
+    return null;
   };
 
   const renderMessageItem = ({ item }: { item: Message }) => {
     const isMine = item.sender_id === currentUserId;
-    const time = new Date(item.created_at).toLocaleTimeString("ar-DZ", { 
-      hour: "2-digit", 
+    const time = new Date(item.created_at).toLocaleTimeString("ar-DZ", {
+      hour: "2-digit",
       minute: "2-digit",
-      hour12: false 
+      hour12: false,
     });
+    const failed = item.delivery_state === "failed";
+    const sendingMessage = item.delivery_state === "sending";
 
     return (
-      <View style={[
-        styles.messageWrapper,
-        isMine ? styles.myMessageWrapper : styles.theirMessageWrapper,
-        { flexDirection: isRTL ? (isMine ? "row-reverse" : "row") : (isMine ? "row" : "row-reverse") }
-      ]}>
-        <View style={[
-          styles.messageBubble,
-          isMine ? 
-            { backgroundColor: colors.primary, borderBottomRightRadius: 2 } : 
-            { backgroundColor: colors.bgSurface, borderBottomLeftRadius: 2, borderColor: colors.borderSubtle, borderWidth: 1 }
-        ]}>
+      <View
+        style={[
+          styles.messageWrapper,
+          isMine ? styles.myMessageWrapper : styles.theirMessageWrapper,
+          { alignItems: isMine ? "flex-start" : "flex-end" },
+        ]}
+      >
+        <TouchableOpacity
+          activeOpacity={failed ? 0.75 : 1}
+          onPress={() => failed && handleRetry(item)}
+          style={[
+            styles.messageBubble,
+            isMine
+              ? { backgroundColor: colors.primary, borderBottomRightRadius: 3 }
+              : { backgroundColor: colors.bgSurface, borderBottomLeftRadius: 3, borderColor: colors.borderSubtle, borderWidth: 1 },
+            failed && { borderColor: colors.error, borderWidth: 1 },
+          ]}
+        >
           <Typography variant="body" style={{ color: isMine ? "#FFFFFF" : colors.textPrimary }}>
             {item.content}
           </Typography>
-          <Typography variant="caption" style={{ 
-            color: isMine ? "rgba(255,255,255,0.7)" : colors.textSecondary,
-            alignSelf: "flex-end",
-            marginTop: 4
-          }}>
-            {time}
-          </Typography>
-        </View>
-      </View>
-    );
-  };
-
-  const OrderContextCard = () => {
-    if (!orderContext) return null;
-
-    const handleMerchantUpdate = async (newStatus: string) => {
-      if (!orderContext || updatingStatus) return;
-      setUpdatingStatus(true);
-      try {
-        const { error } = await supabase
-          .from("orders")
-          .update({ status: newStatus, updated_at: new Date().toISOString() })
-          .eq("id", orderContext.order_id);
-        if (error) throw error;
-        // Refresh context
-        const { data: updated } = await getOrderContext(orderContext.order_id);
-        if (updated) setOrderContext(updated);
-      } catch (err) {
-        console.error("Error updating order status from chat:", err);
-      } finally {
-        setUpdatingStatus(false);
-      }
-    };
-
-    const handleCourierUpdate = async (newStatus: string) => {
-      if (!orderContext || updatingStatus) return;
-      setUpdatingStatus(true);
-      try {
-        const { error } = await supabase
-          .from("delivery_assignments")
-          .update({ status: newStatus, updated_at: new Date().toISOString() })
-          .eq("order_id", orderContext.order_id);
-        if (error) throw error;
-        // Refresh context
-        const { data: updated } = await getOrderContext(orderContext.order_id);
-        if (updated) setOrderContext(updated);
-      } catch (err) {
-        console.error("Error updating delivery status from chat:", err);
-      } finally {
-        setUpdatingStatus(false);
-      }
-    };
-
-    const renderActionButtons = () => {
-      if (currentUserRole === "merchant") {
-        if (orderContext.order_status === "pending") {
-          return (
-            <View style={styles.orderActions}>
-              <Button title="قبول الطلب" onPress={() => handleMerchantUpdate("accepted")} size="sm" style={{ flex: 1 }} />
-              <Button title="رفض" variant="danger" onPress={() => handleMerchantUpdate("cancelled")} size="sm" style={{ flex: 1 }} />
-            </View>
-          );
-        }
-        if (orderContext.order_status === "accepted") {
-          return <Button title="بدء التحضير" onPress={() => handleMerchantUpdate("preparing")} size="sm" style={{ marginTop: 8 }} />;
-        }
-        if (orderContext.order_status === "preparing") {
-          return <Button title="جاهز للاستلام" onPress={() => handleMerchantUpdate("ready_for_pickup")} size="sm" style={{ marginTop: 8 }} />;
-        }
-      }
-
-      if (currentUserRole === "driver") {
-        const dStatus = orderContext.delivery_status;
-        if (dStatus === "accepted") {
-          return <Button title="وصلت للمتجر" onPress={() => handleCourierUpdate("arrived_at_store")} size="sm" style={{ marginTop: 8 }} />;
-        }
-        if (dStatus === "arrived_at_store") {
-          return <Button title="تم الاستلام" onPress={() => handleCourierUpdate("picked_up")} size="sm" style={{ marginTop: 8 }} />;
-        }
-        if (dStatus === "picked_up") {
-          return <Button title="بدء التوصيل" onPress={() => handleCourierUpdate("out_for_delivery")} size="sm" style={{ marginTop: 8 }} />;
-        }
-        if (dStatus === "out_for_delivery") {
-          return <Button title="تم التسليم" onPress={() => handleCourierUpdate("delivered")} size="sm" style={{ marginTop: 8 }} />;
-        }
-      }
-      return null;
-    };
-
-    const getStatusLabel = (status: string) => {
-      const map: any = {
-        pending: "جديد",
-        accepted: "مقبول",
-        preparing: "قيد التحضير",
-        ready_for_pickup: "جاهز للاستلام",
-        picked_up: "تم الاستلام",
-        delivered: "تم التوصيل",
-        cancelled: "مرفوض",
-        arrived_at_store: "في المتجر",
-        out_for_delivery: "في الطريق"
-      };
-      return map[status] || status;
-    };
-
-    const isCourierChat = currentUserRole === 'driver';
-
-    return (
-      <View style={[styles.orderCard, { backgroundColor: colors.bgSurface, borderBottomColor: colors.borderSubtle }]}>
-        <View style={styles.orderCardHeader}>
-          <Package size={20} color={colors.primary} />
-          <Typography variant="h3" style={{ color: colors.textPrimary, marginHorizontal: 8 }}>
-            {isCourierChat 
-              ? `طلب من ${orderContext.store_name} للزبون ${orderContext.customer_name}`
-              : `طلب من ${orderContext.store_name}`
-            }
-          </Typography>
-        </View>
-        <View style={styles.orderCardBody}>
-          <View style={styles.orderStatusItem}>
-            <Typography variant="caption" style={{ color: colors.textSecondary }}>حالة الطلب:</Typography>
-            <Typography variant="body" style={{ color: colors.primary, fontWeight: "600", marginLeft: 4 }}>{getStatusLabel(orderContext.order_status)}</Typography>
+          <View style={[styles.messageMeta, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            <Typography
+              variant="caption"
+              style={{ color: isMine ? "rgba(255,255,255,0.72)" : colors.textSecondary }}
+            >
+              {failed ? "فشل الإرسال · إعادة المحاولة" : time}
+            </Typography>
+            {isMine && !failed ? (
+              sendingMessage ? (
+                <Clock3 size={12} color="rgba(255,255,255,0.72)" />
+              ) : item.is_read ? (
+                <CheckCheck size={13} color="rgba(255,255,255,0.82)" />
+              ) : (
+                <Check size={13} color="rgba(255,255,255,0.72)" />
+              )
+            ) : null}
           </View>
-          <View style={styles.orderStatusItem}>
-            <Typography variant="caption" style={{ color: colors.textSecondary }}>حالة التوصيل:</Typography>
-            <Typography variant="body" style={{ color: colors.accent || colors.primary, marginLeft: 4 }}>{getStatusLabel(orderContext.delivery_status || "pending")}</Typography>
-          </View>
-        </View>
-        {renderActionButtons()}
+        </TouchableOpacity>
       </View>
     );
   };
@@ -280,28 +394,58 @@ export default function ChatScreen() {
   }
 
   const other = conversation?.other_participant;
-  const displayName = other?.role === 'merchant' && other.store_name 
-    ? other.store_name 
-    : (other?.full_name || "محادثة");
-    
-  const displayAvatar = other?.role === 'merchant' && other.store_logo
+  const displayName = other?.role === "merchant" && other.store_name
+    ? other.store_name
+    : other?.full_name || "محادثة آمنة";
+  const displayAvatar = other?.role === "merchant" && other.store_logo
     ? other.store_logo
     : other?.avatar_url;
+  const availabilityLabel = otherAvailability ? AVAILABILITY_LABEL[otherAvailability] || otherAvailability : null;
+  const isCourierConversation = other?.role === "driver" || other?.role === "courier";
+  const relationshipType = conversation?.relationship_type || "";
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
-      <Header 
-        title={displayName} 
+      <Header
+        title={displayName}
+        subtitle={
+          isCourierConversation && availabilityLabel
+            ? availabilityLabel
+            : ROLE_LABEL[other?.role || ""] || "تواصل تجاري آمن"
+        }
+        leftContent={
+          <TouchableOpacity onPress={() => router.back()} style={styles.headerAction} accessibilityLabel="رجوع">
+            <ArrowRight size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+        }
         rightContent={
-          <Avatar 
-            uri={displayAvatar || undefined} 
-            name={displayName} 
-            size={36} 
-          />
+          <View style={styles.headerIdentity}>
+            {isCourierConversation ? (
+              otherAvailability === "online" ? <Wifi size={16} color={colors.success} /> : <WifiOff size={16} color={colors.textSecondary} />
+            ) : null}
+            <Avatar uri={displayAvatar || undefined} name={displayName} size={38} />
+          </View>
         }
       />
-      
-      <OrderContextCard />
+
+      {isCourierConversation && availabilityLabel ? (
+        <View style={[styles.availabilityBanner, { backgroundColor: colors.bgElevated, borderBottomColor: colors.borderSubtle }]}>
+          {otherAvailability === "online" ? <Wifi size={15} color={colors.success} /> : <WifiOff size={15} color={colors.textSecondary} />}
+          <Typography variant="caption" style={{ color: otherAvailability === "online" ? colors.success : colors.textSecondary }}>
+            حالة الموصل: {availabilityLabel}
+          </Typography>
+        </View>
+      ) : null}
+
+      <OrderContextCard context={orderContext} />
+      {renderOrderActions()}
+
+      <View style={[styles.commercialHint, { backgroundColor: colors.primary + "0B" }]}>
+        <Info size={15} color={colors.primary} />
+        <Typography variant="caption" style={{ color: colors.textSecondary, flex: 1, textAlign: "right" }}>
+          هذه محادثة مرتبطة بعلاقة تجارية. لا تشارك أرقام الهاتف أو بيانات الدفع.
+        </Typography>
+      </View>
 
       <FlatList
         ref={flatListRef}
@@ -309,9 +453,34 @@ export default function ChatScreen() {
         renderItem={renderMessageItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.messageList}
+        keyboardShouldPersistTaps="handled"
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        ListEmptyComponent={
+          <View style={styles.emptyMessages}>
+            <MessageCircle size={34} color={colors.textDisabled} />
+            <Typography variant="body" color="secondary" align="center" style={{ marginTop: 8 }}>
+              ابدأ المحادثة برسالة واضحة حول الطلب أو المنتج.
+            </Typography>
+          </View>
+        }
       />
+
+      {relationshipType === "customer_merchant" ? (
+        <View style={[styles.quickActions, { borderTopColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
+          <TouchableOpacity
+            onPress={() => setInputText("هل يمكن تأكيد توفر المنتج والسعر من فضلك؟")}
+            style={[styles.quickAction, { borderColor: colors.borderSubtle }]}
+          >
+            <Typography variant="caption">استفسار عن المنتج</Typography>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setInputText("أرجو تأكيد تفاصيل الطلب ووقت التجهيز.")}
+            style={[styles.quickAction, { borderColor: colors.borderSubtle }]}
+          >
+            <Typography variant="caption">تأكيد الطلب</Typography>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -320,16 +489,18 @@ export default function ChatScreen() {
         <View style={[styles.inputContainer, { backgroundColor: colors.bgSurface, borderTopColor: colors.borderSubtle }]}>
           <TextInput
             style={[styles.input, { color: colors.textPrimary, textAlign: isRTL ? "right" : "left" }]}
-            placeholder="اكتب رسالة..."
+            placeholder="اكتب رسالة آمنة..."
             placeholderTextColor={colors.textSecondary}
             value={inputText}
             onChangeText={setInputText}
             multiline
+            maxLength={1000}
           />
-          <TouchableOpacity 
-            style={[styles.sendButton, { backgroundColor: colors.primary }]} 
+          <TouchableOpacity
+            style={[styles.sendButton, { backgroundColor: colors.primary, opacity: inputText.trim() && !sending ? 1 : 0.55 }]}
             onPress={handleSend}
             disabled={!inputText.trim() || sending}
+            accessibilityLabel="إرسال الرسالة"
           >
             {sending ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -352,25 +523,68 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  headerAction: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerIdentity: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  availabilityBanner: {
+    minHeight: 34,
+    borderBottomWidth: 1,
+    flexDirection: "row-reverse",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+  },
+  commercialHint: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 7,
+    marginHorizontal: TOKENS.spacing.md,
+    marginTop: TOKENS.spacing.sm,
+    padding: TOKENS.spacing.sm,
+    borderRadius: 12,
+  },
   messageList: {
     padding: TOKENS.spacing.md,
     paddingBottom: TOKENS.spacing.xl,
+    flexGrow: 1,
   },
   messageWrapper: {
     marginBottom: TOKENS.spacing.sm,
     width: "100%",
   },
   myMessageWrapper: {
-    justifyContent: "flex-end",
-  },
-  theirMessageWrapper: {
     justifyContent: "flex-start",
   },
+  theirMessageWrapper: {
+    justifyContent: "flex-end",
+  },
   messageBubble: {
-    maxWidth: "80%",
+    maxWidth: "82%",
     padding: TOKENS.spacing.sm,
     paddingHorizontal: TOKENS.spacing.md,
-    borderRadius: 12,
+    borderRadius: 16,
+  },
+  messageMeta: {
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 4,
+    marginTop: 4,
+  },
+  emptyMessages: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: TOKENS.spacing.xl,
+    paddingTop: TOKENS.spacing.xl,
   },
   inputContainer: {
     flexDirection: "row",
@@ -382,40 +596,42 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     maxHeight: 100,
-    minHeight: 40,
-    paddingTop: 8,
-    paddingBottom: 8,
+    minHeight: 42,
+    paddingTop: 9,
+    paddingBottom: 9,
     fontSize: 16,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: TOKENS.spacing.sm,
   },
-  orderCard: {
-    padding: TOKENS.spacing.sm,
+  quickActions: {
+    flexDirection: "row-reverse",
+    gap: 8,
     paddingHorizontal: TOKENS.spacing.md,
-    borderBottomWidth: 1,
+    paddingTop: 8,
   },
-  orderCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  orderCardBody: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  orderStatusItem: {
-    flexDirection: "row",
-    alignItems: "center",
+  quickAction: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
   },
   orderActions: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     gap: 8,
-    marginTop: 8,
+    marginHorizontal: TOKENS.spacing.md,
+    marginTop: TOKENS.spacing.sm,
+  },
+  flexButton: {
+    flex: 1,
+  },
+  actionButton: {
+    marginHorizontal: TOKENS.spacing.md,
+    marginTop: TOKENS.spacing.sm,
   },
 });

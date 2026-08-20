@@ -25,6 +25,8 @@ export interface Conversation {
   unread_count?: number;
 }
 
+export type MessageDeliveryState = "sending" | "sent" | "failed";
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -32,6 +34,10 @@ export interface Message {
   content: string;
   is_read: boolean;
   created_at: string;
+  /** Client-only metadata used by optimistic UI; never sent to Supabase. */
+  client_id?: string;
+  delivery_state?: MessageDeliveryState;
+  delivery_error?: string;
 }
 
 /**
@@ -208,30 +214,84 @@ export const getOrCreateConversation = async (
 };
 
 /**
- * Subscribes to new messages in a conversation.
+ * One dispatcher is registered per conversation channel. This is important in
+ * React Strict Mode and during Expo Fast Refresh: registering `.on()` on a
+ * channel after `.subscribe()` causes the Realtime client to throw.
+ */
+type MessageListener = (message: Message) => void;
+type ManagedMessageChannel = {
+  channel: ReturnType<typeof supabase.channel>;
+  listeners: Set<MessageListener>;
+};
+
+const messageChannels = new Map<string, ManagedMessageChannel>();
+
+const getMessageTopic = (conversationId: string) => `chat:${conversationId}`;
+
+/**
+ * Subscribes to new messages in a conversation with duplicate-channel
+ * protection and deterministic cleanup.
  */
 export const subscribeToMessages = (
   conversationId: string,
-  onNewMessage: (message: Message) => void
+  onNewMessage: MessageListener
 ) => {
-  const channel = supabase
-    .channel(`chat:${conversationId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "chat_messages",
-        filter: `conversation_id=eq.${conversationId}`,
-      },
-      (payload) => {
-        onNewMessage(payload.new as Message);
+  const topic = getMessageTopic(conversationId);
+  let managed = messageChannels.get(conversationId);
+
+  if (!managed) {
+    // Fast Refresh can preserve Supabase channels while this module is
+    // re-evaluated. Remove a stale channel before creating the managed one.
+    const staleChannel = supabase
+      .getChannels()
+      .find((candidate) => candidate.topic === `realtime:${topic}`);
+    if (staleChannel) {
+      void supabase.removeChannel(staleChannel);
+    }
+
+    const listeners = new Set<MessageListener>();
+    const channel = supabase
+      .channel(topic)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const message = payload.new as Message;
+          listeners.forEach((listener) => listener(message));
+        }
+      );
+
+    managed = { channel, listeners };
+    messageChannels.set(conversationId, managed);
+    // All listeners are configured before subscribe() and only one subscribe
+    // call is ever made for this conversation in this module instance.
+    managed.channel.subscribe((status) => {
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        console.warn(`Chat realtime channel ${conversationId}: ${status}`);
       }
-    )
-    .subscribe();
+    });
+  }
+
+  managed.listeners.add(onNewMessage);
+  let active = true;
 
   return () => {
-    supabase.removeChannel(channel);
+    if (!active) return;
+    active = false;
+
+    const current = messageChannels.get(conversationId);
+    if (!current) return;
+    current.listeners.delete(onNewMessage);
+
+    if (current.listeners.size === 0) {
+      messageChannels.delete(conversationId);
+      void supabase.removeChannel(current.channel);
+    }
   };
 };
 

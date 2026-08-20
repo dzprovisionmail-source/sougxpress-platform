@@ -510,8 +510,9 @@ export default function StoreDetailsScreen() {
             ))
           ) : (
             <EmptyState
-              type="no-products"
-              description={searchQuery ? "لا توجد منتجات تطابق بحثك" : "لا توجد منتجات في هذا القسم"}
+              type="no-data"
+              title={searchQuery ? "لا توجد منتجات مطابقة" : "لا توجد منتجات في هذا القسم"}
+              description={searchQuery ? "جرّب كلمة بحث أخرى." : "سيظهر محتوى المتجر هنا عند توفر المنتجات."}
             />
           )}
         </View>
@@ -521,7 +522,10 @@ export default function StoreDetailsScreen() {
       {viewingMediaItem && (
         <MediaViewerModal
           visible={!!viewingMediaItem}
-          item={viewingMediaItem}
+          mediaItem={viewingMediaItem}
+          store={store}
+          currentUserId={currentUserId}
+          currentUserRole={currentUserRole}
           onClose={() => setViewingMediaItem(null)}
         />
       )}

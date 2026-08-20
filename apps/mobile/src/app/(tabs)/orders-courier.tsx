@@ -7,7 +7,6 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
-  Linking,
   I18nManager,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -20,7 +19,6 @@ import {
   EmptyState,
 } from "@/components/ui";
 import {
-  Phone,
   Clock,
   MapPin,
   Store,
@@ -40,7 +38,7 @@ export default function CourierOrdersTabScreen() {
   const { userId } = useCurrentUserId();
   const isRTL = I18nManager.isRTL;
 
-  const { activeDeliveries, loading, refreshOrders, updateDeliveryStatus } = useCourierOrders(userId || "");
+  const { activeDeliveries, loading, refreshDeliveries } = useCourierOrders(userId || "");
 
   const handleStartChat = async (targetUserId: string, type: "customer_courier" | "merchant_courier", orderId?: string) => {
     if (!targetUserId) return;
@@ -157,12 +155,7 @@ export default function CourierOrdersTabScreen() {
             />
           </View>
           
-          <TouchableOpacity 
-            onPress={() => Linking.openURL(`tel:${item.customer_phone}`)}
-            style={[styles.callBtn, { backgroundColor: colors.primary }]}
-          >
-            <Phone size={18} color="#fff" />
-          </TouchableOpacity>
+
         </View>
       </Card>
     );
@@ -186,14 +179,15 @@ export default function CourierOrdersTabScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refreshOrders} colors={[colors.primary]} />
+          <RefreshControl refreshing={loading} onRefresh={refreshDeliveries} colors={[colors.primary]} />
         }
         ListEmptyComponent={
           <EmptyState
             type="no-orders"
-            message="لا توجد توصيلات نشطة حالياً"
-            onAction={refreshOrders}
-            actionLabel="تحديث"
+            title="لا توجد توصيلات نشطة حالياً"
+            description="ستظهر التوصيلات المرتبطة بحسابك هنا دون كشف بيانات اتصال حساسة."
+            onAction={refreshDeliveries}
+            actionTitle="تحديث"
           />
         }
       />
