@@ -81,18 +81,25 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
       console.warn("Status history creation failed non-critically, order and items are saved.");
     }
 
-    // 5. If a preferred driver is specified, insert delivery assignment
+    // 5. If a preferred driver is specified, use the direct delivery offer RPC
     if (data.driver_id) {
       try {
-        await supabase.from("delivery_assignments").insert({
-          order_id: newOrder.id,
-          driver_id: data.driver_id,
-          status: "pending",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+        const { error: directOfferError } = await supabase.rpc('customer_send_direct_delivery_offer', {
+          p_order_id: newOrder.id,
+          p_driver_id: data.driver_id
         });
+        
+        if (directOfferError) {
+          console.warn("Direct delivery offer RPC failed, falling back to manual assignment:", directOfferError);
+          // Fallback to manual assignment if RPC fails (e.g. if eligibility check fails but we still want to record preference)
+          await supabase.from("delivery_assignments").insert({
+            order_id: newOrder.id,
+            driver_id: data.driver_id,
+            status: "pending"
+          });
+        }
       } catch (assignErr) {
-        console.warn("Could not insert delivery assignment directly:", assignErr);
+        console.warn("Could not assign driver:", assignErr);
       }
     }
 

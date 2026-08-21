@@ -252,10 +252,30 @@ export const getCommercialOrderDetails = async (
 };
 
 export const getCommercialPhone = async (
-  orderId: string,
-  targetRole: 'customer' | 'merchant' | 'courier'
+  orderId: string | 'FAVORITE',
+  targetRole: 'customer' | 'merchant' | 'courier',
+  targetId?: string
 ): Promise<{ data: string | null; error: any }> => {
   try {
+    // If it's a favorite contact without an active order
+    if (orderId === 'FAVORITE' && targetId) {
+      const { data: isAllowed } = await supabase.rpc('can_contact_permanently', {
+        p_target_id: targetId
+      });
+      
+      if (isAllowed) {
+        // Get phone from public profile if allowed by RLS for favorites
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone_number')
+          .eq('id', targetId)
+          .single();
+        
+        return { data: profile?.phone_number || null, error: null };
+      }
+      return { data: null, error: 'Unauthorized favorite contact' };
+    }
+
     const { data, error } = await supabase.rpc('get_commercial_contact_phone', {
       p_order_id: orderId,
       p_target_role: targetRole
@@ -299,10 +319,11 @@ export const getOrCreateConversation = async (
   referenceId: string | null = null
 ): Promise<{ data: string | null; error: any }> => {
   try {
+    // RPC parameters renamed in migration 20260821160000 to p_other_user, p_relationship_type, p_reference_id
     const { data, error } = await supabase.rpc("get_or_create_chat_conversation", {
-      p_target_id: otherUserId,
-      p_type: relationshipType,
-      p_order_id: referenceId,
+      p_other_user: otherUserId,
+      p_relationship_type: relationshipType,
+      p_reference_id: referenceId,
     });
 
     if (error) throw error;

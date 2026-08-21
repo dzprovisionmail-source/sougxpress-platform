@@ -200,7 +200,6 @@ export default function CourierProfile() {
 
     try {
       setStartingChat(true);
-      // Determine relationship type based on current user role
       const relationshipType = userRole === "merchant" ? "merchant_courier" : "customer_courier";
       
       const { data: conversationId, error } = await getOrCreateConversation(
@@ -210,8 +209,7 @@ export default function CourierProfile() {
       );
       
       if (error) {
-        console.error("Chat error:", error);
-        Alert.alert("خطأ", "لا توجد علاقة تجارية مؤهلة لبدء محادثة (يجب أن يكون الموصل في المفضلة أو لديه طلب نشط)");
+        Alert.alert("تنبيه", "المحادثة متاحة فقط للمفضلين أو أثناء وجود طلب نشط.");
         return;
       }
       
@@ -224,6 +222,34 @@ export default function CourierProfile() {
     } finally {
       setStartingChat(false);
     }
+  };
+
+  const handleCall = async () => {
+    if (!userId) {
+      Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لبدء اتصال");
+      return;
+    }
+    try {
+      const { data: phone, error } = await getCommercialPhone("FAVORITE", "courier", courier.id);
+      if (error || !phone) {
+        Alert.alert("تنبيه", "رقم الهاتف متاح فقط للمفضلين أو أثناء وجود طلب نشط.");
+        return;
+      }
+      
+      const rel = userRole === "merchant" ? "merchant_courier" : "customer_courier";
+      await logCallPress("00000000-0000-0000-0000-000000000000", courier.id, rel);
+      Linking.openURL(`tel:${phone}`);
+    } catch (err) {
+      Alert.alert("خطأ", "فشل بدء الاتصال.");
+    }
+  };
+
+  const handleDirectOrder = () => {
+    if (!userId) {
+      Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لإرسال طلب مباشر");
+      return;
+    }
+    router.push({ pathname: "/checkout", params: { id: courier.id } });
   };
 
   const handleToggleFavorite = async () => {
@@ -404,29 +430,35 @@ export default function CourierProfile() {
 
         <View style={[styles.actions, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <Button
-            title="بدء دردشة"
+            title="مراسلة"
             loading={startingChat}
             icon={<MessageCircle size={18} color={colors.textOnBrand} />}
             onPress={handleStartChat}
             style={styles.actionBtn}
-            accessibilityLabel="بدء دردشة مع الموصل"
           />
           <Button
-            title={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+            title="اتصال"
+            variant="outline"
+            icon={<Phone size={18} color={colors.success} />}
+            onPress={handleCall}
+            style={styles.actionBtn}
+          />
+        </View>
+
+        <View style={[styles.actions, { marginTop: TOKENS.spacing.md, flexDirection: isRTL ? "row-reverse" : "row" }]}>
+          <Button
+            title="طلب توصيل مباشر"
+            variant="primary"
+            icon={<ShoppingBag size={18} color="#fff" />}
+            onPress={handleDirectOrder}
+            style={{ flex: 1 }}
+          />
+          <Button
+            title={courier.is_favorite ? "مفضل" : "إضافة للمفضلة"}
             variant="outline"
             icon={<Heart size={18} color={courier.is_favorite ? colors.error : colors.primary} fill={courier.is_favorite ? colors.error : "none"} />}
             onPress={handleToggleFavorite}
-            style={styles.actionBtn}
-            disabled={!userId}
-            accessibilityLabel={courier.is_favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
-          />
-          <Button
-            title="مشاركة"
-            variant="ghost"
-            icon={<Share2 size={18} color={colors.primary} />}
-            onPress={handleShare}
-            style={styles.actionBtn}
-            accessibilityLabel="مشاركة الملف"
+            style={{ width: 140 }}
           />
         </View>
       </ScrollView>

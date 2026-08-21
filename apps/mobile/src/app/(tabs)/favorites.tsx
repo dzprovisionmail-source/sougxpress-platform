@@ -97,6 +97,10 @@ export default function FavoritesScreen() {
         const { data: courierResult } = await getMerchantFavoriteCouriers(userId);
         setMerchantData(prev => ({ ...prev, couriers: courierResult?.favorites || [] }));
       } else {
+        // Customer Role
+        const { data: courierResult } = await getMerchantFavoriteCouriers(userId);
+        setMerchantData(prev => ({ ...prev, couriers: courierResult?.favorites || [] }));
+        
         const { data: favs } = await supabase.from("customer_favorites").select("*").eq("customer_id", userId);
         setCustomerFavorites(favs || []);
       }
@@ -139,19 +143,27 @@ export default function FavoritesScreen() {
     }
   };
 
-  const handleCall = async (orderId: string, receiverId: string, targetRole: 'customer' | 'merchant' | 'courier') => {
-    if (!orderId || !receiverId || calling) return;
+  const handleCall = async (orderId: string | null, receiverId: string, targetRole: 'customer' | 'merchant' | 'courier') => {
+    if (!receiverId || calling) return;
     setCalling(receiverId);
     try {
-      const { data: phone, error } = await getCommercialPhone(orderId, targetRole as any);
+      // Use FAVORITE marker if no active order
+      const effectiveOrderId = orderId || "FAVORITE";
+      const { data: phone, error } = await getCommercialPhone(effectiveOrderId, targetRole as any, receiverId);
+      
       if (error || !phone) {
-        Alert.alert("تنبيه", "رقم الهاتف متاح فقط أثناء وجود طلب نشط.");
+        Alert.alert("تنبيه", "رقم الهاتف متاح فقط للمفضلين أو أثناء وجود طلب نشط.");
         return;
       }
+      
       const rel = role === 'courier' ? 'customer_courier' : 'customer_merchant';
-      await logCallPress(orderId, receiverId, rel);
+      // Log audit - use zero UUID for permanent favorite calls
+      const auditOrderId = orderId || "00000000-0000-0000-0000-000000000000";
+      await logCallPress(auditOrderId, receiverId, rel);
+      
       Linking.openURL(`tel:${phone}`);
     } catch (err) {
+      console.error("Call error:", err);
       Alert.alert("خطأ", "فشل بدء الاتصال.");
     } finally {
       setCalling(null);
@@ -159,17 +171,18 @@ export default function FavoritesScreen() {
   };
 
   const handleStartChat = async (targetId: string, type: RelationshipType, orderId: string | null) => {
-    if (!orderId) {
-      Alert.alert("تنبيه", "المحادثة متاحة فقط للطلبات النشطة.");
-      return;
-    }
     try {
       const { data: convId, error } = await getOrCreateConversation(targetId, type, orderId);
       if (error) throw error;
       if (convId) router.push(`/chat/${convId}`);
     } catch (err) {
       console.error("Chat error:", err);
+      Alert.alert("تنبيه", "لا يمكن بدء المحادثة حالياً.");
     }
+  };
+
+  const handleDirectOrder = (driverId: string) => {
+    router.push({ pathname: "/checkout", params: { id: driverId } });
   };
 
   // --- Renderers ---
@@ -240,32 +253,30 @@ export default function FavoritesScreen() {
         <View style={styles.actionRow}>
           <TouchableOpacity 
             style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
-            onPress={() => handleStartChat(customer.id, "customer_courier", customer.last_order_id)}
-            disabled={!hasActiveOrder}
+            onPress={() => handleStartChat(customer.id, "customer_courier", customer.last_order_id || null)}
           >
-            <MessageCircle size={18} color={hasActiveOrder ? colors.primary : colors.textDisabled} />
-            <WorkspaceText variant="caption" color={hasActiveOrder ? 'primary' : 'secondary'}>مراسلة</WorkspaceText>
+            <MessageCircle size={18} color={colors.primary} />
+            <WorkspaceText variant="caption" color="primary">مراسلة</WorkspaceText>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
-            onPress={() => handleCall(customer.last_order_id, customer.id, 'customer')}
-            disabled={!hasActiveOrder || calling === customer.id}
+            onPress={() => handleCall(customer.last_order_id || null, customer.id, 'customer')}
+            disabled={calling === customer.id}
           >
             {calling === customer.id ? <ActivityIndicator size="small" color={colors.primary} /> : (
               <>
-                <Phone size={18} color={hasActiveOrder ? colors.success : colors.textDisabled} />
-                <WorkspaceText variant="caption" style={{ color: hasActiveOrder ? colors.success : colors.textDisabled }}>اتصال</WorkspaceText>
+                <Phone size={18} color={colors.success} />
+                <WorkspaceText variant="caption" style={{ color: colors.success }}>اتصال</WorkspaceText>
               </>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
-            onPress={() => router.push(`/driver/deliveries?orderId=${customer.last_order_id}`)}
-            disabled={!customer.last_order_id}
+            onPress={() => customer.last_order_id ? router.push(`/driver/deliveries?orderId=${customer.last_order_id}`) : Alert.alert("تنبيه", "لا يوجد طلب نشط حالياً لعرض تفاصيله.")}
           >
-            <Info size={18} color={customer.last_order_id ? colors.textSecondary : colors.textDisabled} />
+            <Info size={18} color={colors.textSecondary} />
             <WorkspaceText variant="caption" color="secondary">تفاصيل</WorkspaceText>
           </TouchableOpacity>
         </View>
@@ -333,14 +344,93 @@ export default function FavoritesScreen() {
     );
   }
 
-  // Fallback for Customer/Merchant (Simplified)
-  return (
-    <WorkspaceScreen title="المفضلة" showHeader>
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        <EmptyState title="المفضلة" description="قريباً: تجربة المفضلة المحسنة للجميع." />
-      </ScrollView>
-    </WorkspaceScreen>
-  );
+  // --- Customer / Merchant Renderer ---
+  const renderFavoriteCourier = (card: MerchantFavoriteCourier) => {
+    const courier = card.driver;
+    if (!courier) return null;
+    return (
+      <SectionCard style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.userInfo}>
+            <View style={[styles.avatar, { backgroundColor: colors.bgSurface }]}>
+              {courier.avatar_url ? <Image source={{ uri: courier.avatar_url }} style={styles.avatarImage} /> : <User size={24} color={colors.textSecondary} />}
+            </View>
+            <View style={styles.nameContainer}>
+              <WorkspaceText variant="subtitle" style={styles.name}>{courier.full_name || 'موصل'}</WorkspaceText>
+              <WorkspaceText variant="caption" color="secondary">{courier.neighborhood || 'عين صفراء'}</WorkspaceText>
+            </View>
+          </View>
+          <TouchableOpacity onPress={() => toggleCourierFavorite('driver' as any, courier.id)}>
+            <Heart size={20} color={colors.error} fill={colors.error} />
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.actionRow}>
+          <TouchableOpacity 
+            style={[styles.actionBtn, { borderColor: colors.borderSubtle }]} 
+            onPress={() => handleStartChat(courier.id, "customer_courier", null)}
+          >
+            <MessageCircle size={18} color={colors.primary} />
+            <WorkspaceText variant="caption" color="primary">مراسلة</WorkspaceText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.actionBtn, { borderColor: colors.borderSubtle }]} 
+            onPress={() => handleCall(null, courier.id, 'courier')}
+            disabled={calling === courier.id}
+          >
+            {calling === courier.id ? <ActivityIndicator size="small" color={colors.primary} /> : (
+              <>
+                <Phone size={18} color={colors.success} />
+                <WorkspaceText variant="caption" style={{ color: colors.success }}>اتصال</WorkspaceText>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.actionBtn, { flex: 1.5, backgroundColor: colors.primary, borderColor: colors.primary }]} 
+            onPress={() => handleDirectOrder(courier.id)}
+          >
+            <ShoppingBag size={18} color="#fff" />
+            <WorkspaceText variant="caption" style={{ color: '#fff', fontWeight: 'bold' }}>طلب مباشر</WorkspaceText>
+          </TouchableOpacity>
+        </View>
+      </SectionCard>
+    );
+  };
+
+  if (role === "customer" || role === "merchant") {
+    return (
+      <WorkspaceScreen title="المفضلة" showHeader>
+        <View style={styles.tabBar}>
+          <TouchableOpacity style={[styles.tab, activeTab === 'couriers' && styles.activeTab]} onPress={() => setActiveTab('couriers')}>
+            <WorkspaceText style={[styles.tabText, activeTab === 'couriers' && { color: colors.primary, fontWeight: '700' }]}>الموصلون المفضلون</WorkspaceText>
+          </TouchableOpacity>
+          {role === 'customer' && (
+            <TouchableOpacity style={[styles.tab, activeTab === 'products' && styles.activeTab]} onPress={() => setActiveTab('products')}>
+              <WorkspaceText style={[styles.tabText, activeTab === 'products' && { color: colors.primary, fontWeight: '700' }]}>المنتجات</WorkspaceText>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <FlatList
+          data={activeTab === 'couriers' ? merchantData.couriers : customerFavorites}
+          keyExtractor={(item: any) => item.id || item.courier_id}
+          renderItem={({ item }) => activeTab === 'couriers' ? renderFavoriteCourier(item) : (
+            <SectionCard style={styles.card}>
+              <WorkspaceText>منتج مفضل: {item.product_id}</WorkspaceText>
+            </SectionCard>
+          )}
+          contentContainerStyle={styles.listContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
+          ListEmptyComponent={<EmptyState title="لا توجد نتائج" description="سيظهر هنا الموصلون والمنتجات المفضلة لديك." />}
+        />
+      </WorkspaceScreen>
+    );
+  }
+
+  // Fallback
+  return <LoadingState />;
 }
 
 const styles = StyleSheet.create({

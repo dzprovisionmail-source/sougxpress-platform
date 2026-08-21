@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   I18nManager,
+  Alert,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -135,22 +137,26 @@ export default function CustomerFavoritesScreen() {
 
   const handleCall = async (driverId: string) => {
     try {
-      // In permanent contact, we might not have an order_id yet
-      // For now, we use a placeholder or check if the server allows phone return without order_id for favorites
-      const { data: phone, error } = await getCommercialPhone("FAVORITE", "courier" as any);
+      // Use the updated getCommercialPhone which supports targetId for favorites
+      const { data: phone, error } = await getCommercialPhone("FAVORITE", "courier", driverId);
       if (error || !phone) {
-        Alert.alert("تنبيه", "رقم الهاتف متاح فقط للمفضلين أو أثناء الطلب.");
+        Alert.alert("تنبيه", "رقم الهاتف متاح فقط للمفضلين أو أثناء الطلب النشط.");
         return;
       }
+      
+      // Log audit - using '0000...' as a special marker for permanent favorite calls
+      await logCallPress("00000000-0000-0000-0000-000000000000", driverId, "customer_courier");
+      
       Linking.openURL(`tel:${phone}`);
     } catch (err) {
+      console.error("Error starting call:", err);
       Alert.alert("خطأ", "فشل بدء الاتصال.");
     }
   };
 
   const handleDirectOrder = (driverId: string) => {
-    // Redirect to home/cart to start an order with this driver pre-selected
-    router.push({ pathname: "/(tabs)/home", params: { direct_driver_id: driverId } });
+    // Redirect directly to checkout with this driver pre-selected
+    router.push({ pathname: "/checkout", params: { id: driverId } });
   };
 
   if (loading && !refreshing) {
