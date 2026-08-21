@@ -37,7 +37,7 @@ export const BRAND_CITY_LABEL = "سوق عين الصفراء";
  */
 export const BRAND_COLORS = {
   orange: "#FF8A00",
-  blue: "#1565C0",
+  blue: "#0D47A1",
   darkNavy: "#0A1B33",
   black: "#121212",
   darkGray: "#2A2A2A",
@@ -52,14 +52,14 @@ export const BRAND_COLORS = {
  * Suitable for app icon, badges, and small spaces.
  * SVG source: assets/brand/logo-icon.svg
  */
-export const LOGO_ICON = require("../../assets/brand/logo-icon.png");
+export const LOGO_ICON = require("../../assets/brand/icon.png");
 
 /**
  * Horizontal wordmark logo — "سوق إكسبريس" + "SougXpress" in brand colors.
  * Designed for light/white/ivory backgrounds (MarketplaceHeader).
  * SVG source: assets/brand/logo-wordmark.svg
  */
-export const LOGO_WORDMARK = require("../../assets/brand/logo-wordmark.png");
+export const LOGO_WORDMARK = require("../../assets/brand/logo-horizontal.png");
 
 /**
  * Full horizontal logo — mascot + wordmark + slogan, on dark background.
@@ -87,25 +87,25 @@ export const MASCOT_SVG = require("../../assets/brand/mascot.svg");
  * Shopping/Customer role icon — used in role selection screen.
  * Illustrates the customer shopping experience.
  */
-export const ICON_SHOPPING = require("../../assets/brand/icons/icon-shopping.png");
+export const ICON_SHOPPING = require("../../assets/brand/icon-shopping.png");
 
 /**
  * Store/Merchant role icon — used in role selection screen.
  * Illustrates the merchant store owner experience.
  */
-export const ICON_STORE = require("../../assets/brand/icons/icon-store.png");
+export const ICON_STORE = require("../../assets/brand/icon-store.png");
 
 /**
  * Delivery/Driver role icon — used in role selection screen.
  * Illustrates the delivery driver experience.
  */
-export const ICON_DELIVERY = require("../../assets/brand/icons/icon-delivery.png");
+export const ICON_DELIVERY = require("../../assets/brand/icon-courier.png");
 
 /**
  * Admin role icon — reserved for future admin panel.
  * Currently unused in mobile app.
  */
-export const ICON_ADMIN = require("../../assets/brand/icons/icon-admin.png");
+export const ICON_ADMIN = require("../../assets/brand/icon-admin.png");
 
 // ─── Brand Usage Rules ────────────────────────────────────────────────────────────
 

@@ -5,13 +5,13 @@ export const typography: Record<string, TextStyle> = {
   display: {
     fontFamily: TOKENS.typography.families.arabic,
     fontSize: TOKENS.typography.sizes['2xl'],
-    fontWeight: '700' as const,
+    fontWeight: '900' as const,
     lineHeight: 40,
   },
   heading: {
     fontFamily: TOKENS.typography.families.arabic,
     fontSize: TOKENS.typography.sizes.xl,
-    fontWeight: '700' as const,
+    fontWeight: '800' as const,
     lineHeight: 32,
   },
   title: {
@@ -41,7 +41,7 @@ export const typography: Record<string, TextStyle> = {
   button: {
     fontFamily: TOKENS.typography.families.arabic,
     fontSize: TOKENS.typography.sizes.base,
-    fontWeight: '600' as const,
+    fontWeight: '700' as const,
     lineHeight: 24,
   },
 };

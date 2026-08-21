@@ -201,7 +201,7 @@ export default function EntryScreen() {
           onPress={isLoading ? undefined : closeFounderDialog}
         >
           {/* Prevent taps inside the card from closing the modal */}
-          <Pressable style={[styles.dialogCard, { backgroundColor: TOKENS.colors.dark.bgElevated }]}>
+          <Pressable style={[styles.dialogCard, { backgroundColor: colors.bgElevated }]}>
             <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
@@ -221,13 +221,13 @@ export default function EntryScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: TOKENS.colors.dark.bgSurface,
-                    color: TOKENS.colors.dark.textPrimary,
-                    borderColor: TOKENS.colors.dark.borderSubtle,
+                    backgroundColor: colors.bgSurface,
+                    color: colors.textPrimary,
+                    borderColor: colors.borderSubtle,
                   },
                 ]}
                 placeholder="البريد الإلكتروني"
-                placeholderTextColor={TOKENS.colors.dark.textDisabled}
+                placeholderTextColor={colors.textDisabled}
                 value={email}
                 onChangeText={(v) => {
                   setEmail(v);
@@ -250,13 +250,13 @@ export default function EntryScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: TOKENS.colors.dark.bgSurface,
-                    color: TOKENS.colors.dark.textPrimary,
-                    borderColor: TOKENS.colors.dark.borderSubtle,
+                    backgroundColor: colors.bgSurface,
+                    color: colors.textPrimary,
+                    borderColor: colors.borderSubtle,
                   },
                 ]}
                 placeholder="كلمة المرور"
-                placeholderTextColor={TOKENS.colors.dark.textDisabled}
+                placeholderTextColor={colors.textDisabled}
                 value={password}
                 onChangeText={(v) => {
                   setPassword(v);
@@ -290,8 +290,8 @@ export default function EntryScreen() {
                   styles.loginButton,
                   {
                     backgroundColor: isLoading
-                      ? TOKENS.colors.dark.bgSurface
-                      : TOKENS.colors.brandPrimary,
+                      ? colors.bgSurface
+                      : colors.primary,
                   },
                 ]}
                 onPress={handleFounderLogin}
@@ -304,7 +304,7 @@ export default function EntryScreen() {
                   <Typography
                     variant="body"
                     style={{
-                      color: TOKENS.colors.dark.textOnBrand,
+                      color: "#FFFFFF",
                       fontWeight: "700",
                     }}
                   >
@@ -321,7 +321,7 @@ export default function EntryScreen() {
               >
                 <Typography
                   variant="caption"
-                  style={{ color: TOKENS.colors.dark.textSecondary }}
+                  style={{ color: colors.textSecondary }}
                 >
                   إلغاء
                 </Typography>
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   enterButtonText: {
-    color: TOKENS.colors.dark.textOnBrand,
+    color: "#FFFFFF",
     fontWeight: "700",
   },
   footer: {

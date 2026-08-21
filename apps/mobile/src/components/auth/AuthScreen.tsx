@@ -756,6 +756,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               title={isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"}
               onPress={handleAuth}
               isLoading={loading}
+              variant="primary"
               style={styles.submitBtn}
             />
             <Button

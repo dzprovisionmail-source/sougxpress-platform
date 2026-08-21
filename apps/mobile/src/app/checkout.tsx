@@ -189,6 +189,7 @@ const CheckoutScreen = () => {
               title="تأكيد الطلب"
               onPress={onConfirm}
               isLoading={loading}
+              variant="primary"
               style={styles.confirmButton}
             />
           </View>

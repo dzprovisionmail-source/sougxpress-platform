@@ -136,8 +136,8 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: '#FF8A00',
-          tabBarInactiveTintColor: '#888888',
+          tabBarActiveTintColor: tokens.colors.brandPrimary,
+          tabBarInactiveTintColor: colors.textDisabled,
           tabBarLabelStyle: {
             fontFamily: tokens.typography.families.arabic,
             fontSize: 12,

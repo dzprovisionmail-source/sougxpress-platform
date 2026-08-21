@@ -48,7 +48,7 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
           style={[styles.iconButton, { backgroundColor: colors.bgSurface }]}
         >
           <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
-          <View style={[styles.badge, { backgroundColor: colors.accent, borderColor: colors.bgBase }]} />
+          <View style={[styles.badge, { backgroundColor: TOKENS.colors.brandPrimary, borderColor: colors.bgBase }]} />
         </TouchableOpacity>
         
         <TouchableOpacity 

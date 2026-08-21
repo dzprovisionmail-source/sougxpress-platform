@@ -29,9 +29,9 @@ export const Typography: React.FC<TypographyProps> = ({
   const getVariantStyle = (): TextStyle => {
     switch (variant) {
       case 'display':
-        return { fontSize: TOKENS.typography.sizes['2xl'], fontWeight: '800' };
+        return { fontSize: TOKENS.typography.sizes['2xl'], fontWeight: '900' };
       case 'h1':
-        return { fontSize: TOKENS.typography.sizes.xl, fontWeight: '700' };
+        return { fontSize: TOKENS.typography.sizes.xl, fontWeight: '800' };
       case 'h2':
       case 'title':
         return { fontSize: TOKENS.typography.sizes.lg, fontWeight: '700' };
@@ -41,7 +41,7 @@ export const Typography: React.FC<TypographyProps> = ({
       case 'caption':
         return { fontSize: TOKENS.typography.sizes.xs, fontWeight: '400' };
       case 'button':
-        return { fontSize: TOKENS.typography.sizes.base, fontWeight: '600' };
+        return { fontSize: TOKENS.typography.sizes.base, fontWeight: '700' };
       case 'body':
       default:
         return { fontSize: TOKENS.typography.sizes.base, fontWeight: '400' };

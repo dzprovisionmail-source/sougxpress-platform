@@ -2,7 +2,7 @@ import { TOKENS } from '../constants/tokens';
 
 export const colors = {
   primary: TOKENS.colors.brandPrimary,       // #FF8A00
-  primaryBlue: TOKENS.colors.brandSecondary,  // #1565C0
+  primaryBlue: TOKENS.colors.brandSecondary,  // #0D47A1 (Updated)
   primaryDark: TOKENS.colors.brandSecondary,
   accent: TOKENS.colors.brandPrimary,
   success: TOKENS.colors.statusSuccess,       // #22C55E

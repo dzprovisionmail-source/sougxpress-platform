@@ -9,14 +9,14 @@ export const TOKENS = {
   colors: {
     // Official Brand Palette
     brandPrimary: "#FF8A00",      // Primary Accent
-    brandSecondary: "#1565C0",    // Primary Blue
+    brandSecondary: "#0D47A1",    // Primary Blue (Updated to Brand Identity)
     brandAccent: "#FF8A00",
 
     // Status Colors
     statusSuccess: "#22C55E",     // Success
     statusWarning: "#F59E0B",     // Warning
     statusError: "#EF4444",       // Error
-    statusInfo: "#1565C0",
+    statusInfo: "#0D47A1",
 
     // Light Mode (#FFFFFF background)
     light: {
@@ -31,11 +31,11 @@ export const TOKENS = {
       placeholder: "#94A3B8",
     },
 
-    // Dark Mode (#121212 background, white text)
+    // Dark Mode (#0A1B33 background, white text)
     dark: {
-      bgBase: "#121212",
-      bgSurface: "#1E1E1E",
-      bgElevated: "#282828",
+      bgBase: "#0A1B33",
+      bgSurface: "#122645",
+      bgElevated: "#1A3257",
       borderSubtle: "#333333",
       textPrimary: "#FFFFFF",     // White text on dark
       textSecondary: "#A3A3A3",
