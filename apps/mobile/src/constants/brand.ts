@@ -105,7 +105,8 @@ export const ICON_DELIVERY = require("../../assets/brand/icon-courier.png");
  * Admin role icon — reserved for future admin panel.
  * Currently unused in mobile app.
  */
-export const ICON_ADMIN = require("../../assets/brand/icon-admin.png");
+// Fallback to security icon for admin as there is no specific admin asset in the brand identity
+export const ICON_ADMIN = require("../../assets/brand/icon-security.png");
 
 // ─── Brand Usage Rules ────────────────────────────────────────────────────────────
 
