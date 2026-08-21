@@ -25,7 +25,7 @@ import {
   Badge,
   Button,
 } from "@/components/ui";
-import { Clock, MapPin, Tag, ShoppingBag, Store as StoreIcon, Heart, MessageCircle } from "lucide-react-native";
+import { Store as StoreIcon, Heart, MessageCircle, Star, Eye } from "lucide-react-native";
 import { toggleFavorite, checkIfFavorite, getFavoriteIds } from "@/services/favorite.service";
 import { getOrCreateConversation } from "@/services/chat.service";
 import { TOKENS } from "@/constants/tokens";
@@ -33,6 +33,14 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const getNumericMetric = (...values: unknown[]): number | null => {
+  const value = values.find(
+    (candidate): candidate is number =>
+      typeof candidate === "number" && Number.isFinite(candidate),
+  );
+  return value ?? null;
+};
 
 export default function StoreDetailsScreen() {
   const router = useRouter();
@@ -57,6 +65,8 @@ export default function StoreDetailsScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
   const [startingChat, setStartingChat] = useState(false);
+  const reviewCount = getNumericMetric(store?.review_count);
+  const viewCount = getNumericMetric(store?.view_count, store?.views_count, store?.views);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -297,48 +307,91 @@ export default function StoreDetailsScreen() {
         {/* Store Card Header Info */}
         <View style={[styles.storeCardInfo, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
           <View style={styles.avatarRow}>
-            <Avatar uri={store.logo_url} name={store.name} type="store" size="lg" />
+            <Avatar
+              uri={store.logo_url}
+              name={store.name}
+              type="store"
+              size={96}
+              style={styles.avatarImage}
+            />
           </View>
 
-          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', marginTop: TOKENS.spacing.xs, gap: 12 }}>
-            <Typography variant="h1" align="center">
-              {store.name}
-            </Typography>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              {currentUserId && (
-                <TouchableOpacity onPress={handleToggleStoreFavorite} style={{ padding: 4 }}>
-                  <Heart 
-                    size={24} 
-                    color={isFavorite ? colors.error : colors.textPrimary} 
-                    fill={isFavorite ? colors.error : "transparent"} 
-                  />
-                </TouchableOpacity>
-              )}
-              {currentUserId && currentUserId !== store.merchant_id && (
-                <TouchableOpacity onPress={handleStartChat} style={{ padding: 4 }}>
-                  {startingChat ? (
-                    <ActivityIndicator size="small" color={colors.primary} />
-                  ) : (
-                    <MessageCircle 
-                      size={24} 
-                      color={colors.primary} 
-                    />
-                  )}
-                </TouchableOpacity>
-              )}
+          <View style={[styles.quickActionsRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            {currentUserId && (
+              <TouchableOpacity
+                onPress={handleToggleStoreFavorite}
+                style={[styles.iconAction, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="إضافة المتجر إلى المفضلة"
+              >
+                <Heart
+                  size={22}
+                  color={isFavorite ? colors.error : colors.textPrimary}
+                  fill={isFavorite ? colors.error : "transparent"}
+                />
+              </TouchableOpacity>
+            )}
+            {currentUserId && currentUserId !== store.merchant_id && (
+              <TouchableOpacity
+                onPress={handleStartChat}
+                style={[styles.iconAction, { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}55` }]}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="بدء محادثة مع المتجر"
+              >
+                {startingChat ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <MessageCircle size={22} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {store.is_featured === true ? (
+            <View style={[styles.featuredBadge, { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}66` }]}>
+              <Star size={14} color={colors.primary} fill={colors.primary} />
+              <Typography variant="caption" style={{ color: colors.primary, fontWeight: "800" }}>
+                متجر مميز
+              </Typography>
             </View>
-          </View>
+          ) : null}
 
-          <Typography variant="caption" color="secondary" align="center" style={{ marginTop: 2 }}>
+          <Typography variant="h1" align="center" style={styles.storeTitle}>
+            {store.name}
+          </Typography>
+
+          <Typography variant="caption" color="secondary" align="center" style={styles.storeCategory}>
             {store.category || "متجر في عين صفراء"}
           </Typography>
 
-          <View style={[styles.metaBadgesRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Rating rating={store.rating || 4.8} size="sm" showBadge />
-            <Badge
-              label={store.is_open !== false ? "مفتوح الآن" : "مغلق"}
-              variant={store.is_open !== false ? "success" : "error"}
-            />
+          <View style={[styles.statsRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+            <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+              <Rating rating={store.rating ?? 0} count={reviewCount ?? undefined} size="sm" />
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>التقييم</Text>
+            </View>
+            {reviewCount !== null ? (
+              <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+                <Text style={[styles.statValue, { color: colors.textPrimary }]}>{reviewCount.toLocaleString("ar-DZ")}</Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>مراجعة</Text>
+              </View>
+            ) : null}
+            {viewCount !== null ? (
+              <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+                <View style={[styles.statIconRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                  <Eye size={14} color={colors.textSecondary} />
+                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>{viewCount.toLocaleString("ar-DZ")}</Text>
+                </View>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>مشاهدة</Text>
+              </View>
+            ) : null}
+            <View style={[styles.statusItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+              <Badge
+                label={store.is_open !== false ? "مفتوح الآن" : "مغلق"}
+                variant={store.is_open !== false ? "success" : "error"}
+              />
+            </View>
           </View>
 
           {store.description ? (
@@ -346,23 +399,33 @@ export default function StoreDetailsScreen() {
               {store.description}
             </Typography>
           ) : null}
-          
+
           {/* Main Action Buttons */}
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 16, paddingHorizontal: 20 }}>
-             <Button 
-                title="دردشة مع المتجر"
-                variant="outline"
-                loading={startingChat}
-                icon={<MessageCircle size={18} color={colors.primary} />}
-                onPress={handleStartChat}
-                style={{ flex: 1 }}
-             />
+          <View style={styles.mainActionRow}>
+            <Button
+              title="دردشة مع المتجر"
+              variant="outline"
+              loading={startingChat}
+              icon={<MessageCircle size={18} color={colors.primary} />}
+              onPress={handleStartChat}
+              style={styles.chatButton}
+            />
           </View>
         </View>
 
         {/* Media Section: Photos / Videos Tabs (above products) */}
-        <View style={{ marginTop: TOKENS.spacing.lg, paddingHorizontal: TOKENS.spacing.md }}>
-          <View style={{ flexDirection: "row-reverse", gap: TOKENS.spacing.sm, marginBottom: TOKENS.spacing.sm }}>
+        <View style={styles.mediaSection}>
+          <View style={styles.mediaHeadingRow}>
+            <Typography variant="h2" style={{ color: colors.textPrimary }}>
+              معرض المتجر
+            </Typography>
+            {gallery.length > 0 ? (
+              <Text style={[styles.mediaCount, { color: colors.textSecondary }]}>
+                {gallery.length.toLocaleString("ar-DZ")} صور
+              </Text>
+            ) : null}
+          </View>
+          <View style={styles.mediaTabs}>
             <TouchableOpacity activeOpacity={0.8}
               onPress={() => setMediaTab("photos")}
               style={{
@@ -409,20 +472,20 @@ export default function StoreDetailsScreen() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 12 }}
+                contentContainerStyle={[styles.galleryScroll, { flexDirection: isRTL ? "row-reverse" : "row" }]}
               >
                 {gallery.map((img) => (
-                  <TouchableOpacity activeOpacity={0.8} key={img.id} onPress={() => setViewingMediaItem(img)} style={{ alignItems: "center" }}>
+                  <TouchableOpacity activeOpacity={0.8} key={img.id} onPress={() => setViewingMediaItem(img)} style={styles.galleryItem}>
                     <Image
                       source={{ uri: img.image_url }}
-                      style={{ width: 140, height: 140, borderRadius: TOKENS.radius.sm, borderWidth: 1, borderColor: colors.borderSubtle }}
+                      style={[styles.galleryImage, { borderColor: colors.borderSubtle }]}
                       resizeMode="cover"
                     />
                     {img.title ? (
-                      <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: "700", textAlign: "center", marginTop: 4, maxWidth: 140 }}>{img.title}</Text>
+                      <Text style={[styles.galleryTitle, { color: colors.textPrimary }]}>{img.title}</Text>
                     ) : null}
                     {img.caption ? (
-                      <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "center", marginTop: 2, maxWidth: 140 }}>{img.caption}</Text>
+                      <Text style={[styles.galleryCaption, { color: colors.textSecondary }]}>{img.caption}</Text>
                     ) : null}
                   </TouchableOpacity>
                 ))}
@@ -436,18 +499,8 @@ export default function StoreDetailsScreen() {
 
           {/* Videos Tab Content */}
           {mediaTab === "videos" && (
-            <View
-              style={{
-                width: "100%",
-                height: 220,
-                borderRadius: TOKENS.radius.md,
-                borderWidth: 1,
-                borderColor: colors.borderSubtle,
-                backgroundColor: colors.bgElevated,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+            <View style={[styles.videoPlaceholder, { borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }]}>
+
               <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "center" }}>
                 لا توجد فيديوهات متاحة حالياً
               </Text>
@@ -493,6 +546,14 @@ export default function StoreDetailsScreen() {
         )}
 
         {/* Products Grid */}
+        <View style={styles.productsSectionHeader}>
+          <Typography variant="h2" style={{ color: colors.textPrimary }}>
+            منتجات المتجر
+          </Typography>
+          <Text style={[styles.productsCount, { color: colors.textSecondary }]}>
+            {filteredProducts.length.toLocaleString("ar-DZ")} منتج
+          </Text>
+        </View>
         <View style={styles.productsGrid}>
           {filteredProducts.length > 0 ? (
             filteredProducts.map((product) => (
@@ -505,6 +566,7 @@ export default function StoreDetailsScreen() {
                   isFavorite={favoriteProductIds.includes(product.id)}
                   onToggleFavorite={() => handleToggleProductFavorite(product.id)}
                   onPress={() => router.push({ pathname: "/product-details", params: { id: product.id } })}
+                  style={styles.productCard}
                 />
               </View>
             ))
@@ -552,33 +614,167 @@ const styles = StyleSheet.create({
   },
   storeCardInfo: {
     marginHorizontal: TOKENS.spacing.md,
-    padding: TOKENS.spacing.lg,
+    paddingHorizontal: TOKENS.spacing.md,
+    paddingTop: TOKENS.spacing.sm,
+    paddingBottom: TOKENS.spacing.md,
     borderRadius: TOKENS.radius.lg,
     borderWidth: 1,
     alignItems: 'center',
   },
   avatarRow: {
     marginTop: -TOKENS.spacing.xl - TOKENS.spacing.md,
-    marginBottom: TOKENS.spacing.xs,
+    marginBottom: 2,
+    padding: 4,
     borderWidth: 4,
     borderColor: '#fff',
     borderRadius: TOKENS.radius.full,
-    elevation: 4,
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.24,
+    shadowRadius: 6,
   },
-  metaBadgesRow: {
-    flexDirection: 'row',
+  avatarImage: {
+    borderRadius: TOKENS.radius.full,
+  },
+  quickActionsRow: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: TOKENS.spacing.md,
+    gap: TOKENS.spacing.sm,
+    marginTop: 2,
+    marginBottom: TOKENS.spacing.xs,
+  },
+  iconAction: {
+    width: 44,
+    height: 44,
+    borderRadius: TOKENS.radius.full,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: TOKENS.spacing.sm,
+    paddingVertical: 4,
+    borderRadius: TOKENS.radius.full,
+    borderWidth: 1,
+    marginTop: 2,
+  },
+  storeTitle: {
+    marginTop: 4,
+  },
+  storeCategory: {
+    marginTop: 0,
+  },
+  statsRow: {
+    width: '100%',
+    alignItems: 'stretch',
+    justifyContent: 'center',
+    gap: TOKENS.spacing.xs,
     marginTop: TOKENS.spacing.sm,
   },
+  statItem: {
+    flex: 1,
+    minHeight: 58,
+    paddingHorizontal: TOKENS.spacing.xs,
+    paddingVertical: TOKENS.spacing.xs,
+    borderRadius: TOKENS.radius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statValue: {
+    fontSize: TOKENS.typography.sizes.base,
+    fontWeight: '800',
+    fontFamily: TOKENS.typography.families.arabic,
+    lineHeight: 22,
+  },
+  statLabel: {
+    fontSize: TOKENS.typography.sizes.xs,
+    fontFamily: TOKENS.typography.families.arabic,
+    lineHeight: 18,
+  },
+  statIconRow: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  statusItem: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: TOKENS.radius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   storeDesc: {
-    marginTop: TOKENS.spacing.md,
+    marginTop: TOKENS.spacing.sm,
+    lineHeight: 21,
+    paddingHorizontal: TOKENS.spacing.xs,
+  },
+  mainActionRow: {
+    width: '100%',
+    marginTop: TOKENS.spacing.sm,
+  },
+  chatButton: {
+    width: '100%',
+  },
+  mediaSection: {
+    marginTop: TOKENS.spacing.lg,
+    paddingHorizontal: TOKENS.spacing.md,
+  },
+  mediaHeadingRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: TOKENS.spacing.xs,
+  },
+  mediaCount: {
+    fontSize: TOKENS.typography.sizes.xs,
+    fontFamily: TOKENS.typography.families.secondary,
+  },
+  mediaTabs: {
+    flexDirection: 'row-reverse',
+    gap: TOKENS.spacing.sm,
+    marginBottom: TOKENS.spacing.sm,
+  },
+  galleryScroll: {
+    gap: TOKENS.spacing.md,
+    paddingVertical: TOKENS.spacing.xs,
+  },
+  galleryItem: {
+    width: 164,
+    alignItems: 'center',
+  },
+  galleryImage: {
+    width: 164,
+    height: 164,
+    borderRadius: TOKENS.radius.md,
+    borderWidth: 1,
+  },
+  galleryTitle: {
+    fontSize: TOKENS.typography.sizes.sm,
+    fontWeight: '700',
+    fontFamily: TOKENS.typography.families.arabic,
+    textAlign: 'center',
     lineHeight: 20,
+    marginTop: TOKENS.spacing.xs,
+  },
+  galleryCaption: {
+    fontSize: TOKENS.typography.sizes.xs,
+    fontFamily: TOKENS.typography.families.secondary,
+    textAlign: 'center',
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  videoPlaceholder: {
+    width: '100%',
+    height: 220,
+    borderRadius: TOKENS.radius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchSection: {
     paddingHorizontal: TOKENS.spacing.md,
@@ -593,16 +789,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: TOKENS.spacing.md,
     paddingVertical: TOKENS.spacing.xs,
     borderRadius: TOKENS.radius.full,
-    marginRight: 8,
+    marginHorizontal: 4,
+  },
+  productsSectionHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingHorizontal: TOKENS.spacing.md,
+    marginTop: TOKENS.spacing.sm,
+  },
+  productsCount: {
+    fontSize: TOKENS.typography.sizes.xs,
+    fontFamily: TOKENS.typography.families.secondary,
   },
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: TOKENS.spacing.md,
-    marginTop: TOKENS.spacing.sm,
+    marginTop: TOKENS.spacing.xs,
   },
   productCardWrapper: {
     width: '50%',
-    padding: 4,
+    paddingHorizontal: 3,
+  },
+  productCard: {
+    padding: 2,
+    marginVertical: 3,
   },
 });
