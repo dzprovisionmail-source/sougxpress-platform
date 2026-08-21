@@ -23,14 +23,18 @@ export const subscribeToTableChanges = (
       channel,
       listeners: new Set<RealtimeCallback>(),
     };
+    const filterConfig: any = {
+      event: "*",
+      schema: "public",
+      table,
+    };
+    if (filter) {
+      filterConfig.filter = filter;
+    }
+
     channel.on(
       "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table,
-        filter,
-      },
+      filterConfig,
       () => {
         const currentEntry = channelRegistry.get(topic);
         currentEntry?.listeners.forEach((cb) => cb());

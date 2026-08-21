@@ -52,7 +52,7 @@ export default function DriverProfileScreen() {
     const completionRate = totalHandled > 0 ? Math.round((delivered.length / totalHandled) * 100) : 100;
     const totalEarnings = computeEarningsSplit(delivered.length).driverShareMinor;
     const storeNames = Array.from(new Set(orders.map((order) => order.store?.name).filter(Boolean))) as string[];
-    const customerNames = Array.from(new Set(orders.map((order) => order.customer?.full_name || order.customer?.phone).filter(Boolean))) as string[];
+    const customerNames = Array.from(new Set(orders.map((order) => order.customer?.full_name).filter(Boolean))) as string[];
     return { totalDeliveries: delivered.length, completionRate, totalEarnings, storeNames, customerNames };
   }, [orders]);
 

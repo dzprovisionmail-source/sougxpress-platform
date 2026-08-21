@@ -15,9 +15,27 @@ import {
 export type DriverOrder = Order & {
   assignment_id: string;
   assignment_status: string;
+  assignment_driver_id?: string | null;
   store?: { name: string; zone?: { city: string } };
-  address?: { address_text: string; latitude: number; longitude: number };
-  customer?: { full_name?: string; phone?: string };
+  address?: {
+    address_text: string;
+    address_line1?: string | null;
+    address_line2?: string | null;
+    city?: string | null;
+    state_province?: string | null;
+    postal_code?: string | null;
+    country?: string | null;
+    latitude: number;
+    longitude: number;
+  };
+  customer?: { full_name?: string };
+  items?: Array<{
+    id: string;
+    quantity: number;
+    price_at_order_minor: number;
+    line_total_minor?: number | null;
+    product?: { id: string; name?: string | null; image_url?: string | null } | null;
+  }>;
 };
 
 const useDriverOrders = (driverId: string, zoneId?: string) => {
@@ -26,12 +44,15 @@ const useDriverOrders = (driverId: string, zoneId?: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Ensure driverId is a string and not an object from useCurrentUserId
+  const safeDriverId = typeof driverId === 'string' ? driverId : undefined;
+
   const fetchOrders = useCallback(async () => {
-    if (!driverId) return;
+    if (!safeDriverId) return;
     setLoading(true);
     try {
       const [mine, available] = await Promise.all([
-        getDriverOrders(driverId),
+        getDriverOrders(safeDriverId),
         zoneId ? getAvailableOrders(zoneId) : Promise.resolve([]),
       ]);
       setOrders(mine);
@@ -41,26 +62,26 @@ const useDriverOrders = (driverId: string, zoneId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [driverId, zoneId]);
+  }, [safeDriverId, zoneId]);
 
   useEffect(() => {
+    if (!safeDriverId) return;
+
     fetchOrders();
 
-    if (driverId) {
-      const unsubscribeMine = subscribeToDriverOrders(driverId, () => {
-        fetchOrders();
-      });
-      
-      const unsubscribeAvailable = subscribeToAvailableOrders(() => {
-        fetchOrders();
-      });
+    const unsubscribeMine = subscribeToDriverOrders(safeDriverId, () => {
+      fetchOrders();
+    });
+    
+    const unsubscribeAvailable = subscribeToAvailableOrders(() => {
+      fetchOrders();
+    });
 
-      return () => {
-        unsubscribeMine();
-        unsubscribeAvailable();
-      };
-    }
-  }, [driverId, fetchOrders]);
+    return () => {
+      unsubscribeMine();
+      unsubscribeAvailable();
+    };
+  }, [safeDriverId, fetchOrders]);
 
   const handleAccept = async (assignmentId: string) => {
     const success = await acceptOrder(assignmentId, driverId);

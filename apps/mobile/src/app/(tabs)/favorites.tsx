@@ -52,7 +52,7 @@ import { supabase } from "@/lib/supabase";
  */
 export default function FavoritesScreen() {
   const router = useRouter();
-  const userId = useCurrentUserId();
+  const { userId, loading: authLoading } = useCurrentUserId();
   const { colors, tokens } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
@@ -86,21 +86,17 @@ export default function FavoritesScreen() {
 
       const userRole = profile?.role === "merchant" ? "merchant" : 
                        profile?.role === "driver" ? "courier" : "customer";
-      setRole(userRole);
+      
+      setRole(prev => prev !== userRole ? userRole : prev);
 
       if (userRole === "courier") {
-        if (!activeTab) setActiveTab("connected");
         const { data, error } = await getCourierFavoritesHub(userId);
         if (error) throw error;
         setCourierData(data);
       } else if (userRole === "merchant") {
-        if (!activeTab) setActiveTab("interested");
-        // Fetch merchant data (Simplified for this update)
         const { data: courierResult } = await getMerchantFavoriteCouriers(userId);
         setMerchantData(prev => ({ ...prev, couriers: courierResult?.favorites || [] }));
       } else {
-        if (!activeTab) setActiveTab("products");
-        // Fetch customer favorites
         const { data: favs } = await supabase.from("customer_favorites").select("*").eq("customer_id", userId);
         setCustomerFavorites(favs || []);
       }
@@ -110,11 +106,21 @@ export default function FavoritesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [userId, activeTab]);
+  }, [userId]);
 
   useEffect(() => {
+    if (!userId || authLoading) return;
     void fetchData();
-  }, [fetchData]);
+  }, [userId, authLoading, fetchData]);
+
+  // Tab initialization effect
+  useEffect(() => {
+    if (!activeTab && role) {
+      if (role === "courier") setActiveTab("connected");
+      else if (role === "merchant") setActiveTab("interested");
+      else setActiveTab("products");
+    }
+  }, [role, activeTab]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -279,7 +285,7 @@ export default function FavoritesScreen() {
     );
   };
 
-  if (loading && !refreshing) return <LoadingState />;
+  if ((loading || authLoading) && !refreshing) return <LoadingState />;
 
   // Main UI based on Role
   if (role === "courier") {

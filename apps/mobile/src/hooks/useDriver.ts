@@ -8,8 +8,11 @@ const useDriver = (driverId: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Ensure driverId is a string and not an object from useCurrentUserId
+  const safeDriverId = typeof driverId === 'string' ? driverId : undefined;
+
   useEffect(() => {
-    if (!driverId) {
+    if (!safeDriverId) {
       setDriver(null);
       setError(null);
       setLoading(false);
@@ -20,7 +23,7 @@ const useDriver = (driverId: string) => {
 
     const fetchDriverData = async () => {
       setLoading(true);
-      const fetchedDriver = await getDriver(driverId);
+      const fetchedDriver = await getDriver(safeDriverId);
 
       if (cancelled) return;
 
@@ -35,9 +38,9 @@ const useDriver = (driverId: string) => {
 
     void fetchDriverData();
     const unsubscribe = subscribeToTableChanges(
-      `driver_profile:${driverId}`,
+      `driver_profile:${safeDriverId}`,
       "drivers",
-      `id=eq.${driverId}`,
+      `id=eq.${safeDriverId}`,
       () => {
         if (!cancelled) {
           void fetchDriverData();
@@ -49,7 +52,7 @@ const useDriver = (driverId: string) => {
       cancelled = true;
       unsubscribe();
     };
-  }, [driverId]);
+  }, [safeDriverId]);
 
   const handleUpdateDriver = async (updates: Partial<Driver>) => {
     if (!driver) return;

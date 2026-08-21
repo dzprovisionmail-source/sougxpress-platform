@@ -9,6 +9,7 @@ import { Bike, MapPin, Phone, MessageCircle, ChevronRight, LogIn } from "lucide-
 import { Typography, Button } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { DeliveryStatus, updateDeliveryStatus } from "@/services/courier-delivery.service";
+import { getOrCreateConversation, getCommercialPhone, logCallPress } from "@/services/chat.service";
 
 const NEXT_STATUS: Partial<Record<DeliveryStatus, DeliveryStatus>> = {
   pending: "accepted",
@@ -29,9 +30,12 @@ const NEXT_LABEL: Partial<Record<DeliveryStatus, string>> = {
 export default function DeliveriesScreen() {
   const router = useRouter();
   const { colors, tokens } = useAppTheme();
-  const { userId } = useCurrentUserId();
+  const { userId, loading: authLoading } = useCurrentUserId();
+  
+  // userId is now a string due to destructuring fix in useCurrentUserId hook
   const { activeDeliveries, loading, refreshDeliveries } = useCourierOrders(userId || "");
   const [isGuest, setIsGuest] = React.useState(false);
+  const [callingDeliveryId, setCallingDeliveryId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -50,6 +54,43 @@ export default function DeliveriesScreen() {
       case "cancelled": return "ملغاة";
       case "failed": return "فشلت";
       default: return status;
+    }
+  };
+
+  const handleCallCustomer = async (delivery: any) => {
+    if (!delivery.order_id || !delivery.customer_id || callingDeliveryId) return;
+
+    setCallingDeliveryId(delivery.id);
+    try {
+      const { data: phone, error } = await getCommercialPhone(delivery.order_id, "customer");
+      if (error || !phone) {
+        Alert.alert("تنبيه", "لا يمكن استرجاع رقم الهاتف في هذه المرحلة أو أن العلاقة التجارية غير نشطة.");
+        return;
+      }
+
+      await logCallPress(delivery.order_id, delivery.customer_id, "customer_courier");
+      await Linking.openURL(`tel:${phone}`);
+    } catch (error) {
+      console.error("Error starting commercial call:", error);
+      Alert.alert("خطأ", "تعذر فتح تطبيق الهاتف.");
+    } finally {
+      setCallingDeliveryId(null);
+    }
+  };
+
+  const handleStartCustomerChat = async (delivery: any) => {
+    if (!delivery.order_id || !delivery.customer_id) return;
+    try {
+      const { data: conversationId, error } = await getOrCreateConversation(
+        delivery.customer_id,
+        "customer_courier",
+        delivery.order_id
+      );
+      if (error) throw error;
+      if (conversationId) router.push(`/chat/${conversationId}`);
+    } catch (error) {
+      console.error("Error starting customer chat:", error);
+      Alert.alert("خطأ", "تعذر فتح محادثة الطلب.");
     }
   };
 
@@ -155,25 +196,25 @@ export default function DeliveriesScreen() {
             </View>
 
             <View style={styles.actionRow}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.actionButton, { backgroundColor: colors.primary + '10' }]}
-                onPress={() => {
-                  if (delivery.customer_phone) {
-                    Linking.openURL(`tel:${delivery.customer_phone}`);
-                  }
-                }}
+                onPress={() => void handleCallCustomer(delivery)}
+                disabled={callingDeliveryId === delivery.id}
+                accessibilityRole="button"
+                accessibilityLabel="اتصال بالزبون"
               >
-                <Phone size={20} color={colors.primary} />
+                {callingDeliveryId === delivery.id ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Phone size={20} color={colors.primary} />
+                )}
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.actionButton, { backgroundColor: colors.success + '10' }]}
-                onPress={() => {
-                  if (delivery.customer_phone) {
-                    const cleanPhone = delivery.customer_phone.replace(/^0/, "");
-                    Linking.openURL(`whatsapp://send?phone=+213${cleanPhone}`);
-                  }
-                }}
+                onPress={() => void handleStartCustomerChat(delivery)}
+                accessibilityRole="button"
+                accessibilityLabel="محادثة الزبون"
               >
                 <MessageCircle size={20} color={colors.success} />
               </TouchableOpacity>

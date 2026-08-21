@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, FlatList, TouchableOpacity, Alert, Linking, ActivityIndicator, RefreshControl } from "react-native";
+import { View, FlatList, TouchableOpacity, Alert, Linking, ActivityIndicator, RefreshControl, Image } from "react-native";
 import { MapPin, ShoppingCart, Store, Navigation, X, Phone, MessageCircle } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -39,11 +39,11 @@ const NEXT_LABEL: Partial<Record<DeliveryStatus, string>> = {
 
 const STATUS_FLOW: DeliveryStatus[] = ["pending", "accepted", "arrived_at_store", "picked_up", "out_for_delivery", "delivered"];
 
-function StatusBadge({ status }: { status: DeliveryStatus }) {
+function StatusBadge({ status, assigned }: { status: DeliveryStatus; assigned: boolean }) {
   const { colors } = useAppTheme();
   const label =
                         status === "pending"
-                      ? "متاحة"
+                      ? assigned ? "طلب بانتظار قبولك" : "متاحة"
                       : status === "accepted"
                       ? "تم التعيين / مقبولة"
                       : status === "arrived_at_store"
@@ -125,15 +125,27 @@ function DeliveryCard({
   const nextStatus = NEXT_STATUS[status];
   const storeName = order.store?.name || "متجر";
   const storeCity = order.store?.zone?.city;
+  const customerAddress = order.address?.address_text?.trim()
+    || [
+      order.address?.address_line1,
+      order.address?.address_line2,
+      order.address?.city,
+      order.address?.state_province,
+      order.address?.postal_code,
+      order.address?.country,
+    ].filter(Boolean).join("، ")
+    || "العنوان غير متوفر";
   const lat = order.address?.latitude;
   const lng = order.address?.longitude;
   const [calling, setCalling] = useState<string | null>(null);
 
   const currentStepIndex = STATUS_FLOW.indexOf(status);
+  const items = Array.isArray(order.items) ? order.items : [];
+  const isAssignedToDriver = Boolean(order.assignment_driver_id || order.driver_id);
 
   const handleOpenCustomerLocation = () => {
     if (lat != null && lng != null) {
-      openLocationInMaps(lat, lng, order.address?.address_text);
+      openLocationInMaps(lat, lng, customerAddress);
     }
   };
 
@@ -169,14 +181,6 @@ function DeliveryCard({
       Alert.alert("خطأ", "حدث خطأ أثناء محاولة الاتصال.");
     } finally {
       setCalling(null);
-    }
-  };
-
-  const handleWhatsApp = async () => {
-    const { data: phone } = await getCommercialPhone(order.id, 'customer');
-    if (phone) {
-      const cleanPhone = phone.replace(/^0/, "");
-      Linking.openURL(`whatsapp://send?phone=+213${cleanPhone}`);
     }
   };
 
@@ -226,22 +230,71 @@ function DeliveryCard({
         <WorkspaceText variant="title" style={{ fontSize: tokens.typography.sizes.md }}>
           {storeName}
         </WorkspaceText>
-        <StatusBadge status={status} />
+        <StatusBadge status={status} assigned={isAssignedToDriver} />
       </View>
 
       <View style={{ flexDirection: "row-reverse", alignItems: "center", marginTop: tokens.spacing.xs }}>
         <MapPin size={16} color={colors.textSecondary} />
         <WorkspaceText color="secondary" style={{ marginRight: tokens.spacing.xs, flex: 1 }}>
-          {order.address?.address_text || "العنوان غير متوفر"}
+          {customerAddress}
         </WorkspaceText>
       </View>
 
       <View style={{ flexDirection: "row-reverse", alignItems: "center", marginTop: tokens.spacing.xs }}>
         <ShoppingCart size={16} color={colors.textSecondary} />
         <WorkspaceText color="secondary" style={{ marginRight: tokens.spacing.xs }}>
-          {`أجرة التوصيل: ${(order.delivery_fee_minor / 100).toFixed(2)} د.ج`}
+          {`رسوم التوصيل: ${Math.round(Number(order.delivery_fee_minor || 20000) / 100)} د.ج`}
         </WorkspaceText>
       </View>
+
+      {items.length > 0 && (
+        <View
+          style={{
+            marginTop: tokens.spacing.md,
+            padding: tokens.spacing.sm,
+            borderRadius: tokens.radius.sm,
+            borderWidth: 1,
+            borderColor: colors.borderSubtle,
+            backgroundColor: colors.primary + "08",
+          }}
+        >
+          <WorkspaceText variant="title" color="primary" style={{ fontSize: tokens.typography.sizes.sm, textAlign: "right" }}>
+            محتويات الطلب
+          </WorkspaceText>
+          {items.map((item: any) => {
+            const unitPriceMinor = Number(item.price_at_order_minor || 0);
+            const lineTotalMinor = Number(item.line_total_minor ?? item.quantity * unitPriceMinor);
+            return (
+              <View
+                key={item.id}
+                style={{
+                  flexDirection: "row-reverse",
+                  alignItems: "center",
+                  marginTop: tokens.spacing.xs,
+                  paddingTop: tokens.spacing.xs,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.borderSubtle,
+                }}
+              >
+                {item.product?.image_url ? (
+                  <Image source={{ uri: item.product.image_url }} style={{ width: 34, height: 34, borderRadius: 6, marginLeft: tokens.spacing.xs }} />
+                ) : null}
+                <View style={{ flex: 1, minWidth: 0, alignItems: "flex-end" }}>
+                  <WorkspaceText style={{ textAlign: "right", fontWeight: "700" }} numberOfLines={1}>
+                    {item.product?.name || "منتج"}
+                  </WorkspaceText>
+                  <WorkspaceText color="secondary" variant="caption" style={{ textAlign: "right" }}>
+                    {`الكمية: ${item.quantity} × ${Math.round(unitPriceMinor / 100)} د.ج`}
+                  </WorkspaceText>
+                </View>
+                <WorkspaceText color="primary" variant="caption" style={{ marginRight: tokens.spacing.xs, fontWeight: "700" }}>
+                  {`${Math.round(lineTotalMinor / 100)} د.ج`}
+                </WorkspaceText>
+              </View>
+            );
+          })}
+        </View>
+      )}
 
       {status !== "delivered" && status !== "cancelled" && status !== "failed" && (
         <View style={{ marginTop: tokens.spacing.md }}>
@@ -278,53 +331,57 @@ function DeliveryCard({
       )}
 
       <View style={{ flexDirection: "row-reverse", marginTop: tokens.spacing.md, gap: tokens.spacing.sm, flexWrap: "wrap" }}>
-        <TouchableOpacity
-          onPress={() => handleStartChat(order.store?.merchant_id, "merchant_courier")}
-          style={{
-            flex: 1,
-            flexDirection: "row-reverse",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: tokens.spacing.sm,
-            borderRadius: tokens.radius.sm,
-            borderWidth: 1,
-            borderColor: colors.primary + "30",
-            backgroundColor: colors.primary + "08",
-            minWidth: 80,
-          }}
-        >
-          <MessageCircle size={16} color={colors.primary} />
-          <WorkspaceText color="primary" style={{ marginRight: 4 }} variant="caption">
-            شات المتجر
-          </WorkspaceText>
-        </TouchableOpacity>
+        {isAssignedToDriver && (
+          <>
+            <TouchableOpacity
+              onPress={() => handleStartChat(order.store?.merchant_id, "merchant_courier")}
+              style={{
+                flex: 1,
+                flexDirection: "row-reverse",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: tokens.spacing.sm,
+                borderRadius: tokens.radius.sm,
+                borderWidth: 1,
+                borderColor: colors.primary + "30",
+                backgroundColor: colors.primary + "08",
+                minWidth: 80,
+              }}
+            >
+              <MessageCircle size={16} color={colors.primary} />
+              <WorkspaceText color="primary" style={{ marginRight: 4 }} variant="caption">
+                شات المتجر
+              </WorkspaceText>
+            </TouchableOpacity>
 
-        {order.store?.merchant_id && (
-          <TouchableOpacity
-            onPress={() => handleCall('merchant', order.store.merchant_id)}
-            disabled={calling === 'merchant'}
-            style={{
-              flex: 1,
-              flexDirection: "row-reverse",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: tokens.spacing.sm,
-              borderRadius: tokens.radius.sm,
-              borderWidth: 1,
-              borderColor: colors.primary + "30",
-              backgroundColor: colors.primary + "08",
-              minWidth: 80,
-            }}
-          >
-            {calling === 'merchant' ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Phone size={16} color={colors.primary} />
+            {order.store?.merchant_id && (
+              <TouchableOpacity
+                onPress={() => handleCall('merchant', order.store.merchant_id)}
+                disabled={calling === 'merchant'}
+                style={{
+                  flex: 1,
+                  flexDirection: "row-reverse",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: tokens.spacing.sm,
+                  borderRadius: tokens.radius.sm,
+                  borderWidth: 1,
+                  borderColor: colors.primary + "30",
+                  backgroundColor: colors.primary + "08",
+                  minWidth: 80,
+                }}
+              >
+                {calling === 'merchant' ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Phone size={16} color={colors.primary} />
+                )}
+                <WorkspaceText color="primary" style={{ marginRight: 4 }} variant="caption">
+                  اتصال بالمتجر
+                </WorkspaceText>
+              </TouchableOpacity>
             )}
-            <WorkspaceText color="primary" style={{ marginRight: 4 }} variant="caption">
-              اتصال بالمتجر
-            </WorkspaceText>
-          </TouchableOpacity>
+          </>
         )}
 
         <TouchableOpacity
@@ -348,7 +405,7 @@ function DeliveryCard({
         </TouchableOpacity>
       </View>
 
-      {status !== "pending" && status !== "delivered" && status !== "cancelled" && status !== "failed" && (
+      {isAssignedToDriver && status !== "pending" && status !== "delivered" && status !== "cancelled" && status !== "failed" && (
         <View style={{ marginTop: tokens.spacing.sm, borderTopWidth: 1, borderTopColor: colors.borderSubtle, paddingTop: tokens.spacing.sm }}>
           <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.sm, flexWrap: "wrap" }}>
             <TouchableOpacity
@@ -395,27 +452,6 @@ function DeliveryCard({
               <MessageCircle size={16} color={colors.primary} />
               <WorkspaceText color="primary" style={{ marginRight: 4 }} variant="caption">
                 شات الزبون
-              </WorkspaceText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleWhatsApp}
-              style={{
-                flex: 1,
-                flexDirection: "row-reverse",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: tokens.spacing.sm,
-                borderRadius: tokens.radius.sm,
-                borderWidth: 1,
-                borderColor: colors.success + "30",
-                backgroundColor: colors.success + "08",
-                minWidth: 80,
-              }}
-            >
-              <MessageCircle size={16} color={colors.success} />
-              <WorkspaceText style={{ color: colors.success, marginRight: 4 }} variant="caption">
-                واتساب
               </WorkspaceText>
             </TouchableOpacity>
 
@@ -471,8 +507,9 @@ function DeliveryCard({
 }
 
 export default function DriverDeliveriesScreen() {
-  const { userId } = useCurrentUserId();
-  const { orders, availableOrders, loading, refreshOrders, acceptOrder, updateStatus } = useDriverOrders(userId || "");
+  const { userId, loading: authLoading } = useCurrentUserId();
+  const { driver } = useDriver(userId || "");
+  const { orders, availableOrders, loading, refreshOrders, acceptOrder, updateStatus } = useDriverOrders(userId || "", driver?.zone_id);
   const [activeTab, setActiveTab] = useState<TabKey>("active");
 
   const activeDeliveries = orders.filter(o => 

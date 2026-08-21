@@ -113,8 +113,8 @@ export const getCourierDeliveries = async (
         merchant_id: store?.merchant_id || "",
         delivery_address_id: order?.delivery_address_id,
         delivery_fee_minor: order?.delivery_fee_minor ?? 20000, // Fallback to 200 DZD
-        subtotal_minor: order?.subtotal_minor ?? 0,
-        total_minor: order?.total_minor ?? 0,
+        subtotal_minor: order?.order_total_minor ?? 0,
+        total_minor: (order?.order_total_minor ?? 0) + (order?.delivery_fee_minor ?? 20000),
         special_instructions: order?.special_instructions ?? null,
         store_name: store?.name ?? "متجر Soug-XPRESS",
         store_address: store?.address_line1 || store?.city || "عين صفراء",

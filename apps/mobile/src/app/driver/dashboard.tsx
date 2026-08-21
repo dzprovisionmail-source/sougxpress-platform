@@ -84,7 +84,7 @@ export default function DriverDashboardScreen() {
       result = result.concat(availableOrders);
     }
     if (filter === "all" || filter === "active") {
-      result = result.concat(orders.filter((o) => ["ready_for_pickup", "picked_up"].includes(o.status)));
+      result = result.concat(orders.filter((o) => ["accepted", "arrived_at_store", "picked_up", "out_for_delivery"].includes(o.assignment_status)));
     }
     if (filter === "all" || filter === "completed") {
       result = result.concat(orders.filter((o) => o.status === "delivered"));

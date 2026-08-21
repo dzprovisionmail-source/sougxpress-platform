@@ -18,8 +18,11 @@ const useCourierOrders = (courierId: string) => {
   const [activeDeliveries, setActiveDeliveries] = useState<CourierDelivery[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Ensure courierId is a string and not an object from useCurrentUserId
+  const safeCourierId = typeof courierId === 'string' ? courierId : undefined;
+
   const fetchDeliveries = useCallback(async () => {
-    if (!courierId) {
+    if (!safeCourierId) {
       setActiveDeliveries([]);
       setLoading(false);
       return;
@@ -27,7 +30,7 @@ const useCourierOrders = (courierId: string) => {
 
     setLoading(true);
     try {
-      const res = await getCourierDeliveries(courierId);
+      const res = await getCourierDeliveries(safeCourierId);
       if (res.data) {
         const active = res.data.filter((d) => ACTIVE_STATUSES.includes(d.status));
         setActiveDeliveries(active);
@@ -39,24 +42,24 @@ const useCourierOrders = (courierId: string) => {
     } finally {
       setLoading(false);
     }
-  }, [courierId]);
+  }, [safeCourierId]);
 
   useEffect(() => {
+    if (!safeCourierId) return;
+
     fetchDeliveries();
 
-    if (courierId) {
-      const subRes = subscribeToCourierDeliveries(courierId, () => {
-        fetchDeliveries();
-      });
-      return () => {
-        try {
-          subRes?.data?.subscription?.unsubscribe?.();
-        } catch (e) {
-          // Ignore unsubscribe errors safely
-        }
-      };
-    }
-  }, [courierId, fetchDeliveries]);
+    const subRes = subscribeToCourierDeliveries(safeCourierId, () => {
+      fetchDeliveries();
+    });
+    return () => {
+      try {
+        subRes?.data?.subscription?.unsubscribe?.();
+      } catch (e) {
+        // Ignore unsubscribe errors safely
+      }
+    };
+  }, [safeCourierId, fetchDeliveries]);
 
   return {
     activeDeliveries,

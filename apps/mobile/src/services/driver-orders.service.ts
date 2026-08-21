@@ -13,8 +13,15 @@ export const getDriverOrders = async (driverId: string): Promise<any[]> => {
       order:orders (
         *,
         store:stores (id, name, merchant_id, zone:zones (city)),
-        address:customer_addresses (address_text, latitude, longitude),
-        customer:customers (id, full_name, phone)
+        address:customer_addresses (address_text, address_line1, address_line2, city, state_province, postal_code, country, latitude, longitude),
+        customer:customers (id, full_name),
+        items:order_items (
+          id,
+          quantity,
+          price_at_order_minor,
+          line_total_minor,
+          product:products (id, name, image_url)
+        )
       )
     `)
     .eq("driver_id", driverId)
@@ -27,7 +34,8 @@ export const getDriverOrders = async (driverId: string): Promise<any[]> => {
   return (data as any[] ?? []).map(a => ({
     ...a.order,
     assignment_id: a.id,
-    assignment_status: a.status
+    assignment_status: a.status,
+    assignment_driver_id: a.driver_id,
   }));
 };
 
@@ -45,7 +53,7 @@ export const getAvailableOrders = async (zoneId: string): Promise<any[]> => {
         *,
         store:stores (id, name, merchant_id, zone:zones (city)),
         address:customer_addresses (address_text, latitude, longitude),
-        customer:customers (id, full_name, phone)
+        customer:customers (id, full_name)
       )
     `)
     .eq("status", "pending")
@@ -60,7 +68,8 @@ export const getAvailableOrders = async (zoneId: string): Promise<any[]> => {
   return (data as any[] ?? []).map(a => ({
     ...a.order,
     assignment_id: a.id,
-    assignment_status: a.status
+    assignment_status: a.status,
+    assignment_driver_id: a.driver_id,
   }));
 };
 
@@ -82,18 +91,22 @@ export const acceptOrder = async (assignmentId: string, driverId: string): Promi
       return false;
     }
 
-    const { error } = await supabase
+    const { data: acceptedAssignment, error } = await supabase
       .from("delivery_assignments")
-      .update({ 
-        driver_id: driverId, 
+      .update({
+        driver_id: driverId,
         status: "accepted",
-        assigned_at: new Date().toISOString() 
+        assigned_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq("id", assignmentId)
-      .is("driver_id", null);
+      .eq("status", "pending")
+      .or(`driver_id.is.null,driver_id.eq.${driverId}`)
+      .select("id")
+      .maybeSingle();
 
     if (error) throw error;
-    return true;
+    return Boolean(acceptedAssignment);
   } catch (error) {
     console.error("Error accepting order:", error);
     return false;
@@ -137,10 +150,12 @@ export const subscribeToDriverOrders = (driverId: string, callback: () => void) 
 };
 
 export const subscribeToAvailableOrders = (callback: () => void) => {
+  // Realtime postgres_changes filter doesn't support 'is.null'. 
+  // We subscribe to all delivery_assignments changes and let the hook re-fetch and filter.
   return subscribeToTableChanges(
     "available_assignments",
     "delivery_assignments",
-    "driver_id=is.null",
+    "", // Empty filter to listen to all changes
     callback
   );
 };

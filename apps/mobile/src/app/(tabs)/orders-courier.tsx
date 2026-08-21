@@ -39,7 +39,7 @@ import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 export default function CourierOrdersTabScreen() {
   const router = useRouter();
   const { colors, tokens } = useAppTheme();
-  const userId = useCurrentUserId();
+  const { userId, loading: authLoading } = useCurrentUserId();
   const isRTL = I18nManager.isRTL;
 
   const { activeDeliveries, loading, refreshDeliveries } = useCourierOrders(userId || "");
@@ -211,7 +211,7 @@ export default function CourierOrdersTabScreen() {
     );
   };
 
-  if (loading && activeDeliveries.length === 0) {
+  if ((loading || authLoading) && activeDeliveries.length === 0) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.bgBase }]}>
         <ActivityIndicator size="large" color={colors.primary} />

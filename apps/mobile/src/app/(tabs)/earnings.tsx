@@ -15,7 +15,7 @@ const COMMISSION_PER_DELIVERY_MINOR = Math.round(FIXED_DELIVERY_FEE_MINOR * PLAT
 
 export default function CourierEarningsScreen() {
   const { colors } = useAppTheme();
-  const { userId } = useCurrentUserId();
+  const { userId, loading: authLoading } = useCurrentUserId();
   const { driver } = useDriver(userId || "");
   const { orders, loading } = useDriverOrders(userId || "", driver?.zone_id);
   const [platformRip, setPlatformRip] = useState<string>("00799999000524201107");
