@@ -25,6 +25,7 @@ import {
   BRAND_SLOGAN,
   BRAND_CITY_LABEL,
   LOGO_DARK,
+  LOGO_FULL,
 } from "@/constants/brand";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
@@ -138,7 +139,7 @@ export default function EntryScreen() {
               {/* Official Logo */}
         <View style={styles.logoArea}>
           <Image
-            source={LOGO_DARK}
+            source={LOGO_FULL}
             style={styles.logoImage}
             resizeMode="contain"
           />
@@ -353,8 +354,8 @@ const styles = StyleSheet.create({
     marginBottom: TOKENS.spacing["2xl"],
   },
   logoImage: {
-    width: 280,
-    height: 220,
+    width: 340,
+    height: 280,
   },
   slogan: {
     color: TOKENS.colors.brandAccent,

@@ -69,6 +69,12 @@ export const LOGO_WORDMARK = require("../../assets/brand/logo-horizontal.png");
 export const LOGO_DARK = require("../../assets/brand/logo-horizontal-dark.png");
 
 /**
+ * Full official logo — mascot + wordmark + slogan + icons.
+ * This is the primary asset for entry screens and onboarding.
+ */
+export const LOGO_FULL = require("../../assets/brand/logo-full-official.png");
+
+/**
  * Compatibility path — mascot icon stored in the default images directory.
  */
 export const LOGO_COMPAT = require("../../assets/images/logo.png");
