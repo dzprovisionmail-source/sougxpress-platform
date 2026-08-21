@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { 
   Star, Heart, User, MapPin, MessageCircle, Phone, 
-  ShoppingBag, Info, Store, Search 
+  ShoppingBag, Info, Store, Search, CheckCircle
 } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -218,6 +218,22 @@ export default function FavoritesScreen() {
             <WorkspaceText variant="caption" color="secondary">
               الحالة: {customer.last_assignment_status === 'pending' ? 'بانتظار قبولك' : 'قيد التوصيل'}
             </WorkspaceText>
+          </View>
+        )}
+
+        {customer.delivery_count > 0 && (
+          <View style={[styles.orderContext, { backgroundColor: colors.bgSurface, marginTop: -4, borderTopWidth: 1, borderTopColor: '#eee' }]}>
+            <View style={styles.orderInfoRow}>
+              <CheckCircle size={14} color={colors.success} />
+              <WorkspaceText variant="caption" style={{ fontWeight: '600' }}>
+                {customer.delivery_count} توصيلات مكتملة
+              </WorkspaceText>
+            </View>
+            {customer.last_delivery_at && (
+              <WorkspaceText variant="caption" color="secondary">
+                آخر تعامل: {new Date(customer.last_delivery_at).toLocaleDateString('ar-DZ')}
+              </WorkspaceText>
+            )}
           </View>
         )}
 

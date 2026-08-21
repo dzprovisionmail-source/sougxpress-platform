@@ -1,11 +1,11 @@
-import React, { useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Linking, Alert } from "react-native";
+import React, { useCallback, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Linking, Alert, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import useCourierOrders from "@/hooks/useCourierOrders";
 import { TOKENS } from "@/constants/tokens";
-import { Bike, MapPin, Phone, MessageCircle, ChevronRight, LogIn } from "lucide-react-native";
+import { Bike, MapPin, Phone, MessageCircle, ChevronRight, LogIn, ShoppingBag, Store, CheckCircle, X, Calendar, Clock } from "lucide-react-native";
 import { Typography, Button } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { DeliveryStatus, updateDeliveryStatus } from "@/services/courier-delivery.service";
@@ -30,12 +30,12 @@ const NEXT_LABEL: Partial<Record<DeliveryStatus, string>> = {
 export default function DeliveriesScreen() {
   const router = useRouter();
   const { colors, tokens } = useAppTheme();
-  const { userId, loading: authLoading } = useCurrentUserId();
+  const { userId } = useCurrentUserId();
+  const { activeDeliveries, completedDeliveries, loading, refreshDeliveries } = useCourierOrders(userId || "");
   
-  // userId is now a string due to destructuring fix in useCurrentUserId hook
-  const { activeDeliveries, loading, refreshDeliveries } = useCourierOrders(userId || "");
-  const [isGuest, setIsGuest] = React.useState(false);
-  const [callingDeliveryId, setCallingDeliveryId] = React.useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
+  const [isGuest, setIsGuest] = useState(false);
+  const [callingDeliveryId, setCallingDeliveryId] = useState<string | null>(null);
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -57,18 +57,21 @@ export default function DeliveriesScreen() {
     }
   };
 
-  const handleCallCustomer = async (delivery: any) => {
-    if (!delivery.order_id || !delivery.customer_id || callingDeliveryId) return;
+  const handleCall = async (delivery: any, role: "customer" | "merchant") => {
+    if (!delivery.order_id || callingDeliveryId) return;
+
+    const targetId = role === "customer" ? delivery.customer_id : delivery.merchant_id;
+    if (!targetId) return;
 
     setCallingDeliveryId(delivery.id);
     try {
-      const { data: phone, error } = await getCommercialPhone(delivery.order_id, "customer");
+      const { data: phone, error } = await getCommercialPhone(delivery.order_id, role);
       if (error || !phone) {
-        Alert.alert("تنبيه", "لا يمكن استرجاع رقم الهاتف في هذه المرحلة أو أن العلاقة التجارية غير نشطة.");
+        Alert.alert("تنبيه", "لا يمكن استرجاع رقم الهاتف في هذه المرحلة.");
         return;
       }
 
-      await logCallPress(delivery.order_id, delivery.customer_id, "customer_courier");
+      await logCallPress(delivery.order_id, targetId, role === "customer" ? "customer_courier" : "merchant_courier");
       await Linking.openURL(`tel:${phone}`);
     } catch (error) {
       console.error("Error starting commercial call:", error);
@@ -78,18 +81,20 @@ export default function DeliveriesScreen() {
     }
   };
 
-  const handleStartCustomerChat = async (delivery: any) => {
-    if (!delivery.order_id || !delivery.customer_id) return;
+  const handleStartChat = async (delivery: any, type: "customer_courier" | "merchant_courier") => {
+    const targetId = type === "customer_courier" ? delivery.customer_id : delivery.merchant_id;
+    if (!delivery.order_id || !targetId) return;
+    
     try {
       const { data: conversationId, error } = await getOrCreateConversation(
-        delivery.customer_id,
-        "customer_courier",
+        targetId,
+        type,
         delivery.order_id
       );
       if (error) throw error;
       if (conversationId) router.push(`/chat/${conversationId}`);
     } catch (error) {
-      console.error("Error starting customer chat:", error);
+      console.error("Error starting chat:", error);
       Alert.alert("خطأ", "تعذر فتح محادثة الطلب.");
     }
   };
@@ -98,254 +103,175 @@ export default function DeliveriesScreen() {
     const nextStatus = NEXT_STATUS[currentStatus];
     if (!nextStatus) return;
 
-    const confirmMessage = `تأكيد تغيير الحالة إلى: ${NEXT_LABEL[currentStatus]}؟`;
-    Alert.alert("تحديث الحالة", confirmMessage, [
+    Alert.alert("تحديث الحالة", `تأكيد تغيير الحالة إلى: ${NEXT_LABEL[currentStatus]}؟`, [
       { text: "إلغاء", style: "cancel" },
       {
         text: "تأكيد",
         onPress: async () => {
           const res = await updateDeliveryStatus(id, userId || "", nextStatus);
-          if (res.error) {
-            Alert.alert("خطأ", res.error);
-          } else {
-            refreshDeliveries();
-          }
+          if (res.error) Alert.alert("خطأ", res.error);
+          else refreshDeliveries();
         }
       },
     ]);
   };
 
-  if (loading && activeDeliveries.length === 0 && !isGuest) {
+  const renderDeliveryCard = (delivery: any) => {
+    const isCompleted = ["delivered", "cancelled", "failed"].includes(delivery.status);
+    
     return (
-      <View style={[styles.container, { backgroundColor: colors.bgBase, justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View key={delivery.id} style={[styles.deliveryCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+        <View style={styles.deliveryHeader}>
+          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
+            <View style={[styles.statusDot, { backgroundColor: isCompleted ? (delivery.status === 'delivered' ? colors.success : colors.error) : colors.primary }]} />
+            <Text style={[styles.deliveryStatus, { color: isCompleted ? (delivery.status === 'delivered' ? colors.success : colors.error) : colors.primary }]}>
+              {statusLabel(delivery.status)}
+            </Text>
+          </View>
+          <Text style={[styles.deliveryId, { color: colors.textSecondary }]}>#{delivery.id.slice(0, 8)}</Text>
+        </View>
+
+        <View style={styles.cardBody}>
+          <View style={styles.infoRow}>
+            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 6 }}>
+              <Store size={16} color={colors.primary} />
+              <Text style={[styles.storeName, { color: colors.textPrimary }]}>{delivery.store_name}</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoRow}>
+            <MapPin size={16} color={colors.textSecondary} />
+            <Text style={[styles.addressText, { color: colors.textPrimary }]} numberOfLines={2}>{delivery.address_text}</Text>
+          </View>
+
+          {/* Itemized List */}
+          {delivery.items && delivery.items.length > 0 && (
+            <View style={[styles.itemsContainer, { backgroundColor: colors.bgBase }]}>
+              {delivery.items.map((item: any) => (
+                <View key={item.id} style={styles.itemRow}>
+                  <Text style={[styles.itemText, { color: colors.textPrimary }]}>{item.product?.name || 'منتج'}</Text>
+                  <Text style={[styles.itemQty, { color: colors.textSecondary }]}>x{item.quantity}</Text>
+                  <Text style={[styles.itemPrice, { color: colors.textPrimary }]}>{Math.round((item.line_total_minor || 0) / 100)} د.ج</Text>
+                </View>
+              ))}
+              <View style={[styles.feeRow, { borderTopColor: colors.borderSubtle }]}>
+                <Text style={[styles.feeLabel, { color: colors.textSecondary }]}>رسوم التوصيل الثابتة</Text>
+                <Text style={[styles.feeValue, { color: colors.primary }]}>200.00 د.ج</Text>
+              </View>
+            </View>
+          )}
+
+          {isCompleted && (
+            <View style={[styles.completionInfo, { backgroundColor: delivery.status === 'delivered' ? colors.success + '08' : colors.error + '08' }]}>
+              <View style={styles.timeRow}>
+                <Clock size={14} color={colors.textSecondary} />
+                <Text style={[styles.timeText, { color: colors.textSecondary }]}>
+                  {delivery.delivered_at ? new Date(delivery.delivered_at).toLocaleString('ar-DZ') : new Date(delivery.created_at).toLocaleDateString('ar-DZ')}
+                </Text>
+              </View>
+              {delivery.status === 'delivered' && (
+                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                  <CheckCircle size={14} color={colors.success} />
+                  <Text style={{ color: colors.success, fontSize: 12, fontWeight: '600' }}>تم التسليم بنجاح</Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
+        {!isCompleted && (
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary + '10' }]} onPress={() => handleCall(delivery, "customer")} disabled={!!callingDeliveryId}>
+              {callingDeliveryId === delivery.id ? <ActivityIndicator size="small" color={colors.primary} /> : <Phone size={20} color={colors.primary} />}
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.success + '10' }]} onPress={() => handleStartChat(delivery, "customer_courier")}>
+              <MessageCircle size={20} color={colors.success} />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.advanceButton, { backgroundColor: colors.primary }]} onPress={() => handleAdvance(delivery.id, delivery.status)}>
+              <Text style={styles.advanceButtonText}>{NEXT_LABEL[delivery.status] || "تحديث"}</Text>
+              <ChevronRight size={18} color="white" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     );
-  }
+  };
 
   if (isGuest) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
+      <View style={[styles.container, { backgroundColor: colors.bgBase, justifyContent: 'center' }]}>
         <View style={styles.center}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.primary + '10', width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: TOKENS.spacing.xl }]}>
-            <Bike size={50} color={colors.primary} />
-          </View>
-          <Typography variant="h2" align="center" style={{ marginBottom: TOKENS.spacing.md, fontWeight: '700' }}>
-            مرحبًا بك في Soug-XPRESS
-          </Typography>
-          <Typography variant="body" color="secondary" align="center" style={{ marginBottom: TOKENS.spacing.xl, lineHeight: 24 }}>
-            يجب عليك تسجيل الدخول كعامل توصيل للوصول إلى قائمة التوصيلات النشطة.
-          </Typography>
-          <Button
-            title="التسجيل / الدخول"
-            onPress={() => router.push("/login")}
-            variant="primary"
-            size="lg"
-            icon={<LogIn size={20} color={colors.textOnBrand} />}
-            style={{ width: '100%' }}
-          />
+          <Bike size={80} color={colors.primary} />
+          <Typography variant="h2" align="center">مرحباً بك في Soug-XPRESS</Typography>
+          <Typography variant="body" color="secondary" align="center">يجب تسجيل الدخول كعامل توصيل.</Typography>
+          <Button title="الدخول" onPress={() => router.push("/login")} variant="primary" style={{ width: '100%', marginTop: 20 }} />
         </View>
       </View>
     );
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.bgBase }]} contentContainerStyle={{ paddingBottom: 100 }}>
-      <Text style={[styles.title, { color: colors.textPrimary }]}>التوصيلات النشطة</Text>
-
-      {activeDeliveries.length === 0 ? (
-        <View style={styles.center}>
-          <Bike size={64} color={colors.textDisabled} />
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>لا توجد توصيلات نشطة حالياً</Text>
+    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
+      <View style={[styles.header, { backgroundColor: colors.bgSurface }]}>
+        <Typography variant="h2" style={styles.headerTitle}>توصيلاتي التجارية</Typography>
+        <View style={styles.tabBar}>
+          <TouchableOpacity onPress={() => setActiveTab("active")} style={[styles.tab, activeTab === "active" && { borderBottomColor: colors.primary }]}>
+            <Text style={[styles.tabText, { color: activeTab === "active" ? colors.primary : colors.textSecondary }]}>النشطة ({activeDeliveries.length})</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setActiveTab("completed")} style={[styles.tab, activeTab === "completed" && { borderBottomColor: colors.primary }]}>
+            <Text style={[styles.tabText, { color: activeTab === "completed" ? colors.primary : colors.textSecondary }]}>الأرشيف ({completedDeliveries.length})</Text>
+          </TouchableOpacity>
         </View>
-      ) : (
-        activeDeliveries.map((delivery) => (
-          <View
-            key={delivery.id}
-            style={[styles.deliveryCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
-          >
-            <View style={styles.deliveryHeader}>
-              <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
-                <View style={[styles.statusDot, { backgroundColor: colors.primary }]} />
-                <Text style={[styles.deliveryStatus, { color: colors.primary }]}>
-                  {statusLabel(delivery.status)}
-                </Text>
-              </View>
-              <Text style={[styles.deliveryId, { color: colors.textSecondary }]}>
-                #{delivery.id.slice(0, 8)}
-              </Text>
-            </View>
+      </View>
 
-            <View style={styles.cardBody}>
-              <View style={styles.infoRow}>
-                <Text style={[styles.storeName, { color: colors.textPrimary }]}>{delivery.store_name}</Text>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>المتجر</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Text style={[styles.addressText, { color: colors.textPrimary }]} numberOfLines={2}>
-                  {delivery.address_text}
-                </Text>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>العنوان</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Text style={[styles.customerName, { color: colors.textPrimary }]}>{delivery.customer_name}</Text>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>الزبون</Text>
-              </View>
-            </View>
-
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: colors.primary + '10' }]}
-                onPress={() => void handleCallCustomer(delivery)}
-                disabled={callingDeliveryId === delivery.id}
-                accessibilityRole="button"
-                accessibilityLabel="اتصال بالزبون"
-              >
-                {callingDeliveryId === delivery.id ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : (
-                  <Phone size={20} color={colors.primary} />
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: colors.success + '10' }]}
-                onPress={() => void handleStartCustomerChat(delivery)}
-                accessibilityRole="button"
-                accessibilityLabel="محادثة الزبون"
-              >
-                <MessageCircle size={20} color={colors.success} />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.advanceButton, { backgroundColor: colors.primary }]}
-                onPress={() => handleAdvance(delivery.id, delivery.status)}
-              >
-                <Text style={styles.advanceButtonText}>
-                  {NEXT_LABEL[delivery.status] || "تحديث الحالة"}
-                </Text>
-                <ChevronRight size={18} color="white" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))
-      )}
-    </ScrollView>
+      <ScrollView 
+        contentContainerStyle={{ padding: TOKENS.spacing.md, paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refreshDeliveries} />}
+      >
+        {activeTab === "active" ? (
+          activeDeliveries.length === 0 ? (
+            <View style={styles.center}><Bike size={64} color={colors.textDisabled} /><Text style={{ color: colors.textSecondary }}>لا توجد توصيلات نشطة</Text></View>
+          ) : activeDeliveries.map(renderDeliveryCard)
+        ) : (
+          completedDeliveries.length === 0 ? (
+            <View style={styles.center}><Calendar size={64} color={colors.textDisabled} /><Text style={{ color: colors.textSecondary }}>سجل التوصيلات فارغ</Text></View>
+          ) : completedDeliveries.map(renderDeliveryCard)
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: TOKENS.spacing.lg,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    marginBottom: TOKENS.spacing.xl,
-    textAlign: "right",
-    fontFamily: 'System',
-  },
-  center: {
-    alignItems: "center",
-    marginTop: 60,
-    gap: 16,
-  },
-  iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  deliveryCard: {
-    padding: TOKENS.spacing.lg,
-    borderRadius: TOKENS.radius.lg,
-    borderWidth: 1,
-    marginBottom: TOKENS.spacing.md,
-    ...TOKENS.shadows.small,
-  },
-  deliveryHeader: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: TOKENS.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    paddingBottom: 8,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  deliveryId: {
-    fontSize: 12,
-    fontFamily: 'monospace',
-  },
-  deliveryStatus: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  cardBody: {
-    gap: 12,
-    marginBottom: TOKENS.spacing.lg,
-  },
-  infoRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  label: {
-    fontSize: 12,
-    width: 60,
-    textAlign: 'right',
-  },
-  storeName: {
-    fontSize: 16,
-    fontWeight: '700',
-    flex: 1,
-    textAlign: 'right',
-  },
-  addressText: {
-    fontSize: 14,
-    flex: 1,
-    textAlign: 'right',
-  },
-  customerName: {
-    fontSize: 14,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'right',
-  },
-  actionRow: {
-    flexDirection: 'row-reverse',
-    gap: 12,
-    alignItems: 'center',
-  },
-  actionButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  advanceButton: {
-    flex: 1,
-    height: 44,
-    borderRadius: 22,
-    flexDirection: 'row-reverse',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-  },
-  advanceButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '700',
-  },
+  container: { flex: 1 },
+  header: { paddingHorizontal: TOKENS.spacing.lg, paddingTop: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  headerTitle: { textAlign: 'right', marginBottom: 15, fontWeight: '800' },
+  tabBar: { flexDirection: 'row-reverse' },
+  tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabText: { fontSize: 14, fontWeight: '600' },
+  center: { alignItems: "center", marginTop: 100, gap: 16 },
+  deliveryCard: { padding: TOKENS.spacing.md, borderRadius: TOKENS.radius.lg, borderWidth: 1, marginBottom: TOKENS.spacing.md, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+  deliveryHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f5', paddingBottom: 8 },
+  statusDot: { width: 8, height: 8, borderRadius: 4 },
+  deliveryStatus: { fontSize: 14, fontWeight: "700" },
+  deliveryId: { fontSize: 12, fontFamily: 'monospace' },
+  cardBody: { gap: 10 },
+  infoRow: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 8 },
+  storeName: { fontSize: 16, fontWeight: '700', flex: 1, textAlign: 'right' },
+  addressText: { fontSize: 14, flex: 1, textAlign: 'right', lineHeight: 20 },
+  itemsContainer: { padding: 10, borderRadius: 8, marginTop: 5 },
+  itemRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 4 },
+  itemText: { fontSize: 13, flex: 2, textAlign: 'right' },
+  itemQty: { fontSize: 13, flex: 0.5, textAlign: 'center' },
+  itemPrice: { fontSize: 13, flex: 1, textAlign: 'left', fontWeight: '600' },
+  feeRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTopWidth: 1 },
+  feeLabel: { fontSize: 12, fontWeight: '600' },
+  feeValue: { fontSize: 13, fontWeight: '700' },
+  completionInfo: { padding: 8, borderRadius: 6, marginTop: 5 },
+  timeRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6 },
+  timeText: { fontSize: 12 },
+  actionRow: { flexDirection: 'row-reverse', gap: 10, marginTop: 12 },
+  actionButton: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  advanceButton: { flex: 1, height: 44, borderRadius: 22, flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  advanceButtonText: { color: 'white', fontSize: 14, fontWeight: '700' },
 });

@@ -16,6 +16,7 @@ const ACTIVE_STATUSES: DeliveryStatus[] = [
 
 const useCourierOrders = (courierId: string) => {
   const [activeDeliveries, setActiveDeliveries] = useState<CourierDelivery[]>([]);
+  const [completedDeliveries, setCompletedDeliveries] = useState<CourierDelivery[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Ensure courierId is a string and not an object from useCurrentUserId
@@ -33,9 +34,12 @@ const useCourierOrders = (courierId: string) => {
       const res = await getCourierDeliveries(safeCourierId);
       if (res.data) {
         const active = res.data.filter((d) => ACTIVE_STATUSES.includes(d.status));
+        const completed = res.data.filter((d) => ["delivered", "cancelled", "failed"].includes(d.status));
         setActiveDeliveries(active);
+        setCompletedDeliveries(completed);
       } else {
         setActiveDeliveries([]);
+        setCompletedDeliveries([]);
       }
     } catch (err) {
       setActiveDeliveries([]);
@@ -63,6 +67,7 @@ const useCourierOrders = (courierId: string) => {
 
   return {
     activeDeliveries,
+    completedDeliveries,
     loading,
     refreshDeliveries: fetchDeliveries,
   };

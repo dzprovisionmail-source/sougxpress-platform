@@ -334,6 +334,8 @@ export interface CourierFavoriteCard {
     store_name?: string | null;
     order_created_at?: string | null;
     contact_allowed?: boolean;
+    delivery_count?: number;
+    last_delivery_at?: string | null;
   };
 }
 
@@ -342,7 +344,7 @@ export interface CourierFavoritesHubData {
     stores: CourierFavoriteCard[];
     customers: CourierFavoriteCard[];
   };
-  interestedCustomers: {
+    interestedCustomers: {
     id: string;
     customer_id: string;
     created_at: string;
@@ -355,6 +357,8 @@ export interface CourierFavoritesHubData {
     store_name?: string | null;
     order_created_at?: string | null;
     contact_allowed?: boolean;
+    delivery_count?: number;
+    last_delivery_at?: string | null;
   }[];
   candidates: {
     stores: CourierFavoriteCard[];
@@ -523,6 +527,8 @@ export const getCourierFavoritesHub = async (
           store_name: customer.store_name ?? null,
           order_created_at: customer.order_created_at ?? null,
           contact_allowed: Boolean(customer.contact_allowed),
+          delivery_count: Number(customer.delivery_count || 0),
+          last_delivery_at: customer.last_delivery_at ?? null,
         },
       };
     });
@@ -541,6 +547,8 @@ export const getCourierFavoritesHub = async (
           store_name: customer.store_name ?? null,
           order_created_at: customer.order_created_at ?? null,
           contact_allowed: Boolean(customer.contact_allowed),
+          delivery_count: Number(customer.delivery_count || 0),
+          last_delivery_at: customer.last_delivery_at ?? null,
         })),
         candidates: {
           stores: storeCards,

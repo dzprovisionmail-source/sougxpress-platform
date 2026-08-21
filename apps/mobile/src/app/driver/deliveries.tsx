@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { View, FlatList, TouchableOpacity, Alert, Linking, ActivityIndicator, RefreshControl, Image } from "react-native";
-import { MapPin, ShoppingCart, Store, Navigation, X, Phone, MessageCircle } from "lucide-react-native";
+import { MapPin, ShoppingCart, Store, Navigation, X, Phone, MessageCircle, CheckCircle, Calendar } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
@@ -293,6 +293,31 @@ function DeliveryCard({
               </View>
             );
           })}
+        </View>
+      )}
+
+      {(status === "delivered" || status === "cancelled" || status === "failed") && (
+        <View style={{ 
+          marginTop: tokens.spacing.md, 
+          padding: tokens.spacing.sm, 
+          backgroundColor: status === "delivered" ? colors.success + "08" : colors.error + "08", 
+          borderRadius: tokens.radius.sm, 
+          borderStyle: 'dashed', 
+          borderWidth: 1, 
+          borderColor: status === "delivered" ? colors.success : colors.error 
+        }}>
+           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 4 }}>
+             {status === "delivered" ? <CheckCircle size={16} color={colors.success} /> : <X size={16} color={colors.error} />}
+             <WorkspaceText variant="caption" style={{ color: status === "delivered" ? colors.success : colors.error, fontWeight: '700' }}>
+               {status === "delivered" ? "توصيلة مكتملة بنجاح" : status === "cancelled" ? "توصيلة ملغاة" : "فشل التوصيل"}
+             </WorkspaceText>
+           </View>
+           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+             <Calendar size={14} color={colors.textSecondary} />
+             <WorkspaceText variant="caption" color="secondary">
+               {order.delivered_at ? `تم في: ${new Date(order.delivered_at).toLocaleString('ar-DZ')}` : `التاريخ: ${new Date(order.created_at).toLocaleDateString('ar-DZ')}`}
+             </WorkspaceText>
+           </View>
         </View>
       )}
 
