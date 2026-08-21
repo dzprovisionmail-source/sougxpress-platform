@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
     marginHorizontal: TOKENS.spacing.md,
     paddingHorizontal: TOKENS.spacing.md,
     paddingTop: TOKENS.spacing.xs,
-    paddingBottom: TOKENS.spacing.md,
+    paddingBottom: TOKENS.spacing.sm,
     borderRadius: TOKENS.radius.lg,
     borderWidth: 1,
     alignItems: 'center',
@@ -718,11 +718,11 @@ const styles = StyleSheet.create({
   },
   searchSection: {
     paddingHorizontal: TOKENS.spacing.md,
-    marginTop: TOKENS.spacing.lg,
+    marginTop: TOKENS.spacing.sm,
   },
   categoriesScroll: {
     paddingHorizontal: TOKENS.spacing.md,
-    paddingVertical: TOKENS.spacing.md,
+    paddingVertical: TOKENS.spacing.xs,
     gap: TOKENS.spacing.sm,
   },
   categoryChip: {
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     justifyContent: 'space-between',
     paddingHorizontal: TOKENS.spacing.md,
-    marginTop: TOKENS.spacing.sm,
+    marginTop: TOKENS.spacing.xs,
   },
   productsCount: {
     fontSize: TOKENS.typography.sizes.xs,
