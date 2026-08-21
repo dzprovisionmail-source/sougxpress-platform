@@ -476,7 +476,7 @@ export default function DriverDeliveriesScreen() {
   const [activeTab, setActiveTab] = useState<TabKey>("active");
 
   const activeDeliveries = orders.filter(o => 
-    ["accepted", "arrived_at_store", "picked_up", "out_for_delivery"].includes(o.assignment_status)
+    ["pending", "accepted", "arrived_at_store", "picked_up", "out_for_delivery"].includes(o.assignment_status)
   );
   
   const completedDeliveries = orders.filter(o => 
@@ -515,7 +515,17 @@ export default function DriverDeliveriesScreen() {
         )}
         contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refreshOrders} />}
-        ListEmptyComponent={<EmptyState message="لا توجد توصيلات في هذا القسم" />}
+        ListEmptyComponent={
+          <EmptyState 
+            message={
+              activeTab === "active" 
+                ? "لا توجد طلبات نشطة أو بانتظار قبولك" 
+                : activeTab === "available"
+                ? "لا توجد طلبات متاحة في منطقتك حالياً"
+                : "سجل التوصيلات المكتملة فارغ"
+            } 
+          />
+        }
       />
     );
   };
