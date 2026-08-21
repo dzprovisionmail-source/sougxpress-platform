@@ -86,6 +86,7 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
       try {
         await supabase.from("delivery_assignments").insert({
           order_id: newOrder.id,
+          driver_id: data.driver_id,
           status: "pending",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform, I18nManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { ShoppingBag, MessageSquareText, CheckCircle2 } from 'lucide-react-native';
 
 import { Typography, Button, Card, ListItem } from '@/components/ui';
@@ -29,6 +29,7 @@ const CheckoutScreen = () => {
   const colors = getThemeColors(DEFAULT_THEME);
   const isRTL = I18nManager.isRTL;
   
+  const { id: preferredDriverId } = useLocalSearchParams<{ id?: string }>();
   const {
     loading,
     error,
@@ -47,7 +48,7 @@ const CheckoutScreen = () => {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
 
   const onConfirm = async () => {
-    const result = await handleConfirmOrder();
+    const result = await handleConfirmOrder(preferredDriverId);
     if (result.success) {
       setCreatedOrderId(result.orderId || null);
       setOrderSuccess(true);

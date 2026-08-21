@@ -205,7 +205,8 @@ export default function CourierProfile() {
       
       const { data: conversationId, error } = await getOrCreateConversation(
         courier.id,
-        relationshipType
+        relationshipType,
+        null // Permanent chat for favorites
       );
       
       if (error) {

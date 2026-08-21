@@ -300,9 +300,9 @@ export const getOrCreateConversation = async (
 ): Promise<{ data: string | null; error: any }> => {
   try {
     const { data, error } = await supabase.rpc("get_or_create_chat_conversation", {
-      p_other_user: otherUserId,
-      p_relationship_type: relationshipType,
-      p_reference_id: referenceId,
+      p_target_id: otherUserId,
+      p_type: relationshipType,
+      p_order_id: referenceId,
     });
 
     if (error) throw error;
@@ -310,6 +310,21 @@ export const getOrCreateConversation = async (
   } catch (err) {
     console.error("Error getting/creating conversation:", err);
     return { data: null, error: err };
+  }
+};
+
+/**
+ * Checks if the current user can contact another user permanently (based on favorites).
+ */
+export const canContactPermanently = async (targetId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc("can_contact_permanently", {
+      p_target_id: targetId,
+    });
+    if (error) return false;
+    return !!data;
+  } catch {
+    return false;
   }
 };
 

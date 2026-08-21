@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Star, Heart } from "lucide-react-native";
+import { Star, Heart, MessageCircle, Phone, Bike } from "lucide-react-native";
+import { getOrCreateConversation, getCommercialPhone, logCallPress } from "@/services/chat.service";
 import {
   Typography,
   ProductCard,
@@ -119,6 +120,37 @@ export default function CustomerFavoritesScreen() {
     } catch (err) {
       console.error("Error removing favorite:", err);
     }
+  };
+
+  const handleStartChat = async (targetId: string) => {
+    try {
+      const { data: convId, error } = await getOrCreateConversation(targetId, "customer_courier", null);
+      if (error) throw error;
+      if (convId) router.push(`/chat/${convId}`);
+    } catch (err) {
+      console.error("Chat error:", err);
+      Alert.alert("تنبيه", "لا يمكن بدء محادثة في الوقت الحالي.");
+    }
+  };
+
+  const handleCall = async (driverId: string) => {
+    try {
+      // In permanent contact, we might not have an order_id yet
+      // For now, we use a placeholder or check if the server allows phone return without order_id for favorites
+      const { data: phone, error } = await getCommercialPhone("FAVORITE", "courier" as any);
+      if (error || !phone) {
+        Alert.alert("تنبيه", "رقم الهاتف متاح فقط للمفضلين أو أثناء الطلب.");
+        return;
+      }
+      Linking.openURL(`tel:${phone}`);
+    } catch (err) {
+      Alert.alert("خطأ", "فشل بدء الاتصال.");
+    }
+  };
+
+  const handleDirectOrder = (driverId: string) => {
+    // Redirect to home/cart to start an order with this driver pre-selected
+    router.push({ pathname: "/(tabs)/home", params: { direct_driver_id: driverId } });
   };
 
   if (loading && !refreshing) {
@@ -232,6 +264,27 @@ export default function CustomerFavoritesScreen() {
                       >
                         <Heart size={16} color={colors.error} fill={colors.error} />
                       </TouchableOpacity>
+
+                      <View style={styles.actionRow}>
+                        <TouchableOpacity 
+                          style={[styles.miniActionBtn, { backgroundColor: colors.primary + '10' }]}
+                          onPress={() => handleDirectOrder(driver.id)}
+                        >
+                          <Bike size={14} color={colors.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.miniActionBtn, { backgroundColor: colors.success + '10' }]}
+                          onPress={() => handleStartChat(driver.id)}
+                        >
+                          <MessageCircle size={14} color={colors.success} />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.miniActionBtn, { backgroundColor: colors.primary + '10' }]}
+                          onPress={() => handleCall(driver.id)}
+                        >
+                          <Phone size={14} color={colors.primary} />
+                        </TouchableOpacity>
+                      </View>
                     </TouchableOpacity>
                   </View>
                 );
@@ -304,5 +357,18 @@ const styles = StyleSheet.create({
     top: 8,
     right: 8,
     padding: 4,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+    justifyContent: 'center',
+  },
+  miniActionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

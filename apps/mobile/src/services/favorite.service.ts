@@ -366,6 +366,27 @@ export interface CourierFavoritesHubData {
   };
 }
 
+/**
+ * Sends a direct delivery offer from a customer to a favorite courier.
+ */
+export const sendDirectDeliveryOffer = async (
+  orderId: string,
+  driverId: string
+): Promise<{ success: boolean; error: any }> => {
+  try {
+    const { error } = await supabase.rpc('customer_send_direct_delivery_offer', {
+      p_order_id: orderId,
+      p_driver_id: driverId
+    });
+
+    if (error) throw error;
+    return { success: true, error: null };
+  } catch (err) {
+    console.error('Error sending direct delivery offer:', err);
+    return { success: false, error: err };
+  }
+};
+
 const courierError = (message: string) => ({
   data: null,
   error: message,
