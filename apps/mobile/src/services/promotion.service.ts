@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { StorePromotion } from "../types/schema-03-core";
+import { uploadToSupabase } from "../utils/upload.utils";
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
@@ -103,14 +104,12 @@ export const uploadPromotionImage = async (
   uri: string
 ): Promise<string | null> => {
   try {
-    const response = await fetch(uri);
-    const blob = await response.blob();
     const ext = uri.split(".").pop() ?? "jpg";
     const path = `promotions/${promotionId}.${ext}`;
-    const { error } = await supabase.storage
-      .from("store_images")
-      .upload(path, blob, { contentType: blob.type, upsert: true });
-    if (error) throw error;
+    const contentType = ext === "png" ? "image/png" : "image/jpeg";
+    
+    await uploadToSupabase(supabase, "store_images", path, uri, contentType);
+    
     const { data } = supabase.storage.from("store_images").getPublicUrl(path);
     return data.publicUrl;
   } catch (err) {

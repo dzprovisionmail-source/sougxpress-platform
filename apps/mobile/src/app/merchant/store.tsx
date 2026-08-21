@@ -289,7 +289,7 @@ export default function UnifiedMerchantStoreDashboard() {
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       quality: 1,
     });
     if (res.canceled || !res.assets[0]?.uri) return;

@@ -34,6 +34,7 @@ import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
 import { I18nManager } from "react-native";
+import { uploadToSupabase } from "@/utils/upload.utils";
 
 export default function CustomerProfileScreen() {
   const router = useRouter();
@@ -173,24 +174,21 @@ export default function CustomerProfileScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.85,
     });
-    if (result.canceled) return;
+    if (result.canceled || !result.assets?.[0]) return;
     setUploadingAvatar(true);
     const uri = result.assets[0].uri;
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
       const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
       const contentType = ext === "png" ? "image/png" : "image/jpeg";
-      const filePath = `customer_avatars/${profile.id}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, blob, { contentType, upsert: true });
-      if (uploadError) throw uploadError;
+      // Match the RLS policy: auth.uid()/profile-%
+      const filePath = `${profile.id}/profile-${Date.now()}.${ext}`;
+      
+      await uploadToSupabase(supabase, "avatars", filePath, uri, contentType);
 
       const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
       const publicUrl = data.publicUrl;

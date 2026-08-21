@@ -1,5 +1,6 @@
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "@/lib/supabase";
+import { uploadToSupabase } from "@/utils/upload.utils";
 
 /**
  * Founder User Management Service
@@ -435,17 +436,11 @@ export async function pickAndUploadAvatar(
 
     const asset = result.assets[0];
     const ext = asset.uri.split(".").pop()?.toLowerCase() ?? "jpg";
-    const path = `${entityId}/avatar.${ext}`;
+    // Match the RLS policy: auth.uid()/profile-%
+    const path = `${entityId}/profile-${Date.now()}.${ext}`;
     const contentType = `image/${ext === "jpg" ? "jpeg" : ext}`;
 
-    const response = await fetch(asset.uri);
-    const blob = await response.blob();
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, blob, { upsert: true, contentType });
-
-    if (uploadError) return { url: null, error: uploadError.message };
+    await uploadToSupabase(supabase, "avatars", path, asset.uri, contentType);
 
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
     return { url: urlData.publicUrl ?? null, error: null };

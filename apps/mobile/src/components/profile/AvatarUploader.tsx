@@ -4,6 +4,7 @@ import { View, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 're
 import * as ImagePicker from 'expo-image-picker';
 import { Camera } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
+import { uploadToSupabase } from '@/utils/upload.utils';
 import Avatar from '../ui/Avatar';
 import { colors } from '@/design/colors';
 import { radius } from '@/design/radius';
@@ -25,41 +26,38 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ avatarUrl, onUpload, si
       return;
     }
 
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 1,
+      quality: 0.85,
     });
 
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      uploadAvatar(uri);
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      await uploadAvatar(result.assets[0]);
     }
   };
 
-  const uploadAvatar = async (uri: string) => {
+  const uploadAvatar = async (asset: ImagePicker.ImagePickerAsset) => {
     setUploading(true);
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const fileExt = uri.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, blob, { contentType: blob.type });
-
-      if (uploadError) {
-        throw uploadError;
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!userData.user?.id) {
+        throw new Error('يجب تسجيل الدخول قبل رفع صورة الحساب');
       }
+
+      const mimeType = asset.mimeType?.toLowerCase();
+      const extension = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
+      const contentType = extension === 'jpg' ? 'image/jpeg' : `image/${extension}`;
+      const filePath = `${userData.user.id}/profile-${Date.now()}.${extension}`;
+
+      await uploadToSupabase(supabase, 'avatars', filePath, asset.uri, contentType);
 
       const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
       onUpload(publicUrlData.publicUrl);
-
     } catch (error: any) {
-      Alert.alert('خطأ في الرفع', error.message);
+      Alert.alert('خطأ في الرفع', error?.message || 'تعذر رفع صورة الحساب. تحقق من الاتصال وحاول مجدداً.');
     } finally {
       setUploading(false);
     }

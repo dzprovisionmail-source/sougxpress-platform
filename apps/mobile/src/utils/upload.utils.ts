@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 
 /**
  * Robustly converts a base64 string to a Uint8Array.
