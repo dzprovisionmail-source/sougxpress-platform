@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -31,13 +31,16 @@ import {
 import {
   getCourierFavoritesHub,
   getMerchantFavoriteCouriers,
+  getCustomerFavoritesDetailed,
   toggleCourierFavorite,
   toggleMerchantFavorite,
+  toggleFavorite,
   type CourierFavoriteCard,
   type CourierFavoriteTargetType,
   type MerchantFavoriteCourier,
   type CourierFavoritesHubData,
 } from "@/services/favorite.service";
+import { toggleFavoriteCourier } from "@/services/courierService";
 import {
   getOrCreateConversation,
   getCommercialPhone,
@@ -62,7 +65,11 @@ export default function FavoritesScreen() {
   const [activeTab, setActiveTab] = useState<string>("");
 
   // Role-specific data
-  const [customerFavorites, setCustomerFavorites] = useState<any[]>([]);
+  const [customerData, setCustomerData] = useState<{
+    products: any[];
+    stores: any[];
+    couriers: any[];
+  }>({ products: [], stores: [], couriers: [] });
   const [merchantData, setMerchantData] = useState<{
     favorites: any[];
     interested: any[];
@@ -98,11 +105,15 @@ export default function FavoritesScreen() {
         setMerchantData(prev => ({ ...prev, couriers: courierResult?.favorites || [] }));
       } else {
         // Customer Role
-        const { data: courierResult } = await getMerchantFavoriteCouriers(userId);
-        setMerchantData(prev => ({ ...prev, couriers: courierResult?.favorites || [] }));
-        
-        const { data: favs } = await supabase.from("customer_favorites").select("*").eq("customer_id", userId);
-        setCustomerFavorites(favs || []);
+        const { data: favsResult, error: favsError } = await getCustomerFavoritesDetailed(userId);
+        if (favsError) throw favsError;
+        if (favsResult) {
+          setCustomerData({
+            products: favsResult.products || [],
+            stores: favsResult.stores || [],
+            couriers: favsResult.couriers || []
+          });
+        }
       }
     } catch (err) {
       console.error("Error fetching favorites data:", err);
@@ -125,6 +136,21 @@ export default function FavoritesScreen() {
       else setActiveTab("products");
     }
   }, [role, activeTab]);
+
+  const handleToggleFavorite = async (type: 'product' | 'store' | 'driver', id: string) => {
+    if (busyId === id) return;
+    setBusyId(id);
+    try {
+      if (type === 'driver') {
+        await toggleFavoriteCourier(userId!, id);
+      } else {
+        await toggleFavorite(type, id);
+      }
+      await fetchData(true);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -360,7 +386,7 @@ export default function FavoritesScreen() {
               <WorkspaceText variant="caption" color="secondary">{courier.neighborhood || 'عين صفراء'}</WorkspaceText>
             </View>
           </View>
-          <TouchableOpacity onPress={() => toggleCourierFavorite('driver' as any, courier.id)}>
+          <TouchableOpacity onPress={() => handleToggleFavorite('driver', courier.id)}>
             <Heart size={20} color={colors.error} fill={colors.error} />
           </TouchableOpacity>
         </View>
@@ -400,27 +426,86 @@ export default function FavoritesScreen() {
   };
 
   if (role === "customer" || role === "merchant") {
+    const renderProduct = (product: any) => (
+      <SectionCard style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.userInfo}>
+            <View style={[styles.avatar, { backgroundColor: colors.bgSurface }]}>
+              {product.image_url ? <Image source={{ uri: product.image_url }} style={styles.avatarImage} /> : <ShoppingBag size={24} color={colors.textSecondary} />}
+            </View>
+            <View style={styles.nameContainer}>
+              <WorkspaceText variant="subtitle" style={styles.name}>{product.name || 'منتج'}</WorkspaceText>
+              <WorkspaceText variant="caption" color="secondary">{(product.price_minor / 100).toFixed(2)} دج</WorkspaceText>
+            </View>
+          </View>
+          <TouchableOpacity onPress={() => handleToggleFavorite('product', product.id)}>
+            <Heart size={20} color={colors.error} fill={colors.error} />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity 
+          style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
+          onPress={() => router.push(`/product-details?id=${product.id}`)}
+        >
+          <WorkspaceText variant="caption" color="primary">عرض المنتج</WorkspaceText>
+        </TouchableOpacity>
+      </SectionCard>
+    );
+
+    const renderStore = (store: any) => (
+      <SectionCard style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.userInfo}>
+            <View style={[styles.avatar, { backgroundColor: colors.bgSurface }]}>
+              {store.logo_url ? <Image source={{ uri: store.logo_url }} style={styles.avatarImage} /> : <Store size={24} color={colors.textSecondary} />}
+            </View>
+            <View style={styles.nameContainer}>
+              <WorkspaceText variant="subtitle" style={styles.name}>{store.name || 'متجر'}</WorkspaceText>
+              <WorkspaceText variant="caption" color="secondary">{store.city || 'عين صفراء'}</WorkspaceText>
+            </View>
+          </View>
+          <TouchableOpacity onPress={() => handleToggleFavorite('store', store.id)}>
+            <Heart size={20} color={colors.error} fill={colors.error} />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity 
+          style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
+          onPress={() => router.push(`/store-details?id=${store.id}`)}
+        >
+          <WorkspaceText variant="caption" color="primary">زيارة المتجر</WorkspaceText>
+        </TouchableOpacity>
+      </SectionCard>
+    );
+
+    const getListData = () => {
+      if (activeTab === 'couriers') return role === 'merchant' ? merchantData.couriers : customerData.couriers;
+      if (activeTab === 'products') return customerData.products;
+      if (activeTab === 'stores') return customerData.stores;
+      return [];
+    };
+
     return (
       <WorkspaceScreen title="المفضلة" showHeader>
         <View style={styles.tabBar}>
-          <TouchableOpacity style={[styles.tab, activeTab === 'couriers' && styles.activeTab]} onPress={() => setActiveTab('couriers')}>
-            <WorkspaceText style={[styles.tabText, activeTab === 'couriers' && { color: colors.primary, fontWeight: '700' }]}>الموصلون المفضلون</WorkspaceText>
+          <TouchableOpacity style={[styles.tab, activeTab === 'products' && styles.activeTab]} onPress={() => setActiveTab('products')}>
+            <WorkspaceText style={[styles.tabText, activeTab === 'products' && { color: colors.primary, fontWeight: '700' }]}>المنتجات</WorkspaceText>
           </TouchableOpacity>
-          {role === 'customer' && (
-            <TouchableOpacity style={[styles.tab, activeTab === 'products' && styles.activeTab]} onPress={() => setActiveTab('products')}>
-              <WorkspaceText style={[styles.tabText, activeTab === 'products' && { color: colors.primary, fontWeight: '700' }]}>المنتجات</WorkspaceText>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity style={[styles.tab, activeTab === 'stores' && styles.activeTab]} onPress={() => setActiveTab('stores')}>
+            <WorkspaceText style={[styles.tabText, activeTab === 'stores' && { color: colors.primary, fontWeight: '700' }]}>المتاجر</WorkspaceText>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, activeTab === 'couriers' && styles.activeTab]} onPress={() => setActiveTab('couriers')}>
+            <WorkspaceText style={[styles.tabText, activeTab === 'couriers' && { color: colors.primary, fontWeight: '700' }]}>الموصلون</WorkspaceText>
+          </TouchableOpacity>
         </View>
 
         <FlatList
-          data={activeTab === 'couriers' ? merchantData.couriers : customerFavorites}
-          keyExtractor={(item: any) => item.id || item.courier_id}
-          renderItem={({ item }) => activeTab === 'couriers' ? renderFavoriteCourier(item) : (
-            <SectionCard style={styles.card}>
-              <WorkspaceText>منتج مفضل: {item.product_id}</WorkspaceText>
-            </SectionCard>
-          )}
+          data={getListData()}
+          keyExtractor={(item: any) => item.id || item.courier_id || item.target_id}
+          renderItem={({ item }) => {
+            if (activeTab === 'couriers') return renderFavoriteCourier(item.driver ? item : { driver: item });
+            if (activeTab === 'products') return renderProduct(item);
+            if (activeTab === 'stores') return renderStore(item);
+            return null;
+          }}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
           ListEmptyComponent={<EmptyState title="لا توجد نتائج" description="سيظهر هنا الموصلون والمنتجات المفضلة لديك." />}

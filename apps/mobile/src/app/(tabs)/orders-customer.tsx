@@ -144,18 +144,21 @@ export default function CustomerOrdersScreen() {
 
   useEffect(() => {
     fetchOrders();
-    const channel = supabase.channel("customer_orders_all");
-
-    channel
+    const channel = supabase
+      .channel("customer_orders_all")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
-        () => fetchOrders()
+        () => {
+          fetchOrders();
+        }
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "delivery_assignments" },
-        () => fetchOrders()
+        () => {
+          fetchOrders();
+        }
       )
       .subscribe();
 

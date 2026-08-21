@@ -667,3 +667,71 @@ export const getMerchantFavoriteCouriers = async (
     return { data: null, error: err };
   }
 };
+
+/**
+ * Fetches detailed favorites for a customer including products, stores, and couriers.
+ */
+export const getCustomerFavoritesDetailed = async (customerId: string) => {
+  try {
+    // 1. Fetch IDs first to avoid relationship name issues
+    const { data: favs, error: favError } = await supabase
+      .from('customer_favorites')
+      .select('id, target_type, target_id, product_id')
+      .eq('customer_id', customerId);
+
+    if (favError) throw favError;
+
+    const { data: courierFavs, error: courierFavError } = await supabase
+      .from('favorite_couriers')
+      .select('id, courier_id')
+      .eq('user_id', customerId);
+
+    if (courierFavError) throw courierFavError;
+
+    // 2. Separate IDs by type
+    const productIds = (favs || [])
+      .filter(f => f.target_type === 'product' || f.product_id)
+      .map(f => f.product_id || f.target_id);
+    
+    const storeIds = (favs || [])
+      .filter(f => f.target_type === 'store')
+      .map(f => f.target_id);
+    
+    const courierIds = (courierFavs || []).map(f => f.courier_id);
+
+    // 3. Fetch detailed objects in parallel
+    const [productsRes, storesRes, couriersRes] = await Promise.all([
+      productIds.length > 0 
+        ? supabase.from('products').select('*').in('id', productIds)
+        : Promise.resolve({ data: [], error: null }),
+      storeIds.length > 0
+        ? supabase.from('stores').select('*').in('id', storeIds)
+        : Promise.resolve({ data: [], error: null }),
+      courierIds.length > 0
+        ? supabase.from('drivers').select('*').in('id', courierIds)
+        : Promise.resolve({ data: [], error: null })
+    ]);
+
+    // 4. Map back to original favorite records
+    return {
+      data: {
+        products: (productsRes.data || []).map(p => {
+          const fav = favs.find(f => (f.product_id === p.id || (f.target_type === 'product' && f.target_id === p.id)));
+          return { ...p, favorite_id: fav?.id };
+        }),
+        stores: (storesRes.data || []).map(s => {
+          const fav = favs.find(f => f.target_type === 'store' && f.target_id === s.id);
+          return { ...s, favorite_id: fav?.id };
+        }),
+        couriers: (couriersRes.data || []).map(d => {
+          const fav = courierFavs.find(f => f.courier_id === d.id);
+          return { driver: d, favorite_id: fav?.id };
+        })
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('Error fetching customer favorites detailed:', error);
+    return { data: null, error };
+  }
+};
