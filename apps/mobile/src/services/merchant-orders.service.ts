@@ -16,8 +16,8 @@ export const getMerchantOrders = async (merchantId: string): Promise<Order[]> =>
     .from("orders")
     .select(`
       *,
-      customer:customers(id, full_name),
-      address:customer_addresses(address_text),
+      customer:customers(id, full_name, first_name, last_name),
+      address:customer_addresses(address_text, address_line1, address_line2, city, state_province, postal_code, country),
       items:order_items(
         id,
         quantity,
@@ -29,7 +29,7 @@ export const getMerchantOrders = async (merchantId: string): Promise<Order[]> =>
         id,
         status,
         driver_id,
-        driver:drivers(id, first_name, last_name, vehicle_type, rating)
+        driver:drivers(id, full_name, first_name, last_name, vehicle_type, rating, delivered_count)
       )
     `)
     .in("store_id", storeIds)
@@ -132,7 +132,12 @@ export const getAvailableDriversForOrder = async (orderId: string): Promise<any[
     console.error("Error fetching available drivers:", error);
     return [];
   }
-  return data || [];
+  return (data || []).map((driver: any) => ({
+    ...driver,
+    // The RPC contract exposes the primary key as `id`; the UI uses the
+    // explicit `driver_id` name to avoid confusing it with the order id.
+    driver_id: driver.driver_id || driver.id,
+  }));
 };
 
 export const assignDriverToOrder = async (orderId: string, driverId: string): Promise<boolean> => {

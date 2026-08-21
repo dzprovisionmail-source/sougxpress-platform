@@ -197,6 +197,60 @@ export const sendMessage = async (conversationId: string, content: string): Prom
  * Retrieves the commercial contact phone number for a specific order and target role.
  * Uses the secure get_commercial_contact_phone RPC.
  */
+export type CommercialOrderItem = {
+  id: string;
+  product_id: string;
+  name: string;
+  image_url?: string | null;
+  quantity: number;
+  unit_price_minor: number;
+  line_total_minor: number;
+};
+
+export type CommercialOrderDetails = {
+  order_id: string;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  store_id?: string | null;
+  store_name?: string | null;
+  merchant_id?: string | null;
+  driver_id?: string | null;
+  driver_name?: string | null;
+  order_status?: string | null;
+  delivery_status?: string | null;
+  total_minor?: number | null;
+  delivery_fee_minor?: number | null;
+  special_instructions?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  address?: {
+    address_text?: string | null;
+    address_line1?: string | null;
+    address_line2?: string | null;
+    city?: string | null;
+    state_province?: string | null;
+    postal_code?: string | null;
+    country?: string | null;
+  } | null;
+  items?: CommercialOrderItem[];
+};
+
+export const getCommercialOrderDetails = async (
+  orderId: string
+): Promise<{ data: CommercialOrderDetails | null; error: any }> => {
+  try {
+    const { data, error } = await supabase.rpc('get_commercial_order_details', {
+      p_order_id: orderId,
+    });
+
+    if (error) throw error;
+    return { data: (data as CommercialOrderDetails | null) || null, error: null };
+  } catch (err) {
+    console.error("Error fetching commercial order details:", err);
+    return { data: null, error: err };
+  }
+};
+
 export const getCommercialPhone = async (
   orderId: string,
   targetRole: 'customer' | 'merchant' | 'courier'

@@ -33,7 +33,7 @@ interface CourierSelectionModalProps {
   visible: boolean;
   onClose: () => void;
   orderId: string;
-  onAssigned: () => void;
+  onAssigned: (driverId: string) => void;
 }
 
 export const CourierSelectionModal: React.FC<CourierSelectionModalProps> = ({
@@ -74,7 +74,7 @@ export const CourierSelectionModal: React.FC<CourierSelectionModalProps> = ({
     try {
       const success = await assignDriverToOrder(orderId, driverId);
       if (success) {
-        onAssigned();
+        onAssigned(driverId);
         onClose();
       }
     } catch (error) {
@@ -101,7 +101,7 @@ export const CourierSelectionModal: React.FC<CourierSelectionModalProps> = ({
       >
         <View style={styles.driverInfo}>
           <View style={styles.avatarContainer}>
-            <User size={24} color={colors.textSecondary} />
+            <User size={24} color="#4B5563" />
           </View>
           <View style={styles.details}>
             <Text style={styles.driverName} numberOfLines={1}>
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   },
   driverName: {
     ...typography.subtitle,
-    color: colors.text,
+    color: colors.black,
     fontWeight: '700',
     maxWidth: '100%',
     textAlign: I18nManager.isRTL ? 'right' : 'left',
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   },
   statText: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: '#4B5563',
   },
   actionIcon: {
     minWidth: 32,

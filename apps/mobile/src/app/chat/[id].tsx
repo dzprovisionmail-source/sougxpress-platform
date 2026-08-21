@@ -41,6 +41,7 @@ import {
   subscribeToMessages,
   markAsRead,
   getOrderContext,
+  getCommercialOrderDetails,
   getConversationById,
   getCommercialPhone,
   logCallPress,
@@ -138,7 +139,7 @@ export default function ChatScreen() {
     const { data } = await supabase
       .from("drivers")
       .select("availability")
-      .or(`id.eq.${participant.id},user_id.eq.${participant.id}`)
+      .eq("id", participant.id)
       .maybeSingle();
 
     setOtherAvailability(data?.availability || null);
@@ -170,7 +171,11 @@ export default function ChatScreen() {
         await fetchCourierAvailability(conv.other_participant);
         if (conv.reference_id) {
           const { data: order } = await getOrderContext(conv.reference_id);
-          setOrderContext((order as ChatOrderContext | null) || null);
+          const { data: details } = await getCommercialOrderDetails(conv.reference_id);
+          setOrderContext({
+            ...((order as ChatOrderContext | null) || {}),
+            ...(details || {}),
+          } as ChatOrderContext);
         } else {
           setOrderContext(null);
         }

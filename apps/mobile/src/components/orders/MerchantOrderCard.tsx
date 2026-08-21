@@ -86,6 +86,24 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
     }
   };
 
+  const handleAssignedCourier = async (driverId: string) => {
+    onUpdateStatus(order.id, order.status);
+    try {
+      const { data: conversationId, error } = await getOrCreateConversation(
+        driverId,
+        "merchant_courier",
+        order.id
+      );
+      if (error) throw error;
+      if (conversationId) {
+        router.push(`/chat/${conversationId}`);
+      }
+    } catch (err) {
+      console.error("Error opening courier order chat:", err);
+      Alert.alert("تم الإسناد", "تم اختيار الموصل. يمكنك فتح المحادثة من الطلب لاحقاً.");
+    }
+  };
+
   const handleCall = async (targetRole: 'customer' | 'courier', receiverId: string) => {
     if (!order.id || !receiverId || calling) return;
     
@@ -138,9 +156,27 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
     }
   })();
 
-  const subtotalMinor = order.subtotal_minor ?? order.items?.reduce((acc: number, item: any) => acc + (item.line_total_minor || (item.quantity * item.price_at_order_minor)), 0) ?? order.total_minor;
-  const deliveryFeeMinor = order.delivery_fee_minor ?? 20000; // Standard 200 DZD fee
-  const totalMinor = order.total_minor ?? (subtotalMinor + deliveryFeeMinor);
+  const subtotalMinor = Number(order.subtotal_minor ?? order.items?.reduce(
+    (acc: number, item: any) => acc + Number(item.line_total_minor || (item.quantity * item.price_at_order_minor) || 0),
+    0,
+  ) ?? order.total_minor ?? 0);
+  const deliveryFeeMinor = Number(order.delivery_fee_minor || 0) > 0
+    ? Number(order.delivery_fee_minor)
+    : 20000; // Standard 200 DZD fee
+  const totalMinor = Number(order.total_minor || 0) >= subtotalMinor + deliveryFeeMinor
+    ? Number(order.total_minor)
+    : subtotalMinor + deliveryFeeMinor;
+  const customerName = order.customer?.full_name?.trim()
+    || [order.customer?.first_name, order.customer?.last_name].filter(Boolean).join(' ').trim()
+    || 'زبون غير مسجل';
+  const courierName = courier?.full_name?.trim()
+    || [courier?.first_name, courier?.last_name].filter(Boolean).join(' ').trim()
+    || 'الموصل';
+  const addressText = order.address?.address_text?.trim()
+    || [order.address?.address_line1, order.address?.address_line2, order.address?.city]
+      .filter(Boolean)
+      .join('، ')
+    || 'العنوان غير متوفر';
 
   return (
     <Card style={styles.card}>
@@ -162,7 +198,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
       <View style={[styles.infoRow, { justifyContent: 'space-between' }]}>
         <View style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1 }}>
           <User size={iconSizes.small} color={colors.textSecondary} />
-          <Text style={styles.infoText}>الزبون: {order.customer?.full_name || 'زبون غير مسجل'}</Text>
+          <Text style={styles.infoText}>الزبون: {customerName}</Text>
         </View>
         {order.customer?.id && (
           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
@@ -192,7 +228,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
         <View style={[styles.infoRow, { justifyContent: 'space-between', marginTop: spacing.xs }]}>
           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', flex: 1 }}>
             <Clock size={iconSizes.small} color={colors.textSecondary} />
-            <Text style={styles.infoText}>الموصل: {courier.full_name || `${courier.first_name} ${courier.last_name}`}</Text>
+            <Text style={styles.infoText}>الموصل: {courierName}</Text>
           </View>
           <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
             <TouchableOpacity 
@@ -214,7 +250,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
       )}
       <View style={styles.infoRow}>
         <MapPin size={iconSizes.small} color={colors.textSecondary} />
-        <Text style={styles.infoText}>العنوان: {order.address?.address_text || 'العنوان الافتراضي'}</Text>
+        <Text style={styles.infoText}>العنوان: {addressText}</Text>
       </View>
 
       <View style={styles.divider} />
@@ -363,7 +399,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
         visible={showCourierModal}
         onClose={() => setShowCourierModal(false)}
         orderId={order.id}
-        onAssigned={() => onUpdateStatus(order.id, order.status)}
+        onAssigned={handleAssignedCourier}
       />
     </Card>
   );
