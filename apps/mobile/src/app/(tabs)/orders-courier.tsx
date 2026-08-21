@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   I18nManager,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -17,6 +18,7 @@ import {
   Header,
   Button,
   EmptyState,
+  Price,
 } from "@/components/ui";
 import {
   Clock,
@@ -24,29 +26,32 @@ import {
   Store,
   User,
   MessageCircle,
+  Phone,
+  ShoppingBag,
+  ChevronLeft,
 } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { supabase } from "@/lib/supabase";
-import { getOrCreateConversation } from "@/services/chat.service";
+import { getOrCreateConversation, getCommercialPhone, logCallPress } from "@/services/chat.service";
 import useCourierOrders from "@/hooks/useCourierOrders";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 
 export default function CourierOrdersTabScreen() {
   const router = useRouter();
   const { colors, tokens } = useAppTheme();
-  const { userId } = useCurrentUserId();
+  const userId = useCurrentUserId();
   const isRTL = I18nManager.isRTL;
 
   const { activeDeliveries, loading, refreshDeliveries } = useCourierOrders(userId || "");
+  const [calling, setCalling] = useState<string | null>(null);
 
-  const handleStartChat = async (targetUserId: string, type: "customer_courier" | "merchant_courier", orderId?: string) => {
-    if (!targetUserId) return;
+  const handleStartChat = async (targetUserId: string, type: "customer_courier" | "merchant_courier", orderId: string) => {
+    if (!targetUserId || !orderId) return;
     try {
       const { data: conversationId, error } = await getOrCreateConversation(
         targetUserId,
         type,
-        orderId || null
+        orderId
       );
       if (error) throw error;
       if (conversationId) {
@@ -54,50 +59,63 @@ export default function CourierOrdersTabScreen() {
       }
     } catch (err) {
       console.error("Error starting chat:", err);
-      Alert.alert("خطأ", "فشل بدء المحادثة. يرجى المحاولة لاحقاً.");
+      Alert.alert("خطأ", "فشل بدء المحادثة.");
+    }
+  };
+
+  const handleCall = async (orderId: string, receiverId: string, targetRole: 'customer' | 'merchant') => {
+    if (!orderId || !receiverId || calling) return;
+    
+    setCalling(receiverId);
+    try {
+      const { data: phone, error } = await getCommercialPhone(orderId, targetRole);
+      
+      if (error || !phone) {
+        Alert.alert("تنبيه", "رقم الهاتف متاح فقط للطلبات النشطة.");
+        return;
+      }
+
+      const rel = targetRole === 'customer' ? 'customer_courier' : 'merchant_courier';
+      await logCallPress(orderId, receiverId, rel);
+      Linking.openURL(`tel:${phone}`);
+    } catch (err) {
+      Alert.alert("خطأ", "فشل بدء الاتصال.");
+    } finally {
+      setCalling(null);
     }
   };
 
   const getStatusBadgeVariant = (status: string): "warning" | "info" | "success" | "error" | "default" => {
     switch (status) {
-      case "pending":
-        return "warning";
+      case "pending": return "warning";
       case "accepted":
       case "arrived_at_store":
       case "picked_up":
-      case "out_for_delivery":
-        return "info";
-      case "delivered":
-        return "success";
-      case "cancelled":
-        return "error";
-      default:
-        return "default";
+      case "out_for_delivery": return "info";
+      case "delivered": return "success";
+      case "cancelled": return "error";
+      default: return "default";
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "pending":
-        return "قيد الانتظار";
-      case "accepted":
-        return "مقبول";
-      case "arrived_at_store":
-        return "وصلت للمتجر";
-      case "picked_up":
-        return "تم الاستلام";
-      case "out_for_delivery":
-        return "في الطريق";
-      case "delivered":
-        return "تم التوصيل";
-      case "cancelled":
-        return "ملغى";
-      default:
-        return status;
+      case "pending": return "بانتظار قبولك";
+      case "accepted": return "مقبول";
+      case "arrived_at_store": return "في المتجر";
+      case "picked_up": return "تم الاستلام";
+      case "out_for_delivery": return "قيد التوصيل";
+      case "delivered": return "تم التوصيل";
+      case "cancelled": return "ملغى";
+      default: return status;
     }
   };
 
   const renderDeliveryItem = ({ item }: { item: any }) => {
+    const deliveryFee = Number(item.delivery_fee_minor || 20000);
+    const total = Number(item.total_minor || 0);
+    const items = Array.isArray(item.items) ? item.items : [];
+
     return (
       <Card key={item.id} style={styles.deliveryCard}>
         <View style={[styles.headerRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
@@ -113,6 +131,7 @@ export default function CourierOrdersTabScreen() {
           />
         </View>
 
+        {/* Store Section */}
         <View style={[styles.infoSection, { borderLeftColor: colors.primary }]}>
           <View style={[styles.infoRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <Store size={16} color={colors.textSecondary} />
@@ -120,10 +139,19 @@ export default function CourierOrdersTabScreen() {
           </View>
           <View style={[styles.infoRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <MapPin size={16} color={colors.textSecondary} />
-            <Typography variant="caption" color="secondary">{item.store_address}</Typography>
+            <Typography variant="caption" color="secondary">{item.store_address || "عين صفراء"}</Typography>
+          </View>
+          <View style={styles.contactRow}>
+            <TouchableOpacity onPress={() => handleStartChat(item.merchant_id, "merchant_courier", item.order_id)}>
+              <MessageCircle size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleCall(item.order_id, item.merchant_id, 'merchant')}>
+              <Phone size={20} color={colors.success} />
+            </TouchableOpacity>
           </View>
         </View>
 
+        {/* Customer Section */}
         <View style={[styles.infoSection, { borderLeftColor: colors.success }]}>
           <View style={[styles.infoRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <User size={16} color={colors.textSecondary} />
@@ -133,30 +161,52 @@ export default function CourierOrdersTabScreen() {
             <MapPin size={16} color={colors.textSecondary} />
             <Typography variant="caption" color="secondary">{item.address_text}</Typography>
           </View>
+          <View style={styles.contactRow}>
+            <TouchableOpacity onPress={() => handleStartChat(item.customer_id, "customer_courier", item.order_id)}>
+              <MessageCircle size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleCall(item.order_id, item.customer_id, 'customer')}>
+              <Phone size={20} color={colors.success} />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Items Section */}
+        {items.length > 0 && (
+          <View style={styles.itemsSection}>
+            <View style={[styles.infoRow, { flexDirection: isRTL ? "row-reverse" : "row", marginBottom: 8 }]}>
+              <ShoppingBag size={16} color={colors.textSecondary} />
+              <Typography variant="caption" style={{ fontWeight: '700' }}>محتويات الطلب ({items.length})</Typography>
+            </View>
+            {items.map((sub: any) => (
+              <View key={sub.id} style={[styles.itemRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <Typography variant="caption" style={{ flex: 1 }}>{sub.product?.name || 'سلعة'} × {sub.quantity}</Typography>
+                <Price amount={sub.line_total_minor || 0} size="xs" color="secondary" />
+              </View>
+            ))}
+          </View>
+        )}
 
         <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
 
-        <View style={[styles.actionsRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-          <View style={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 8 }}>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<MessageCircle size={16} color={colors.primary} />}
-              onPress={() => handleStartChat(item.merchant_id, "merchant_courier", item.order_id)}
-              title="شات المتجر"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<MessageCircle size={16} color={colors.primary} />}
-              onPress={() => handleStartChat(item.customer_id, "customer_courier", item.order_id)}
-              title="شات الزبون"
-            />
+        {/* Pricing Section */}
+        <View style={[styles.pricingRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+          <View>
+            <Typography variant="caption" color="secondary">رسوم التوصيل</Typography>
+            <Price amount={deliveryFee} size="sm" color="primary" />
           </View>
-          
-
+          <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}>
+            <Typography variant="caption" color="secondary">الإجمالي</Typography>
+            <Price amount={total} size="md" color="text" />
+          </View>
         </View>
+
+        <Button
+          style={{ marginTop: 12 }}
+          variant="primary"
+          title="عرض التفاصيل الكاملة"
+          onPress={() => router.push(`/driver/deliveries?orderId=${item.order_id}`)}
+        />
       </Card>
     );
   };
@@ -171,7 +221,7 @@ export default function CourierOrdersTabScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <Header title="التوصيلات الحالية" leftContent={null} />
+      <Header title="توصيلاتي التجارية" leftContent={null} />
 
       <FlatList
         data={activeDeliveries}
@@ -184,8 +234,8 @@ export default function CourierOrdersTabScreen() {
         ListEmptyComponent={
           <EmptyState
             type="no-orders"
-            title="لا توجد توصيلات نشطة حالياً"
-            description="ستظهر التوصيلات المرتبطة بحسابك هنا دون كشف بيانات اتصال حساسة."
+            title="لا توجد توصيلات نشطة"
+            description="الطلبات المسندة إليك ستظهر هنا مع كامل التفاصيل التجارية."
             onAction={refreshDeliveries}
             actionTitle="تحديث"
           />
@@ -219,30 +269,41 @@ const styles = StyleSheet.create({
   },
   orderIdCol: {
     flex: 1,
+    alignItems: I18nManager.isRTL ? 'flex-end' : 'flex-start',
   },
   infoSection: {
     borderLeftWidth: 3,
     paddingLeft: TOKENS.spacing.sm,
     marginBottom: TOKENS.spacing.md,
+    position: 'relative',
   },
   infoRow: {
     alignItems: "center",
     gap: 8,
     marginBottom: 4,
   },
+  contactRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 4,
+    justifyContent: 'flex-end',
+  },
+  itemsSection: {
+    backgroundColor: '#F8FAFC',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  itemRow: {
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
   divider: {
     height: 1,
     marginVertical: TOKENS.spacing.md,
   },
-  actionsRow: {
+  pricingRow: {
     justifyContent: "space-between",
-    alignItems: "center",
-  },
-  callBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
     alignItems: "center",
   },
 });

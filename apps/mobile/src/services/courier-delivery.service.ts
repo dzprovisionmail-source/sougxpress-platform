@@ -29,19 +29,27 @@ export interface CourierDelivery {
   status: DeliveryStatus;
   customer_id: string;
   store_id: string;
+  merchant_id: string; // Added for chat context
   delivery_address_id: string;
   delivery_fee_minor: number;
   subtotal_minor: number;
   total_minor: number;
   special_instructions: string | null;
   store_name: string;
+  store_address: string; // Added for UI consistency
   customer_name: string;
-  customer_phone: string;
   address_text: string;
   created_at: string;
   assigned_at: string | null;
   picked_up_at: string | null;
   delivered_at: string | null;
+  items?: Array<{
+    id: string;
+    quantity: number;
+    price_at_order_minor: number;
+    line_total_minor?: number | null;
+    product?: { id: string; name?: string | null; image_url?: string | null } | null;
+  }>;
 }
 
 export interface DeliveryStats {
@@ -68,9 +76,16 @@ export const getCourierDeliveries = async (
         *,
         order:orders (
           *,
-          customer:customers (full_name, phone),
-          store:stores (name),
-          address:customer_addresses (address_text)
+          customer:customers (full_name),
+          store:stores (name, merchant_id, address_line1, city),
+          address:customer_addresses (address_text),
+          items:order_items (
+            id,
+            quantity,
+            price_at_order_minor,
+            line_total_minor,
+            product:products (id, name, image_url)
+          )
         )
       `)
       .eq("driver_id", courierId)
@@ -84,27 +99,34 @@ export const getCourierDeliveries = async (
 
     if (error) throw error;
 
-    const deliveries: CourierDelivery[] = (data as any[] ?? []).map((assignment: any) => ({
-      id: assignment.id,
-      order_id: assignment.order_id,
-      driver_id: courierId,
-      status: assignment.status as DeliveryStatus,
-      customer_id: assignment.order?.customer_id,
-      store_id: assignment.order?.store_id,
-      delivery_address_id: assignment.order?.delivery_address_id,
-      delivery_fee_minor: assignment.order?.delivery_fee_minor ?? 0,
-      subtotal_minor: assignment.order?.subtotal_minor ?? 0,
-      total_minor: assignment.order?.total_minor ?? 0,
-      special_instructions: assignment.order?.special_instructions ?? null,
-      store_name: assignment.order?.store?.name ?? "Unknown Store",
-      customer_name: assignment.order?.customer?.full_name ?? "Unknown Customer",
-      customer_phone: assignment.order?.customer?.phone ?? "",
-      address_text: assignment.order?.address?.address_text ?? "",
-      created_at: assignment.created_at,
-      assigned_at: assignment.assigned_at,
-      picked_up_at: assignment.picked_up_at,
-      delivered_at: assignment.delivered_at,
-    }));
+    const deliveries: CourierDelivery[] = (data as any[] ?? []).map((assignment: any) => {
+      const order = assignment.order;
+      const store = order?.store;
+      
+      return {
+        id: assignment.id,
+        order_id: assignment.order_id,
+        driver_id: courierId,
+        status: assignment.status as DeliveryStatus,
+        customer_id: order?.customer_id,
+        store_id: order?.store_id,
+        merchant_id: store?.merchant_id || "",
+        delivery_address_id: order?.delivery_address_id,
+        delivery_fee_minor: order?.delivery_fee_minor ?? 20000, // Fallback to 200 DZD
+        subtotal_minor: order?.subtotal_minor ?? 0,
+        total_minor: order?.total_minor ?? 0,
+        special_instructions: order?.special_instructions ?? null,
+        store_name: store?.name ?? "متجر Soug-XPRESS",
+        store_address: store?.address_line1 || store?.city || "عين صفراء",
+        customer_name: order?.customer?.full_name ?? "زبون",
+        address_text: order?.address?.address_text ?? "العنوان غير متوفر",
+        created_at: assignment.created_at,
+        assigned_at: assignment.assigned_at,
+        picked_up_at: assignment.picked_up_at,
+        delivered_at: assignment.delivered_at,
+        items: order?.items || [],
+      };
+    });
 
     return { data: deliveries, error: null };
   } catch (err: any) {
@@ -132,7 +154,7 @@ export const acceptDelivery = async (
 
     return { data: data as any as CourierDelivery, error: null };
   } catch (err: any) {
-    return { data: null, error: err?.message ?? "فشل قبول التوصil" };
+    return { data: null, error: err?.message ?? "فشل قبول التوصيل" };
   }
 };
 

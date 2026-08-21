@@ -328,6 +328,12 @@ export interface CourierFavoriteCard {
     avatar_url: string | null;
     neighborhood: string | null;
     address: string | null;
+    last_order_id?: string | null;
+    last_order_status?: string | null;
+    last_assignment_status?: string | null;
+    store_name?: string | null;
+    order_created_at?: string | null;
+    contact_allowed?: boolean;
   };
 }
 
@@ -343,6 +349,12 @@ export interface CourierFavoritesHubData {
     full_name: string | null;
     avatar_url: string | null;
     neighborhood: string | null;
+    last_order_id?: string | null;
+    last_order_status?: string | null;
+    last_assignment_status?: string | null;
+    store_name?: string | null;
+    order_created_at?: string | null;
+    contact_allowed?: boolean;
   }[];
   candidates: {
     stores: CourierFavoriteCard[];
@@ -503,7 +515,15 @@ export const getCourierFavoritesHub = async (
         target_type: 'customer',
         created_at: favorite?.created_at || null,
         isFavorite: !!favorite,
-        customer,
+        customer: {
+          ...customer,
+          last_order_id: customer.last_order_id ?? null,
+          last_order_status: customer.last_order_status ?? null,
+          last_assignment_status: customer.last_assignment_status ?? null,
+          store_name: customer.store_name ?? null,
+          order_created_at: customer.order_created_at ?? null,
+          contact_allowed: Boolean(customer.contact_allowed),
+        },
       };
     });
 
@@ -513,7 +533,15 @@ export const getCourierFavoritesHub = async (
           stores: storeCards.filter(card => card.isFavorite),
           customers: customerCards.filter(card => card.isFavorite),
         },
-        interestedCustomers: interestedResult.data || [],
+        interestedCustomers: (interestedResult.data || []).map((customer: any) => ({
+          ...customer,
+          last_order_id: customer.last_order_id ?? null,
+          last_order_status: customer.last_order_status ?? null,
+          last_assignment_status: customer.last_assignment_status ?? null,
+          store_name: customer.store_name ?? null,
+          order_created_at: customer.order_created_at ?? null,
+          contact_allowed: Boolean(customer.contact_allowed),
+        })),
         candidates: {
           stores: storeCards,
           customers: customerCards,

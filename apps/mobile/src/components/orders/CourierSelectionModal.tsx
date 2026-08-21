@@ -90,6 +90,7 @@ export const CourierSelectionModal: React.FC<CourierSelectionModalProps> = ({
       [item.first_name, item.last_name].filter(Boolean).join(' ').trim() ||
       'موصل';
     const isAssigning = assigning === item.driver_id;
+    const rating = Number(item.rating);
 
     return (
       <TouchableOpacity
@@ -111,7 +112,7 @@ export const CourierSelectionModal: React.FC<CourierSelectionModalProps> = ({
               <View style={styles.statItem}>
                 <Star size={12} color={colors.warning} fill={colors.warning} />
                 <Text style={styles.statText}>
-                  {typeof item.rating === 'number' ? item.rating.toFixed(1) : '0.0'}
+                  {Number.isFinite(rating) ? rating.toFixed(1) : '0.0'}
                 </Text>
               </View>
               <View style={styles.statItem}>
