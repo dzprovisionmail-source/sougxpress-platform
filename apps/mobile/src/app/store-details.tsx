@@ -58,6 +58,8 @@ export default function StoreDetailsScreen() {
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingGallery, setLoadingGallery] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const [currentUserRole, setCurrentUserRole] = useState<string | undefined>(undefined);
@@ -170,7 +172,10 @@ export default function StoreDetailsScreen() {
   const fetchStoreData = async () => {
     try {
       setLoading(true);
-      // Fetch store
+      setLoadingGallery(true);
+      setLoadingProducts(true);
+      
+      // Fetch store basic info
       const { data: storeData, error: storeErr } = await supabase
         .from("stores")
         .select("*")
@@ -179,15 +184,7 @@ export default function StoreDetailsScreen() {
 
       if (storeErr) throw storeErr;
       setStore(storeData);
-
-      // Fetch products
-      const { data: prodsData, error: prodsErr } = await supabase
-        .from("products")
-        .select("*")
-        .eq("store_id", id);
-
-       if (prodsErr) throw prodsErr;
-      setProducts(prodsData || []);
+      setLoading(false);
 
       // Fetch gallery (active images only)
       const { data: galleryData, error: galleryErr } = await supabase
@@ -198,6 +195,17 @@ export default function StoreDetailsScreen() {
 
       if (galleryErr) console.error("Gallery fetch error:", galleryErr);
       setGallery(galleryData || []);
+      setLoadingGallery(false);
+
+      // Fetch products
+      const { data: prodsData, error: prodsErr } = await supabase
+        .from("products")
+        .select("*")
+        .eq("store_id", id);
+
+      if (prodsErr) throw prodsErr;
+      setProducts(prodsData || []);
+      setLoadingProducts(false);
 
       // Extract unique categories
       const catsSet = new Set<string>();
@@ -207,8 +215,10 @@ export default function StoreDetailsScreen() {
       setCategories(["الكل", ...Array.from(catsSet)]);
     } catch (err) {
       console.error("Error fetching store data:", err);
-    } finally {
       setLoading(false);
+      setLoadingGallery(false);
+      setLoadingProducts(false);
+    } finally {
       setRefreshing(false);
     }
   };
@@ -418,7 +428,11 @@ export default function StoreDetailsScreen() {
             </View>
 
             {mediaTab === "photos" && (
-              gallery.length > 0 ? (
+              loadingGallery ? (
+                <View style={{ height: 180, justifyContent: 'center', alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : gallery.length > 0 ? (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -440,7 +454,11 @@ export default function StoreDetailsScreen() {
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
-              ) : null
+              ) : (
+                <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "center", paddingVertical: 20 }}>
+                  لا توجد صور في المعرض.
+                </Text>
+              )
             )}
           </View>
         </View>
@@ -501,7 +519,11 @@ export default function StoreDetailsScreen() {
           </Text>
         </View>
         <View style={styles.productsGrid}>
-          {filteredProducts.length > 0 ? (
+          {loadingProducts ? (
+            <View style={{ width: '100%', height: 200, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : filteredProducts.length > 0 ? (
             filteredProducts.map((product) => (
               <View key={product.id} style={styles.productCardWrapper}>
                 <ProductCard
