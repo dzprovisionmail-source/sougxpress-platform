@@ -448,13 +448,11 @@ export default function StoreDetailsScreen() {
           {/* Videos Tab Content */}
           {mediaTab === "videos" && (
             <View style={[styles.videoPlaceholder, { borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }]}>
-
               <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "center" }}>
                 لا توجد فيديوهات متاحة حالياً
               </Text>
             </View>
           )}
-        </View>
 
         {/* Search Bar in Store */}
         <View style={styles.searchSection}>
