@@ -7,7 +7,7 @@ export interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
-  variant?: 'elevated' | 'flat' | 'outlined';
+  variant?: 'elevated' | 'flat' | 'outlined' | 'neon' | 'neonBlue';
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -16,7 +16,7 @@ export const Card: React.FC<CardProps> = ({
   style,
   variant = 'elevated',
 }) => {
-  const { colors } = useAppTheme();
+  const { colors, tokens } = useAppTheme();
   const Container = onPress ? TouchableOpacity : View;
 
   const getVariantStyles = (): ViewStyle => {
@@ -31,6 +31,20 @@ export const Card: React.FC<CardProps> = ({
           backgroundColor: colors.bgSurface,
           borderWidth: 1,
           borderColor: colors.borderSubtle,
+        };
+      case 'neon':
+        return {
+          backgroundColor: colors.bgElevated,
+          borderColor: colors.primary + '60',
+          borderWidth: 1.5,
+          ...tokens.shadows.neon,
+        };
+      case 'neonBlue':
+        return {
+          backgroundColor: colors.bgElevated,
+          borderColor: tokens.colors.brandBlue + '60',
+          borderWidth: 1.5,
+          ...tokens.shadows.neonBlue,
         };
       case 'elevated':
       default:

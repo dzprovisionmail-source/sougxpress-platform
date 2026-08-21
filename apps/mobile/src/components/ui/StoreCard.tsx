@@ -82,7 +82,11 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   };
 
   return (
-    <Card onPress={handlePress} style={[styles.card, style]}>
+    <Card 
+      onPress={handlePress} 
+      style={[styles.card, style]}
+      variant={actualIsFeatured ? 'neon' : 'elevated'}
+    >
       {/* Cover Image with Fallback */}
       <View style={styles.coverWrapper}>
         <ImageFallback

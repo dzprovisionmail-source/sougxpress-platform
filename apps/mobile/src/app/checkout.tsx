@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { ShoppingBag, MessageSquareText, CheckCircle2 } from 'lucide-react-native';
+import { ICON_MASCOT_SCOOTER } from '@/constants/brand';
+import { Image } from 'react-native';
 
 import { Typography, Button, Card, ListItem } from '@/components/ui';
 import AddressCard from '@/components/checkout/AddressCard';
@@ -84,7 +86,7 @@ const CheckoutScreen = () => {
       <SafeAreaView style={[styles.successContainer, { backgroundColor: colors.bgBase }]}>
         <Stack.Screen options={{ title: 'تم الطلب', headerLeft: () => null }} />
         <View style={styles.successContent}>
-          <CheckCircle2 size={80} color={colors.success} />
+          <Image source={ICON_MASCOT_SCOOTER} style={{ width: 150, height: 150, marginBottom: 20 }} resizeMode="contain" />
           <Typography variant="h1" align="center" style={styles.successTitle}>تم إرسال طلبك بنجاح</Typography>
           <Typography variant="body" color="secondary" align="center" style={styles.successSubtitle}>
             جار انتظار موافقة التاجر. يمكنك متابعة حالة طلبك من قائمة طلباتي.

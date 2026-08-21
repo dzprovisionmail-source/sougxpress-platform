@@ -371,11 +371,12 @@ const styles = StyleSheet.create({
   },
   enterButton: {
     width: "100%",
-    backgroundColor: TOKENS.colors.brandPrimary,
+    backgroundColor: "#0D47A1",
     borderRadius: TOKENS.radius.full,
     paddingVertical: TOKENS.spacing.lg,
     alignItems: "center",
     justifyContent: "center",
+    ...TOKENS.shadows.neonBlue,
   },
   enterButtonText: {
     color: "#FFFFFF",

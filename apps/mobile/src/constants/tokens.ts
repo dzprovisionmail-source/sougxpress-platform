@@ -127,6 +127,20 @@ export const TOKENS = {
       shadowRadius: 12,
       elevation: 6,
     },
+    neon: {
+      shadowColor: "#FF8A00",
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.8,
+      shadowRadius: 10,
+      elevation: 10,
+    },
+    neonBlue: {
+      shadowColor: "#0D47A1",
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.8,
+      shadowRadius: 10,
+      elevation: 10,
+    },
   },
 
   touchTarget: {

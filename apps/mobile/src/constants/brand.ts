@@ -114,6 +114,27 @@ export const ICON_DELIVERY = require("../../assets/brand/icon-courier.png");
 // Fallback to security icon for admin as there is no specific admin asset in the brand identity
 export const ICON_ADMIN = require("../../assets/brand/icon-security.png");
 
+// ─── 3D Navigation & UI Icons ─────────────────────────────────────────────────────
+
+export const ICON_HOME_3D = require("../../assets/brand/home_3d.png");
+export const ICON_SEARCH_3D = require("../../assets/brand/search_3d.png");
+export const ICON_CART_3D = require("../../assets/brand/cart_3d.png");
+export const ICON_PROFILE_3D = require("../../assets/brand/profile_3d.png");
+export const ICON_ORDERS_3D = require("../../assets/brand/orders_3d.png");
+export const ICON_TRACK_3D = require("../../assets/brand/track_3d.png");
+export const ICON_PAYMENT_3D = require("../../assets/brand/payment_3d.png");
+export const ICON_DEALS_3D = require("../../assets/brand/deals_3d.png");
+export const ICON_SETTINGS_3D = require("../../assets/brand/settings_3d.png");
+export const ICON_SUPPORT_3D = require("../../assets/brand/support_3d.png");
+export const ICON_MASCOT_HEAD = require("../../assets/brand/mascot_head.png");
+export const ICON_MASCOT_SCOOTER = require("../../assets/brand/mascot_scooter.png");
+
+// ─── Advertising Banners ──────────────────────────────────────────────────────────
+
+export const BANNER_FRESH = require("../../assets/brand/banner_fresh.png");
+export const BANNER_BAKERY = require("../../assets/brand/banner_bakery.png");
+export const BANNER_DELIVERY = require("../../assets/brand/banner_delivery.png");
+
 // ─── Brand Usage Rules ────────────────────────────────────────────────────────────
 
 /**

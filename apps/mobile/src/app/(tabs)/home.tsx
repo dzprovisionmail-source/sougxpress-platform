@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart } from 'lucide-react-native';
+import { LOGO_WORDMARK, ICON_MASCOT_SCOOTER, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button } from '@/components/ui';
 import { useAppTheme } from '@/contexts/ThemeContext';
@@ -39,21 +40,21 @@ interface HeroSlide {
 const HERO_SLIDES_TEMPLATES: Omit<HeroSlide, "storeId" | "storeName">[] = [
   {
     id: "1",
-    image: "",
+    image: Image.resolveAssetSource(BANNER_FRESH).uri,
     title: "عروض الأسبوع",
     description: "خصومات حصرية على الخضروات والفواكه الطازجة",
     buttonLabel: "تسوق الآن",
   },
   {
     id: "2",
-    image: "",
+    image: Image.resolveAssetSource(BANNER_BAKERY).uri,
     title: "متجر جديد في السوق",
     description: "مخبزة السعادة تفتح أبوابها — خبز طازج يومياً",
     buttonLabel: "اكتشف المتجر",
   },
   {
     id: "3",
-    image: "",
+    image: Image.resolveAssetSource(BANNER_DELIVERY).uri,
     title: "توصيل مجاني",
     description: "لأول طلب لك — يوصلك لبابك بدون رسوم",
     buttonLabel: "اطلب الآن",
@@ -327,7 +328,7 @@ const HomeScreen = () => {
 
     return (
       <TouchableOpacity
-        style={[styles.heroSlide, { backgroundColor: colors.bgElevated }]}
+        style={[styles.heroSlide, { backgroundColor: colors.bgElevated, ...tokens.shadows.premium }]}
         activeOpacity={!!(item.storeId || heroStore) ? 0.8 : 1}
         onPress={handlePress}
       >
@@ -350,36 +351,60 @@ const HomeScreen = () => {
               ]}
             >
               <Typography variant="caption" color="disabled">
-                صورة
+                Soug-XPRESS
               </Typography>
             </View>
           )}
-          <View
-            style={[
-              styles.heroOverlay,
-              { backgroundColor: "rgba(0, 0, 0, 0.35)" },
-            ]}
-          />
-        </View>
-
-        <View style={[styles.heroTextContent, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-          <Typography variant="h2" align="right" style={[styles.heroTitle, { color: colors.primary }]}>
-            {item.title}
-          </Typography>
-          <Typography variant="body" color="secondary" numberOfLines={2} align="right">
-            {item.description}
-          </Typography>
-          <TouchableOpacity
-            style={[styles.heroActionBtn, { backgroundColor: colors.primary }]}
-            activeOpacity={0.7}
-          >
-            <Typography variant="button" align="center" style={[styles.heroActionText, { color: colors.textOnBrand }]}>
-              {item.buttonLabel}
+          {/* Professional Overlay with Gradient effect using semi-transparent colors */}
+          <View style={[styles.heroOverlay, { backgroundColor: "rgba(0,0,0,0.25)" }]} />
+          
+          <View style={[styles.heroTextContentOverlay, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+            <Typography
+              variant="h2"
+              color="white"
+              align="right"
+              style={[styles.heroTitle, { textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: {width: -1, height: 1}, textShadowRadius: 10 }]}
+            >
+              {item.title}
             </Typography>
-          </TouchableOpacity>
-          <Typography variant="caption" color="disabled" align="right" style={styles.heroStoreLabel}>
-            {heroStore ? heroStore.name : item.storeName || HERO_STORE_TITLES[index] || ""}
-          </Typography>
+            <Typography 
+              variant="body" 
+              color="white" 
+              align="right"
+              style={{ textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: {width: -1, height: 1}, textShadowRadius: 5 }}
+            >
+              {item.description}
+            </Typography>
+
+            <View style={styles.heroActionRow}>
+              <View
+                style={[
+                  styles.heroActionBtn,
+                  { backgroundColor: colors.primary, ...tokens.shadows.small },
+                ]}
+              >
+                <Typography
+                  variant="button"
+                  color="white"
+                  style={styles.heroActionText}
+                >
+                  {item.buttonLabel}
+                </Typography>
+              </View>
+              
+              <View
+                style={[
+                  styles.heroStoreLabelOverlay,
+                  { flexDirection: "row", alignItems: "center", backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, borderRadius: 4 }
+                ]}
+              >
+                <Typography variant="caption" color="white" align="right">
+                  {heroStore ? heroStore.name : item.storeName || HERO_STORE_TITLES[index] || "سوق عين صفراء"}
+                </Typography>
+                <StoreIcon color="white" size={12} style={{ marginLeft: 4 }} />
+              </View>
+            </View>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -440,7 +465,16 @@ const HomeScreen = () => {
       <StatusBar barStyle="dark-content" />
       <Stack.Screen
         options={{
-          title: 'Soug-XPRESS',
+          headerTitle: '',
+          headerLeft: () => (
+            <View style={{ paddingLeft: 16 }}>
+              <Image 
+                source={LOGO_WORDMARK} 
+                style={{ width: 120, height: 30 }} 
+                resizeMode="contain" 
+              />
+            </View>
+          ),
           headerRight: () => (
             <View style={{ flexDirection: isRTL ? 'row' : 'row-reverse', alignItems: 'center', gap: 16 }}>
               <TouchableOpacity onPress={() => router.push('/cart')}>
@@ -511,12 +545,13 @@ const HomeScreen = () => {
         {/* Login Banner - Only for guests */}
         {isGuest && (
           <TouchableOpacity
-            style={[styles.loginBanner, { backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}30` }]}
+            style={[styles.loginBanner, { backgroundColor: colors.bgElevated, borderColor: colors.primary + '40', borderWidth: 1, ...tokens.shadows.premium }]}
             onPress={() => router.push('/login')}
             activeOpacity={0.8}
           >
             <View style={styles.loginBannerContent}>
-              <View style={styles.loginBannerText}>
+              <Image source={ICON_MASCOT_HEAD} style={{ width: 60, height: 60 }} resizeMode="contain" />
+              <View style={[styles.loginBannerText, { flex: 1, marginHorizontal: 12 }]}>
                 <Typography variant="h3" align="right" color="brand">
                   مرحباً بك في سوق عين صفراء!
                 </Typography>
@@ -526,11 +561,10 @@ const HomeScreen = () => {
               </View>
               <View style={styles.loginBannerBtn}>
                 <Button
-                  title="تسجيل الدخول"
+                  title="دخول"
                   onPress={() => router.push("/login")}
                   size="sm"
                   variant="primary"
-                  icon={<LogIn size={16} color={colors.textOnBrand} />}
                 />
               </View>
             </View>
@@ -545,18 +579,19 @@ const HomeScreen = () => {
               backgroundColor: colors.bgElevated,
               borderRightColor: colors.primary,
               borderRightWidth: 4,
+              overflow: 'hidden',
+              ...tokens.shadows.small,
             },
           ]}
           onPress={() => router.push('/couriers')}
           activeOpacity={0.8}
         >
           <View style={styles.couriersBannerContent}>
-            <View style={styles.couriersBannerText}>
+            <View style={[styles.couriersBannerText, { flex: 1 }]}>
               <Text style={[styles.couriersBannerTitle, { color: colors.textPrimary, fontWeight: '700', textAlign: 'right' }]}>الموصلون المتاحون</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'right' }}>اطلب توصيل مباشر من الموصل المفضل لديك</Text>
             </View>
-            <View style={styles.couriersBannerIcon}>
-              <Bike size={20} color={colors.primary} />
-            </View>
+            <Image source={ICON_MASCOT_SCOOTER} style={{ width: 80, height: 80, marginRight: -10 }} resizeMode="contain" />
           </View>
         </TouchableOpacity>
 
@@ -858,14 +893,13 @@ const styles = StyleSheet.create({
   },
   heroImageContainer: {
     width: "100%",
-    height: 160,
+    height: 220,
     position: "relative",
   },
   heroImage: {
     width: "100%",
     height: "100%",
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
+    borderRadius: radius.lg,
   },
   heroOverlay: {
     position: "absolute",
@@ -873,22 +907,33 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
+    borderRadius: radius.lg,
   },
-  heroTextContent: {
+  heroTextContentOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: spacing.lg,
     gap: spacing.xs,
   },
   heroTitle: {
-    fontWeight: "700",
+    fontWeight: "800",
+    fontSize: 24,
+  },
+  heroActionRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.sm,
   },
   heroActionBtn: {
-    borderRadius: radius.full,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    alignSelf: I18nManager.isRTL ? "flex-end" : "flex-start",
-    marginTop: spacing.xs,
+    borderRadius: radius.medium,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  heroStoreLabelOverlay: {
+    marginTop: 0,
   },
   heroActionText: {
     fontWeight: "600",

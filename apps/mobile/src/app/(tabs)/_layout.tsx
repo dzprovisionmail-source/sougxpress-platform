@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Tabs, router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
@@ -15,13 +15,26 @@ import {
   Wallet,
   Heart,
 } from 'lucide-react-native';
+import { 
+  ICON_HOME_3D, 
+  ICON_CART_3D, 
+  ICON_PROFILE_3D, 
+  ICON_ORDERS_3D, 
+  ICON_TRACK_3D,
+  ICON_PAYMENT_3D,
+  ICON_DEALS_3D,
+  ICON_SETTINGS_3D,
+  ICON_SUPPORT_3D,
+  ICON_MASCOT_HEAD
+} from '@/constants/brand';
 
 type Role = 'guest' | 'customer' | 'courier' | 'merchant';
 
 interface TabConfig {
   name: string;
   title: string;
-  Icon: React.ComponentType<{ color: string; size: number }>;
+  Icon: any;
+  is3D?: boolean;
 }
 
 export default function TabLayout() {
@@ -74,30 +87,30 @@ export default function TabLayout() {
   // Define approved tabs for each role strictly per specifications
   const roleTabs: Record<Role, TabConfig[]> = {
     guest: [
-      { name: 'home', title: 'الرئيسية', Icon: Home },
-      { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
+      { name: 'home', title: 'الرئيسية', Icon: ICON_HOME_3D, is3D: true },
+      { name: 'profile', title: 'حسابي', Icon: ICON_PROFILE_3D, is3D: true },
     ],
     customer: [
-      { name: 'home', title: 'Soug-XPRESS', Icon: Home },
+      { name: 'home', title: 'Soug-XPRESS', Icon: ICON_HOME_3D, is3D: true },
       { name: 'favorites', title: 'المفضلة', Icon: Heart },
-      { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
-      { name: 'cart', title: 'السلة', Icon: ShoppingCart },
-      { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
+      { name: 'orders', title: 'الطلبات', Icon: ICON_ORDERS_3D, is3D: true },
+      { name: 'cart', title: 'السلة', Icon: ICON_CART_3D, is3D: true },
+      { name: 'profile', title: 'حسابي', Icon: ICON_PROFILE_3D, is3D: true },
     ],
     merchant: [
-      { name: 'home', title: 'الرئيسية', Icon: Home },
-      { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+      { name: 'home', title: 'الرئيسية', Icon: ICON_HOME_3D, is3D: true },
+      { name: 'orders', title: 'الطلبات', Icon: ICON_ORDERS_3D, is3D: true },
       { name: 'favorites', title: 'المفضلة', Icon: Heart },
       { name: 'my-store', title: 'المتجر', Icon: Store },
-      { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
+      { name: 'profile', title: 'حسابي', Icon: ICON_PROFILE_3D, is3D: true },
     ],
     courier: [
-      { name: 'home', title: 'الرئيسية', Icon: Home },
-      { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+      { name: 'home', title: 'الرئيسية', Icon: ICON_HOME_3D, is3D: true },
+      { name: 'orders', title: 'الطلبات', Icon: ICON_ORDERS_3D, is3D: true },
       { name: 'favorites', title: 'المفضلة', Icon: Heart },
       { name: 'deliveries', title: 'التوصيلات', Icon: Bike },
       { name: 'earnings', title: 'الأرباح', Icon: Wallet },
-      { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
+      { name: 'profile', title: 'حسابي', Icon: ICON_PROFILE_3D, is3D: true },
     ],
   };
 
@@ -114,8 +127,21 @@ export default function TabLayout() {
     const IconComponent = approvedTab.Icon;
     return {
       title: approvedTab.title,
-      tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-        <IconComponent color={color} size={size} />
+      tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+        approvedTab.is3D ? (
+          <Image 
+            source={IconComponent} 
+            style={{ 
+              width: size + 4, 
+              height: size + 4, 
+              opacity: focused ? 1 : 0.6,
+              transform: [{ scale: focused ? 1.1 : 1 }]
+            }} 
+            resizeMode="contain"
+          />
+        ) : (
+          <IconComponent color={color} size={size} />
+        )
       ),
     };
   };

@@ -281,6 +281,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
+    ...TOKENS.shadows.neon,
   },
 
   // Horizontal Variant
@@ -329,6 +330,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    ...TOKENS.shadows.neon,
   },
 });
 
