@@ -360,7 +360,11 @@ export default function FavoritesScreen() {
 
         <FlatList
           data={activeTab === 'connected' ? connectedList : courierData?.favorites.stores}
-          keyExtractor={(item: any) => item.id || item.customer_id || item.target_id}
+          keyExtractor={(item: any) => {
+            const id = item.id || item.customer_id || item.target_id || item.driver?.id;
+            const prefix = activeTab === 'connected' ? 'customer' : 'store';
+            return `${prefix}:${id}`;
+          }}
           renderItem={({ item }) => activeTab === 'connected' ? renderCourierCustomer(item, courierData?.favorites.customers.some(f => f.target_id === (item.customer_id || item.id)) || false) : renderCourierStore(item)}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
@@ -499,7 +503,11 @@ export default function FavoritesScreen() {
 
         <FlatList
           data={getListData()}
-          keyExtractor={(item: any) => item.id || item.courier_id || item.target_id}
+          keyExtractor={(item: any) => {
+            const id = item.id || item.courier_id || item.target_id || item.driver?.id;
+            const prefix = activeTab === 'couriers' ? 'courier' : activeTab === 'products' ? 'product' : 'store';
+            return `${prefix}:${id}`;
+          }}
           renderItem={({ item }) => {
             if (activeTab === 'couriers') return renderFavoriteCourier(item.driver ? item : { driver: item });
             if (activeTab === 'products') return renderProduct(item);
