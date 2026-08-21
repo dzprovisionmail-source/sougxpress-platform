@@ -385,81 +385,7 @@ export default function StoreDetailsScreen() {
             {store.category || "سوبر ماركت"}
           </Typography>
 
-          {/* Integrated Media Section - Pushed Up & Larger */}
-          <View style={styles.integratedMediaSection}>
-            <View style={styles.mediaTabs}>
-              <TouchableOpacity activeOpacity={0.8}
-                onPress={() => setMediaTab("photos")}
-                style={[styles.mediaTabButton, mediaTab === "photos" && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
-              >
-                <Typography variant="subtitle" style={{ fontSize: 14, color: mediaTab === "photos" ? colors.primary : colors.textSecondary }}>
-                  صور
-                </Typography>
-              </TouchableOpacity>
-              <TouchableOpacity activeOpacity={0.8}
-                onPress={() => setMediaTab("videos")}
-                style={[styles.mediaTabButton, mediaTab === "videos" && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
-              >
-                <Typography variant="subtitle" style={{ fontSize: 14, color: mediaTab === "videos" ? colors.primary : colors.textSecondary }}>
-                  فيديو
-                </Typography>
-              </TouchableOpacity>
-            </View>
-
-            {mediaTab === "photos" && (
-              loadingGallery ? (
-                <View style={{ height: 240, justifyContent: 'center', alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                </View>
-              ) : gallery.length > 0 ? (
-                <View style={styles.galleryWrapper}>
-                  {/* Left Indicator Arrow */}
-                  <View style={[styles.galleryArrow, { left: -5 }]}>
-                    <ChevronLeft size={20} color={colors.textSecondary} opacity={0.5} />
-                  </View>
-                  
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={[styles.galleryScroll, { flexDirection: isRTL ? "row-reverse" : "row" }]}
-                  >
-                    {gallery.map((img) => (
-                      <TouchableOpacity activeOpacity={0.8} key={img.id} onPress={() => setViewingMediaItem(img)} style={styles.galleryItem}>
-                        <Image
-                          source={{ uri: img.image_url }}
-                          style={[styles.galleryImage, { borderColor: colors.borderSubtle }]}
-                          resizeMode="cover"
-                        />
-                        {img.title ? (
-                          <Text style={[styles.galleryTitle, { color: colors.textPrimary }]}>{img.title}</Text>
-                        ) : null}
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-
-                  {/* Right Indicator Arrow */}
-                  <View style={[styles.galleryArrow, { right: -5 }]}>
-                    <ChevronRight size={20} color={colors.textSecondary} opacity={0.5} />
-                  </View>
-                </View>
-              ) : (
-                <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "center", paddingVertical: 20 }}>
-                  لا توجد صور في المعرض.
-                </Text>
-              )
-            )}
-
-            {/* Videos Tab Content */}
-            {mediaTab === "videos" && (
-              <View style={[styles.videoPlaceholder, { borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }]}>
-                <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "center" }}>
-                  لا توجد فيديوهات متاحة حالياً
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Stats Row - Moved Down */}
+          {/* Stats Row - Now at the top of info */}
           <View style={[styles.statsRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
               <Rating rating={store.rating ?? 0} count={reviewCount ?? 0} size="sm" />
@@ -487,6 +413,80 @@ export default function StoreDetailsScreen() {
               style={styles.chatButton}
             />
           </View>
+        </View>
+
+        {/* Separate Media Section - Below Store Card Info */}
+        <View style={[styles.separateMediaSection, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
+          <View style={styles.mediaTabs}>
+            <TouchableOpacity activeOpacity={0.8}
+              onPress={() => setMediaTab("photos")}
+              style={[styles.mediaTabButton, mediaTab === "photos" && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
+            >
+              <Typography variant="subtitle" style={{ fontSize: 14, color: mediaTab === "photos" ? colors.primary : colors.textSecondary }}>
+                صور
+              </Typography>
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.8}
+              onPress={() => setMediaTab("videos")}
+              style={[styles.mediaTabButton, mediaTab === "videos" && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
+            >
+              <Typography variant="subtitle" style={{ fontSize: 14, color: mediaTab === "videos" ? colors.primary : colors.textSecondary }}>
+                فيديو
+              </Typography>
+            </TouchableOpacity>
+          </View>
+
+          {mediaTab === "photos" && (
+            loadingGallery ? (
+              <View style={{ height: 240, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : gallery.length > 0 ? (
+              <View style={styles.galleryWrapper}>
+                {/* Left Indicator Arrow */}
+                <View style={[styles.galleryArrow, { left: -5 }]}>
+                  <ChevronLeft size={20} color={colors.textSecondary} opacity={0.5} />
+                </View>
+                
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={[styles.galleryScroll, { flexDirection: isRTL ? "row-reverse" : "row" }]}
+                >
+                  {gallery.map((img) => (
+                    <TouchableOpacity activeOpacity={0.8} key={img.id} onPress={() => setViewingMediaItem(img)} style={styles.galleryItem}>
+                      <Image
+                        source={{ uri: img.image_url }}
+                        style={[styles.galleryImage, { borderColor: colors.borderSubtle }]}
+                        resizeMode="cover"
+                      />
+                      {img.title ? (
+                        <Text style={[styles.galleryTitle, { color: colors.textPrimary }]}>{img.title}</Text>
+                      ) : null}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                {/* Right Indicator Arrow */}
+                <View style={[styles.galleryArrow, { right: -5 }]}>
+                  <ChevronRight size={20} color={colors.textSecondary} opacity={0.5} />
+                </View>
+              </View>
+            ) : (
+              <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "center", paddingVertical: 20 }}>
+                لا توجد صور في المعرض.
+              </Text>
+            )
+          )}
+
+          {/* Videos Tab Content */}
+          {mediaTab === "videos" && (
+            <View style={[styles.videoPlaceholder, { borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }]}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "center" }}>
+                لا توجد فيديوهات متاحة حالياً
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Search Bar in Store */}
@@ -671,12 +671,13 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     fontSize: 13,
   },
-  integratedMediaSection: {
-    width: '100%',
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+  separateMediaSection: {
+    marginHorizontal: TOKENS.spacing.md,
+    marginTop: TOKENS.spacing.md,
+    paddingHorizontal: TOKENS.spacing.sm,
+    paddingVertical: TOKENS.spacing.md,
+    borderRadius: TOKENS.radius.lg,
+    borderWidth: 1,
   },
   mediaTabs: {
     flexDirection: 'row-reverse',
@@ -811,10 +812,11 @@ const styles = StyleSheet.create({
   },
   productCardWrapper: {
     width: '50%',
-    paddingHorizontal: 6,
-    paddingVertical: 6,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
   },
   productCard: {
-    transform: [{ scale: 0.96 }],
+    transform: [{ scale: 0.82 }],
+    margin: -15,
   },
 });
