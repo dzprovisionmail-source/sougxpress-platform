@@ -26,7 +26,7 @@ import {
   Button,
 } from "@/components/ui";
 import { Store as StoreIcon, Heart, MessageCircle, Star, Eye, ChevronRight, ChevronLeft } from "lucide-react-native";
-import { getPromotionalViews, calculateViews } from "@/services/promotional-views.service";
+import { getPromotionalViews } from "@/services/promotional-views.service";
 import { toggleFavorite, checkIfFavorite, getFavoriteIds } from "@/services/favorite.service";
 import { getOrCreateConversation } from "@/services/chat.service";
 import { TOKENS } from "@/constants/tokens";
@@ -410,7 +410,7 @@ export default function StoreDetailsScreen() {
             {promoViews !== null && (
               <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>{typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'}</Text>
+                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>{promoViews.toLocaleString("ar-DZ")}</Text>
                   <Eye size={14} color={colors.textSecondary} />
                 </View>
                 <Text style={[styles.statLabel, { color: colors.textSecondary }]}>مشاهدة</Text>

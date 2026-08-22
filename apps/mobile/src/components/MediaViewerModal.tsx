@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { X, Heart, Star, Send, Trash2, MessageCircle, Eye } from "lucide-react-native";
-import { getPromotionalViews, calculateViews } from "@/services/promotional-views.service";
+import { getPromotionalViews } from "@/services/promotional-views.service";
 import { StoreGalleryImage, StoreGalleryComment, Store, MediaType } from "@/types/schema-03-core";
 import { Avatar } from "@/components/ui/Avatar";
 import {
@@ -350,7 +350,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
               <View style={[styles.actionButton, { opacity: 0.8 }]}>
                 <Eye size={20} color={colors.textSecondary} />
                 <Text style={[styles.actionText, { color: colors.textSecondary }]}>
-                  {typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'}
+                  {promoViews.toLocaleString("ar-DZ")} مشاهدة
                 </Text>
               </View>
             )}

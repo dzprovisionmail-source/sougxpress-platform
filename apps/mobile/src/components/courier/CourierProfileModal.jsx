@@ -17,7 +17,7 @@ import {
   X,
   Eye,
 } from "lucide-react-native";
-import { getPromotionalViews, calculateViews } from "@/services/promotional-views.service";
+import { getPromotionalViews } from "@/services/promotional-views.service";
 import { Avatar, Rating, Typography, Button, Badge } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
@@ -164,7 +164,7 @@ export default function CourierProfileModal({
             <View style={[styles.row, isRTL && { flexDirection: "row-reverse" }, { backgroundColor: `${colors.textSecondary}10`, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }]}>
               <Eye size={14} color={colors.textSecondary} />
               <Typography variant="caption" color="secondary">
-                {typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'} مشاهدة
+                {promoViews.toLocaleString("ar-DZ")} مشاهدة
               </Typography>
             </View>
           )}

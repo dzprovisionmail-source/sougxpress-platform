@@ -356,7 +356,7 @@ export default function CourierProfile() {
               <View style={[styles.vehicleChip, { flexDirection: isRTL ? "row-reverse" : "row", backgroundColor: `${colors.textSecondary}10` }]}>
                 <Eye size={14} color={colors.textSecondary} />
                 <Typography variant="caption" color="secondary" style={{ marginHorizontal: TOKENS.spacing.xs }}>
-                  {typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'} مشاهدة
+                  {promoViews.toLocaleString("ar-DZ")} مشاهدة
                 </Typography>
               </View>
             )}

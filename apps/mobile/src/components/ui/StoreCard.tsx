@@ -9,7 +9,7 @@ import {
   I18nManager,
 } from 'react-native';
 import { Clock, MapPin, Tag, Heart, MessageCircle, Eye } from 'lucide-react-native';
-import { getPromotionalViews, calculateViews } from '@/services/promotional-views.service';
+import { getPromotionalViews } from '@/services/promotional-views.service';
 import { Card } from './Card';
 import { Rating } from './Rating';
 import { ImageFallback } from './ImageFallback';
@@ -269,7 +269,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
               <View style={styles.infoPill}>
                 <Eye size={13} color={colors.textSecondary} />
                 <Text style={[styles.infoPillText, { color: colors.textSecondary }]}>
-                  {typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'}
+                  {promoViews.toLocaleString("ar-DZ")} مشاهدة
                 </Text>
               </View>
             )}

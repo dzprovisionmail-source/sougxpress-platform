@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Star, Share2, Heart, Truck, Bike, Car, Eye } from "lucide-react-native";
-import { getPromotionalViews, calculateViews } from "@/services/promotional-views.service";
+import { getPromotionalViews } from "@/services/promotional-views.service";
 import {
   Typography,
   Avatar,
@@ -207,7 +207,7 @@ export default function CouriersDirectoryScreen() {
             <View style={[styles.statItem, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
               <Eye size={16} color={colors.textSecondary} />
               <Typography variant="caption" color="secondary">
-                {typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'} مشاهدة
+                {promoViews.toLocaleString("ar-DZ")} مشاهدة
               </Typography>
             </View>
           )}
