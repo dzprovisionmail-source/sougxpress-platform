@@ -36,6 +36,7 @@ import {
 } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { TOKENS } from "@/constants/tokens";
 import { AdminPageShell, AdminStatCard, AdminErrorState, SearchBar } from "@/components/admin";
 import {
   getControlCenterStats,
@@ -638,7 +639,7 @@ const styles = StyleSheet.create({
   liveDot: { width: 8, height: 8, borderRadius: 4 },
   alertCard: { borderWidth: 1 },
   financeCard: { borderWidth: 1 },
-  quickActionsGrid: { gap: tokens.spacing.sm },
+  quickActionsGrid: { gap: TOKENS.spacing.sm },
   quickAction: { flexDirection: "row-reverse", alignItems: "center", gap: 12 },
   quickActionIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   navGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between" },
