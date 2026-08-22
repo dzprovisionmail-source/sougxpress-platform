@@ -126,7 +126,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
         try {
           const promoData = await getPromotionalViews('store', store.id);
           if (promoData) {
-            setPromoViews(calculateViews(promoData));
+            setPromoViews(promoData.currentViews);
           }
         } catch (e) {
           console.error("Error fetching promo views for media viewer:", e);

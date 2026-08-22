@@ -39,11 +39,15 @@ export function calculateViews(record: PromotionalViewRecord | null, entityCreat
   if (!record) return null;
 
   const referenceTime = entityCreatedAt ? new Date(entityCreatedAt).getTime() : new Date(record.started_at).getTime();
+  
+  // Defensive check for invalid dates
+  if (isNaN(referenceTime)) return null;
+
   const now = Date.now();
   const diffHours = (now - referenceTime) / (1000 * 60 * 60);
 
   // Less than 24 hours -> does not show promotional views
-  if (diffHours < 24) {
+  if (diffHours < 24 || isNaN(diffHours)) {
     return null;
   }
 
@@ -86,7 +90,23 @@ export async function getPromotionalViews(entityType: "store" | "courier", entit
     }
 
     if (!data) {
-      // Create default record if not exists
+      // Check user role before attempting INSERT to avoid RLS error 42501
+      const { data: { user } } = await supabase.auth.getUser();
+      let isFounder = false;
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+        isFounder = profile?.role === "admin" || profile?.role === "founder";
+      }
+
+      if (!isFounder) {
+        return { currentViews: null, record: null };
+      }
+
+      // Create default record if not exists (only for founders)
       const { data: created, error: createError } = await withRetry(() =>
         supabase
           .from("promotional_views")

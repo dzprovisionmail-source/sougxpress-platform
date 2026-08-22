@@ -192,7 +192,7 @@ export default function StoreDetailsScreen() {
       try {
         const promoData = await getPromotionalViews("store", id);
         if (promoData) {
-          setPromoViews(calculateViews(promoData));
+          setPromoViews(promoData.currentViews);
         }
       } catch (e) {
         console.error("Error fetching promo views:", e);
