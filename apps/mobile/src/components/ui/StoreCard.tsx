@@ -83,7 +83,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         try {
           const promoData = await getPromotionalViews('store', actualId);
           if (promoData) {
-            setPromoViews(calculateViews(promoData));
+            setPromoViews(promoData?.currentViews ?? null);
           }
         } catch (e) {
           console.error("Error fetching promo views for card:", e);
@@ -269,7 +269,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
               <View style={styles.infoPill}>
                 <Eye size={13} color={colors.textSecondary} />
                 <Text style={[styles.infoPillText, { color: colors.textSecondary }]}>
-                  {promoViews.toLocaleString("ar-DZ")}
+                  {typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'}
                 </Text>
               </View>
             )}

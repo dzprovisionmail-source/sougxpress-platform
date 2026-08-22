@@ -134,7 +134,7 @@ export default function CouriersDirectoryScreen() {
         for (const courier of couriers) {
           try {
             const promoData = await getPromotionalViews("courier", courier.id);
-            newMap[courier.id] = promoData ? calculateViews(promoData) : null;
+            newMap[courier.id] = promoData?.currentViews ?? null;
           } catch (e) {
             console.error(`Error fetching promo views for courier ${courier.id}:`, e);
           }
@@ -207,7 +207,7 @@ export default function CouriersDirectoryScreen() {
             <View style={[styles.statItem, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
               <Eye size={16} color={colors.textSecondary} />
               <Typography variant="caption" color="secondary">
-                {promoViews.toLocaleString("ar-DZ")} مشاهدة
+                {typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'} مشاهدة
               </Typography>
             </View>
           )}

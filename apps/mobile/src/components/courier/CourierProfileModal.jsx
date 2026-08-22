@@ -86,9 +86,9 @@ export default function CourierProfileModal({
       setIsFavorite(!!data.is_favorite);
       
       try {
-        const promoData = await getPromotionalViews('driver', courierId);
+        const promoData = await getPromotionalViews('courier', courierId);
         if (promoData) {
-          setPromoViews(calculateViews(promoData));
+          setPromoViews(promoData?.currentViews ?? null);
         }
       } catch (e) {
         console.error("Error fetching promo views for courier modal:", e);
@@ -164,7 +164,7 @@ export default function CourierProfileModal({
             <View style={[styles.row, isRTL && { flexDirection: "row-reverse" }, { backgroundColor: `${colors.textSecondary}10`, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }]}>
               <Eye size={14} color={colors.textSecondary} />
               <Typography variant="caption" color="secondary">
-                {promoViews.toLocaleString("ar-DZ")} مشاهدة
+                {typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'} مشاهدة
               </Typography>
             </View>
           )}

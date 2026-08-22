@@ -126,7 +126,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
         try {
           const promoData = await getPromotionalViews('store', store.id);
           if (promoData) {
-            setPromoViews(promoData.currentViews);
+            setPromoViews(promoData?.currentViews ?? null);
           }
         } catch (e) {
           console.error("Error fetching promo views for media viewer:", e);
@@ -350,7 +350,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
               <View style={[styles.actionButton, { opacity: 0.8 }]}>
                 <Eye size={20} color={colors.textSecondary} />
                 <Text style={[styles.actionText, { color: colors.textSecondary }]}>
-                  {promoViews.toLocaleString("ar-DZ")}
+                  {typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'}
                 </Text>
               </View>
             )}

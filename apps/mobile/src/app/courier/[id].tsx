@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Phone, Star, Share2, Heart, Image as ImageIcon, ClipboardList, TrendingUp, MessageCircle } from "lucide-react-native";
+import { ArrowLeft, Phone, Star, Share2, Heart, Image as ImageIcon, ClipboardList, TrendingUp, MessageCircle, Eye } from "lucide-react-native";
 import {
   Typography,
   Avatar,
@@ -27,6 +27,7 @@ import {
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
 import { getCourierById, toggleFavoriteCourier } from "@/services/courierService";
+import { getPromotionalViews } from "@/services/promotional-views.service";
 import { supabase } from "@/lib/supabase";
 import { getVehicleIcon, isCourierAvailable, vehicleLabel } from "@/utils/courier.utils";
 import { getOrCreateConversation } from "@/services/chat.service";
@@ -158,6 +159,7 @@ export default function CourierProfile() {
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [startingChat, setStartingChat] = useState(false);
+  const [promoViews, setPromoViews] = useState<number | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -180,7 +182,17 @@ export default function CourierProfile() {
     const load = async () => {
       setLoading(true);
       const { data, error } = await getCourierById(id);
-      if (data) setCourier(data);
+      if (data) {
+        setCourier(data);
+        try {
+          const promoData = await getPromotionalViews('courier', id);
+          if (promoData) {
+            setPromoViews(promoData?.currentViews ?? null);
+          }
+        } catch (e) {
+          console.error("Error fetching promo views for courier profile:", e);
+        }
+      }
       else if (error) Alert.alert("خطأ", error);
       setLoading(false);
     };
@@ -340,6 +352,14 @@ export default function CourierProfile() {
           <View style={styles.badgeRow}>
             <Badge variant={available ? "success" : "error"} label={available ? "متاح" : "غير متاح"} />
             {courier.is_mock && <Badge variant="accent" label="تجريبي" />}
+            {promoViews !== null && (
+              <View style={[styles.vehicleChip, { flexDirection: isRTL ? "row-reverse" : "row", backgroundColor: `${colors.textSecondary}10` }]}>
+                <Eye size={14} color={colors.textSecondary} />
+                <Typography variant="caption" color="secondary" style={{ marginHorizontal: TOKENS.spacing.xs }}>
+                  {typeof promoViews === 'number' ? promoViews.toLocaleString("ar-DZ") : '0'} مشاهدة
+                </Typography>
+              </View>
+            )}
             <View style={[styles.vehicleChip, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
               {getVehicleIcon(courier.vehicle_type, colors.primary, 16)}
               <Typography variant="caption" color="secondary" style={{ marginHorizontal: TOKENS.spacing.xs }}>
