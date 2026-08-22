@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, withRetry } from "@/lib/supabase";
 
 export interface PromotionalViewRecord {
   id: string;
@@ -72,12 +72,14 @@ export function calculateViews(record: PromotionalViewRecord | null, entityCreat
  */
 export async function getPromotionalViews(entityType: "store" | "courier", entityId: string, entityCreatedAt?: string | null): Promise<{ currentViews: number | null; record: PromotionalViewRecord | null }> {
   try {
-    const { data, error } = await supabase
-      .from("promotional_views")
-      .select("*")
-      .eq("entity_type", entityType)
-      .eq("entity_id", entityId)
-      .single();
+    const { data, error } = await withRetry(() =>
+      supabase
+        .from("promotional_views")
+        .select("*")
+        .eq("entity_type", entityType)
+        .eq("entity_id", entityId)
+        .single()
+    );
 
     if (error && error.code !== "PGRST116") {
       console.error("Error fetching promotional views:", error);
@@ -85,19 +87,21 @@ export async function getPromotionalViews(entityType: "store" | "courier", entit
 
     if (!data) {
       // Create default record if not exists
-      const { data: created, error: createError } = await supabase
-        .from("promotional_views")
-        .insert({
-          entity_type: entityType,
-          entity_id: entityId,
-          base_views: 74,
-          daily_increment: 30,
-          manual_views: 0,
-          enabled: true,
-          started_at: entityCreatedAt || new Date().toISOString(),
-        })
-        .select()
-        .single();
+      const { data: created, error: createError } = await withRetry(() =>
+        supabase
+          .from("promotional_views")
+          .insert({
+            entity_type: entityType,
+            entity_id: entityId,
+            base_views: 74,
+            daily_increment: 30,
+            manual_views: 0,
+            enabled: true,
+            started_at: entityCreatedAt || new Date().toISOString(),
+          })
+          .select()
+          .single()
+      );
 
       if (createError) {
         console.error("Error creating promotional views record:", createError);

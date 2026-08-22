@@ -31,3 +31,36 @@ export const supabase = createClient(
     },
   },
 );
+
+/**
+ * Helper to retry Supabase requests that fail due to clock skew (PGRST303: JWT issued at future).
+ * This is a common issue in mobile environments where the device clock is ahead of the server.
+ */
+export async function withRetry<T>(
+  fn: () => Promise<{ data: T | null; error: any }>,
+  maxRetries = 2,
+  delayMs = 1000
+): Promise<{ data: T | null; error: any }> {
+  let lastError: any;
+  
+  for (let i = 0; i <= maxRetries; i++) {
+    const result = await fn();
+    if (!result.error) return result;
+    
+    lastError = result.error;
+    
+    // PGRST303: JWT issued at future
+    if (result.error.code === 'PGRST303') {
+      if (i < maxRetries) {
+        // Wait a bit for the clock to "catch up" or just retry
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        continue;
+      }
+    } else {
+      // Not a clock skew error, don't retry here
+      break;
+    }
+  }
+  
+  return { data: null, error: lastError };
+}

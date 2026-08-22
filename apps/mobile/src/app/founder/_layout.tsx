@@ -71,6 +71,15 @@ export default function FounderLayout() {
       <Stack.Screen name="add-demo-customer" />
       <Stack.Screen name="categories" />
       <Stack.Screen name="hero-slides" />
+      <Stack.Screen name="activity-control" />
+      <Stack.Screen name="activity" />
+      <Stack.Screen name="chat-control" />
+      <Stack.Screen name="couriers-control" />
+      <Stack.Screen name="customers-control" />
+      <Stack.Screen name="deliveries" />
+      <Stack.Screen name="market-settings" />
+      <Stack.Screen name="merchants-control" />
+      <Stack.Screen name="views-management" />
     </Stack>
   );
 }

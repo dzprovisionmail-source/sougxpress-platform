@@ -133,7 +133,7 @@ export default function CouriersDirectoryScreen() {
         const newMap: Record<string, number | null> = {};
         for (const courier of couriers) {
           try {
-            const promoData = await getPromotionalViews("driver", courier.id);
+            const promoData = await getPromotionalViews("courier", courier.id);
             newMap[courier.id] = promoData ? calculateViews(promoData) : null;
           } catch (e) {
             console.error(`Error fetching promo views for courier ${courier.id}:`, e);

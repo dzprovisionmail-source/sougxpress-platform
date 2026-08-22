@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { router } from "expo-router";
-import { supabase } from "@/lib/supabase";
+import { supabase, withRetry } from "@/lib/supabase";
 
 export interface AdminProfile {
   id: string;
@@ -43,11 +43,13 @@ export function useAdminProfile(): UseAdminProfileResult {
         return;
       }
 
-      const { data: profileData, error } = await supabase
-        .from("profiles")
-        .select("id, role, full_name")
-        .eq("id", user.id)
-        .single();
+      const { data: profileData, error } = await withRetry(() =>
+        supabase
+          .from("profiles")
+          .select("id, role, full_name")
+          .eq("id", user.id)
+          .single()
+      );
 
       if (!mounted) return;
 

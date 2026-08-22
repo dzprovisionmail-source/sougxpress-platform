@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Store } from '../types/schema-03-core';
 import { getAllStores, getStoresByCategory, searchStores } from '../services/store.service';
-import { supabase } from '../lib/supabase';
+import { supabase, withRetry } from '../lib/supabase';
 
 export const useStores = (category?: string) => {
   const [stores, setStores] = useState<Store[]>([]);
@@ -64,13 +64,15 @@ export const useNewStores = (limit: number = 10) => {
     const fetchNewStores = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('stores')
-          .select('*')
-          .eq('status', 'active')
-          .eq('is_new', true)
-          .order('created_at', { ascending: false })
-          .limit(limit);
+        const { data, error } = await withRetry(() => 
+          supabase
+            .from('stores')
+            .select('*')
+            .eq('status', 'active')
+            .eq('is_new', true)
+            .order('created_at', { ascending: false })
+            .limit(limit)
+        );
         
         if (error) throw error;
         setStores(data || []);
