@@ -121,20 +121,24 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   }, [visible, mediaItemId, fetchLikeData, fetchComments, fetchRating]);
 
   useEffect(() => {
-    if (visible && store?.id) {
-      const fetchViews = async () => {
-        try {
-          const promoData = await getPromotionalViews('store', store.id);
-          if (promoData) {
-            setPromoViews(promoData?.currentViews ?? null);
-          }
-        } catch (e) {
-          console.error("Error fetching promo views for media viewer:", e);
-        }
-      };
-      fetchViews();
-    }
-  }, [visible, store?.id]);
+    let cancelled = false;
+    setPromoViews(null);
+    if (!visible || !store?.id) return;
+
+    getPromotionalViews("store", store.id, store.created_at ?? null)
+      .then((promoData) => {
+        if (cancelled) return;
+        const value = promoData?.currentViews;
+        setPromoViews(typeof value === "number" && Number.isFinite(value) ? value : null);
+      })
+      .catch(() => {
+        if (!cancelled) setPromoViews(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, store?.id, store?.created_at]);
 
   const handleLikePress = async () => {
     if (!currentUserId) {
@@ -346,14 +350,14 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
               <MessageCircle size={22} color={colors.textSecondary} />
             </TouchableOpacity>
 
-            {promoViews !== null && (
-              <View style={[styles.actionButton, { opacity: 0.8 }]}>
+            {typeof promoViews === "number" && Number.isFinite(promoViews) ? (
+              <View style={styles.actionButton}>
                 <Eye size={20} color={colors.textSecondary} />
                 <Text style={[styles.actionText, { color: colors.textSecondary }]}>
-                  {promoViews.toLocaleString("ar-DZ")} مشاهدة
+                  {promoViews.toLocaleString("ar-DZ")}
                 </Text>
               </View>
-            )}
+            ) : null}
           </View>
 
           {ratingMode && (

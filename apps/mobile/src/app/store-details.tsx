@@ -188,16 +188,6 @@ export default function StoreDetailsScreen() {
       setStore(storeData);
       setLoading(false);
 
-      // Fetch promotional views
-      try {
-        const promoData = await getPromotionalViews("store", id);
-        if (promoData) {
-          setPromoViews(promoData.currentViews);
-        }
-      } catch (e) {
-        console.error("Error fetching promo views:", e);
-      }
-
       // Fetch gallery (active images only)
       const { data: galleryData, error: galleryErr } = await supabase
         .from("store_gallery")
@@ -234,6 +224,26 @@ export default function StoreDetailsScreen() {
       setRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    setPromoViews(null);
+    if (!id) return;
+
+    getPromotionalViews("store", id, store?.created_at ?? null)
+      .then((promoData) => {
+        if (cancelled) return;
+        const value = promoData?.currentViews;
+        setPromoViews(typeof value === "number" && Number.isFinite(value) ? value : null);
+      })
+      .catch(() => {
+        if (!cancelled) setPromoViews(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, store?.created_at]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -407,15 +417,16 @@ export default function StoreDetailsScreen() {
               <Text style={[styles.statValue, { color: colors.textPrimary }]}>{ (reviewCount || 0).toLocaleString("ar-DZ")}</Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>مراجعة</Text>
             </View>
-            {promoViews !== null && (
+
+            {typeof promoViews === "number" && Number.isFinite(promoViews) ? (
               <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                   <Text style={[styles.statValue, { color: colors.textPrimary }]}>{promoViews.toLocaleString("ar-DZ")}</Text>
                   <Eye size={14} color={colors.textSecondary} />
                 </View>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>مشاهدة</Text>
               </View>
-            )}
+            ) : null}
+
             <View style={[styles.statusItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
               <Badge
                 label={store.is_open !== false ? "مفتوح الآن" : "مغلق"}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
   I18nManager,
 } from 'react-native';
 import { Clock, MapPin, Tag, Heart, MessageCircle, Eye } from 'lucide-react-native';
-import { getPromotionalViews } from '@/services/promotional-views.service';
 import { Card } from './Card';
 import { Rating } from './Rating';
 import { ImageFallback } from './ImageFallback';
@@ -17,6 +16,7 @@ import { CategoryIcon } from './CategoryIcon';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { TOKENS } from '@/constants/tokens';
 import { getArabicCategoryName } from '@/config/storeCategories';
+import { getPromotionalViews } from '@/services/promotional-views.service';
 
 export interface StoreCardProps {
   id?: string;
@@ -78,20 +78,24 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   const actualAddress = address || store?.address_line1 || store?.city || '';
 
   useEffect(() => {
-    if (actualId) {
-      const fetchViews = async () => {
-        try {
-          const promoData = await getPromotionalViews('store', actualId);
-          if (promoData) {
-            setPromoViews(promoData?.currentViews ?? null);
-          }
-        } catch (e) {
-          console.error("Error fetching promo views for card:", e);
-        }
-      };
-      fetchViews();
-    }
-  }, [actualId]);
+    let cancelled = false;
+    setPromoViews(null);
+    if (!actualId) return;
+
+    getPromotionalViews("store", actualId, store?.created_at ?? null)
+      .then((promoData) => {
+        if (cancelled) return;
+        const value = promoData?.currentViews;
+        setPromoViews(typeof value === "number" && Number.isFinite(value) ? value : null);
+      })
+      .catch(() => {
+        if (!cancelled) setPromoViews(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [actualId, store?.created_at]);
 
   const handlePress = () => {
     if (onPress) {
@@ -265,14 +269,14 @@ export const StoreCard: React.FC<StoreCardProps> = ({
               </Text>
             </View>
 
-            {promoViews !== null && (
+            {typeof promoViews === "number" && Number.isFinite(promoViews) ? (
               <View style={styles.infoPill}>
                 <Eye size={13} color={colors.textSecondary} />
                 <Text style={[styles.infoPillText, { color: colors.textSecondary }]}>
-                  {promoViews.toLocaleString("ar-DZ")} مشاهدة
+                  {promoViews.toLocaleString("ar-DZ")}
                 </Text>
               </View>
-            )}
+            ) : null}
           </View>
 
           <View style={styles.infoPill}>
