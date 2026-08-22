@@ -12,6 +12,7 @@ import { router } from "expo-router";
 import {
   Users,
   Store,
+  MessageSquare,
   Truck,
   ShoppingBag,
   ClipboardList,
@@ -479,6 +480,8 @@ export default function FounderControlCenterScreen() {
             <NavTile label="المتاجر" icon={<Store size={20} color={primary} />} onPress={() => router.push("/founder/stores" as never)} colors={colors} tokens={tokens} />
             <NavTile label="إدارة الطلبات" icon={<ClipboardList size={20} color={primary} />} onPress={() => router.push("/founder/orders" as never)} colors={colors} tokens={tokens} />
             <NavTile label="إدارة التوصيلات" icon={<Truck size={20} color={primary} />} onPress={() => router.push("/founder/deliveries" as never)} colors={colors} tokens={tokens} />
+            <NavTile label="مراقبة المحادثات" icon={<MessageSquare size={20} color={primary} />} onPress={() => router.push("/founder/chat-control" as never)} colors={colors} tokens={tokens} />
+            <NavTile label="نشاط المنصة" icon={<Activity size={20} color={primary} />} onPress={() => router.push("/founder/activity-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="مراقبة الزبائن" icon={<Users size={20} color={primary} />} onPress={() => router.push("/founder/customers-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="مراقبة التجار" icon={<Store size={20} color={primary} />} onPress={() => router.push("/founder/merchants-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="مراقبة الموصلون" icon={<Truck size={20} color={primary} />} onPress={() => router.push("/founder/couriers-control" as never)} colors={colors} tokens={tokens} />
