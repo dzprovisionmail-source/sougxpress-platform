@@ -14,7 +14,8 @@ import { router } from "expo-router";
 import { Eye, Plus, Settings, Check, X, Shield, ArrowRight, Store, Truck } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { AdminPageShell, AdminErrorState, SearchBar } from "@/components/admin";
+import { AdminPageShell, AdminErrorState } from "@/components/admin";
+import { SearchBar } from "@/components/ui/SearchBar";
 import {
   getAllPromotionalViews,
   updatePromotionalViews,

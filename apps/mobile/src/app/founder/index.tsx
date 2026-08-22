@@ -37,7 +37,8 @@ import {
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
-import { AdminPageShell, AdminStatCard, AdminErrorState, SearchBar } from "@/components/admin";
+import { AdminPageShell, AdminStatCard, AdminErrorState } from "@/components/admin";
+import { SearchBar } from "@/components/ui/SearchBar";
 import {
   getControlCenterStats,
   subscribeToFounderStats,
