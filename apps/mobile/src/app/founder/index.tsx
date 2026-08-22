@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Dimensions,
 } from "react-native";
 import { router } from "expo-router";
 import {
@@ -17,12 +16,7 @@ import {
   ShoppingBag,
   ClipboardList,
   CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Ban,
-  Package,
   DollarSign,
-  Shield,
   FileText,
   Settings,
   ScrollText,
@@ -30,11 +24,9 @@ import {
   UserPlus,
   TrendingUp,
   Activity,
-  Bell,
-  BarChart2,
-  MapPin,
   Megaphone,
   Eye,
+  ChevronLeft,
 } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -46,34 +38,90 @@ import {
   type ControlCenterStats,
 } from "@/services/founder.service";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+// ─── Founder visual foundation ────────────────────────────────────────────────
 
-const ACTION_LABELS: Record<string, string> = {
-  view_founder_dashboard: "عرض لوحة المؤسس",
-  create_store: "إنشاء متجر",
-  create_store_failed: "فشل إنشاء متجر",
-  update_store_status: "تحديث حالة متجر",
-  update_merchant_status: "تحديث حالة تاجر",
-  update_driver_status: "تحديث حالة موصل",
-  update_customer_status: "تحديث حالة زبون",
-  provision_account: "إنشاء حساب",
-};
+function FounderHero() {
+  const { colors, tokens } = useAppTheme();
 
-const ENTITY_LABELS: Record<string, string> = {
-  system: "النظام",
-  store: "المتجر",
-  merchant: "التاجر",
-  driver: "الموصل",
-  customer: "الزبون",
-  order: "الطلب",
-};
-
-function actionLabel(action: string) {
-  return ACTION_LABELS[action] ?? action;
-}
-
-function entityLabel(type: string) {
-  return ENTITY_LABELS[type] ?? type;
+  return (
+    <View
+      style={[
+        styles.hero,
+        {
+          backgroundColor: colors.bgSurface,
+          borderColor: colors.borderSubtle,
+          borderRadius: tokens.radius.lg,
+          padding: tokens.spacing.lg,
+        },
+      ]}
+    >
+      <View style={[styles.heroAccent, { backgroundColor: colors.primary }]} />
+      <View style={styles.heroRow}>
+        <View
+          style={[
+            styles.heroIcon,
+            {
+              backgroundColor: colors.primary + "18",
+              borderColor: colors.primary + "44",
+            },
+          ]}
+        >
+          <TrendingUp size={22} color={colors.primary} />
+        </View>
+        <View style={styles.heroCopy}>
+          <Text
+            style={{
+              color: colors.primary,
+              fontSize: tokens.typography.sizes.xs,
+              fontWeight: "700",
+              textAlign: "right",
+              letterSpacing: 0.4,
+              fontFamily: tokens.typography.families.arabic,
+            }}
+          >
+            SOUG-XPRESS · FOUNDER CONTROL CENTER
+          </Text>
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: tokens.typography.sizes.lg,
+              fontWeight: "800",
+              textAlign: "right",
+              marginTop: 4,
+              fontFamily: tokens.typography.families.arabic,
+            }}
+          >
+            مركز قيادة المنصة
+          </Text>
+          <Text
+            style={{
+              color: colors.textSecondary,
+              fontSize: tokens.typography.sizes.sm,
+              lineHeight: 20,
+              textAlign: "right",
+              marginTop: 3,
+              fontFamily: tokens.typography.families.arabic,
+            }}
+          >
+            رؤية موحّدة للعمليات الحية في Soug-XPRESS
+          </Text>
+          <View style={styles.heroLiveRow}>
+            <View style={[styles.liveDot, { backgroundColor: colors.success }]} />
+            <Text
+              style={{
+                color: colors.success,
+                fontSize: tokens.typography.sizes.xs,
+                fontWeight: "700",
+                fontFamily: tokens.typography.families.arabic,
+              }}
+            >
+              مزامنة مباشرة مع بيانات المنصة
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
 }
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
@@ -87,19 +135,21 @@ function SectionBlock({
 }) {
   const { colors, tokens } = useAppTheme();
   return (
-    <View style={{ gap: tokens.spacing.sm, marginBottom: tokens.spacing.lg }}>
-      <Text
-        style={{
-          color: colors.textSecondary,
-          fontSize: tokens.typography.sizes.sm,
-          fontWeight: "700",
-          textAlign: "right",
-          paddingHorizontal: tokens.spacing.lg,
-          fontFamily: tokens.typography.families.arabic,
-        }}
-      >
-        {title}
-      </Text>
+    <View style={styles.sectionBlock}>
+      <View style={styles.sectionHeading}>
+        <View style={[styles.sectionHeadingLine, { backgroundColor: colors.primary }]} />
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: tokens.typography.sizes.sm,
+            fontWeight: "800",
+            textAlign: "right",
+            fontFamily: tokens.typography.families.arabic,
+          }}
+        >
+          {title}
+        </Text>
+      </View>
       {children}
     </View>
   );
@@ -110,7 +160,7 @@ function SectionBlock({
 function StatsRow({ children }: { children: React.ReactNode }) {
   const { tokens } = useAppTheme();
   return (
-    <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.sm, paddingHorizontal: tokens.spacing.lg }}>
+    <View style={[styles.statsRow, { gap: tokens.spacing.sm }]}>
       {children}
     </View>
   );
@@ -301,9 +351,8 @@ export default function FounderControlCenterScreen() {
     <AdminPageShell showLogout title="مركز التحكم" showProfile showNotification={false} scrollable={false}>
       <ScrollView
         contentContainerStyle={{
-          paddingVertical: tokens.spacing.xl,
+          paddingVertical: tokens.spacing.lg,
           paddingBottom: tokens.spacing["3xl"],
-          gap: tokens.spacing.lg,
         }}
         refreshControl={
           <RefreshControl
@@ -314,6 +363,8 @@ export default function FounderControlCenterScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
+        <FounderHero />
+
         {/* ── Section: نظرة عامة ────────────────────────────────────── */}
         <SectionBlock title="نظرة عامة">
           <StatsRow>
@@ -447,6 +498,7 @@ export default function FounderControlCenterScreen() {
               borderWidth: 1,
               borderRadius: tokens.radius.md,
               padding: tokens.spacing.md,
+              marginHorizontal: 16,
               flexDirection: "row-reverse",
               alignItems: "center",
               justifyContent: "space-between",
@@ -465,7 +517,7 @@ export default function FounderControlCenterScreen() {
                 </Text>
               </View>
             </View>
-            <Text style={{ color: primary, fontWeight: "700", fontSize: 16, marginRight: 8 }}>←</Text>
+            <ChevronLeft color={primary} size={20} />
           </TouchableOpacity>
         </SectionBlock>
       </ScrollView>
@@ -474,15 +526,78 @@ export default function FounderControlCenterScreen() {
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    borderWidth: 1,
+    overflow: "hidden",
+    marginHorizontal: 16,
+    marginBottom: 20,
+  },
+  heroAccent: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: 4,
+  },
+  heroRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 14,
+  },
+  heroCopy: {
+    flex: 1,
+    alignItems: "stretch",
+  },
+  heroIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroLiveRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 6,
+    marginTop: 10,
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  sectionBlock: {
+    gap: 10,
+    marginBottom: 20,
+  },
+  sectionHeading: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+  },
+  sectionHeadingLine: {
+    width: 24,
+    height: 3,
+    borderRadius: 2,
+  },
+  statsRow: {
+    flexDirection: "row-reverse",
+    paddingHorizontal: 16,
+  },
   navGrid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
     gap: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
   },
   navTile: {
-    width: "22%",
+    width: "31.5%",
+    minHeight: 92,
     alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
   },
   navTileIcon: {
@@ -493,13 +608,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   quickActionsGrid: {
-    gap: 8,
-    paddingHorizontal: 10,
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: 10,
+    paddingHorizontal: 16,
   },
   quickAction: {
+    width: "48.5%",
+    minHeight: 68,
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: 12,
+    gap: 9,
     borderWidth: 1,
   },
   quickActionIcon: {
@@ -511,7 +630,12 @@ const styles = StyleSheet.create({
   },
   financeCard: {
     borderWidth: 1,
-    marginHorizontal: 10,
+    marginHorizontal: 16,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 2,
   },
   activityItem: {
     borderWidth: 1,
