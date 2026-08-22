@@ -21,6 +21,7 @@ import {
   calculateViews,
   type PromotionalViewRecord,
 } from "@/services/promotional-views.service";
+import { getStoreOrderMetrics, setStoreOrderCountOverride } from "@/services/store-metrics.service";
 
 export default function FounderViewsManagementScreen() {
   const { colors, tokens } = useAppTheme();
@@ -36,6 +37,7 @@ export default function FounderViewsManagementScreen() {
   const [addedViewsInput, setAddedViewsInput] = useState("");
   const [dailyIncrementInput, setDailyIncrementInput] = useState("");
   const [enabledInput, setEnabledInput] = useState(true);
+  const [orderCountOverrideInput, setOrderCountOverrideInput] = useState("");
   const [updating, setUpdating] = useState(false);
 
   const loadData = useCallback(async (isRefresh = false) => {
@@ -58,11 +60,18 @@ export default function FounderViewsManagementScreen() {
     loadData();
   }, [loadData]);
 
-  const handleOpenModal = (record: PromotionalViewRecord) => {
+  const handleOpenModal = async (record: PromotionalViewRecord) => {
     setSelectedRecord(record);
     setAddedViewsInput("");
     setDailyIncrementInput(String(record.daily_increment));
     setEnabledInput(record.enabled);
+    setOrderCountOverrideInput("");
+    if (record.entity_type === "store") {
+      const metrics = await getStoreOrderMetrics(record.entity_id);
+      setOrderCountOverrideInput(
+        metrics.orderCountOverride === null ? "" : String(metrics.orderCountOverride),
+      );
+    }
     setModalVisible(true);
   };
 
@@ -86,6 +95,18 @@ export default function FounderViewsManagementScreen() {
       });
 
       if (success) {
+        if (selectedRecord.entity_type === "store") {
+          const trimmedOverride = orderCountOverrideInput.trim();
+          const parsedOverride = trimmedOverride === "" ? null : Number(trimmedOverride);
+          const overrideResult = await setStoreOrderCountOverride(
+            selectedRecord.entity_id,
+            parsedOverride,
+          );
+          if (overrideResult.error) {
+            alert(`تم تحديث المشاهدات، لكن تعذر حفظ عداد الطلبات: ${overrideResult.error}`);
+            return;
+          }
+        }
         setModalVisible(false);
         loadData(true);
       } else {
@@ -287,6 +308,21 @@ export default function FounderViewsManagementScreen() {
                 <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 12, fontFamily: tokens.typography.families.arabic }}>
                   نوع الكيان: {selectedRecord.entity_type} | ID: {selectedRecord.entity_id}
                 </Text>
+
+                {selectedRecord.entity_type === "store" ? (
+                  <View style={{ marginBottom: 12 }}>
+                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right", marginBottom: 6, fontFamily: tokens.typography.families.arabic }}>
+                      Override عدد الطلبات الظاهر (اتركه فارغاً لاستخدام العدد الفعلي)
+                    </Text>
+                    <TextInput
+                      value={orderCountOverrideInput}
+                      onChangeText={setOrderCountOverrideInput}
+                      placeholder="العدد الفعلي"
+                      keyboardType="number-pad"
+                      style={[styles.input, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary, borderRadius: tokens.radius.md, textAlign: "right", fontFamily: tokens.typography.families.arabic, paddingHorizontal: 12, height: 44 }]}
+                    />
+                  </View>
+                ) : null}
 
                 <View style={{ marginBottom: 12 }}>
                   <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", textAlign: "right", marginBottom: 6, fontFamily: tokens.typography.families.arabic }}>

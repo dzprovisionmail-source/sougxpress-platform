@@ -16,7 +16,7 @@ import { CategoryIcon } from './CategoryIcon';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { TOKENS } from '@/constants/tokens';
 import { getArabicCategoryName } from '@/config/storeCategories';
-import { getPromotionalViews } from '@/services/promotional-views.service';
+import { getStoreMetrics } from '@/services/store-metrics.service';
 
 export interface StoreCardProps {
   id?: string;
@@ -64,6 +64,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
   const [promoViews, setPromoViews] = useState<number | null>(null);
+  const [displayedOrderCount, setDisplayedOrderCount] = useState<number | null>(null);
 
   const actualId = id || store?.id || '';
   const actualName = name || store?.name || '';
@@ -80,16 +81,24 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   useEffect(() => {
     let cancelled = false;
     setPromoViews(null);
+    setDisplayedOrderCount(null);
     if (!actualId) return;
-
-    getPromotionalViews("store", actualId, store?.created_at ?? null)
-      .then((promoData) => {
+    getStoreMetrics(actualId, store?.created_at ?? null)
+      .then((metrics) => {
         if (cancelled) return;
-        const value = promoData?.currentViews;
-        setPromoViews(typeof value === "number" && Number.isFinite(value) ? value : null);
+        const views = metrics?.currentViews;
+        setPromoViews(typeof views === "number" && Number.isFinite(views) ? views : null);
+        setDisplayedOrderCount(
+          typeof metrics?.displayedOrderCount === "number" && Number.isFinite(metrics.displayedOrderCount)
+            ? metrics.displayedOrderCount
+            : null,
+        );
       })
       .catch(() => {
-        if (!cancelled) setPromoViews(null);
+        if (!cancelled) {
+          setPromoViews(null);
+          setDisplayedOrderCount(null);
+        }
       });
 
     return () => {
@@ -268,6 +277,14 @@ export const StoreCard: React.FC<StoreCardProps> = ({
                 {deliveryTime}
               </Text>
             </View>
+
+            {typeof displayedOrderCount === "number" && Number.isFinite(displayedOrderCount) ? (
+              <View style={styles.infoPill}>
+                <Text style={[styles.infoPillText, { color: colors.textSecondary }]}>
+                  {displayedOrderCount.toLocaleString("ar-DZ")} طلبات
+                </Text>
+              </View>
+            ) : null}
 
             {typeof promoViews === "number" && Number.isFinite(promoViews) ? (
               <View style={styles.infoPill}>

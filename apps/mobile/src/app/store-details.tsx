@@ -26,7 +26,7 @@ import {
   Button,
 } from "@/components/ui";
 import { Store as StoreIcon, Heart, MessageCircle, Star, Eye, ChevronRight, ChevronLeft } from "lucide-react-native";
-import { getPromotionalViews } from "@/services/promotional-views.service";
+import { getStoreMetrics } from "@/services/store-metrics.service";
 import { toggleFavorite, checkIfFavorite, getFavoriteIds } from "@/services/favorite.service";
 import { getOrCreateConversation } from "@/services/chat.service";
 import { TOKENS } from "@/constants/tokens";
@@ -69,6 +69,7 @@ export default function StoreDetailsScreen() {
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
   const [startingChat, setStartingChat] = useState(false);
   const [promoViews, setPromoViews] = useState<number | null>(null);
+  const [displayedOrderCount, setDisplayedOrderCount] = useState<number | null>(null);
   const reviewCount = getNumericMetric(store?.review_count);
   const viewCount = getNumericMetric(store?.view_count, store?.views_count, store?.views);
 
@@ -228,16 +229,25 @@ export default function StoreDetailsScreen() {
   useEffect(() => {
     let cancelled = false;
     setPromoViews(null);
+    setDisplayedOrderCount(null);
     if (!id) return;
 
-    getPromotionalViews("store", id, store?.created_at ?? null)
-      .then((promoData) => {
+    getStoreMetrics(id, store?.created_at ?? null)
+      .then((metrics) => {
         if (cancelled) return;
-        const value = promoData?.currentViews;
-        setPromoViews(typeof value === "number" && Number.isFinite(value) ? value : null);
+        const views = metrics?.currentViews;
+        setPromoViews(typeof views === "number" && Number.isFinite(views) ? views : null);
+        setDisplayedOrderCount(
+          typeof metrics?.displayedOrderCount === "number" && Number.isFinite(metrics.displayedOrderCount)
+            ? metrics.displayedOrderCount
+            : null,
+        );
       })
       .catch(() => {
-        if (!cancelled) setPromoViews(null);
+        if (!cancelled) {
+          setPromoViews(null);
+          setDisplayedOrderCount(null);
+        }
       });
 
     return () => {
@@ -413,10 +423,12 @@ export default function StoreDetailsScreen() {
               <Rating rating={store.rating ?? 0} count={reviewCount ?? 0} size="sm" />
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>التقييم</Text>
             </View>
-            <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-              <Text style={[styles.statValue, { color: colors.textPrimary }]}>{ (reviewCount || 0).toLocaleString("ar-DZ")}</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>عدد الطلبيات</Text>
-            </View>
+            {typeof displayedOrderCount === "number" && Number.isFinite(displayedOrderCount) ? (
+              <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+                <Text style={[styles.statValue, { color: colors.textPrimary }]}>{displayedOrderCount.toLocaleString("ar-DZ")}</Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>عدد الطلبيات</Text>
+              </View>
+            ) : null}
 
             {typeof promoViews === "number" && Number.isFinite(promoViews) ? (
               <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
