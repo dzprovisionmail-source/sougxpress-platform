@@ -45,8 +45,9 @@ const getNumericMetric = (...values: unknown[]): number | null => {
 
 export default function StoreDetailsScreen() {
   const router = useRouter();
-  const rawParams = useLocalSearchParams<{ id: string }>();
+  const rawParams = useLocalSearchParams<{ id: string; identity?: string }>();
   const rawId = rawParams.id;
+  const platformIdentity = rawParams.identity === "soug-admin" ? "soug-admin" : undefined;
   const id = rawId && UUID_REGEX.test(rawId) ? rawId : undefined;
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -617,6 +618,7 @@ export default function StoreDetailsScreen() {
           store={store}
           currentUserId={currentUserId}
           currentUserRole={currentUserRole}
+          identity={platformIdentity}
           onClose={() => setViewingMediaItem(null)}
         />
       )}

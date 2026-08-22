@@ -246,6 +246,7 @@ export interface StoreGalleryComment {
   user_id: string;
   user_name: string;
   user_avatar_url: string | null;
+  platform_profile_slug?: string | null;
   content: string;
   created_at: string;
 }

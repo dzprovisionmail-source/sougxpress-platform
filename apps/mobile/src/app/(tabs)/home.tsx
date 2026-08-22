@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart } from 'lucide-react-native';
 import { LOGO_WORDMARK, ICON_MASCOT_SCOOTER, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
 
@@ -65,6 +65,8 @@ const HERO_STORE_TITLES = ["سوبر ماركت الوفاء", "مخبزة ال�
 
 const HomeScreen = () => {
   const router = useRouter();
+  const params = useLocalSearchParams<{ identity?: string }>();
+  const platformIdentity = params.identity === "soug-admin" ? "soug-admin" : undefined;
   const { colors, tokens, isRTL, textAlign } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -163,7 +165,10 @@ const HomeScreen = () => {
   };
 
   const handleStorePress = (storeId: string) => {
-    router.push({ pathname: "/store-details", params: { id: storeId } });
+    router.push({
+      pathname: "/store-details",
+      params: { id: storeId, ...(platformIdentity ? { identity: platformIdentity } : {}) },
+    });
   };
 
   const storesMap = useMemo(() => {
@@ -320,9 +325,9 @@ const HomeScreen = () => {
       } else if (targetProd && UUID_REGEX.test(targetProd)) {
         router.push({ pathname: "/product-details", params: { id: targetProd } });
       } else if (targetStore && UUID_REGEX.test(targetStore)) {
-        router.push({ pathname: "/store-details", params: { id: targetStore } });
+        handleStorePress(targetStore);
       } else if (heroStore && UUID_REGEX.test(heroStore.id)) {
-        router.push({ pathname: "/store-details", params: { id: heroStore.id } });
+        handleStorePress(heroStore.id);
       }
     };
 

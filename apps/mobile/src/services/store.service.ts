@@ -2,6 +2,7 @@
 import { supabase } from "../lib/supabase";
 import { Store, StoreGalleryImage, StoreVideo, StoreGalleryLike, StoreGalleryComment, StoreGalleryRating } from "../types/schema-03-core";
 import { mapLegacyCategoryToMain } from "../config/storeCategories";
+import { getPlatformPublicProfile } from "./platform-profile.service";
 
 const isValidUUID = (uuid: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -405,6 +406,7 @@ export const toggleGalleryLike = async (
 export interface GalleryCommentWithAuthor extends StoreGalleryComment {
   user_name: string;
   user_avatar_url: string | null;
+  platform_profile_slug?: string | null;
 }
 
 export const getGalleryComments = async (imageId: string): Promise<GalleryCommentWithAuthor[]> => {
@@ -415,7 +417,24 @@ export const getGalleryComments = async (imageId: string): Promise<GalleryCommen
       .eq("gallery_image_id", imageId)
       .order("created_at", { ascending: true });
     if (error) return [];
-    return (data ?? []) as GalleryCommentWithAuthor[];
+
+    const comments = (data ?? []) as GalleryCommentWithAuthor[];
+    if (!comments.some((comment) => comment.platform_profile_slug === "soug-admin")) {
+      return comments;
+    }
+
+    const platformProfile = await getPlatformPublicProfile("soug-admin");
+    if (!platformProfile) return comments;
+
+    return comments.map((comment) =>
+      comment.platform_profile_slug === "soug-admin"
+        ? {
+            ...comment,
+            user_name: platformProfile.display_name,
+            user_avatar_url: platformProfile.avatar_url,
+          }
+        : comment,
+    );
   } catch {
     return [];
   }
@@ -495,15 +514,24 @@ export async function getUserDisplayInfo(userId: string): Promise<{ name: string
 export const addGalleryComment = async (
   imageId: string,
   userId: string,
-  content: string
+  content: string,
+  platformProfileSlug?: string | null,
 ): Promise<GalleryCommentWithAuthor | null> => {
   try {
-    const { name, avatarUrl } = await getUserDisplayInfo(userId);
+    const platformProfile = platformProfileSlug
+      ? await getPlatformPublicProfile(platformProfileSlug)
+      : null;
+    if (platformProfileSlug && !platformProfile) return null;
+
+    const { name, avatarUrl } = platformProfile
+      ? { name: platformProfile.display_name, avatarUrl: platformProfile.avatar_url }
+      : await getUserDisplayInfo(userId);
     const { data, error } = await supabase
       .from("store_gallery_comments")
       .insert({
         gallery_image_id: imageId,
         user_id: userId,
+        platform_profile_slug: platformProfile?.slug ?? null,
         user_name: name || "مستخدم",
         user_avatar_url: avatarUrl,
         content: content.trim(),

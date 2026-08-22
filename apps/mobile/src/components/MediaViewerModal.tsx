@@ -42,6 +42,7 @@ interface MediaViewerModalProps {
   store: Store | null;
   currentUserId: string | undefined;
   currentUserRole: string | undefined;
+  identity?: string;
   onLikeUpdate?: () => void;
 }
 
@@ -52,6 +53,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   store,
   currentUserId,
   currentUserRole,
+  identity,
   onLikeUpdate,
 }) => {
   const { colors, tokens } = useAppTheme();
@@ -72,6 +74,10 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   const mediaType: MediaType = mediaItem?.media_type ?? "photo";
   const ownerId = store?.created_by ?? null;
   const mediaItemId = mediaItem?.id ?? "";
+  const platformProfileSlug =
+    identity === "soug-admin" && (currentUserRole === "founder" || currentUserRole === "admin")
+      ? "soug-admin"
+      : undefined;
 
   if (!visible || !mediaItem) return null;
 
@@ -197,7 +203,8 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
       const result = await addGalleryComment(
         mediaItemId,
         currentUserId,
-        commentText
+        commentText,
+        platformProfileSlug,
       );
       if (result) {
         setCommentText("");
