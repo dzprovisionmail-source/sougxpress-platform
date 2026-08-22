@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Store } from '../types/schema-03-core';
 import { getAllStores, getStoresByCategory, searchStores } from '../services/store.service';
 import { supabase, withRetry } from '../lib/supabase';
+import { PlatformPublicProfile, searchPlatformPublicProfiles } from '../services/platform-profile.service';
 
 export const useStores = (category?: string) => {
   const [stores, setStores] = useState<Store[]>([]);
@@ -34,18 +35,21 @@ export const useStores = (category?: string) => {
 };
 
 export const useSearch = () => {
-  const [results, setResults] = useState<{ stores: Store[] }>({ stores: [] });
+  const [results, setResults] = useState<{ stores: Store[]; platformProfiles: PlatformPublicProfile[] }>({ stores: [], platformProfiles: [] });
   const [loading, setLoading] = useState(false);
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
-      setResults({ stores: [] });
+      setResults({ stores: [], platformProfiles: [] });
       return;
     }
     setLoading(true);
     try {
-      const stores = await searchStores(query);
-      setResults({ stores });
+      const [stores, platformProfiles] = await Promise.all([
+        searchStores(query),
+        searchPlatformPublicProfiles(query),
+      ]);
+      setResults({ stores, platformProfiles });
     } catch (err) {
       console.error(err);
     } finally {

@@ -453,6 +453,7 @@ const HomeScreen = () => {
   }, [allStores, activeCategory, activeSubcategory, searchQuery]);
 
   const displayedStores = searchQuery.length > 0 ? searchResults.stores : filteredStores;
+  const platformProfiles = searchQuery.length > 0 ? searchResults.platformProfiles : [];
   const loading = storesLoading || searchLoading || newStoresLoading;
   const error = storesError;
 
@@ -643,6 +644,27 @@ const HomeScreen = () => {
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
+              </View>
+            )}
+
+            {/* Official platform profiles */}
+            {platformProfiles.length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>الحسابات الرسمية</Text>
+                {platformProfiles.map((profile) => (
+                  <TouchableOpacity
+                    key={profile.id}
+                    style={[styles.platformProfileResult, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
+                    activeOpacity={0.8}
+                    onPress={() => router.push({ pathname: '/platform-profile/[slug]', params: { slug: profile.slug } })}
+                  >
+                    <Image source={LOGO_WORDMARK} style={styles.platformProfileAvatar} resizeMode="contain" />
+                    <View style={styles.platformProfileCopy}>
+                      <Text style={[styles.platformProfileName, { color: colors.textPrimary }]}>{profile.display_name}</Text>
+                      <Text style={[styles.platformProfileBio, { color: colors.textSecondary }]}>{profile.bio}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
               </View>
             )}
 
@@ -1004,6 +1026,34 @@ const styles = StyleSheet.create({
     ...typography.body,
     textAlign: 'center',
     marginTop: spacing.lg,
+  },
+  platformProfileResult: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: radius.medium,
+    padding: spacing.md,
+    marginHorizontal: spacing.lg,
+    ...shadows.small,
+  },
+  platformProfileAvatar: {
+    width: 52,
+    height: 52,
+    marginStart: spacing.md,
+  },
+  platformProfileCopy: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  platformProfileName: {
+    ...typography.title,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  platformProfileBio: {
+    ...typography.caption,
+    marginTop: spacing.xs,
+    textAlign: 'right',
   },
 });
 
