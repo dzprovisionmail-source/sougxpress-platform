@@ -26,6 +26,7 @@ import {
   Button,
 } from "@/components/ui";
 import { Store as StoreIcon, Heart, MessageCircle, Star, Eye, ChevronRight, ChevronLeft } from "lucide-react-native";
+import { getPromotionalViews, calculateViews } from "@/services/promotional-views.service";
 import { toggleFavorite, checkIfFavorite, getFavoriteIds } from "@/services/favorite.service";
 import { getOrCreateConversation } from "@/services/chat.service";
 import { TOKENS } from "@/constants/tokens";
@@ -67,6 +68,7 @@ export default function StoreDetailsScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
   const [startingChat, setStartingChat] = useState(false);
+  const [promoViews, setPromoViews] = useState<number | null>(null);
   const reviewCount = getNumericMetric(store?.review_count);
   const viewCount = getNumericMetric(store?.view_count, store?.views_count, store?.views);
 
@@ -185,6 +187,16 @@ export default function StoreDetailsScreen() {
       if (storeErr) throw storeErr;
       setStore(storeData);
       setLoading(false);
+
+      // Fetch promotional views
+      try {
+        const promoData = await getPromotionalViews("store", id);
+        if (promoData) {
+          setPromoViews(calculateViews(promoData));
+        }
+      } catch (e) {
+        console.error("Error fetching promo views:", e);
+      }
 
       // Fetch gallery (active images only)
       const { data: galleryData, error: galleryErr } = await supabase
@@ -395,6 +407,15 @@ export default function StoreDetailsScreen() {
               <Text style={[styles.statValue, { color: colors.textPrimary }]}>{ (reviewCount || 0).toLocaleString("ar-DZ")}</Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>مراجعة</Text>
             </View>
+            {promoViews !== null && (
+              <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>{promoViews.toLocaleString("ar-DZ")}</Text>
+                  <Eye size={14} color={colors.textSecondary} />
+                </View>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>مشاهدة</Text>
+              </View>
+            )}
             <View style={[styles.statusItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
               <Badge
                 label={store.is_open !== false ? "مفتوح الآن" : "مغلق"}

@@ -13,7 +13,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Star, Share2, Heart, Truck, Bike, Car } from "lucide-react-native";
+import { ArrowLeft, Star, Share2, Heart, Truck, Bike, Car, Eye } from "lucide-react-native";
+import { getPromotionalViews, calculateViews } from "@/services/promotional-views.service";
 import {
   Typography,
   Avatar,
@@ -124,9 +125,30 @@ export default function CouriersDirectoryScreen() {
     }
   };
 
+  const [promoViewsMap, setPromoViewsMap] = useState<Record<string, number | null>>({});
+
+  useEffect(() => {
+    if (couriers.length > 0) {
+      const fetchAllPromoViews = async () => {
+        const newMap: Record<string, number | null> = {};
+        for (const courier of couriers) {
+          try {
+            const promoData = await getPromotionalViews("driver", courier.id);
+            newMap[courier.id] = promoData ? calculateViews(promoData) : null;
+          } catch (e) {
+            console.error(`Error fetching promo views for courier ${courier.id}:`, e);
+          }
+        }
+        setPromoViewsMap(newMap);
+      };
+      fetchAllPromoViews();
+    }
+  }, [couriers]);
+
   const renderCourierCard = (courier: any) => {
     const available = isCourierAvailable(courier);
     const vehicleType = vehicleLabel(courier.vehicle_type);
+    const promoViews = promoViewsMap[courier.id];
 
     return (
       <Card key={courier.id} variant="elevated" style={styles.card}>
@@ -181,6 +203,14 @@ export default function CouriersDirectoryScreen() {
               {courier.delivery_count ?? 0} توصيل
             </Typography>
           </View>
+          {promoViews !== null && (
+            <View style={[styles.statItem, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <Eye size={16} color={colors.textSecondary} />
+              <Typography variant="caption" color="secondary">
+                {promoViews.toLocaleString("ar-DZ")} مشاهدة
+              </Typography>
+            </View>
+          )}
         </View>
 
         <View style={styles.bioRow}>

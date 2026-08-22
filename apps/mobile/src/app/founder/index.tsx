@@ -532,6 +532,7 @@ export default function FounderControlCenterScreen() {
             <QuickAction label="إدارة التوصيلات" icon={<Truck size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/deliveries" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="مراقبة المحادثات" icon={<MessageSquare size={18} color={info} />} accentColor={info} onPress={() => router.push("/founder/chat-control" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="نشاط المنصة" icon={<Activity size={18} color={blue} />} accentColor={blue} onPress={() => router.push("/founder/activity-control" as never)} colors={colors} tokens={tokens} />
+            <QuickAction label="إدارة المشاهدات" icon={<Eye size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/views-management" as never)} colors={colors} tokens={tokens} />
           </View>
         </SectionBlock>
 
@@ -544,6 +545,7 @@ export default function FounderControlCenterScreen() {
             <NavTile label="التوصيلات" icon={<Truck size={20} color={primary} />} onPress={() => router.push("/founder/deliveries" as never)} colors={colors} tokens={tokens} />
             <NavTile label="المحادثات" icon={<MessageSquare size={20} color={primary} />} onPress={() => router.push("/founder/chat-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="النشاط" icon={<Activity size={20} color={primary} />} onPress={() => router.push("/founder/activity-control" as never)} colors={colors} tokens={tokens} />
+            <NavTile label="إدارة المشاهدات" icon={<Eye size={20} color={primary} />} onPress={() => router.push("/founder/views-management" as never)} colors={colors} tokens={tokens} />
             <NavTile label="الزبائن" icon={<Users size={20} color={primary} />} onPress={() => router.push("/founder/customers-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="التجار" icon={<Store size={20} color={primary} />} onPress={() => router.push("/founder/merchants-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="الموصلون" icon={<Truck size={20} color={primary} />} onPress={() => router.push("/founder/couriers-control" as never)} colors={colors} tokens={tokens} />

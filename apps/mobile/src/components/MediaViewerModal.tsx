@@ -19,7 +19,8 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { X, Heart, Star, Send, Trash2, MessageCircle } from "lucide-react-native";
+import { X, Heart, Star, Send, Trash2, MessageCircle, Eye } from "lucide-react-native";
+import { getPromotionalViews, calculateViews } from "@/services/promotional-views.service";
 import { StoreGalleryImage, StoreGalleryComment, Store, MediaType } from "@/types/schema-03-core";
 import { Avatar } from "@/components/ui/Avatar";
 import {
@@ -66,6 +67,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   const [userRating, setUserRating] = useState<number | null>(null);
   const [ratingMode, setRatingMode] = useState(false);
   const [tempRating, setTempRating] = useState(0);
+  const [promoViews, setPromoViews] = useState<number | null>(null);
 
   const mediaType: MediaType = mediaItem?.media_type ?? "photo";
   const ownerId = store?.created_by ?? null;
@@ -117,6 +119,22 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
       fetchRating();
     }
   }, [visible, mediaItemId, fetchLikeData, fetchComments, fetchRating]);
+
+  useEffect(() => {
+    if (visible && store?.id) {
+      const fetchViews = async () => {
+        try {
+          const promoData = await getPromotionalViews('store', store.id);
+          if (promoData) {
+            setPromoViews(calculateViews(promoData));
+          }
+        } catch (e) {
+          console.error("Error fetching promo views for media viewer:", e);
+        }
+      };
+      fetchViews();
+    }
+  }, [visible, store?.id]);
 
   const handleLikePress = async () => {
     if (!currentUserId) {
@@ -327,6 +345,15 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
             >
               <MessageCircle size={22} color={colors.textSecondary} />
             </TouchableOpacity>
+
+            {promoViews !== null && (
+              <View style={[styles.actionButton, { opacity: 0.8 }]}>
+                <Eye size={20} color={colors.textSecondary} />
+                <Text style={[styles.actionText, { color: colors.textSecondary }]}>
+                  {promoViews.toLocaleString("ar-DZ")}
+                </Text>
+              </View>
+            )}
           </View>
 
           {ratingMode && (

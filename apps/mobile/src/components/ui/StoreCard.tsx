@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,8 @@ import {
   ViewStyle,
   I18nManager,
 } from 'react-native';
-import { Clock, MapPin, Tag, Heart, MessageCircle } from 'lucide-react-native';
+import { Clock, MapPin, Tag, Heart, MessageCircle, Eye } from 'lucide-react-native';
+import { getPromotionalViews, calculateViews } from '@/services/promotional-views.service';
 import { Card } from './Card';
 import { Rating } from './Rating';
 import { ImageFallback } from './ImageFallback';
@@ -62,6 +63,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
 }) => {
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
+  const [promoViews, setPromoViews] = useState<number | null>(null);
 
   const actualId = id || store?.id || '';
   const actualName = name || store?.name || '';
@@ -74,6 +76,22 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   const actualIsOpen = isOpen ?? store?.is_open ?? (store?.status === 'active');
   const actualIsFeatured = isFeatured || store?.is_featured || false;
   const actualAddress = address || store?.address_line1 || store?.city || '';
+
+  useEffect(() => {
+    if (actualId) {
+      const fetchViews = async () => {
+        try {
+          const promoData = await getPromotionalViews('store', actualId);
+          if (promoData) {
+            setPromoViews(calculateViews(promoData));
+          }
+        } catch (e) {
+          console.error("Error fetching promo views for card:", e);
+        }
+      };
+      fetchViews();
+    }
+  }, [actualId]);
 
   const handlePress = () => {
     if (onPress) {
@@ -239,11 +257,22 @@ export const StoreCard: React.FC<StoreCardProps> = ({
 
         {/* Delivery Details Footer */}
         <View style={styles.footerRow}>
-          <View style={styles.infoPill}>
-            <Clock size={13} color={colors.textSecondary} />
-            <Text style={[styles.infoPillText, { color: colors.textSecondary }]}>
-              {deliveryTime}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={styles.infoPill}>
+              <Clock size={13} color={colors.textSecondary} />
+              <Text style={[styles.infoPillText, { color: colors.textSecondary }]}>
+                {deliveryTime}
+              </Text>
+            </View>
+
+            {promoViews !== null && (
+              <View style={styles.infoPill}>
+                <Eye size={13} color={colors.textSecondary} />
+                <Text style={[styles.infoPillText, { color: colors.textSecondary }]}>
+                  {promoViews.toLocaleString("ar-DZ")}
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.infoPill}>
