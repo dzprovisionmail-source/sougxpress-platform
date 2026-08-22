@@ -415,13 +415,13 @@ export default function StoreDetailsScreen() {
             </View>
             <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
               <Text style={[styles.statValue, { color: colors.textPrimary }]}>{ (reviewCount || 0).toLocaleString("ar-DZ")}</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>مراجعة</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>عدد الطلبيات</Text>
             </View>
 
             {typeof promoViews === "number" && Number.isFinite(promoViews) ? (
               <View style={[styles.statItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>{promoViews.toLocaleString("ar-DZ")}</Text>
+                  <Text style={[styles.statValue, { color: colors.textPrimary, fontSize: 14 }]}>{promoViews.toLocaleString("ar-DZ")}</Text>
                   <Eye size={14} color={colors.textSecondary} />
                 </View>
               </View>
