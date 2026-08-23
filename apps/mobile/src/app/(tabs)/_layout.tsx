@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Tabs, router, useGlobalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
@@ -15,26 +15,12 @@ import {
   Wallet,
   Heart,
 } from 'lucide-react-native';
-import { 
-  ICON_HOME_3D, 
-  ICON_CART_3D, 
-  ICON_PROFILE_3D, 
-  ICON_ORDERS_3D, 
-  ICON_TRACK_3D,
-  ICON_PAYMENT_3D,
-  ICON_DEALS_3D,
-  ICON_SETTINGS_3D,
-  ICON_SUPPORT_3D,
-  ICON_MASCOT_HEAD
-} from '@/constants/brand';
-
 type Role = 'guest' | 'customer' | 'courier' | 'merchant';
 
 interface TabConfig {
   name: string;
   title: string;
   Icon: any;
-  is3D?: boolean;
 }
 
 export default function TabLayout() {
@@ -43,7 +29,10 @@ export default function TabLayout() {
   const [role, setRole] = useState<Role>('guest');
   const params = useGlobalSearchParams<{ preview?: string; identity?: string }>();
   const isSougAdminPreview = params.identity === 'soug-admin';
-  const isPreviewMode = isSougAdminPreview && params.preview === '1';
+  // Store/details and media routes may carry the official identity without
+  // inheriting the tab entry's preview query parameter. The identity itself
+  // is the authoritative presentation context for Founder market browsing.
+  const isPreviewMode = isSougAdminPreview && (params.preview === '1' || params.preview === undefined);
 
   useEffect(() => {
     let mounted = true;
@@ -88,30 +77,30 @@ export default function TabLayout() {
   // Define approved tabs for each role strictly per specifications
   const roleTabs: Record<Role, TabConfig[]> = {
     guest: [
-      { name: 'home', title: 'الرئيسية', Icon: ICON_HOME_3D, is3D: true },
-      { name: 'profile', title: 'حسابي', Icon: ICON_PROFILE_3D, is3D: true },
+      { name: 'home', title: 'الرئيسية', Icon: Home },
+      { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
     ],
     customer: [
-      { name: 'home', title: 'Soug-XPRESS', Icon: ICON_HOME_3D, is3D: true },
+      { name: 'home', title: 'Soug-XPRESS', Icon: Home },
       { name: 'favorites', title: 'المفضلة', Icon: Heart },
-      { name: 'orders', title: 'الطلبات', Icon: ICON_ORDERS_3D, is3D: true },
-      { name: 'cart', title: 'السلة', Icon: ICON_CART_3D, is3D: true },
-      { name: 'profile', title: 'حسابي', Icon: ICON_PROFILE_3D, is3D: true },
+      { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
+      { name: 'cart', title: 'السلة', Icon: ShoppingCart },
+      { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
     ],
     merchant: [
-      { name: 'home', title: 'الرئيسية', Icon: ICON_HOME_3D, is3D: true },
-      { name: 'orders', title: 'الطلبات', Icon: ICON_ORDERS_3D, is3D: true },
+      { name: 'home', title: 'الرئيسية', Icon: Home },
+      { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
       { name: 'favorites', title: 'المفضلة', Icon: Heart },
       { name: 'my-store', title: 'المتجر', Icon: Store },
-      { name: 'profile', title: 'حسابي', Icon: ICON_PROFILE_3D, is3D: true },
+      { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
     ],
     courier: [
-      { name: 'home', title: 'الرئيسية', Icon: ICON_HOME_3D, is3D: true },
-      { name: 'orders', title: 'الطلبات', Icon: ICON_ORDERS_3D, is3D: true },
+      { name: 'home', title: 'الرئيسية', Icon: Home },
+      { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
       { name: 'favorites', title: 'المفضلة', Icon: Heart },
       { name: 'deliveries', title: 'التوصيلات', Icon: Bike },
       { name: 'earnings', title: 'الأرباح', Icon: Wallet },
-      { name: 'profile', title: 'حسابي', Icon: ICON_PROFILE_3D, is3D: true },
+      { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
     ],
   };
 
@@ -129,20 +118,11 @@ export default function TabLayout() {
     return {
       title: approvedTab.title,
       tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
-        approvedTab.is3D ? (
-          <Image 
-            source={IconComponent} 
-            style={{ 
-              width: size + 4, 
-              height: size + 4, 
-              opacity: focused ? 1 : 0.6,
-              transform: [{ scale: focused ? 1.1 : 1 }]
-            }} 
-            resizeMode="contain"
-          />
-        ) : (
-          <IconComponent color={color} size={size} />
-        )
+        <IconComponent
+          color={color}
+          size={focused ? size + 1 : size}
+          strokeWidth={focused ? 2.5 : 2}
+        />
       ),
     };
   };
@@ -167,7 +147,7 @@ export default function TabLayout() {
           tabBarInactiveTintColor: colors.textDisabled,
           tabBarLabelStyle: {
             fontFamily: tokens.typography.families.arabic,
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: '700',
           },
           tabBarStyle: {
@@ -175,8 +155,8 @@ export default function TabLayout() {
             borderTopColor: colors.borderSubtle,
             borderTopWidth: 1,
             paddingBottom: Math.max(insets.bottom, 8),
-            paddingTop: 8,
-            height: 60 + Math.max(insets.bottom, 8),
+            paddingTop: 7,
+            height: 62 + Math.max(insets.bottom, 8),
           },
         }}
       >

@@ -45,9 +45,10 @@ const getNumericMetric = (...values: unknown[]): number | null => {
 
 export default function StoreDetailsScreen() {
   const router = useRouter();
-  const rawParams = useLocalSearchParams<{ id: string; identity?: string }>();
+  const rawParams = useLocalSearchParams<{ id: string; preview?: string; identity?: string }>();
   const rawId = rawParams.id;
   const platformIdentity = rawParams.identity === "soug-admin" ? "soug-admin" : undefined;
+  const marketContextParams = platformIdentity ? { preview: "1", identity: platformIdentity } : {};
   const id = rawId && UUID_REGEX.test(rawId) ? rawId : undefined;
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -595,7 +596,7 @@ export default function StoreDetailsScreen() {
                   image={product.image_url}
                   isFavorite={favoriteProductIds.includes(product.id)}
                   onToggleFavorite={() => handleToggleProductFavorite(product.id)}
-                  onPress={() => router.push({ pathname: "/product-details", params: { id: product.id } })}
+                  onPress={() => router.push({ pathname: "/product-details", params: { id: product.id, ...marketContextParams } })}
                   style={styles.productCard}
                 />
               </View>

@@ -156,7 +156,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           title={actualName}
           category={category}
           width="100%"
-          height={125}
+          height={132}
           borderRadius={TOKENS.radius.sm}
         />
 
@@ -223,20 +223,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 const styles = StyleSheet.create({
   gridCard: {
     width: '100%',
-    padding: TOKENS.spacing.xs,
-    marginVertical: TOKENS.spacing.xs,
+    padding: TOKENS.spacing.sm,
+    marginVertical: TOKENS.spacing.sm,
   },
   imageContainer: {
     width: '100%',
-    height: 125,
+    height: 132,
     borderRadius: TOKENS.radius.sm,
     overflow: 'hidden',
     position: 'relative',
   },
   favoriteBtn: {
     position: 'absolute',
-    top: 6,
-    [I18nManager.isRTL ? 'right' : 'left']: 6,
+    top: TOKENS.spacing.sm,
+    [I18nManager.isRTL ? 'right' : 'left']: TOKENS.spacing.sm,
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -257,7 +257,9 @@ const styles = StyleSheet.create({
     fontFamily: TOKENS.typography.families.arabic,
   },
   content: {
-    padding: TOKENS.spacing.xs,
+    paddingTop: TOKENS.spacing.sm,
+    paddingHorizontal: TOKENS.spacing.xs,
+    paddingBottom: TOKENS.spacing.xs,
     justifyContent: 'space-between',
   },
   productTitleGrid: {

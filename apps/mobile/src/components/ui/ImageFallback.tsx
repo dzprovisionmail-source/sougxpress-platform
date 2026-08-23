@@ -130,10 +130,6 @@ export const ImageFallback: React.FC<ImageFallbackProps> = ({
         ) : null}
       </View>
 
-      {/* Brand Watermark Pill */}
-      <View style={[styles.brandPill, { backgroundColor: colors.bgElevated }]}>
-        <Text style={[styles.brandPillText, { color: colors.textSecondary }]}>Soug-XPRESS</Text>
-      </View>
     </View>
   );
 };
@@ -166,20 +162,6 @@ const styles = StyleSheet.create({
     fontSize: TOKENS.typography.sizes.sm,
     fontWeight: '700',
     marginTop: 4,
-  },
-  brandPill: {
-    position: 'absolute',
-    bottom: TOKENS.spacing.xs,
-    left: TOKENS.spacing.xs,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: TOKENS.radius.full,
-    opacity: 0.85,
-  },
-  brandPillText: {
-    fontSize: 9,
-    fontWeight: '700',
-    fontFamily: TOKENS.typography.families.arabic,
   },
 });
 

@@ -42,7 +42,7 @@ export const Card: React.FC<CardProps> = ({
       case 'neonBlue':
         return {
           backgroundColor: colors.bgElevated,
-          borderColor: tokens.colors.brandBlue + '60',
+          borderColor: tokens.colors.brandSecondary + '60',
           borderWidth: 1.5,
           ...tokens.shadows.neonBlue,
         };
@@ -71,9 +71,9 @@ export const Card: React.FC<CardProps> = ({
 const styles = StyleSheet.create({
   baseCard: {
     direction: 'rtl',
-    borderRadius: TOKENS.radius.md,
+    borderRadius: TOKENS.radius.lg,
     padding: TOKENS.spacing.md,
-    marginVertical: TOKENS.spacing.xs,
+    marginVertical: TOKENS.spacing.sm,
     overflow: 'hidden',
   },
 });

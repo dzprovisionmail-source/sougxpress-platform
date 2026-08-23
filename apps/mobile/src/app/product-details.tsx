@@ -34,8 +34,10 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 
 export default function ProductDetailsScreen() {
   const router = useRouter();
-  const rawParams = useLocalSearchParams<{ id: string }>();
+  const rawParams = useLocalSearchParams<{ id: string; preview?: string; identity?: string }>();
   const rawId = rawParams.id;
+  const platformIdentity = rawParams.identity === "soug-admin" ? "soug-admin" : undefined;
+  const marketContextParams = platformIdentity ? { preview: "1", identity: platformIdentity } : {};
   const id = rawId && UUID_REGEX.test(rawId) ? rawId : undefined;
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -221,7 +223,7 @@ export default function ProductDetailsScreen() {
         {/* Store Card Link */}
         {store && (
           <TouchableOpacity activeOpacity={0.8}
-            onPress={() => router.push({ pathname: "/store-details", params: { id: store.id } })}
+            onPress={() => router.push({ pathname: "/store-details", params: { id: store.id, ...marketContextParams } })}
             style={[
               styles.storeCardLink,
               { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle },

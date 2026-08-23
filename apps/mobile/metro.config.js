@@ -1,7 +1,11 @@
 const path = require("path");
 const { getDefaultConfig } = require("expo/metro-config");
 
-const config = getDefaultConfig(__dirname);
+const projectRoot = __dirname;
+const config = getDefaultConfig(projectRoot);
+// This is a pnpm workspace; keep Metro's application root on the mobile app
+// instead of allowing workspace discovery to resolve it to the repository root.
+config.projectRoot = projectRoot;
 
 // Expo's development root wrapper calls expo-keep-awake automatically. On
 // runtimes that do not expose the native keep-awake module this rejects as an

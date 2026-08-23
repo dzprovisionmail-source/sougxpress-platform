@@ -7,7 +7,7 @@ import {
   I18nManager,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { BRAND_NAME_AR, LOGO_WORDMARK } from "@/constants/brand";
+import { LOGO_OFFICIAL_WORDMARK } from "@/constants/brand";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { Typography } from "./Typography";
@@ -37,7 +37,7 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
             <Ionicons name="arrow-forward" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
         ) : (
-          <Image source={LOGO_WORDMARK} style={styles.wordmarkLogo} resizeMode="contain" />
+            <Image source={LOGO_OFFICIAL_WORDMARK} style={styles.wordmarkLogo} resizeMode="contain" />
         )}
       </View>
 
@@ -81,8 +81,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   wordmarkLogo: {
+    width: 204,
     height: WORDMARK_HEIGHT,
-    maxWidth: 200,
+    maxWidth: 220,
   },
   actions: {
     alignItems: "center",

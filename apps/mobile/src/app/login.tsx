@@ -3,7 +3,7 @@ import { Link } from "expo-router";
 import { View, ScrollView, StyleSheet, I18nManager, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography, Card } from "../components/ui";
-import { BRAND_NAME_AR, LOGO_ICON, ICON_SHOPPING, ICON_STORE, ICON_DELIVERY } from "../constants/brand";
+import { BRAND_NAME_AR, LOGO_OFFICIAL_WORDMARK, ICON_SHOPPING, ICON_STORE, ICON_DELIVERY } from "../constants/brand";
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
 
@@ -74,7 +74,7 @@ export default function RoleSelectionScreen() {
         {/* Header with official logo */}
         <View style={styles.header}>
           <Image
-            source={LOGO_ICON}
+            source={LOGO_OFFICIAL_WORDMARK}
             style={styles.headerLogo}
             resizeMode="contain"
           />
@@ -144,9 +144,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerLogo: {
-    width: 64,
+    width: "86%",
+    maxWidth: 280,
     height: 64,
-    marginBottom: TOKENS.spacing.md,
+    marginBottom: TOKENS.spacing.lg,
   },
   headerTitle: {
     color: TOKENS.colors.brandPrimary,

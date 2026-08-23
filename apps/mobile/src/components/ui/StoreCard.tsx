@@ -311,12 +311,12 @@ export const StoreCard: React.FC<StoreCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     padding: 0,
-    marginVertical: TOKENS.spacing.xs,
+    marginVertical: TOKENS.spacing.sm,
     overflow: 'hidden',
   },
   coverWrapper: {
     width: '100%',
-    height: 140,
+    height: 148,
     position: 'relative',
   },
   badgesRow: {
@@ -350,16 +350,16 @@ const styles = StyleSheet.create({
     ...TOKENS.shadows.small,
   },
   content: {
-    paddingTop: TOKENS.spacing.lg,
-    paddingHorizontal: TOKENS.spacing.md,
-    paddingBottom: TOKENS.spacing.md,
+    paddingTop: TOKENS.spacing.xl,
+    paddingHorizontal: TOKENS.spacing.lg,
+    paddingBottom: TOKENS.spacing.lg,
   },
   titleRow: {
     flexDirection: 'row',
     direction: 'rtl',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: TOKENS.spacing.xs,
   },
   storeName: {
     fontSize: TOKENS.typography.sizes.lg,
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
     direction: 'rtl',
     alignItems: 'center',
     gap: 4,
-    marginBottom: TOKENS.spacing.sm,
+    marginBottom: TOKENS.spacing.md,
   },
   categoryText: {
     fontSize: TOKENS.typography.sizes.xs,

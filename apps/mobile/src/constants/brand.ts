@@ -75,6 +75,12 @@ export const LOGO_DARK = require("../../assets/brand/logo-horizontal-dark.png");
 export const LOGO_FULL = require("../../assets/brand/logo-full-official.png");
 
 /**
+ * Official Soug-Xpress horizontal wordmark supplied for the application UI.
+ * Use only in brand surfaces such as entry and marketplace headers.
+ */
+export const LOGO_OFFICIAL_WORDMARK = require("../../assets/brand/logo-soug-xpress-official.png");
+
+/**
  * Compatibility path — mascot icon stored in the default images directory.
  */
 export const LOGO_COMPAT = require("../../assets/images/logo.png");

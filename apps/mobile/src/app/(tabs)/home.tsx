@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart } from 'lucide-react-native';
-import { LOGO_WORDMARK, ICON_MASCOT_SCOOTER, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
+import { LOGO_WORDMARK, LOGO_ICON, ICON_MASCOT_SCOOTER, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button } from '@/components/ui';
 import { useAppTheme } from '@/contexts/ThemeContext';
@@ -67,6 +67,7 @@ const HomeScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ identity?: string }>();
   const platformIdentity = params.identity === "soug-admin" ? "soug-admin" : undefined;
+  const marketContextParams = platformIdentity ? { preview: "1", identity: platformIdentity } : {};
   const { colors, tokens, isRTL, textAlign } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -167,7 +168,7 @@ const HomeScreen = () => {
   const handleStorePress = (storeId: string) => {
     router.push({
       pathname: "/store-details",
-      params: { id: storeId, ...(platformIdentity ? { identity: platformIdentity } : {}) },
+      params: { id: storeId, ...marketContextParams },
     });
   };
 
@@ -321,9 +322,9 @@ const HomeScreen = () => {
 
       if (item.kind === "courier") {
         const courierId = item.id.replace("courier-", "");
-        router.push({ pathname: "/courier/[id]", params: { id: courierId } });
+        router.push({ pathname: "/courier/[id]", params: { id: courierId, ...marketContextParams } });
       } else if (targetProd && UUID_REGEX.test(targetProd)) {
-        router.push({ pathname: "/product-details", params: { id: targetProd } });
+        router.push({ pathname: "/product-details", params: { id: targetProd, ...marketContextParams } });
       } else if (targetStore && UUID_REGEX.test(targetStore)) {
         handleStorePress(targetStore);
       } else if (heroStore && UUID_REGEX.test(heroStore.id)) {
@@ -663,7 +664,7 @@ const HomeScreen = () => {
                     activeOpacity={0.8}
                     onPress={() => router.push({ pathname: '/platform-profile/[slug]', params: { slug: profile.slug } })}
                   >
-                    <Image source={LOGO_WORDMARK} style={styles.platformProfileAvatar} resizeMode="contain" />
+                    <Image source={LOGO_ICON} style={styles.platformProfileAvatar} resizeMode="contain" />
                     <View style={styles.platformProfileCopy}>
                       <Text style={[styles.platformProfileName, { color: colors.textPrimary }]}>{profile.display_name}</Text>
                       <Text style={[styles.platformProfileBio, { color: colors.textSecondary }]}>{profile.bio}</Text>
@@ -844,7 +845,7 @@ const styles = StyleSheet.create({
     ...shadows.small,
   },
   section: {
-    marginBottom: spacing.huge,
+    marginBottom: spacing['2xl'],
     width: '100%',
     alignItems: 'stretch',
     direction: 'rtl',
@@ -871,9 +872,10 @@ const styles = StyleSheet.create({
   },
   categoryItem: {
     alignItems: 'center',
-    marginHorizontal: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: radius.small,
+    marginHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
     ...shadows.small,
   },
   categoryText: {
@@ -920,7 +922,7 @@ const styles = StyleSheet.create({
   },
   heroImageContainer: {
     width: "100%",
-    height: 220,
+    height: 196,
     position: "relative",
   },
   heroImage: {
@@ -985,9 +987,9 @@ const styles = StyleSheet.create({
   couriersBanner: {
     marginHorizontal: spacing.lg,
     marginVertical: spacing.sm,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     ...shadows.small,
   },
   couriersBannerContent: {
@@ -1011,7 +1013,7 @@ const styles = StyleSheet.create({
   loginBanner: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
-    borderRadius: radius.medium,
+    borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
   },
@@ -1036,14 +1038,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: radius.medium,
+    borderRadius: radius.lg,
     padding: spacing.md,
     marginHorizontal: spacing.lg,
     ...shadows.small,
   },
   platformProfileAvatar: {
-    width: 52,
-    height: 52,
+    width: 56,
+    height: 56,
     marginStart: spacing.md,
   },
   platformProfileCopy: {
