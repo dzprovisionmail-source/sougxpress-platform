@@ -31,6 +31,9 @@ export interface CourierProfileUpdate {
  * Maps a database driver row to the standard Courier interface.
  */
 function mapDriverRowToCourier(row: any): Courier {
+  const rating = Number(row.rating);
+  const deliveryCount = Number(row.delivery_count);
+
   return {
     id: row.id,
     user_id: row.user_id ?? row.id,
@@ -40,7 +43,8 @@ function mapDriverRowToCourier(row: any): Courier {
     avatar_url: row.avatar_url || null,
     vehicle_type: mapVehicleType(row.vehicle_type) as VehicleType,
     vehicle_photo_url: row.vehicle_photo_url || null,
-    rating: Number(row.rating) || 5.0,
+    rating: Number.isFinite(rating) ? rating : 5.0,
+    delivery_count: Number.isFinite(deliveryCount) ? deliveryCount : null,
     is_available: row.availability === "online" || row.is_available === true,
     is_mock: row.is_demo === true,
     is_verified: row.status === "active",

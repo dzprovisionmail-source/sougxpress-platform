@@ -197,12 +197,14 @@ export default function CouriersDirectoryScreen() {
               {typeof courier.rating === "number" ? courier.rating.toFixed(1) : courier.rating}
             </Typography>
           </View>
-          <View style={[styles.statItem, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-            <Truck size={16} color={colors.textSecondary} />
-            <Typography variant="caption" color="secondary">
-              {courier.delivery_count ?? 0} توصيل
-            </Typography>
-          </View>
+          {typeof courier.delivery_count === "number" && Number.isFinite(courier.delivery_count) ? (
+            <View style={[styles.statItem, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <Truck size={16} color={colors.textSecondary} />
+              <Typography variant="caption" color="secondary">
+                {courier.delivery_count.toLocaleString("ar-DZ")} توصيل
+              </Typography>
+            </View>
+          ) : null}
           {typeof promoViews === "number" && Number.isFinite(promoViews) ? (
             <View style={[styles.statItem, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
               <Eye size={16} color={colors.textSecondary} />

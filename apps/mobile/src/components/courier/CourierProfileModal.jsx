@@ -15,9 +15,7 @@ import {
   Phone,
   Edit3,
   X,
-  Eye,
 } from "lucide-react-native";
-import { getPromotionalViews } from "@/services/promotional-views.service";
 import { Avatar, Rating, Typography, Button, Badge } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
@@ -67,7 +65,6 @@ export default function CourierProfileModal({
   const [isFavorite, setIsFavorite] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [resolvedUserId, setResolvedUserId] = useState(userId);
-  const [promoViews, setPromoViews] = useState(null);
 
   useEffect(() => {
     if (!resolvedUserId) {
@@ -84,15 +81,7 @@ export default function CourierProfileModal({
     if (data) {
       setCourier(data);
       setIsFavorite(!!data.is_favorite);
-      
-      try {
-        const promoData = await getPromotionalViews('courier', courierId);
-        if (promoData) {
-          setPromoViews(promoData?.currentViews ?? null);
-        }
-      } catch (e) {
-        console.error("Error fetching promo views for courier modal:", e);
-      }
+
     } else if (error) {
       Alert.alert("خطأ", error);
     }
@@ -160,14 +149,6 @@ export default function CourierProfileModal({
         <View style={[styles.badgeRow, isRTL && { flexDirection: "row-reverse" }]}>
           <Badge variant={available ? "success" : "error"} label={available ? "متاح" : "غير متاح"} />
           {courier.is_mock && <Badge variant="accent" label="تجريبي" />}
-          {promoViews !== null && (
-            <View style={[styles.row, isRTL && { flexDirection: "row-reverse" }, { backgroundColor: `${colors.textSecondary}10`, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }]}>
-              <Eye size={14} color={colors.textSecondary} />
-              <Typography variant="caption" color="secondary">
-                {promoViews.toLocaleString("ar-DZ")} مشاهدة
-              </Typography>
-            </View>
-          )}
         </View>
 
         {courier.bio ? (
