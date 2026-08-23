@@ -42,7 +42,8 @@ export default function TabLayout() {
   const { colors, tokens } = useAppTheme();
   const [role, setRole] = useState<Role>('guest');
   const params = useLocalSearchParams();
-  const isPreviewMode = params.preview === '1';
+  const isCustomerPreview = params.preview === 'customer';
+  const isPreviewMode = params.preview === '1' || isCustomerPreview;
   const isSougAdminPreview = params.identity === 'soug-admin';
 
   useEffect(() => {
@@ -151,7 +152,7 @@ export default function TabLayout() {
     <View style={{ flex: 1 }}>
       {isPreviewMode && (
         <View style={[styles.previewBanner, { backgroundColor: colors.primary, paddingTop: Math.max(insets.top, 8) + 4, paddingBottom: 10, paddingHorizontal: 16 }]}>
-          <Text style={[styles.previewText, { fontFamily: tokens.typography.families.arabic }]}>{isSougAdminPreview ? "soug-admin — الحساب الرسمي لمنصة Soug-XPRESS" : "وضع معاينة السوق (كمتصفح)"}</Text>
+          <Text style={[styles.previewText, { fontFamily: tokens.typography.families.arabic }]}>{isSougAdminPreview ? "soug-admin — الحساب الرسمي لمنصة Soug-XPRESS" : isCustomerPreview ? "وضع الزبون للمؤسس" : "وضع معاينة السوق (كمتصفح)"}</Text>
           <TouchableOpacity 
             onPress={() => router.replace('/founder')}
             style={styles.exitBtn}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, ActivityIndicator, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { Typography, Button } from "@/components/ui";
@@ -16,6 +16,8 @@ type Role = 'customer' | 'courier' | 'merchant' | 'guest';
 
 export default function ProfileGateway() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ preview?: string }>();
+  const isCustomerPreview = params.preview === "customer";
   const { colors, tokens } = useAppTheme();
   const [role, setRole] = useState<Role | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,10 @@ export default function ProfileGateway() {
         if (!mounted) return;
 
         const r = (profile as any)?.role;
+        if (isCustomerPreview && (r === 'founder' || r === 'admin')) {
+          setRole('customer');
+          return;
+        }
         if (r === 'customer') setRole('customer');
         else if (r === 'driver') setRole('courier');
         else if (r === 'merchant') setRole('merchant');
@@ -55,7 +61,7 @@ export default function ProfileGateway() {
 
     checkRole();
     return () => { mounted = false; };
-  }, []);
+  }, [isCustomerPreview]);
 
   if (loading) {
     return (
