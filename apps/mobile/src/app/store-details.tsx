@@ -155,7 +155,10 @@ export default function StoreDetailsScreen() {
       }
       
       if (conversationId) {
-        router.push(`/chat/${conversationId}`);
+        router.push({
+          pathname: "/chat/[id]",
+          params: { id: conversationId, ...marketContextParams },
+        });
       }
     } catch (err) {
       console.error("Error starting chat:", err);

@@ -204,7 +204,12 @@ export default function FavoritesScreen() {
     try {
       const { data: convId, error } = await getOrCreateConversation(targetId, type, orderId);
       if (error) throw error;
-      if (convId) router.push(`/chat/${convId}`);
+      if (convId) {
+        router.push({
+          pathname: "/chat/[id]",
+          params: { id: convId, ...marketContextParams },
+        });
+      }
     } catch (err) {
       console.error("Chat error:", err);
       Alert.alert("تنبيه", "لا يمكن بدء المحادثة حالياً.");

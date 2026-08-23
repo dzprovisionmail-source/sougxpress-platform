@@ -9,7 +9,7 @@ import {
   I18nManager,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useGlobalSearchParams, useRouter } from "expo-router";
 import { MessageSquare, ChevronRight, ChevronLeft, Package } from "lucide-react-native";
 import {
   Typography,
@@ -24,6 +24,10 @@ import { getConversations, Conversation } from "@/services/chat.service";
 
 export default function ChatListScreen() {
   const router = useRouter();
+  const params = useGlobalSearchParams<{ preview?: string; identity?: string }>();
+  const marketContextParams = params.identity === "soug-admin" && (params.preview === "1" || params.preview === undefined)
+    ? { preview: "1", identity: "soug-admin" }
+    : {};
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
@@ -68,7 +72,10 @@ export default function ChatListScreen() {
     return (
       <TouchableOpacity
         style={[styles.convItem, { borderBottomColor: colors.borderSubtle }]}
-        onPress={() => router.push(`/chat/${item.id}`)}
+        onPress={() => router.push({
+          pathname: "/chat/[id]",
+          params: { id: item.id, ...marketContextParams },
+        })}
       >
         <Avatar
           uri={displayAvatar || undefined}

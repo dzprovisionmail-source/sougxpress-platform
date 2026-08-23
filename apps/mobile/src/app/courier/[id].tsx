@@ -149,7 +149,14 @@ const getStyles = (colors: ReturnType<typeof useAppTheme>["colors"]) =>
 
 export default function CourierProfile() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, preview, identity } = useLocalSearchParams<{
+    id: string;
+    preview?: string;
+    identity?: string;
+  }>();
+  const marketContextParams = identity === "soug-admin" && (preview === "1" || preview === undefined)
+    ? { preview: "1", identity: "soug-admin" }
+    : {};
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
 
@@ -216,7 +223,10 @@ export default function CourierProfile() {
       }
       
       if (conversationId) {
-        router.push(`/chat/${conversationId}`);
+        router.push({
+          pathname: "/chat/[id]",
+          params: { id: conversationId, ...marketContextParams },
+        });
       }
     } catch (err) {
       console.error("Error starting chat:", err);
