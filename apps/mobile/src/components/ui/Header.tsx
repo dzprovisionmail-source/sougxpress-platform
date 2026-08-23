@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
+import { BrandWordmark } from './BrandWordmark';
 
 interface HeaderProps {
   title: string;
@@ -33,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
         {subtitle && <Text style={[styles.subtitle, { color: colors.textSecondary }, subtitleStyle]}>{subtitle}</Text>}
       </View>
       {rightContent && <View style={styles.rightContent}>{rightContent}</View>}
+      <BrandWordmark size="compact" style={styles.brandMark} />
     </View>
   );
 };
@@ -51,6 +53,9 @@ const styles = StyleSheet.create({
   },
   rightContent: {
     // Styles for content on the right (e.g., action buttons)
+  },
+  brandMark: {
+    flexShrink: 0,
   },
   textContainer: {
     flex: 1,

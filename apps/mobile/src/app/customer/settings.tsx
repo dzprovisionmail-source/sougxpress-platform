@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Typography, Card } from "@/components/ui";
+import { Typography, Card, BrandWordmark } from "@/components/ui";
 import {
   Moon, Bell, Shield, Globe, HelpCircle,
   ChevronRight, ChevronLeft, Info,
@@ -120,7 +120,7 @@ export default function CustomerSettingsScreen() {
             : <ChevronLeft  size={24} color={colors.textPrimary} />}
         </TouchableOpacity>
         <Typography variant="h1" style={styles.headerTitle}>الإعدادات</Typography>
-        <View style={{ width: 24 }} />
+        <BrandWordmark size="compact" style={styles.headerLogo} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -193,7 +193,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.05)",
   },
-  headerTitle: { color: TOKENS.colors.brandPrimary, flex: 1, textAlign: "center" },
+    headerLogo: {
+    flexShrink: 0,
+  },
+  headerTitle: {
+ color: TOKENS.colors.brandPrimary, flex: 1, textAlign: "center" },
   backBtn: { padding: 4 },
   scrollContent: {
     padding: TOKENS.spacing.lg,

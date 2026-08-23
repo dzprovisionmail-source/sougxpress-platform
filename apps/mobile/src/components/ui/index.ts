@@ -11,6 +11,7 @@ export { CategoryItem } from "./CategoryItem";
 export { SectionHeader } from "./SectionHeader";
 export { BottomNavigation } from "./BottomNavigation";
 export { MarketplaceHeader } from "./MarketplaceHeader";
+export { BrandWordmark } from "./BrandWordmark";
 export { Badge, default as BadgeDefault } from "./Badge";
 export { QuantitySelector } from "./QuantitySelector";
 export { Avatar, default as AvatarDefault } from "./Avatar";

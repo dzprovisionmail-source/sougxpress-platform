@@ -1,16 +1,15 @@
 import React from "react";
 import { 
   View, 
-  Image,
   StyleSheet, 
   TouchableOpacity, 
   I18nManager,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LOGO_OFFICIAL_WORDMARK } from "@/constants/brand";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { Typography } from "./Typography";
+import { BrandWordmark } from "./BrandWordmark";
 
 interface MarketplaceHeaderProps {
   onNotificationPress?: () => void;
@@ -37,7 +36,7 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
             <Ionicons name="arrow-forward" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
         ) : (
-            <Image source={LOGO_OFFICIAL_WORDMARK} style={styles.wordmarkLogo} resizeMode="contain" />
+            <BrandWordmark size="market" />
         )}
       </View>
 
@@ -63,7 +62,6 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
 };
 
 const HEADER_HEIGHT = 60;
-const WORDMARK_HEIGHT = 40;
 const ACTION_SIZE = 44;
 
 const styles = StyleSheet.create({
@@ -79,11 +77,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  wordmarkLogo: {
-    width: 204,
-    height: WORDMARK_HEIGHT,
-    maxWidth: 220,
   },
   actions: {
     alignItems: "center",

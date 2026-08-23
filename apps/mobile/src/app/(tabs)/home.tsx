@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart } from 'lucide-react-native';
-import { LOGO_WORDMARK, LOGO_ICON, ICON_MASCOT_SCOOTER, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
+import { LOGO_ICON, ICON_MASCOT_SCOOTER, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
 
-import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button } from '@/components/ui';
+import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button, BrandWordmark } from '@/components/ui';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
@@ -473,15 +473,7 @@ const HomeScreen = () => {
       <Stack.Screen
         options={{
           headerTitle: '',
-          headerLeft: () => (
-            <View style={{ paddingLeft: 16 }}>
-              <Image 
-                source={LOGO_WORDMARK} 
-                style={{ width: 120, height: 30 }} 
-                resizeMode="contain" 
-              />
-            </View>
-          ),
+          headerLeft: () => <View style={{ width: 16 }} />,
           headerRight: () => (
             <View style={{ flexDirection: isRTL ? 'row' : 'row-reverse', alignItems: 'center', gap: 16 }}>
               <TouchableOpacity onPress={() => router.push('/cart')}>
@@ -503,17 +495,20 @@ const HomeScreen = () => {
       <ScrollView style={[styles.container, { direction: isRTL ? 'rtl' : 'ltr' }]} contentContainerStyle={styles.pageContent}>
 
 
-        {/* Search Bar */}
-        <View style={[styles.searchContainer, { backgroundColor: colors.bgSurface }]}>
-          <Input
-            placeholder="بحث عن متاجر أو منتجات..."
-            value={searchQuery}
-            onChangeText={(text) => {
-              setSearchQuery(text);
-              handleSearch(text);
-            }}
-            icon={<SearchIcon color={colors.textSecondary} size={iconSizes.default} />}
-          />
+        {/* Brand + Search */}
+        <View style={[styles.marketSearchRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <BrandWordmark size="market" style={styles.marketLogo} />
+          <View style={[styles.searchContainer, { backgroundColor: colors.bgSurface }]}>
+            <Input
+              placeholder="بحث عن متاجر أو منتجات..."
+              value={searchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                handleSearch(text);
+              }}
+              icon={<SearchIcon color={colors.textSecondary} size={iconSizes.default} />}
+            />
+          </View>
         </View>
 
         {/* Hero Slider */}
@@ -837,11 +832,20 @@ const styles = StyleSheet.create({
     ...typography.body,
     marginTop: spacing.md,
   },
+  marketSearchRow: {
+    width: '100%',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  marketLogo: {
+    flexShrink: 0,
+  },
   searchContainer: {
-    padding: spacing.lg,
-    borderBottomLeftRadius: radius.medium,
-    borderBottomRightRadius: radius.medium,
-    marginBottom: spacing.md,
+    flex: 1,
+    padding: spacing.sm,
+    borderRadius: radius.medium,
     ...shadows.small,
   },
   section: {

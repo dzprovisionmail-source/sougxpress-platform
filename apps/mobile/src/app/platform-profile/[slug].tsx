@@ -3,10 +3,9 @@ import { ActivityIndicator, Image, I18nManager, ScrollView, StyleSheet, View } f
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, ShieldCheck } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, Typography } from '@/components/ui';
+import { Button, Card, Typography, BrandWordmark } from '@/components/ui';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { TOKENS } from '@/constants/tokens';
-import { LOGO_WORDMARK } from '@/constants/brand';
 import { getPlatformPublicProfile, PlatformPublicProfile } from '@/services/platform-profile.service';
 
 export default function PlatformPublicProfileScreen() {
@@ -51,7 +50,13 @@ export default function PlatformPublicProfileScreen() {
           </View>
         ) : profile ? (
           <Card style={[styles.profileCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <Image source={profile.avatar_url ? { uri: profile.avatar_url } : LOGO_WORDMARK} style={styles.avatar} resizeMode="contain" />
+            {profile.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={styles.avatar} resizeMode="contain" />
+            ) : (
+              <View style={styles.avatarLogo}>
+                <BrandWordmark size="market" />
+              </View>
+            )}
             <View style={styles.officialRow}>
               <ShieldCheck size={18} color={colors.primary} />
               <Typography variant="caption" color="secondary">حساب رسمي</Typography>
@@ -77,6 +82,13 @@ const styles = StyleSheet.create({
   center: { flex: 1, minHeight: 280, alignItems: 'center', justifyContent: 'center' },
   profileCard: { alignItems: 'center', borderWidth: 1, padding: TOKENS.spacing.xl },
   avatar: { width: 120, height: 120, marginBottom: TOKENS.spacing.md },
+  avatarLogo: {
+    width: 156,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: TOKENS.spacing.md,
+  },
   officialRow: { flexDirection: 'row', alignItems: 'center', gap: TOKENS.spacing.xs, marginBottom: TOKENS.spacing.sm },
   name: { textAlign: 'center', writingDirection: 'rtl' },
   bio: { textAlign: 'center', writingDirection: 'rtl', marginTop: TOKENS.spacing.sm },

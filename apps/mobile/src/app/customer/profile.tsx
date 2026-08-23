@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Typography, Card, Avatar, Badge } from "@/components/ui";
+import { Typography, Card, Button, BrandWordmark } from "@/components/ui";
 import {
   MapPin,
   Heart,
@@ -294,6 +294,7 @@ export default function CustomerProfileScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
+          <BrandWordmark size="header" style={styles.headerLogo} />
           <Typography variant="h1" align="right" style={styles.headerTitle}>حسابي</Typography>
         </View>
 
@@ -542,7 +543,8 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   content: { padding: TOKENS.spacing.lg },
-  header: { marginBottom: TOKENS.spacing.xl, paddingTop: TOKENS.spacing.md },
+  header: { marginBottom: TOKENS.spacing.xl, paddingTop: TOKENS.spacing.md, alignItems: "flex-end" },
+  headerLogo: { marginBottom: TOKENS.spacing.sm },
   headerTitle: { color: TOKENS.colors.brandPrimary },
     statsCard: {
     marginBottom: TOKENS.spacing.md,

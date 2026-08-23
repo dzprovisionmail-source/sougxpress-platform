@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Typography, Card, Badge } from "@/components/ui";
+import { Typography, Card, Badge, BrandWordmark } from "@/components/ui";
 import { AinSefraZoneSelect } from "@/components/ui/AinSefraZoneSelect";
 import {
   MapPin, Plus, Trash2, Home, Briefcase,
@@ -397,8 +397,9 @@ export default function CustomerAddressesScreen() {
             ? <ChevronRight size={24} color={colors.textPrimary} />
             : <ChevronLeft size={24} color={colors.textPrimary} />}
         </TouchableOpacity>
-        <Typography variant="h1" style={styles.headerTitle}>عناويني</Typography>
-        <View style={{ width: 24 }} />
+              <Typography variant="h1" style={styles.headerTitle}>عناويني</Typography>
+      <BrandWordmark size="compact" style={styles.headerLogo} />
+
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -522,6 +523,9 @@ export default function CustomerAddressesScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  headerLogo: {
+    flexShrink: 0,
+  },
   header: {
     padding: TOKENS.spacing.lg,
     paddingTop: TOKENS.spacing.md,

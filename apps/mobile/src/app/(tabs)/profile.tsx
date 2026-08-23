@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, ActivityIndicator, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter, useGlobalSearchParams } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { Typography, Button } from "@/components/ui";
+import { Typography, Button, BrandWordmark } from "@/components/ui";
 import { LogIn, UserCircle, ShieldCheck } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
-import { LOGO_ICON } from "@/constants/brand";
 
 import CustomerProfileScreen from "../customer/profile";
 import MerchantProfileScreen from "../merchant/profile";
@@ -75,13 +74,9 @@ export default function ProfileGateway() {
     return (
       <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
         <View style={styles.content}>
-          {/* Header Icon */}
-          <View style={[styles.iconContainer, { backgroundColor: colors.primary + '10' }]}>
-            <Image
-              source={LOGO_ICON}
-              style={styles.logoIcon}
-              resizeMode="contain"
-            />
+          {/* Official Brand */}
+          <View style={[styles.brandContainer, { backgroundColor: colors.primary + '10' }]}>
+            <BrandWordmark size="market" />
           </View>
 
           <Typography variant="h1" align="center" style={styles.title}>
@@ -154,17 +149,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  brandContainer: {
+    width: 156,
+    height: 52,
+    borderRadius: TOKENS.radius.lg,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: TOKENS.spacing.xl,
-  },
-  logoIcon: {
-    width: 60,
-    height: 60,
+    paddingHorizontal: TOKENS.spacing.sm,
   },
   title: {
     marginBottom: TOKENS.spacing.md,

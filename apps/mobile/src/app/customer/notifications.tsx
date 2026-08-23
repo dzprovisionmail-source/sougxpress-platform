@@ -11,7 +11,7 @@ import {
   import { I18nManager } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Typography, Card } from "@/components/ui";
+import { Typography, Card, BrandWordmark } from "@/components/ui";
 import { Bell, ChevronRight, ChevronLeft, Circle, X, CheckCheck } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
@@ -167,7 +167,7 @@ export default function CustomerNotificationsScreen() {
             : <ChevronLeft size={24} color={colors.textPrimary} />}
         </TouchableOpacity>
         <Typography variant="h1" style={styles.headerTitle}>التنبيهات</Typography>
-        <View style={{ width: 24 }} />
+        <BrandWordmark size="compact" style={styles.headerLogo} />
       </View>
 
       {unreadCount > 0 && (
@@ -331,6 +331,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.05)",
+  },
+  headerLogo: {
+    flexShrink: 0,
   },
   headerTitle: {
     color: TOKENS.colors.brandPrimary,

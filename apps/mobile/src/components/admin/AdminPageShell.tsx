@@ -17,7 +17,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { router } from "expo-router";
 import { ArrowRight, Bell, CircleUserRound, LogOut } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { LOGO_DARK, LOGO_WORDMARK } from "@/constants/brand";
+import { LOGO_OFFICIAL_WORDMARK } from "@/constants/brand";
 import { supabase } from "@/lib/supabase";
 
 interface AdminPageShellProps {
@@ -159,7 +159,7 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
             </TouchableOpacity>
           )}
           <Image
-            source={isDark ? LOGO_DARK : LOGO_WORDMARK}
+            source={LOGO_OFFICIAL_WORDMARK}
             style={styles.logo}
             resizeMode="contain"
           />
