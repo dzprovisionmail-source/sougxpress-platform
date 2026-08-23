@@ -69,13 +69,35 @@ export default function CustomerProfileScreen() {
 
       setSessionEmail(user.email ?? null);
 
-      const { data: customerData, error: customerError } = await supabase
+      const { data: existingCustomer, error: customerLookupError } = await supabase
         .from("customers")
         .select("id, full_name, first_name, last_name, phone, phone_number, email, avatar_url, zone_id, status, zones(name)")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (customerError) throw customerError;
+      if (customerLookupError) throw customerLookupError;
+
+      let customerData = existingCustomer;
+      if (!customerData) {
+        const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "soug-admin";
+        const [firstName, ...lastNameParts] = displayName.trim().split(/\s+/).filter(Boolean);
+        const { data: createdCustomer, error: createCustomerError } = await supabase
+          .from("customers")
+          .insert({
+            id: user.id,
+            first_name: firstName || "",
+            last_name: lastNameParts.join(" "),
+            phone_number: user.user_metadata?.phone || "غير محدد",
+            email: user.email || "",
+            full_name: displayName,
+          })
+          .select("id, full_name, first_name, last_name, phone, phone_number, email, avatar_url, zone_id, status, zones(name)")
+          .single();
+
+        if (createCustomerError) throw createCustomerError;
+        customerData = createdCustomer;
+      }
+
       setProfile(customerData);
 
       const { data: orderData, error: orderStatsError } = await supabase

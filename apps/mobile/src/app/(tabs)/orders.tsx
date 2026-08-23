@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, ActivityIndicator, StyleSheet, Image } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useGlobalSearchParams } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { Typography, Button } from "@/components/ui";
@@ -16,8 +16,8 @@ type Role = 'customer' | 'courier' | 'merchant' | 'guest';
 
 export default function OrdersGateway() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ preview?: string }>();
-  const isCustomerPreview = params.preview === "customer";
+  const params = useGlobalSearchParams<{ preview?: string; identity?: string }>();
+  const isSougAdminPreview = params.preview === "1" && params.identity === "soug-admin";
   const { colors } = useAppTheme();
   const [role, setRole] = useState<Role | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,7 @@ export default function OrdersGateway() {
         if (!mounted) return;
         
         const r = (profile as any)?.role;
-        if (isCustomerPreview && (r === 'founder' || r === 'admin')) {
+        if (isSougAdminPreview && (r === 'founder' || r === 'admin')) {
           setRole('customer');
           return;
         }
@@ -61,7 +61,7 @@ export default function OrdersGateway() {
 
     checkRole();
     return () => { mounted = false; };
-  }, [isCustomerPreview]);
+  }, [isSougAdminPreview]);
 
   if (loading) {
     return (

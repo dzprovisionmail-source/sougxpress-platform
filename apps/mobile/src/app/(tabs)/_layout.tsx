@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { Tabs, router, useLocalSearchParams } from 'expo-router';
+import { Tabs, router, useGlobalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useAppTheme } from '@/contexts/ThemeContext';
@@ -41,10 +41,9 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { colors, tokens } = useAppTheme();
   const [role, setRole] = useState<Role>('guest');
-  const params = useLocalSearchParams();
-  const isCustomerPreview = params.preview === 'customer';
-  const isPreviewMode = params.preview === '1' || isCustomerPreview;
+  const params = useGlobalSearchParams<{ preview?: string; identity?: string }>();
   const isSougAdminPreview = params.identity === 'soug-admin';
+  const isPreviewMode = isSougAdminPreview && params.preview === '1';
 
   useEffect(() => {
     let mounted = true;
@@ -152,7 +151,7 @@ export default function TabLayout() {
     <View style={{ flex: 1 }}>
       {isPreviewMode && (
         <View style={[styles.previewBanner, { backgroundColor: colors.primary, paddingTop: Math.max(insets.top, 8) + 4, paddingBottom: 10, paddingHorizontal: 16 }]}>
-          <Text style={[styles.previewText, { fontFamily: tokens.typography.families.arabic }]}>{isSougAdminPreview ? "soug-admin — الحساب الرسمي لمنصة Soug-XPRESS" : isCustomerPreview ? "وضع الزبون للمؤسس" : "وضع معاينة السوق (كمتصفح)"}</Text>
+          <Text style={[styles.previewText, { fontFamily: tokens.typography.families.arabic }]}>{isSougAdminPreview ? "soug-admin — الحساب الرسمي لمنصة Soug-XPRESS" : "وضع معاينة السوق"}</Text>
           <TouchableOpacity 
             onPress={() => router.replace('/founder')}
             style={styles.exitBtn}

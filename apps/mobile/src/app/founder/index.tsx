@@ -536,7 +536,6 @@ export default function FounderControlCenterScreen() {
             <QuickAction label="نشاط المنصة" icon={<Activity size={18} color={blue} />} accentColor={blue} onPress={() => router.push("/founder/activity-control" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إدارة المشاهدات" icon={<Eye size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/views-management" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="الدخول إلى السوق باسم soug-admin" icon={<Store size={18} color={blue} />} accentColor={blue} onPress={() => router.push({ pathname: "/(tabs)/home", params: { preview: "1", identity: "soug-admin" } } as never)} colors={colors} tokens={tokens} />
-            <QuickAction label="الدخول إلى السوق كزبون" icon={<ShoppingBag size={18} color={primary} />} accentColor={primary} onPress={() => router.push({ pathname: "/(tabs)/home", params: { preview: "customer" } } as never)} colors={colors} tokens={tokens} />
           </View>
         </SectionBlock>
 
