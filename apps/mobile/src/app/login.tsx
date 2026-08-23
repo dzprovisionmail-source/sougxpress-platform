@@ -1,11 +1,12 @@
-import React from "react";
-import { Link } from "expo-router";
-import { View, ScrollView, StyleSheet, I18nManager, Image } from "react-native";
+import { Link, router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, View, ScrollView, StyleSheet, I18nManager, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography, Card } from "../components/ui";
 import { BRAND_NAME_AR, LOGO_OFFICIAL_WORDMARK, ICON_SHOPPING, ICON_STORE, ICON_DELIVERY } from "../constants/brand";
 import { TOKENS } from "../constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
+import { getAuthenticatedEntryRoute } from "../services/auth-entry.service";
 
 /**
  * Role Selection Gateway — Brand Icon Integration
@@ -63,6 +64,37 @@ const INTENT_OPTIONS: IntentOption[] = [
 export default function RoleSelectionScreen() {
   const colors = getThemeColors(DEFAULT_THEME);
   const isRTL = I18nManager.isRTL;
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const redirectReturningUser = async () => {
+      try {
+        const route = await getAuthenticatedEntryRoute();
+        if (mounted && route) router.replace(route);
+      } catch {
+        // Keep the existing role-selection screen available when the session check fails.
+      } finally {
+        if (mounted) setCheckingSession(false);
+      }
+    };
+
+    redirectReturningUser();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (checkingSession) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
@@ -129,6 +161,11 @@ export default function RoleSelectionScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   container: {
     flex: 1,

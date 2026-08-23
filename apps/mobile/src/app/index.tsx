@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import {
   Image,
   Modal,
@@ -30,6 +30,7 @@ import {
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
+import { getAuthenticatedEntryRoute } from "@/services/auth-entry.service";
 
 /**
  * Soug-XPRESS Entry Screen — Brand Logo Integration
@@ -126,6 +127,15 @@ export default function EntryScreen() {
     }
   };
 
+  const handleMarketEntry = async () => {
+    try {
+      const route = await getAuthenticatedEntryRoute();
+      router.replace(route ?? "/login");
+    } catch {
+      router.replace("/login");
+    }
+  };
+
   /* ── Render ── */
   const isLoading = dialogState === "loading";
 
@@ -162,16 +172,15 @@ export default function EntryScreen() {
 
         {/* Role Selection Gateway */}
         <View style={styles.gatewayContainer}>
-          <Link href="/login" asChild>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.enterButton}
-            >
-              <Typography variant="h2" style={styles.enterButtonText}>
-                الدخول إلى السوق
-              </Typography>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.enterButton}
+            onPress={handleMarketEntry}
+          >
+            <Typography variant="h2" style={styles.enterButtonText}>
+              الدخول إلى السوق
+            </Typography>
+          </TouchableOpacity>
         </View>
 
         {/* Footer */}
