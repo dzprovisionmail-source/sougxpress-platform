@@ -474,7 +474,7 @@ export default function FounderControlCenterScreen() {
         <SectionBlock title="إدارة التوصيل">
           <StatsRow>
             <AdminStatCard label="توصيلات منجزة" value={fmtCount(stats?.totalCompletedDeliveries)} accent={blue} onPress={() => router.push("/founder/deliveries" as never)} />
-            <AdminStatCard label="الموصلون النشطون" value={fmtCount(stats?.totalDrivers)} accent={success} onPress={() => router.push("/founder/couriers-control" as never)} />
+            <AdminStatCard label="الموصلون النشطون" value={fmtCount(stats?.totalDrivers)} accent={success} onPress={() => router.push("/founder/users/drivers" as never)} />
           </StatsRow>
         </SectionBlock>
 
@@ -532,6 +532,8 @@ export default function FounderControlCenterScreen() {
             <QuickAction label="مركز الموافقات" icon={<CheckCircle size={18} color={warning} />} accentColor={warning} onPress={() => router.push("/founder/approvals" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إدارة الطلبات" icon={<ClipboardList size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/orders" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إدارة التوصيلات" icon={<Truck size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/deliveries" as never)} colors={colors} tokens={tokens} />
+            <QuickAction label="إدارة الموصلين" icon={<Truck size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/couriers" as never)} colors={colors} tokens={tokens} />
+            <QuickAction label="حسابات الموصلين" icon={<Users size={18} color={blue} />} accentColor={blue} onPress={() => router.push("/founder/users/drivers" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="مراقبة المحادثات" icon={<MessageSquare size={18} color={info} />} accentColor={info} onPress={() => router.push("/founder/chat-control" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="نشاط المنصة" icon={<Activity size={18} color={blue} />} accentColor={blue} onPress={() => router.push("/founder/activity-control" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إدارة المشاهدات" icon={<Eye size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/views-management" as never)} colors={colors} tokens={tokens} />
@@ -551,7 +553,8 @@ export default function FounderControlCenterScreen() {
             <NavTile label="إدارة المشاهدات" icon={<Eye size={20} color={primary} />} onPress={() => router.push("/founder/views-management" as never)} colors={colors} tokens={tokens} />
             <NavTile label="الزبائن" icon={<Users size={20} color={primary} />} onPress={() => router.push("/founder/customers-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="التجار" icon={<Store size={20} color={primary} />} onPress={() => router.push("/founder/merchants-control" as never)} colors={colors} tokens={tokens} />
-            <NavTile label="الموصلون" icon={<Truck size={20} color={primary} />} onPress={() => router.push("/founder/couriers-control" as never)} colors={colors} tokens={tokens} />
+            <NavTile label="إدارة موصلين السوق" icon={<Truck size={20} color={primary} />} onPress={() => router.push("/founder/couriers" as never)} colors={colors} tokens={tokens} />
+            <NavTile label="حسابات الموصلين" icon={<Users size={20} color={primary} />} onPress={() => router.push("/founder/users/drivers" as never)} colors={colors} tokens={tokens} />
             <NavTile label="المالية" icon={<DollarSign size={20} color={primary} />} onPress={() => router.push("/founder/finance" as never)} colors={colors} tokens={tokens} />
             <NavTile label="المحتوى" icon={<FileText size={20} color={primary} />} onPress={() => router.push("/founder/content" as never)} colors={colors} tokens={tokens} />
             <NavTile label="الإعدادات" icon={<Settings size={20} color={primary} />} onPress={() => router.push("/founder/settings" as never)} colors={colors} tokens={tokens} />
