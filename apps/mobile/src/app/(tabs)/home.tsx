@@ -65,8 +65,8 @@ const HERO_STORE_TITLES = ["سوبر ماركت الوفاء", "مخبزة ال�
 
 const HomeScreen = () => {
   const router = useRouter();
-  const params = useLocalSearchParams<{ identity?: string }>();
-  const platformIdentity = params.identity === "soug-admin" ? "soug-admin" : undefined;
+  const params = useLocalSearchParams<{ preview?: string; identity?: string }>();
+  const platformIdentity = params.identity === "soug-admin" && (params.preview === "1" || params.preview === undefined) ? "soug-admin" : undefined;
   const marketContextParams = platformIdentity ? { preview: "1", identity: platformIdentity } : {};
   const { colors, tokens, isRTL, textAlign } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState('');
@@ -418,7 +418,7 @@ const HomeScreen = () => {
 
   const handleCategoryPress = async (catId: string) => {
     if (catId === "couriers") {
-      router.push("/couriers");
+      router.push({ pathname: "/couriers", params: marketContextParams });
       return;
     }
     setActiveCategory(catId);
@@ -484,7 +484,7 @@ const HomeScreen = () => {
                   </View>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push('/(tabs)/favorites')}>
+              <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/favorites', params: marketContextParams })}>
                 <Heart color={colors.textPrimary} size={iconSizes.header} />
               </TouchableOpacity>
             </View>
@@ -585,7 +585,7 @@ const HomeScreen = () => {
               ...tokens.shadows.small,
             },
           ]}
-          onPress={() => router.push('/couriers')}
+          onPress={() => router.push({ pathname: '/couriers', params: marketContextParams })}
           activeOpacity={0.8}
         >
           <View style={styles.couriersBannerContent}>
@@ -657,7 +657,7 @@ const HomeScreen = () => {
                     key={profile.id}
                     style={[styles.platformProfileResult, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
                     activeOpacity={0.8}
-                    onPress={() => router.push({ pathname: '/platform-profile/[slug]', params: { slug: profile.slug } })}
+                    onPress={() => router.push({ pathname: '/platform-profile/[slug]', params: { slug: profile.slug, ...marketContextParams } })}
                   >
                     <Image source={LOGO_ICON} style={styles.platformProfileAvatar} resizeMode="contain" />
                     <View style={styles.platformProfileCopy}>
@@ -796,7 +796,7 @@ const HomeScreen = () => {
 	                        isFavorite={favoriteProductIds.includes(product.id)}
 	                        onToggleFavorite={isGuest ? undefined : () => handleToggleProductFavorite(product.id)}
 	                        onPress={() =>
-	                          router.push({ pathname: "/product-details", params: { id: product.id } })
+	                          router.push({ pathname: "/product-details", params: { id: product.id, ...marketContextParams } })
 	                        }
                       />
                     </View>

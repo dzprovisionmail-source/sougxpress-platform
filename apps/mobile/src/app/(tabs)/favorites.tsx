@@ -13,7 +13,7 @@ import {
   FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useGlobalSearchParams, useRouter } from "expo-router";
 import { 
   Star, Heart, User, MapPin, MessageCircle, Phone, 
   ShoppingBag, Info, Store, Search, CheckCircle
@@ -55,6 +55,10 @@ import { supabase } from "@/lib/supabase";
  */
 export default function FavoritesScreen() {
   const router = useRouter();
+  const params = useGlobalSearchParams<{ preview?: string; identity?: string }>();
+  const marketContextParams = params.identity === "soug-admin" && (params.preview === "1" || params.preview === undefined)
+    ? { preview: "1", identity: "soug-admin" }
+    : {};
   const { userId, loading: authLoading } = useCurrentUserId();
   const { colors, tokens } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -330,7 +334,7 @@ export default function FavoritesScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.actionRow}>
-          <TouchableOpacity style={[styles.actionBtn, { flex: 1, borderColor: colors.borderSubtle }]} onPress={() => router.push(`/store-details?id=${store.id}`)}>
+          <TouchableOpacity style={[styles.actionBtn, { flex: 1, borderColor: colors.borderSubtle }]} onPress={() => router.push({ pathname: "/store-details", params: { id: store.id, ...marketContextParams } })}>
             <WorkspaceText variant="caption" color="primary">عرض المتجر</WorkspaceText>
           </TouchableOpacity>
         </View>
@@ -448,7 +452,7 @@ export default function FavoritesScreen() {
         </View>
         <TouchableOpacity 
           style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
-          onPress={() => router.push(`/product-details?id=${product.id}`)}
+          onPress={() => router.push({ pathname: "/product-details", params: { id: product.id, ...marketContextParams } })}
         >
           <WorkspaceText variant="caption" color="primary">عرض المنتج</WorkspaceText>
         </TouchableOpacity>
@@ -473,7 +477,7 @@ export default function FavoritesScreen() {
         </View>
         <TouchableOpacity 
           style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
-          onPress={() => router.push(`/store-details?id=${store.id}`)}
+          onPress={() => router.push({ pathname: "/store-details", params: { id: store.id, ...marketContextParams } })}
         >
           <WorkspaceText variant="caption" color="primary">زيارة المتجر</WorkspaceText>
         </TouchableOpacity>

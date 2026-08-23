@@ -12,7 +12,7 @@ import {
   Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useGlobalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Star, Share2, Heart, Truck, Bike, Car, Eye } from "lucide-react-native";
 import { getPromotionalViews } from "@/services/promotional-views.service";
 import {
@@ -32,6 +32,10 @@ import { getVehicleIcon, isCourierAvailable, vehicleLabel } from "@/utils/courie
 
 export default function CouriersDirectoryScreen() {
   const router = useRouter();
+  const params = useGlobalSearchParams<{ preview?: string; identity?: string }>();
+  const marketContextParams = params.identity === "soug-admin" && (params.preview === "1" || params.preview === undefined)
+    ? { preview: "1", identity: "soug-admin" }
+    : {};
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
@@ -74,7 +78,7 @@ export default function CouriersDirectoryScreen() {
   }, [fetchCouriers]);
 
   const handleViewProfile = (courierId: string) => {
-    router.push({ pathname: "/courier/[id]", params: { id: courierId } });
+    router.push({ pathname: "/courier/[id]", params: { id: courierId, ...marketContextParams } });
   };
 
   const handleToggleFavorite = async (courierId: string) => {
