@@ -203,14 +203,14 @@ export default function CouriersDirectoryScreen() {
               {courier.delivery_count ?? 0} توصيل
             </Typography>
           </View>
-          {promoViews !== null && (
+          {typeof promoViews === "number" && Number.isFinite(promoViews) ? (
             <View style={[styles.statItem, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
               <Eye size={16} color={colors.textSecondary} />
               <Typography variant="caption" color="secondary">
                 {promoViews.toLocaleString("ar-DZ")} مشاهدة
               </Typography>
             </View>
-          )}
+          ) : null}
         </View>
 
         <View style={styles.bioRow}>
