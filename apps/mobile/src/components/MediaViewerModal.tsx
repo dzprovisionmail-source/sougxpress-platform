@@ -251,27 +251,47 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     }
   };
 
-  const renderComment = ({ item }: { item: StoreGalleryComment }) => (
-    <View style={styles.commentRow}>
-      <Avatar uri={item.user_avatar_url} name={item.user_name} size={36} />
-      <View style={[styles.commentBubble, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-        <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right", marginBottom: 2 }}>
-          {item.user_name || "مستخدم"} • {formatDate(item.created_at)}
-        </Text>
-        <Text style={{ color: colors.textPrimary, fontSize: 13, textAlign: "right", lineHeight: 18 }}>
-          {item.content}
-        </Text>
+  const renderComment = ({ item }: { item: StoreGalleryComment }) => {
+    const isPlatformComment = item.platform_profile_slug === "soug-admin";
+
+    return (
+      <View style={styles.commentRow}>
+        <Avatar uri={item.user_avatar_url} name={item.user_name} size={36} />
+        <View style={[styles.commentBubble, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
+          <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right", marginBottom: 2 }}>
+            <Text
+              style={{
+                color: isPlatformComment ? colors.error : colors.textSecondary,
+                fontWeight: isPlatformComment ? "800" : "400",
+              }}
+            >
+              {item.user_name || "مستخدم"}
+            </Text>
+            {` • ${formatDate(item.created_at)}`}
+          </Text>
+          <Text
+            style={{
+              color: isPlatformComment ? colors.error : colors.textPrimary,
+              fontSize: 13,
+              fontWeight: isPlatformComment ? "600" : "400",
+              textAlign: "right",
+              lineHeight: 18,
+            }}
+          >
+            {item.content}
+          </Text>
+        </View>
+        {canDeleteComment(item.user_id) && (
+          <TouchableOpacity
+            onPress={() => handleDeleteComment(item.id, item.user_id)}
+            style={{ padding: 4, marginRight: 4 }}
+          >
+            <Trash2 size={14} color={colors.error} />
+          </TouchableOpacity>
+        )}
       </View>
-      {canDeleteComment(item.user_id) && (
-        <TouchableOpacity
-          onPress={() => handleDeleteComment(item.id, item.user_id)}
-          style={{ padding: 4, marginRight: 4 }}
-        >
-          <Trash2 size={14} color={colors.error} />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+    );
+  };
 
   if (!visible) return null;
 
