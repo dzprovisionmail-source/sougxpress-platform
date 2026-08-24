@@ -5,10 +5,10 @@
     "scheme": "sougxpress",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/brand/icon.png",
+    "icon": "./assets/brand/logo-official-soug-xpress.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/brand/splash.png",
+      "image": "./assets/brand/logo-official-soug-xpress.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A1B33"
     },
@@ -31,7 +31,7 @@
     "android": {
       "package": "com.sougxpress.founder",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/brand/adaptive-icon.png",
+        "foregroundImage": "./assets/brand/logo-official-soug-xpress.png",
         "backgroundColor": "#FF8A00"
       },
       "permissions": [
