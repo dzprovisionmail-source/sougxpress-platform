@@ -26,11 +26,11 @@ const useMerchantOrders = (merchantId: string) => {
     fetchOrders();
 
     if (merchantId) {
-      const subscription = subscribeToMerchantOrders(merchantId, () => {
-        fetchOrders();
+      const cleanupSubscription = subscribeToMerchantOrders(merchantId, () => {
+        void fetchOrders();
       });
       return () => {
-        subscription.unsubscribe();
+        void cleanupSubscription();
       };
     }
   }, [merchantId, fetchOrders]);

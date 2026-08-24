@@ -108,20 +108,54 @@ export const updateOrderStatus = async (
   }
 };
 
-export const subscribeToMerchantOrders = (merchantId: string, callback: () => void) => {
-  const channel = supabase.channel(`merchant_orders_${merchantId}`);
+type MerchantOrdersSubscription = {
+  channel: ReturnType<typeof supabase.channel>;
+  references: number;
+};
 
-  // Register every Realtime listener before subscribing. The returned channel
-  // is intentionally kept for useMerchantOrders cleanup via unsubscribe().
+const merchantOrdersSubscriptions = new Map<string, MerchantOrdersSubscription>();
+let merchantOrdersChannelSequence = 0;
+
+export const subscribeToMerchantOrders = (merchantId: string, callback: () => void) => {
+  const existing = merchantOrdersSubscriptions.get(merchantId);
+  if (existing) {
+    existing.references += 1;
+    return createMerchantOrdersCleanup(merchantId, existing);
+  }
+
+  // Use a unique topic for each active lifecycle. This prevents a Strict Mode
+  // remount from creating a second active channel with the same topic.
+  const channelName = `merchant_orders_${merchantId}_${++merchantOrdersChannelSequence}`;
+  const channel = supabase.channel(channelName);
+
+  // Every postgres_changes callback must be registered before subscribe().
   channel.on(
     "postgres_changes",
     { event: "*", schema: "public", table: "orders" },
-    callback
+    callback,
   );
 
+  const subscription: MerchantOrdersSubscription = { channel, references: 1 };
+  merchantOrdersSubscriptions.set(merchantId, subscription);
   channel.subscribe();
-  return channel;
+  return createMerchantOrdersCleanup(merchantId, subscription);
 };
+
+function createMerchantOrdersCleanup(
+  merchantId: string,
+  subscription: MerchantOrdersSubscription,
+): () => Promise<void> {
+  return async () => {
+    const current = merchantOrdersSubscriptions.get(merchantId);
+    if (current !== subscription) return;
+
+    subscription.references -= 1;
+    if (subscription.references > 0) return;
+
+    merchantOrdersSubscriptions.delete(merchantId);
+    await subscription.channel.unsubscribe();
+  };
+}
 
 export const getAvailableDriversForOrder = async (orderId: string): Promise<any[]> => {
   const { data, error } = await supabase.rpc("get_available_drivers_for_merchant", {
