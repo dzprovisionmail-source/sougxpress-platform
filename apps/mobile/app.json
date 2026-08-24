@@ -5,7 +5,7 @@
     "scheme": "sougxpress",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/brand/logo-official-soug-xpress.png",
+    "icon": "./assets/brand/logo-app-icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/brand/logo-official-soug-xpress.png",
@@ -31,7 +31,7 @@
     "android": {
       "package": "com.sougxpress.founder",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/brand/logo-official-soug-xpress.png",
+        "foregroundImage": "./assets/brand/logo-app-icon.png",
         "backgroundColor": "#FF8A00"
       },
       "permissions": [
