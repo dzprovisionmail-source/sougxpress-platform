@@ -1,3 +1,4 @@
+import { useMarketPresence } from "@/hooks/useMarketPresence";
 import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
@@ -157,6 +158,7 @@ export default function CourierProfile() {
   const marketContextParams = identity === "soug-admin" && (preview === "1" || preview === undefined)
     ? { preview: "1", identity: "soug-admin" }
     : {};
+  useMarketPresence("courier");
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
 

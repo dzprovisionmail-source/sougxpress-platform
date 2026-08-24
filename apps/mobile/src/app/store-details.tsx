@@ -1,3 +1,4 @@
+import { useMarketPresence } from "@/hooks/useMarketPresence";
 import React, { useState, useEffect, useMemo } from "react";
 import { StyleSheet, Alert } from 'react-native';
 import {
@@ -49,6 +50,7 @@ export default function StoreDetailsScreen() {
   const rawId = rawParams.id;
   const platformIdentity = rawParams.identity === "soug-admin" ? "soug-admin" : undefined;
   const marketContextParams = platformIdentity ? { preview: "1", identity: platformIdentity } : {};
+  useMarketPresence("store");
   const id = rawId && UUID_REGEX.test(rawId) ? rawId : undefined;
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;

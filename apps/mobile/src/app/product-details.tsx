@@ -1,3 +1,4 @@
+import { useMarketPresence } from "@/hooks/useMarketPresence";
 import { useState, useEffect } from "react";
 import {
   StyleSheet,
@@ -38,6 +39,7 @@ export default function ProductDetailsScreen() {
   const rawId = rawParams.id;
   const platformIdentity = rawParams.identity === "soug-admin" ? "soug-admin" : undefined;
   const marketContextParams = platformIdentity ? { preview: "1", identity: platformIdentity } : {};
+  useMarketPresence("product");
   const id = rawId && UUID_REGEX.test(rawId) ? rawId : undefined;
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;

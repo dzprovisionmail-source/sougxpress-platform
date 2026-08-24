@@ -1,3 +1,4 @@
+import { useMarketPresence } from "@/hooks/useMarketPresence";
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, I18nManager, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,6 +12,7 @@ import { getPlatformPublicProfile, PlatformPublicProfile } from '@/services/plat
 export default function PlatformPublicProfileScreen() {
   const router = useRouter();
   const { slug } = useLocalSearchParams<{ slug?: string }>();
+  useMarketPresence("market");
   const { colors, tokens } = useAppTheme();
   const [profile, setProfile] = useState<PlatformPublicProfile | null>(null);
   const [loading, setLoading] = useState(true);

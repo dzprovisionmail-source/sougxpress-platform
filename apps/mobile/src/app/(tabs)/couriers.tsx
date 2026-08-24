@@ -1,3 +1,4 @@
+import { useMarketPresence } from "@/hooks/useMarketPresence";
 import React, { useEffect, useState, useCallback } from "react";
 import {
   StyleSheet,
@@ -31,6 +32,7 @@ import { supabase } from "@/lib/supabase";
 import { getVehicleIcon, isCourierAvailable, vehicleLabel } from "@/utils/courier.utils";
 
 export default function CouriersDirectoryScreen() {
+  useMarketPresence("courier");
   const router = useRouter();
   const params = useGlobalSearchParams<{ preview?: string; identity?: string }>();
   const marketContextParams = params.identity === "soug-admin" && (params.preview === "1" || params.preview === undefined)

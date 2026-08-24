@@ -80,6 +80,7 @@ export default function FounderLayout() {
       <Stack.Screen name="market-settings" />
       <Stack.Screen name="merchants-control" />
       <Stack.Screen name="views-management" />
+      <Stack.Screen name="market-presence" />
     </Stack>
   );
 }

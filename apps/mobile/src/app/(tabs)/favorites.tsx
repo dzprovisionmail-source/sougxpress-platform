@@ -1,3 +1,4 @@
+import { useMarketPresence } from "@/hooks/useMarketPresence";
 import React, { useState, useCallback, useEffect } from "react";
 import {
   StyleSheet,
@@ -54,6 +55,7 @@ import { supabase } from "@/lib/supabase";
  * Refactored to prioritize the professional Courier-Customer commercial cycle.
  */
 export default function FavoritesScreen() {
+  useMarketPresence("market");
   const router = useRouter();
   const params = useGlobalSearchParams<{ preview?: string; identity?: string }>();
   const marketContextParams = params.identity === "soug-admin" && (params.preview === "1" || params.preview === undefined)

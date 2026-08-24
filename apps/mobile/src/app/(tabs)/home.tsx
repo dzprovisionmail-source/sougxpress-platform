@@ -1,3 +1,4 @@
+import { useMarketPresence } from "@/hooks/useMarketPresence";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -66,6 +67,7 @@ const HERO_STORE_TITLES = ["سوبر ماركت الوفاء", "مخبزة ال�
 const HomeScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ preview?: string; identity?: string }>();
+  useMarketPresence("market");
   const platformIdentity = params.identity === "soug-admin" && (params.preview === "1" || params.preview === undefined) ? "soug-admin" : undefined;
   const marketContextParams = platformIdentity ? { preview: "1", identity: platformIdentity } : {};
   const { colors, tokens, isRTL, textAlign } = useAppTheme();

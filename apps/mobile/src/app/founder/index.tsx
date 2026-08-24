@@ -536,6 +536,7 @@ export default function FounderControlCenterScreen() {
             <QuickAction label="حسابات الموصلين" icon={<Users size={18} color={blue} />} accentColor={blue} onPress={() => router.push("/founder/users/drivers" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="مراقبة المحادثات" icon={<MessageSquare size={18} color={info} />} accentColor={info} onPress={() => router.push("/founder/chat-control" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="نشاط المنصة" icon={<Activity size={18} color={blue} />} accentColor={blue} onPress={() => router.push("/founder/activity-control" as never)} colors={colors} tokens={tokens} />
+            <QuickAction label="من في السوق الآن" icon={<Activity size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/market-presence" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إدارة المشاهدات" icon={<Eye size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/views-management" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="الدخول إلى السوق باسم soug-admin" icon={<Store size={18} color={blue} />} accentColor={blue} onPress={() => router.push({ pathname: "/(tabs)/home", params: { preview: "1", identity: "soug-admin" } } as never)} colors={colors} tokens={tokens} />
           </View>
