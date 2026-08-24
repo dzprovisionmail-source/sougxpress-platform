@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Typography, Card, Button, BrandWordmark } from "@/components/ui";
+import { Typography, Card, Badge, Button, BrandWordmark } from "@/components/ui";
 import {
   MapPin,
   Heart,
@@ -28,12 +28,14 @@ import {
   Camera,
   X,
   User,
+  MessageCircle,
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
 import { I18nManager } from "react-native";
+import { getOrCreateSupportConversation } from "@/services/chat.service";
 import { uploadToSupabase } from "@/utils/upload.utils";
 
 export default function CustomerProfileScreen() {
@@ -154,6 +156,12 @@ export default function CustomerProfileScreen() {
         },
       ]
     );
+  };
+
+  const openSupportChat = async () => {
+    const { data, error } = await getOrCreateSupportConversation();
+    if (error || !data) { Alert.alert("تعذر فتح الدعم", "حاول مرة أخرى لاحقاً."); return; }
+    router.push({ pathname: "/chat/[id]", params: { id: data, support: "1" } });
   };
 
   const openEditModal = () => {
@@ -438,6 +446,15 @@ export default function CustomerProfileScreen() {
               <Typography variant="body" style={[styles.menuTitle, { color: colors.error }]}>
                 تسجيل الخروج
               </Typography>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.menuItem, { backgroundColor: colors.bgSurface }]}
+            onPress={openSupportChat}
+          >
+            <View style={[styles.menuItemContent, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <View style={styles.menuIconWrapper}><MessageCircle color={colors.primary} size={22} /></View>
+              <Typography variant="body" style={[styles.menuTitle, { color: colors.textPrimary }]}>الاتصال بـ Soug-Admin</Typography>
             </View>
           </TouchableOpacity>
         </View>

@@ -74,7 +74,7 @@ export default function ChatListScreen() {
         style={[styles.convItem, { borderBottomColor: colors.borderSubtle }]}
         onPress={() => router.push({
           pathname: "/chat/[id]",
-          params: { id: item.id, ...marketContextParams },
+          params: { id: item.id, ...(item.conversation_type === "support" ? { support: "1" } : {}), ...marketContextParams },
         })}
       >
         <Avatar
@@ -99,6 +99,7 @@ export default function ChatListScreen() {
               style={{ color: colors.textSecondary, flex: 1, textAlign: isRTL ? "right" : "left" }}
             >
               {item.last_message?.content || (
+                item.conversation_type === "support" ? "دعم Soug-XPRESS" :
                 item.relationship_type === 'customer_merchant' ? "متجر" : 
                 item.relationship_type === 'customer_courier' ? "موصل" : "تنسيق توصيل"
               )}

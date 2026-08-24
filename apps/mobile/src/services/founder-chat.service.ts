@@ -6,13 +6,21 @@
 import { supabase } from "@/lib/supabase";
 import type { Conversation, Message } from "./chat.service";
 
-export async function getFounderConversations(search?: string, relationshipType?: string): Promise<Conversation[]> {
+export type FounderConversationType = "commercial" | "support";
+
+export async function getFounderConversations(
+  search?: string,
+  relationshipType?: string,
+  conversationType: FounderConversationType = "commercial",
+): Promise<Conversation[]> {
   try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
     let query = supabase
       .from("v_chat_conversations_list")
       .select("*")
       .order("last_message_at", { ascending: false, nullsFirst: false });
 
+    query = query.eq("conversation_type", conversationType);
     if (relationshipType && relationshipType !== "all") {
       query = query.eq("relationship_type", relationshipType);
     }
@@ -25,20 +33,23 @@ export async function getFounderConversations(search?: string, relationshipType?
 
     const rows = (data ?? []) as Record<string, unknown>[];
     return rows.map((conv) => {
+      const supportOtherIsP1 = conversationType === "support" && currentUser?.id === String(conv.participant_two ?? "");
+      const otherPrefix = supportOtherIsP1 ? "p1" : "p2";
       const other = {
-        id: String(conv.participant_two ?? ""),
-        full_name: conv.p2_full_name ? String(conv.p2_full_name) : null,
-        avatar_url: conv.p2_avatar_url ? String(conv.p2_avatar_url) : null,
-        role: conv.p2_role ? String(conv.p2_role) : "",
-        store_name: conv.p2_store_name ? String(conv.p2_store_name) : null,
-        store_logo: conv.p2_store_logo ? String(conv.p2_store_logo) : null,
+        id: String(supportOtherIsP1 ? conv.participant_one : conv.participant_two ?? ""),
+        full_name: conv[`${otherPrefix}_full_name`] ? String(conv[`${otherPrefix}_full_name`]) : null,
+        avatar_url: conv[`${otherPrefix}_avatar_url`] ? String(conv[`${otherPrefix}_avatar_url`]) : null,
+        role: conv[`${otherPrefix}_role`] ? String(conv[`${otherPrefix}_role`]) : "",
+        store_name: conv[`${otherPrefix}_store_name`] ? String(conv[`${otherPrefix}_store_name`]) : null,
+        store_logo: conv[`${otherPrefix}_store_logo`] ? String(conv[`${otherPrefix}_store_logo`]) : null,
       };
 
       return {
         id: String(conv.id),
         participant_one: String(conv.participant_one),
         participant_two: String(conv.participant_two),
-        relationship_type: (conv.relationship_type as any) ?? "customer_merchant",
+        relationship_type: (conv.relationship_type as any) ?? null,
+        conversation_type: (conv.conversation_type as "commercial" | "support" | undefined) ?? conversationType,
         reference_id: conv.reference_id ? String(conv.reference_id) : null,
         last_message_at: String(conv.last_message_at ?? conv.created_at),
         created_at: String(conv.created_at),
@@ -46,7 +57,7 @@ export async function getFounderConversations(search?: string, relationshipType?
         last_message: conv.last_message_content
           ? {
               content: String(conv.last_message_content),
-              create_at: String(conv.last_message_time ?? conv.created_at),
+              created_at: String(conv.last_message_time ?? conv.created_at),
             }
           : undefined,
       };
@@ -55,6 +66,15 @@ export async function getFounderConversations(search?: string, relationshipType?
     console.error("getFounderConversations exception:", err);
     return [];
   }
+}
+
+export function subscribeToFounderSupportConversations(onChange: () => void): () => void {
+  const channel = supabase
+    .channel("founder-support-conversations")
+    .on("postgres_changes", { event: "*", schema: "public", table: "chat_conversations", filter: "conversation_type=eq.support" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, onChange);
+  channel.subscribe();
+  return () => { void channel.unsubscribe(); };
 }
 
 export async function getFounderConversationMessages(conversationId: string): Promise<Message[]> {

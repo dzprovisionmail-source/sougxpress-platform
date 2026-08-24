@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ScrollView, Alert, Switch, View, TouchableOpacity, Image, Modal, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
-import { Camera, BadgeInfo, Bike, Car, FolderClosed, LogOut, Palette, TrendingUp, User, X } from "lucide-react-native";
+import { Camera, BadgeInfo, Bike, Car, FolderClosed, LogOut, Palette, TrendingUp, User, X, MessageCircle } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -10,6 +10,7 @@ import useDriver from "@/hooks/useDriver";
 import useDriverOrders from "@/hooks/useDriverOrders";
 import { supabase } from "@/lib/supabase";
 import { uploadToSupabase } from "@/utils/upload.utils";
+import { getOrCreateSupportConversation } from "@/services/chat.service";
 import { computeEarningsSplit, formatCurrency } from "@/constants/earnings";
 import {
   WorkspaceScreen,
@@ -77,6 +78,12 @@ export default function DriverProfileScreen() {
         },
       ]
     );
+  };
+
+  const openSupportChat = async () => {
+    const { data, error } = await getOrCreateSupportConversation();
+    if (error || !data) { Alert.alert("تعذر فتح الدعم", "حاول مرة أخرى لاحقاً."); return; }
+    router.push({ pathname: "/chat/[id]", params: { id: data, support: "1" } });
   };
 
   const handleAvatarUpload = async () => {
@@ -354,6 +361,13 @@ export default function DriverProfileScreen() {
             variant="danger"
             icon={<LogOut color={colors.textOnBrand} size={18} />}
             onPress={handleLogout}
+          />
+        </SectionCard>
+        <SectionCard>
+          <WorkspaceButton
+            title="الاتصال بـ Soug-Admin"
+            icon={<MessageCircle color={colors.textOnBrand} size={18} />}
+            onPress={openSupportChat}
           />
         </SectionCard>
       </ScrollView>

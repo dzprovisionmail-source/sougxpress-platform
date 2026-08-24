@@ -19,12 +19,14 @@ import {
   Shield,
   Bell,
   Heart,
+  MessageCircle,
 } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import { getMerchant, updateMerchant } from "@/services/merchant.service";
 import { getStoreByMerchantId } from "@/services/store.service";
+import { getOrCreateSupportConversation } from "@/services/chat.service";
 import { Merchant, Store } from "@/types/schema-03-core";
 import { supabase } from "@/lib/supabase";
 import {
@@ -95,6 +97,12 @@ export default function MerchantProfileScreen() {
     } else {
       router.replace("/");
     }
+  };
+
+  const openSupportChat = async () => {
+    const { data, error } = await getOrCreateSupportConversation();
+    if (error || !data) { Alert.alert("تعذر فتح الدعم", "حاول مرة أخرى لاحقاً."); return; }
+    router.push({ pathname: "/chat/[id]", params: { id: data, support: "1" } });
   };
 
   const handleSave = async () => {
@@ -286,6 +294,13 @@ export default function MerchantProfileScreen() {
             variant="danger"
             icon={<LogOut color={colors.textOnBrand} size={18} />}
             onPress={handleLogout}
+          />
+        </SectionCard>
+        <SectionCard>
+          <WorkspaceButton
+            title="الاتصال بـ Soug-Admin"
+            icon={<MessageCircle color={colors.textOnBrand} size={18} />}
+            onPress={openSupportChat}
           />
         </SectionCard>
       </ScrollView>

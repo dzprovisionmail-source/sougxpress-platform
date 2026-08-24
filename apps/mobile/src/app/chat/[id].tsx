@@ -81,7 +81,7 @@ const statusLabel = (status?: string | null) => {
 const createClientId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 export default function ChatScreen() {
-  const { id: conversationId } = useLocalSearchParams<{ id: string }>();
+  const { id: conversationId, support } = useLocalSearchParams<{ id: string; support?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -98,6 +98,7 @@ export default function ChatScreen() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showCommercialActions, setShowCommercialActions] = useState(true);
   const [calling, setCalling] = useState(false);
+  const isSupportChat = support === "1";
 
   const currentUserIdRef = useRef<string | null>(null);
   const flatListRef = useRef<FlatList<Message>>(null);
@@ -336,7 +337,7 @@ export default function ChatScreen() {
   };
 
   const renderOrderActions = () => {
-    if (!orderContext || !showCommercialActions) return null;
+    if (!orderContext || isSupportChat || conversation?.conversation_type === "support" || !showCommercialActions) return null;
 
     if (currentUserRole === "merchant") {
       if (orderContext.order_status === "pending") {
@@ -459,7 +460,7 @@ export default function ChatScreen() {
         subtitle={
           isCourierConversation && availabilityLabel
             ? availabilityLabel
-            : ROLE_LABEL[other?.role || ""] || "تواصل تجاري آمن"
+            : isSupportChat ? "فريق دعم Soug-XPRESS" : ROLE_LABEL[other?.role || ""] || "تواصل تجاري آمن"
         }
         leftContent={
           <TouchableOpacity onPress={() => router.back()} style={styles.headerAction} accessibilityLabel="رجوع">
@@ -504,7 +505,7 @@ export default function ChatScreen() {
       <View style={[styles.commercialHint, { backgroundColor: colors.primary + "0B" }]}>
         <Info size={15} color={colors.primary} />
         <Typography variant="caption" style={{ color: colors.textSecondary, flex: 1, textAlign: "right" }}>
-          هذه محادثة مرتبطة بعلاقة تجارية. لا تشارك أرقام الهاتف أو بيانات الدفع.
+          {isSupportChat ? "هذه محادثة دعم مباشرة مع Soug-XPRESS. لا تشارك كلمات المرور أو رموز التحقق." : "هذه محادثة مرتبطة بعلاقة تجارية. لا تشارك أرقام الهاتف أو بيانات الدفع."}
         </Typography>
       </View>
 

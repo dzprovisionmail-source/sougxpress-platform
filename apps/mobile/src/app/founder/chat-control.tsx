@@ -9,7 +9,7 @@ import {
   Modal,
   ScrollView,
 } from "react-native";
-import { MessageSquare, Shield, ChevronLeft, X, Filter } from "lucide-react-native";
+import { MessageSquare, Shield, ChevronLeft, X, Filter, Headphones } from "lucide-react-native";
 import { SearchBar } from "@/components/ui";
 import {
   AdminPageShell,
@@ -19,9 +19,11 @@ import {
   AdminErrorState,
 } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { useRouter } from "expo-router";
 import {
   getFounderConversations,
   getFounderConversationMessages,
+  subscribeToFounderSupportConversations,
 } from "@/services/founder-chat.service";
 import type { Conversation, Message } from "@/services/chat.service";
 
@@ -41,6 +43,8 @@ export default function FounderChatControlScreen() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [relationshipFilter, setRelationshipFilter] = useState<RelationshipFilter>("all");
+  const [conversationMode, setConversationMode] = useState<"commercial" | "support">("commercial");
+  const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
 
   // Selected conversation detail
@@ -56,7 +60,7 @@ export default function FounderChatControlScreen() {
       setError(null);
       try {
         const effectiveRel = rel === "all" ? undefined : rel;
-        const data = await getFounderConversations(search, effectiveRel);
+        const data = await getFounderConversations(search, conversationMode === "support" ? undefined : effectiveRel, conversationMode);
         setConversations(data);
       } catch (err) {
         console.error("Founder Chat load error:", err);
@@ -66,12 +70,20 @@ export default function FounderChatControlScreen() {
         setRefreshing(false);
       }
     },
-    [search]
+    [search, conversationMode]
   );
 
   useEffect(() => {
-    loadConversations(relationshipFilter);
-  }, [loadConversations, relationshipFilter]);
+    loadConversations(conversationMode === "support" ? "all" : relationshipFilter);
+  }, [loadConversations, relationshipFilter, conversationMode]);
+
+  useEffect(() => {
+    if (conversationMode !== "support") return;
+    const cleanup = subscribeToFounderSupportConversations(() => {
+      void loadConversations("all", true);
+    });
+    return cleanup;
+  }, [conversationMode, loadConversations]);
 
   const openConversationDetail = async (conv: Conversation) => {
     setSelectedConv(conv);
@@ -115,6 +127,16 @@ export default function FounderChatControlScreen() {
   return (
     <AdminPageShell showLogout title="مراقبة المحادثات" showBack scrollable={false}>
       <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: "row-reverse", gap: 8, paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }}>
+          <TouchableOpacity onPress={() => setConversationMode("commercial")} style={[styles.modeTab, { borderColor: conversationMode === "commercial" ? colors.primary : colors.borderSubtle, backgroundColor: conversationMode === "commercial" ? colors.primary + "18" : "transparent" }]}>
+            <MessageSquare size={16} color={conversationMode === "commercial" ? colors.primary : colors.textSecondary} />
+            <Text style={{ color: conversationMode === "commercial" ? colors.primary : colors.textSecondary, fontFamily: tokens.typography.families.arabic }}>المحادثات التجارية</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setConversationMode("support")} style={[styles.modeTab, { borderColor: conversationMode === "support" ? colors.primary : colors.borderSubtle, backgroundColor: conversationMode === "support" ? colors.primary + "18" : "transparent" }]}>
+            <Headphones size={16} color={conversationMode === "support" ? colors.primary : colors.textSecondary} />
+            <Text style={{ color: conversationMode === "support" ? colors.primary : colors.textSecondary, fontFamily: tokens.typography.families.arabic }}>محادثات الدعم</Text>
+          </TouchableOpacity>
+        </View>
         {/* Search & Filters */}
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
           <SearchBar
@@ -123,7 +145,7 @@ export default function FounderChatControlScreen() {
             placeholder="بحث باسم المشارك أو المتجر..."
             onSubmitEditing={() => loadConversations(relationshipFilter)}
             onClear={() => setSearch("")}
-            onFilterPress={() => setShowFilters(true)}
+            onFilterPress={() => setShowFilters(conversationMode === "commercial")}
             style={{ flex: 1 }}
           />
         </View>
@@ -147,7 +169,7 @@ export default function FounderChatControlScreen() {
           }
           ListEmptyComponent={<AdminEmptyState message="لا توجد محادثات نشطة أو متاحة للقراءة" />}
           renderItem={({ item }) => {
-            const relLabel = RELATIONSHIP_LABELS[item.relationship_type] ?? item.relationship_type;
+            const relLabel = conversationMode === "support" ? "دعم Soug-XPRESS" : RELATIONSHIP_LABELS[item.relationship_type ?? ""] ?? item.relationship_type ?? "علاقة تجارية";
             const other = item.other_participant;
             return (
               <TouchableOpacity onPress={() => openConversationDetail(item)} activeOpacity={0.8}>
@@ -176,7 +198,7 @@ export default function FounderChatControlScreen() {
                           }}
                           numberOfLines={1}
                         >
-                          {other?.store_name || other?.full_name || "مشارك"}
+                          {conversationMode === "support" ? (other?.full_name || "مستخدم") : (other?.store_name || other?.full_name || "مشارك")}
                         </Text>
                         <View style={[styles.badge, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "44" }]}>
                           <Text style={{ color: colors.primary, fontSize: 10, fontWeight: "700", fontFamily: tokens.typography.families.arabic }}>
@@ -318,6 +340,14 @@ export default function FounderChatControlScreen() {
                   ))
                 )}
 
+                {selectedConv.conversation_type === "support" && (
+                  <TouchableOpacity
+                    onPress={() => { setShowDetail(false); router.push({ pathname: "/chat/[id]", params: { id: selectedConv.id, support: "1" } }); }}
+                    style={[styles.closeBtn, { backgroundColor: colors.primary, borderRadius: tokens.radius.md, marginBottom: 8 }]}
+                  >
+                    <Text style={{ color: "#fff", fontWeight: "700", textAlign: "center", fontFamily: tokens.typography.families.arabic }}>فتح محادثة الدعم والرد</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
                   onPress={() => setShowDetail(false)}
                   style={[styles.closeBtn, { backgroundColor: colors.primary, borderRadius: tokens.radius.md }]}
@@ -335,6 +365,7 @@ export default function FounderChatControlScreen() {
 
 const styles = StyleSheet.create({
   topBar: { marginBottom: 8 },
+  modeTab: { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 10, flexDirection: "row-reverse", justifyContent: "center", alignItems: "center", gap: 6 },
   card: { borderWidth: 1 },
   cardRow: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
   cardInfo: { flex: 1 },

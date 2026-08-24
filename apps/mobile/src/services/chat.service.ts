@@ -1,12 +1,14 @@
 import { supabase } from "@/lib/supabase";
 
 export type RelationshipType = 'customer_merchant' | 'customer_courier' | 'merchant_courier';
+export type ConversationType = 'commercial' | 'support';
 
 export interface Conversation {
   id: string;
   participant_one: string;
   participant_two: string;
-  relationship_type: RelationshipType;
+  relationship_type: RelationshipType | null;
+  conversation_type?: ConversationType;
   reference_id: string | null;
   last_message_at: string;
   created_at: string;
@@ -72,6 +74,7 @@ export const getConversations = async (): Promise<{ data: Conversation[] | null;
         participant_one: conv.participant_one,
         participant_two: conv.participant_two,
         relationship_type: conv.relationship_type,
+        conversation_type: conv.conversation_type ?? 'commercial',
         reference_id: conv.reference_id,
         last_message_at: conv.last_message_at,
         created_at: conv.created_at,
@@ -120,7 +123,8 @@ export const getConversationById = async (id: string): Promise<{ data: Conversat
       id: data.id,
       participant_one: data.participant_one,
       participant_two: data.participant_two,
-      relationship_type: data.relationship_type as RelationshipType,
+      relationship_type: (data.relationship_type as RelationshipType | null) ?? null,
+      conversation_type: (data.conversation_type as ConversationType | undefined) ?? 'commercial',
       reference_id: data.reference_id,
       last_message_at: data.last_message_at,
       created_at: data.created_at,
@@ -310,6 +314,17 @@ export const logCallPress = async (
   } catch (err) {
     console.error("Error logging call press:", err);
     return { error: err };
+  }
+};
+
+export const getOrCreateSupportConversation = async (): Promise<{ data: string | null; error: any }> => {
+  try {
+    const { data, error } = await supabase.rpc('get_or_create_support_conversation');
+    if (error) throw error;
+    return { data: data ? String(data) : null, error: null };
+  } catch (err) {
+    console.error('Error getting/creating support conversation:', err);
+    return { data: null, error: err };
   }
 };
 
