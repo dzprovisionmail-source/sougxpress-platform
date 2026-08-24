@@ -449,6 +449,11 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoiding}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
       <Header
         title={displayName}
         subtitle={
@@ -538,11 +543,7 @@ export default function ChatScreen() {
         </View>
       ) : null}
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-      >
-        <View style={[styles.inputContainer, { backgroundColor: colors.bgSurface, borderTopColor: colors.borderSubtle }]}>
+      <View style={[styles.inputContainer, { backgroundColor: colors.bgSurface, borderTopColor: colors.borderSubtle }]}>
           <TextInput
             style={[styles.input, { color: colors.textPrimary, textAlign: isRTL ? "right" : "left" }]}
             placeholder="اكتب رسالة آمنة..."
@@ -564,7 +565,7 @@ export default function ChatScreen() {
               <Send size={20} color="#FFFFFF" style={{ transform: [{ scaleX: isRTL ? -1 : 1 }] }} />
             )}
           </TouchableOpacity>
-        </View>
+      </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -572,6 +573,9 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardAvoiding: {
     flex: 1,
   },
   centered: {
