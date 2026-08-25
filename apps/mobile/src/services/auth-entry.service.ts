@@ -28,7 +28,7 @@ export async function getAuthenticatedEntryRoute(): Promise<string | null> {
     case "merchant":
       return "/(tabs)/home";
     case "driver":
-      return "/driver/dashboard";
+      return "/(tabs)/home";
     case "founder":
     case "admin":
       return "/founder";
