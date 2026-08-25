@@ -1,5 +1,7 @@
 import * as ImageManipulator from "expo-image-manipulator";
-import * as FileSystem from "expo-file-system";
+// Expo SDK 54 keeps the async helpers in the legacy entrypoint; the root
+// getInfoAsync export intentionally throws at runtime after the deprecation.
+import * as FileSystem from "expo-file-system/legacy";
 import { Image } from "react-native";
 
 export type ImageType = "cover" | "logo" | "gallery";
@@ -64,8 +66,17 @@ function getImageSize(uri: string): Promise<{ width: number; height: number }> {
 }
 
 async function getFileSize(uri: string): Promise<number> {
-  const info = await FileSystem.getInfoAsync(uri);
-  return info.exists ? info.size ?? 0 : 0;
+  try {
+    const info = await FileSystem.getInfoAsync(uri);
+    if (!info.exists) {
+      console.warn("[imageOptimizer] processed URI does not exist", { uri });
+      return 0;
+    }
+    return info.size ?? 0;
+  } catch (error) {
+    console.error("[imageOptimizer] failed to inspect processed URI", { uri, error });
+    return 0;
+  }
 }
 
 /**
@@ -75,7 +86,14 @@ async function getFileSize(uri: string): Promise<number> {
 export async function prepareImageForUpload(uri: string): Promise<PreparedImage> {
   if (!uri) throw new Error("لم يتم تحديد صورة");
 
-  const original = await getImageSize(uri);
+  let original: { width: number; height: number };
+  try {
+    original = await getImageSize(uri);
+  } catch (error) {
+    console.error("[imageOptimizer] unable to read source image dimensions", { uri, error });
+    throw new Error("تعذر قراءة أبعاد الصورة");
+  }
+
   const largestSide = Math.max(original.width, original.height);
   const dimensionStages = Array.from(
     new Set([
@@ -91,9 +109,10 @@ export async function prepareImageForUpload(uri: string): Promise<PreparedImage>
     ].filter((dimension) => dimension <= largestSide))
   );
 
-  if (dimensionStages.length === 0) dimensionStages.push(largestSide);
+  if (dimensionStages.length === 0) dimensionStages.push(Math.max(1, largestSide));
 
   let bestResult: PreparedImage | null = null;
+  let attemptCount = 0;
 
   for (const maxDimension of dimensionStages) {
     const scale = Math.min(1, maxDimension / largestSide);
@@ -106,15 +125,44 @@ export async function prepareImageForUpload(uri: string): Promise<PreparedImage>
     }
 
     for (const quality of COMPRESSION_QUALITIES) {
+      attemptCount += 1;
       try {
         const result = await ImageManipulator.manipulateAsync(uri, actions, {
           compress: quality,
           format: ImageManipulator.SaveFormat.JPEG,
         });
-        const sizeBytes = await getFileSize(result.uri);
-        if (sizeBytes <= 0) continue;
 
-        const dimensions = await getImageSize(result.uri);
+        if (!result.uri) {
+          console.warn("[imageOptimizer] manipulator returned an empty URI", {
+            maxDimension,
+            quality,
+          });
+          continue;
+        }
+
+        const sizeBytes = await getFileSize(result.uri);
+        if (sizeBytes <= 0) {
+          console.warn("[imageOptimizer] processed output was not readable", {
+            outputUri: result.uri,
+            maxDimension,
+            quality,
+          });
+          continue;
+        }
+
+        let dimensions: { width: number; height: number };
+        try {
+          dimensions = await getImageSize(result.uri);
+        } catch (error) {
+          console.error("[imageOptimizer] processed output dimensions failed", {
+            outputUri: result.uri,
+            maxDimension,
+            quality,
+            error,
+          });
+          continue;
+        }
+
         const prepared: PreparedImage = {
           uri: result.uri,
           width: dimensions.width,
@@ -123,18 +171,46 @@ export async function prepareImageForUpload(uri: string): Promise<PreparedImage>
           contentType: "image/jpeg",
         };
 
+        console.log("[imageOptimizer] processed image candidate", {
+          maxDimension,
+          quality,
+          width: dimensions.width,
+          height: dimensions.height,
+          sizeBytes,
+        });
+
         if (!bestResult || sizeBytes < bestResult.sizeBytes) {
           bestResult = prepared;
         }
 
         if (sizeBytes <= MAX_SAFE_UPLOAD_BYTES) return prepared;
-      } catch {
-        // Continue with the next quality or dimension stage. The original is never uploaded.
+      } catch (error) {
+        console.error("[imageOptimizer] image manipulation attempt failed; continuing", {
+          sourceUri: uri,
+          maxDimension,
+          quality,
+          error,
+        });
       }
     }
   }
 
-  if (bestResult) return bestResult;
+  if (bestResult) {
+    console.warn("[imageOptimizer] 1 MB target was not reached; using best processed output", {
+      attemptCount,
+      sizeBytes: bestResult.sizeBytes,
+      width: bestResult.width,
+      height: bestResult.height,
+    });
+    return bestResult;
+  }
+
+  console.error("[imageOptimizer] all image manipulation attempts failed", {
+    sourceUri: uri,
+    attemptCount,
+    originalWidth: original.width,
+    originalHeight: original.height,
+  });
   throw new Error("تعذر تجهيز الصورة للرفع");
 }
 
