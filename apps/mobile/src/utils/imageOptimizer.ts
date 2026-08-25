@@ -53,8 +53,9 @@ export interface PreparedImage {
 }
 
 const MAX_UPLOAD_DIMENSION = 1600;
-const MAX_SAFE_UPLOAD_BYTES = 4.5 * 1024 * 1024;
-const COMPRESSION_QUALITIES = [0.85, 0.78, 0.7, 0.62, 0.55];
+const MIN_UPLOAD_DIMENSION = 320;
+const MAX_SAFE_UPLOAD_BYTES = 1 * 1024 * 1024;
+const COMPRESSION_QUALITIES = [0.85, 0.78, 0.7, 0.62, 0.55, 0.45, 0.35, 0.25];
 
 function getImageSize(uri: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
@@ -76,40 +77,65 @@ export async function prepareImageForUpload(uri: string): Promise<PreparedImage>
 
   const original = await getImageSize(uri);
   const largestSide = Math.max(original.width, original.height);
-  const scale = Math.min(1, MAX_UPLOAD_DIMENSION / largestSide);
-  const targetWidth = Math.max(1, Math.round(original.width * scale));
-  const targetHeight = Math.max(1, Math.round(original.height * scale));
+  const dimensionStages = Array.from(
+    new Set([
+      MAX_UPLOAD_DIMENSION,
+      1400,
+      1200,
+      1000,
+      800,
+      640,
+      512,
+      400,
+      MIN_UPLOAD_DIMENSION,
+    ].filter((dimension) => dimension <= largestSide))
+  );
 
-  const actions: ImageManipulator.Action[] = [];
-  if (targetWidth !== original.width || targetHeight !== original.height) {
-    actions.push({ resize: { width: targetWidth, height: targetHeight } });
-  }
+  if (dimensionStages.length === 0) dimensionStages.push(largestSide);
 
-  let lastResult: ImageManipulator.ImageResult | null = null;
-  for (const quality of COMPRESSION_QUALITIES) {
-    lastResult = await ImageManipulator.manipulateAsync(uri, actions, {
-      compress: quality,
-      format: ImageManipulator.SaveFormat.JPEG,
-    });
+  let bestResult: PreparedImage | null = null;
 
-    const sizeBytes = await getFileSize(lastResult.uri);
-    if (sizeBytes > 0 && sizeBytes <= MAX_SAFE_UPLOAD_BYTES) {
-      const dimensions = await getImageSize(lastResult.uri);
-      return {
-        uri: lastResult.uri,
-        width: dimensions.width,
-        height: dimensions.height,
-        sizeBytes,
-        contentType: "image/jpeg",
-      };
+  for (const maxDimension of dimensionStages) {
+    const scale = Math.min(1, maxDimension / largestSide);
+    const targetWidth = Math.max(1, Math.round(original.width * scale));
+    const targetHeight = Math.max(1, Math.round(original.height * scale));
+    const actions: ImageManipulator.Action[] = [];
+
+    if (targetWidth !== original.width || targetHeight !== original.height) {
+      actions.push({ resize: { width: targetWidth, height: targetHeight } });
+    }
+
+    for (const quality of COMPRESSION_QUALITIES) {
+      try {
+        const result = await ImageManipulator.manipulateAsync(uri, actions, {
+          compress: quality,
+          format: ImageManipulator.SaveFormat.JPEG,
+        });
+        const sizeBytes = await getFileSize(result.uri);
+        if (sizeBytes <= 0) continue;
+
+        const dimensions = await getImageSize(result.uri);
+        const prepared: PreparedImage = {
+          uri: result.uri,
+          width: dimensions.width,
+          height: dimensions.height,
+          sizeBytes,
+          contentType: "image/jpeg",
+        };
+
+        if (!bestResult || sizeBytes < bestResult.sizeBytes) {
+          bestResult = prepared;
+        }
+
+        if (sizeBytes <= MAX_SAFE_UPLOAD_BYTES) return prepared;
+      } catch {
+        // Continue with the next quality or dimension stage. The original is never uploaded.
+      }
     }
   }
 
-  if (!lastResult) throw new Error("تعذر تجهيز الصورة");
-  const finalSize = await getFileSize(lastResult.uri);
-  throw new Error(
-    `حجم الصورة بعد الضغط كبير جدًا (${Math.ceil(finalSize / 1024 / 1024)}MB). اختر صورة أصغر.`
-  );
+  if (bestResult) return bestResult;
+  throw new Error("تعذر تجهيز الصورة للرفع");
 }
 
 export async function getOriginalImageInfo(uri: string): Promise<OriginalImageInfo> {
