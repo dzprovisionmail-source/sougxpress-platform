@@ -1,7 +1,5 @@
 import * as ImageManipulator from "expo-image-manipulator";
-// Expo SDK 54 keeps the async helpers in the legacy entrypoint; the root
-// getInfoAsync export intentionally throws at runtime after the deprecation.
-import * as FileSystem from "expo-file-system/legacy";
+import { File } from "expo-file-system";
 import { Image } from "react-native";
 
 export type ImageType = "cover" | "logo" | "gallery";
@@ -65,16 +63,51 @@ function getImageSize(uri: string): Promise<{ width: number; height: number }> {
   });
 }
 
+function describeError(error: unknown): {
+  name?: string;
+  code?: string;
+  message: string;
+  stack?: string;
+  details?: unknown;
+} {
+  if (error instanceof Error) {
+    const errorRecord = error as Error & { code?: string };
+    return {
+      name: errorRecord.name,
+      code: errorRecord.code,
+      message: errorRecord.message,
+      stack: errorRecord.stack,
+    };
+  }
+
+  if (typeof error === "object" && error !== null) {
+    const record = error as Record<string, unknown>;
+    return {
+      name: typeof record.name === "string" ? record.name : undefined,
+      code: typeof record.code === "string" ? record.code : undefined,
+      message: typeof record.message === "string" ? record.message : JSON.stringify(error),
+      stack: typeof record.stack === "string" ? record.stack : undefined,
+      details: record,
+    };
+  }
+
+  return { message: String(error) };
+}
+
 async function getFileSize(uri: string): Promise<number> {
   try {
-    const info = await FileSystem.getInfoAsync(uri);
+    // File.info() is the SDK 54 API. It is synchronous by design.
+    const info = new File(uri).info();
     if (!info.exists) {
-      console.warn("[imageOptimizer] processed URI does not exist", { uri });
+      console.warn("[imageOptimizer] processed URI does not exist", { uri, info });
       return 0;
     }
     return info.size ?? 0;
   } catch (error) {
-    console.error("[imageOptimizer] failed to inspect processed URI", { uri, error });
+    console.error("[imageOptimizer] failed to inspect processed URI with File.info()", {
+      uri,
+      error: describeError(error),
+    });
     return 0;
   }
 }
@@ -90,7 +123,10 @@ export async function prepareImageForUpload(uri: string): Promise<PreparedImage>
   try {
     original = await getImageSize(uri);
   } catch (error) {
-    console.error("[imageOptimizer] unable to read source image dimensions", { uri, error });
+    console.error("[imageOptimizer] unable to read source image dimensions", {
+      uri,
+      error: describeError(error),
+    });
     throw new Error("تعذر قراءة أبعاد الصورة");
   }
 
@@ -158,7 +194,7 @@ export async function prepareImageForUpload(uri: string): Promise<PreparedImage>
             outputUri: result.uri,
             maxDimension,
             quality,
-            error,
+            error: describeError(error),
           });
           continue;
         }
@@ -189,7 +225,7 @@ export async function prepareImageForUpload(uri: string): Promise<PreparedImage>
           sourceUri: uri,
           maxDimension,
           quality,
-          error,
+          error: describeError(error),
         });
       }
     }
