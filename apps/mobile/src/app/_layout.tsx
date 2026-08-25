@@ -6,6 +6,7 @@ LogBox.ignoreLogs([
   "Method getInfoAsync imported from \"expo-file-system\" is deprecated"
 ]);
 import { Stack, useRouter } from "expo-router";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
@@ -30,8 +31,9 @@ export default function RootLayout() {
   }, [router]);
 
   return (
-    <ThemeProvider>
-      <Stack screenOptions={{ headerShown: false }}>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="admin" />
@@ -47,7 +49,8 @@ export default function RootLayout() {
         <Stack.Screen name="merchant" />
         <Stack.Screen name="driver" />
         <Stack.Screen name="(tabs)" />
-      </Stack>
-    </ThemeProvider>
+        </Stack>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
