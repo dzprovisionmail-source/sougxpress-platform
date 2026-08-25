@@ -1,10 +1,12 @@
+import { useEffect } from "react";
 import { LogBox, I18nManager } from "react-native";
 LogBox.ignoreLogs([
   "SafeAreaView has been deprecated",
   "MediaTypeOptions` have been deprecated",
   "Method getInfoAsync imported from \"expo-file-system\" is deprecated"
 ]);
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
+import { supabase } from "@/lib/supabase";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // SougXpress is Arabic-only — force RTL layout direction app-wide.
@@ -15,6 +17,18 @@ if (!I18nManager.isRTL) {
 }
 
 export default function RootLayout() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        router.replace("/");
+      }
+    });
+
+    return () => authListener.subscription.unsubscribe();
+  }, [router]);
+
   return (
     <ThemeProvider>
       <Stack screenOptions={{ headerShown: false }}>

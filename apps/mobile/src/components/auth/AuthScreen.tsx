@@ -202,16 +202,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     const provisioningFirstName = (nameParts[0] || "موصل").trim();
     const provisioningLastName = (nameParts.slice(1).join(" ") || "غير محدد").trim();
 
-    if (role === "driver" && !provisioningVehicleType) {
-      Alert.alert("نوع المركبة مطلوب", "يرجى اختيار نوع المركبة لإكمال تسجيل الموصل.");
-      return;
-    }
-
-    if (role === "driver" && !provisioningNeighborhood) {
-      Alert.alert("الحي مطلوب", "يرجى اختيار حي من أحياء عين الصفراء لإكمال التسجيل.");
-      return;
-    }
-
     // 1. Check / Provision Profile
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -371,6 +361,25 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           .maybeSingle();
         if (dQueryError) throw dQueryError;
 
+        // Validate the authoritative driver row only after it has been loaded.
+        // The previous pre-query check inspected empty form state during login,
+        // which caused a false vehicle_type error on the first attempt.
+        const resolvedVehicleType = isVehicleType(driver?.vehicle_type)
+          ? driver.vehicle_type
+          : provisioningVehicleType;
+        const resolvedNeighborhood =
+          driver?.neighborhood?.trim() || provisioningNeighborhood;
+
+        if (!resolvedVehicleType) {
+          Alert.alert("نوع المركبة مطلوب", "يرجى اختيار نوع المركبة لإكمال تسجيل الموصل.");
+          return;
+        }
+
+        if (!resolvedNeighborhood) {
+          Alert.alert("الحي مطلوب", "يرجى اختيار حي من أحياء عين الصفراء لإكمال التسجيل.");
+          return;
+        }
+
         if (!driver) {
           const { error: dInsertError } = await supabase
             .from("drivers")
@@ -382,9 +391,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               phone_number: provisioningPhone || "",
               phone: provisioningPhone || "",
               email: userEmail,
-              vehicle_type: provisioningVehicleType || null,
+              vehicle_type: resolvedVehicleType,
               city: "Ain Sefra",
-              neighborhood: provisioningNeighborhood || null,
+              neighborhood: resolvedNeighborhood,
               zone_id: resolvedZoneId,
               availability: "offline",
               is_available: false,
@@ -408,14 +417,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           if (!driver.email && userEmail) {
             driverUpdates.email = userEmail;
           }
-          if (!driver.vehicle_type && provisioningVehicleType) {
-            driverUpdates.vehicle_type = provisioningVehicleType;
+          if (!isVehicleType(driver.vehicle_type) && resolvedVehicleType) {
+            driverUpdates.vehicle_type = resolvedVehicleType;
           }
           if (!driver.city) {
             driverUpdates.city = "Ain Sefra";
           }
-          if (!driver.neighborhood && provisioningNeighborhood) {
-            driverUpdates.neighborhood = provisioningNeighborhood;
+          if (!driver.neighborhood && resolvedNeighborhood) {
+            driverUpdates.neighborhood = resolvedNeighborhood;
           }
           if (!driver.zone_id && resolvedZoneId) {
             driverUpdates.zone_id = resolvedZoneId;

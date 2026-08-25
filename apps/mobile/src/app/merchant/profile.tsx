@@ -94,8 +94,6 @@ export default function MerchantProfileScreen() {
     const { error } = await supabase.auth.signOut();
     if (error) {
       Alert.alert("خطأ في تسجيل الخروج", error.message);
-    } else {
-      router.replace("/");
     }
   };
 

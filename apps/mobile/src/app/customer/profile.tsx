@@ -151,7 +151,6 @@ export default function CustomerProfileScreen() {
           style: "destructive",
           onPress: async () => {
             await supabase.auth.signOut();
-            router.replace("/login");
           },
         },
       ]

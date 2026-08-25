@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { CircleUserRound, LogOut, Shield, Moon, Sun } from "lucide-react-native";
-import { router } from "expo-router";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { AdminPageShell } from "@/components/admin";
 import { supabase } from "@/lib/supabase";
@@ -50,7 +49,6 @@ export default function AdminProfileScreen() {
   const handleSignOut = useCallback(async () => {
     setSigningOut(true);
     await supabase.auth.signOut();
-    router.replace("/login");
   }, []);
 
   return (

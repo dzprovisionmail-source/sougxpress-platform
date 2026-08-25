@@ -73,7 +73,6 @@ export default function DriverProfileScreen() {
           style: "destructive",
           onPress: async () => {
             await supabase.auth.signOut();
-            router.replace("/");
           },
         },
       ]

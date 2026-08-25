@@ -1,6 +1,5 @@
 import React from "react";
 import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
-import { useRouter } from "expo-router";
 import { LogOut, Palette, Bell, Shield, HelpCircle } from "lucide-react-native";
 
 import { WorkspaceScreen, SectionCard, SectionTitle, WorkspaceText, WorkspaceButton, WorkspaceRow, ThemeSwitcher } from "@/features/workspace/ui";
@@ -8,7 +7,6 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 
 export default function CourierSettingsScreen() {
-  const router = useRouter();
   const { colors, tokens } = useAppTheme();
 
   const handleLogout = async () => {
@@ -22,7 +20,6 @@ export default function CourierSettingsScreen() {
           style: "destructive",
           onPress: async () => {
             await supabase.auth.signOut();
-            router.replace("/");
           },
         },
       ]

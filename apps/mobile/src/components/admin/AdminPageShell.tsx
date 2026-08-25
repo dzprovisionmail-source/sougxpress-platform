@@ -60,7 +60,6 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      router.replace("/");
     } catch {
       Alert.alert("خطأ", "تعذّر تسجيل الخروج");
     }
