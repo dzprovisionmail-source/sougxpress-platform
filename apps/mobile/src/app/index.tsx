@@ -130,7 +130,11 @@ export default function EntryScreen() {
   const handleMarketEntry = async () => {
     try {
       const route = await getAuthenticatedEntryRoute();
-      router.replace(route ?? "/login");
+      if (route) {
+        router.push(route);
+      } else {
+        router.replace("/login");
+      }
     } catch {
       router.replace("/login");
     }

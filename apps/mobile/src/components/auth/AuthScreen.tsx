@@ -451,8 +451,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
     if (status === "active") {
       // Reset only the post-auth stack; internal Back navigation remains unchanged.
-      router.dismissAll();
-      router.replace("/(tabs)/home");
+      router.push("/(tabs)/home");
     }
   };
 
