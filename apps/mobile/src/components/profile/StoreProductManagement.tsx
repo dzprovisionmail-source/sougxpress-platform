@@ -13,6 +13,7 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 import { SimpleSelect } from '@/components/ui';
 import { Product } from '@/types/schema-03-core';
 import { uploadToSupabase } from '@/utils/upload.utils';
+import { prepareImageForUpload } from '@/utils/imageOptimizer';
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
@@ -123,11 +124,10 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
 
   const uploadImage = async (uri: string, productId: string): Promise<string | null> => {
     try {
-      const ext = uri.split('.').pop() ?? 'jpg';
-      // Use flat path in root for maximum RLS compatibility
-      const path = `product-${storeId}-${productId}.${ext}`;
+      const prepared = await prepareImageForUpload(uri);
+      const path = `products/${storeId}/${productId}.jpg`;
       
-      await uploadToSupabase(supabase, 'store_images', path, uri);
+      await uploadToSupabase(supabase, 'store_images', path, prepared.uri, prepared.contentType);
       
       const { data } = supabase.storage.from('store_images').getPublicUrl(path);
       return data.publicUrl;
@@ -146,6 +146,11 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
 
     const stockValue = form.stock_quantity.trim() === '' ? null : parseInt(form.stock_quantity, 10);
     const priceMinor = Math.round(priceValue * 100);
+
+    if (form.imageUri && !editingProduct && products.filter((product) => Boolean(product.image_url)).length >= 50) {
+      Alert.alert('الحد الأقصى', 'لا يمكن إضافة أكثر من 50 صورة منتجات لهذا المتجر.');
+      return;
+    }
 
     setSubmitting(true);
     let imageUrl: string | null = form.existingImageUrl;

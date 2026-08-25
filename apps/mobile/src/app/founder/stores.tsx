@@ -26,7 +26,8 @@ import { StoreGalleryImage, StoreVideo, Product } from "@/types/schema-03-core";
 import { supabase } from "@/lib/supabase";
 import { useRealtimeStoreList } from "@/hooks/useRealtimeStoreList";
 import { ImageOptimizerModal, SimpleSelect } from "@/components/ui";
-import { ImageType } from "@/utils/imageOptimizer";
+import { ImageType, prepareImageForUpload } from "@/utils/imageOptimizer";
+import { uploadToSupabase } from "@/utils/upload.utils";
 import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
 
 type StoreStatus = "all" | "draft" | "active" | "paused" | "suspended";
@@ -336,15 +337,15 @@ export default function FounderStoresScreen() {
 
   const handleGalleryUpload = async () => {
     if (!selectedStore || !galleryImageUri) return;
+    if (gallery.length >= 20) {
+      Alert.alert("الحد الأقصى", "لا يمكن إضافة أكثر من 20 صورة لمعرض المتجر.");
+      return;
+    }
     setUploadingGallery(true);
     try {
-      const arrayBuffer = await new File(galleryImageUri).arrayBuffer();
-      const fileExt = galleryImageUri.split(".").pop() || "jpg";
-      const fileName = `${selectedStore.id}-${Date.now()}.${fileExt}`;
-      const filePath = `store_gallery/${fileName}`;
-      const contentType = `image/${fileExt === "jpg" ? "jpeg" : fileExt}`;
-      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, arrayBuffer, { contentType });
-      if (uploadError) throw uploadError;
+      const prepared = await prepareImageForUpload(galleryImageUri);
+      const filePath = `store_gallery/${selectedStore.id}/${Date.now()}.jpg`;
+      await uploadToSupabase(supabase, "store_images", filePath, prepared.uri, prepared.contentType);
       const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
       const { image, error: err } = await addFounderGalleryImage(selectedStore.id, publicUrlData.publicUrl, galleryImageTitle.trim() || null, galleryCaption.trim() || null);
       if (image) {
@@ -424,16 +425,16 @@ export default function FounderStoresScreen() {
       return;
     }
     const priceMinor = Math.round(priceValue * 100);
+    if (products.filter((product) => Boolean(product.image_url)).length >= 50) {
+      Alert.alert("الحد الأقصى", "لا يمكن إضافة أكثر من 50 صورة منتجات لهذا المتجر.");
+      return;
+    }
     setUploadingProductImage(true);
     let imageUrl: string | null = null;
     try {
-      const arrayBuffer = await new File(newProductImageUri).arrayBuffer();
-      const fileExt = newProductImageUri.split(".").pop() || "jpg";
-      const fileName = `${selectedStore.id}-product-${Date.now()}.${fileExt}`;
-      const filePath = `store_products/${fileName}`;
-      const contentType = `image/${fileExt === "jpg" ? "jpeg" : fileExt}`;
-      const { error: uploadError } = await supabase.storage.from("store_images").upload(filePath, arrayBuffer, { contentType });
-      if (uploadError) throw uploadError;
+      const prepared = await prepareImageForUpload(newProductImageUri);
+      const filePath = `products/${selectedStore.id}/founder-${Date.now()}.jpg`;
+      await uploadToSupabase(supabase, "store_images", filePath, prepared.uri, prepared.contentType);
       const { data: publicUrlData } = supabase.storage.from("store_images").getPublicUrl(filePath);
       imageUrl = publicUrlData.publicUrl;
     } catch (e: any) {

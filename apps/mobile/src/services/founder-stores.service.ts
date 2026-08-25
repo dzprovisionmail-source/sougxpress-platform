@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
-import { File } from "expo-file-system";
 import { mapLegacyCategoryToMain } from "@/config/storeCategories";
+import { prepareImageForUpload } from "@/utils/imageOptimizer";
+import { uploadToSupabase } from "@/utils/upload.utils";
 
 export interface FounderStore {
   id: string;
@@ -136,17 +137,15 @@ export async function uploadStoreLogo(
 ): Promise<{ url: string | null; error: string | null }> {
   try {
     if (!uri) return { url: null, error: "لم يتم تحديد صورة للشعار" };
-    const ext = uri.split(".").pop()?.split("?")[0].toLowerCase() ?? "jpg";
-    const contentType = `image/${ext === "jpg" ? "jpeg" : ext}`;
-    const path = `${storeId}/logo.${ext}`;
-    const response = await fetch(uri);
-    const arrayBuffer = await response.arrayBuffer();
-
-    const { error: uploadError } = await supabase.storage
-      .from("store_images")
-      .upload(path, arrayBuffer, { upsert: true, contentType });
-
-    if (uploadError) return { url: null, error: uploadError.message };
+    const prepared = await prepareImageForUpload(uri);
+    const path = `${storeId}/logo.jpg`;
+    await uploadToSupabase(
+      supabase,
+      "store_images",
+      path,
+      prepared.uri,
+      prepared.contentType
+    );
 
     const { data: urlData } = supabase.storage.from("store_images").getPublicUrl(path);
     return { url: urlData.publicUrl ?? null, error: null };
@@ -161,17 +160,15 @@ export async function uploadStoreCover(
 ): Promise<{ url: string | null; error: string | null }> {
   try {
     if (!uri) return { url: null, error: "لم يتم تحديد صورة الغلاف" };
-    const ext = uri.split(".").pop()?.split("?")[0].toLowerCase() ?? "jpg";
-    const contentType = `image/${ext === "jpg" ? "jpeg" : ext}`;
-    const path = `${storeId}/cover.${ext}`;
-    const response = await fetch(uri);
-    const arrayBuffer = await response.arrayBuffer();
-
-    const { error: uploadError } = await supabase.storage
-      .from("store_images")
-      .upload(path, arrayBuffer, { upsert: true, contentType });
-
-    if (uploadError) return { url: null, error: uploadError.message };
+    const prepared = await prepareImageForUpload(uri);
+    const path = `${storeId}/cover.jpg`;
+    await uploadToSupabase(
+      supabase,
+      "store_images",
+      path,
+      prepared.uri,
+      prepared.contentType
+    );
 
     const { data: urlData } = supabase.storage.from("store_images").getPublicUrl(path);
     return { url: urlData.publicUrl ?? null, error: null };

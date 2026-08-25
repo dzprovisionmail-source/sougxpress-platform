@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { addStoreGalleryImage, deleteStoreGalleryImage } from '@/services/store.service';
 import { uploadToSupabase } from '@/utils/upload.utils';
+import { prepareImageForUpload } from '@/utils/imageOptimizer';
 
 interface StoreImageGalleryProps {
   storeId: string;
@@ -51,14 +52,16 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
       Alert.alert('خطأ', 'الرجاء اختيار صورة أولاً');
       return;
     }
+    if (images.length >= 20) {
+      Alert.alert('الحد الأقصى', 'لا يمكن إضافة أكثر من 20 صورة لمعرض المتجر.');
+      return;
+    }
     setUploading(true);
     try {
-      const fileExt = galleryImageUri.split('.').pop();
-      // Use flat path in root for maximum RLS compatibility
-      const fileName = `gallery-${storeId}-${Date.now()}.${fileExt}`;
-      const filePath = fileName;
+      const prepared = await prepareImageForUpload(galleryImageUri);
+      const filePath = `store_gallery/${storeId}/${Date.now()}.jpg`;
 
-      await uploadToSupabase(supabase, 'store_images', filePath, galleryImageUri);
+      await uploadToSupabase(supabase, 'store_images', filePath, prepared.uri, prepared.contentType);
 
       const { data: publicUrlData } = supabase.storage.from('store_images').getPublicUrl(filePath);
 
@@ -97,11 +100,15 @@ const StoreImageGallery: React.FC<StoreImageGalleryProps> = ({
           text: 'Supprimer',
           onPress: async () => {
             try {
+              const storageMarker = '/store_images/';
+              const storagePath = imageUrl.split(storageMarker)[1];
               const parts = imageUrl.split('/');
               const fileName = parts.pop();
               const sId = parts.pop();
-              if (!fileName || !sId) throw new Error('Invalid image URL');
-              const filePath = `store_gallery/${sId}/${fileName}`;
+              const filePath = storagePath
+                ? decodeURIComponent(storagePath)
+                : (fileName && sId ? `store_gallery/${sId}/${fileName}` : null);
+              if (!filePath) throw new Error('Invalid image URL');
 
               const { error } = await supabase.storage.from('store_images').remove([filePath]);
 

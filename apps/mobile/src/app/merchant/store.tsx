@@ -46,7 +46,7 @@ import StoreImageGallery from "@/components/profile/StoreImageGallery";
 import StoreProductManagement from "@/components/profile/StoreProductManagement";
 import { supabase } from "@/lib/supabase";
 import { ImageOptimizerModal, SimpleSelect } from "@/components/ui";
-import { ImageType } from "@/utils/imageOptimizer";
+import { ImageType, prepareImageForUpload } from "@/utils/imageOptimizer";
 import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
 import { uploadToSupabase } from "@/utils/upload.utils";
 import {
@@ -305,12 +305,10 @@ export default function UnifiedMerchantStoreDashboard() {
     setOptimizerVisible(false);
 
     try {
-      const ext = processedUri.split(".").pop() ?? "jpg";
-      // Use a flat path in the bucket root to avoid nested folder RLS/listing complexities
-      const fileName = `${store.id}-${pendingAssetType === "logos" ? "logo" : "cover"}.${ext}`;
-      const filePath = fileName;
+      const prepared = await prepareImageForUpload(processedUri);
+      const filePath = `${store.id}-${pendingAssetType === "logos" ? "logo" : "cover"}.jpg`;
 
-      await uploadToSupabase(supabase, "store_images", filePath, processedUri);
+      await uploadToSupabase(supabase, "store_images", filePath, prepared.uri, prepared.contentType);
 
       const { data } = supabase.storage.from("store_images").getPublicUrl(filePath);
       if (data?.publicUrl) {
