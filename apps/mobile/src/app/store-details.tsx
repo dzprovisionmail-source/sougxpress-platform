@@ -598,6 +598,7 @@ export default function StoreDetailsScreen() {
                   id={product.id}
                   name={product.name}
                   price={product.price_minor / 100}
+                  variant="store-grid"
                   image={product.image_url}
                   isFavorite={favoriteProductIds.includes(product.id)}
                   onToggleFavorite={() => handleToggleProductFavorite(product.id)}
@@ -859,16 +860,15 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: TOKENS.spacing.md,
+    paddingHorizontal: TOKENS.spacing.sm,
     marginTop: TOKENS.spacing.xs,
   },
   productCardWrapper: {
     width: '33.3333%',
-    paddingHorizontal: 2,
-    paddingVertical: 2,
+    paddingHorizontal: 1,
+    paddingVertical: 1,
   },
   productCard: {
-    transform: [{ scale: 0.82 }],
-    margin: -15,
+    marginVertical: 0,
   },
 });

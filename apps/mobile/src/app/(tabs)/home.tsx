@@ -793,13 +793,14 @@ const HomeScreen = () => {
                         id={product.id}
                         name={product.name}
                         price={product.price_minor ? product.price_minor / 100 : 0}
-	                        image={product.image_url}
-	                        storeName={product.stores?.name}
-	                        isFavorite={favoriteProductIds.includes(product.id)}
-	                        onToggleFavorite={isGuest ? undefined : () => handleToggleProductFavorite(product.id)}
-	                        onPress={() =>
-	                          router.push({ pathname: "/product-details", params: { id: product.id, ...marketContextParams } })
-	                        }
+                        variant="grid"
+                        image={product.image_url}
+                        storeName={product.stores?.name}
+                        isFavorite={favoriteProductIds.includes(product.id)}
+                        onToggleFavorite={isGuest ? undefined : () => handleToggleProductFavorite(product.id)}
+                        onPress={() =>
+                          router.push({ pathname: "/product-details", params: { id: product.id, ...marketContextParams } })
+                        }
                       />
                     </View>
                   ))}

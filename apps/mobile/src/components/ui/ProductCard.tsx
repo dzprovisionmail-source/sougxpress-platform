@@ -32,7 +32,7 @@ export interface ProductCardProps {
   onAddToCart?: (product?: any) => void;
   onToggleFavorite?: () => void;
   onPress?: (id?: string) => void;
-  variant?: 'grid' | 'horizontal' | 'compact';
+  variant?: 'grid' | 'store-grid' | 'horizontal' | 'compact';
   style?: StyleProp<ViewStyle>;
 }
 
@@ -63,6 +63,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const actualPrice = price ?? (product?.price_minor ? product.price_minor / 100 : product?.price ?? 0);
   const actualImage = image || product?.image_url || product?.image || null;
   const actualInStock = inStock && (product?.is_available !== false);
+  const isStoreGrid = variant === 'store-grid';
 
   const handlePress = () => {
     if (onPress) {
@@ -147,16 +148,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   // Standard Grid Variant
   return (
-    <Card onPress={handlePress} style={[styles.gridCard, style]}>
+    <Card
+      onPress={handlePress}
+      style={[isStoreGrid ? styles.storeGridCard : styles.gridCard, style]}
+    >
       {/* Top Image + Favorite Overlay */}
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageContainer, isStoreGrid && styles.storeImageContainer]}>
         <ImageFallback
           uri={actualImage}
           type="product"
           title={actualName}
           category={category}
           width="100%"
-          height={132}
+          height={isStoreGrid ? '100%' : 132}
+          aspectRatio={isStoreGrid ? 1 : undefined}
           borderRadius={TOKENS.radius.sm}
         />
 
@@ -184,7 +189,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       </View>
 
       {/* Body Content */}
-      <View style={styles.content}>
+      <View style={[styles.content, isStoreGrid && styles.storeGridContent]}>
         <Text
           numberOfLines={2}
           style={[
@@ -226,12 +231,21 @@ const styles = StyleSheet.create({
     padding: TOKENS.spacing.sm,
     marginVertical: TOKENS.spacing.sm,
   },
+  storeGridCard: {
+    width: '100%',
+    padding: TOKENS.spacing.xs,
+    marginVertical: 2,
+  },
   imageContainer: {
     width: '100%',
     height: 132,
     borderRadius: TOKENS.radius.sm,
     overflow: 'hidden',
     position: 'relative',
+  },
+  storeImageContainer: {
+    height: undefined,
+    aspectRatio: 1,
   },
   favoriteBtn: {
     position: 'absolute',
@@ -261,6 +275,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: TOKENS.spacing.xs,
     paddingBottom: TOKENS.spacing.xs,
     justifyContent: 'space-between',
+  },
+  storeGridContent: {
+    paddingTop: TOKENS.spacing.xs,
+    paddingHorizontal: 2,
+    paddingBottom: 2,
   },
   productTitleGrid: {
     fontSize: TOKENS.typography.sizes.sm,
