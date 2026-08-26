@@ -23,8 +23,30 @@ import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
 import { getActiveHeroSlides, getHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
 import { supabase } from '@/lib/supabase';
 import DriverDashboardScreen from '../driver/dashboard';
+import { AIN_SEFRA_ZONES } from '@/constants/ain-sefra-zones';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+const toFiniteCoordinate = (value: unknown): number | null => {
+  const numberValue = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+};
+
+const distanceInKm = (aLat: number, aLon: number, bLat: number, bLon: number): number => {
+  const earthRadiusKm = 6371;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLon = ((bLon - aLon) * Math.PI) / 180;
+  const lat1 = (aLat * Math.PI) / 180;
+  const lat2 = (bLat * Math.PI) / 180;
+  const haversine = Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+};
+
+const zoneOrder = (zoneName?: string | null): number => {
+  if (!zoneName) return AIN_SEFRA_ZONES.length + 1;
+  const index = AIN_SEFRA_ZONES.findIndex((name) => name === zoneName);
+  return index === -1 ? AIN_SEFRA_ZONES.length + 1 : index;
+};
 
 interface HeroSlide {
   id: string;
@@ -85,6 +107,9 @@ const HomeScreen = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [favoriteStoreIds, setFavoriteStoreIds] = useState<string[]>([]);
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
+  const [customerLocation, setCustomerLocation] = useState<{ zoneId: string | null; latitude: number | null; longitude: number | null }>({ zoneId: null, latitude: null, longitude: null });
+  const [zoneNames, setZoneNames] = useState<Record<string, string>>({});
+  const [mostLikedProducts, setMostLikedProducts] = useState<any[]>([]);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
@@ -105,6 +130,8 @@ const HomeScreen = () => {
     });
     fetchProducts();
     fetchFavorites();
+    fetchCustomerLocation();
+    fetchMostLikedProducts();
     getMarketSectionSettings().then((res) => {
       setMarketSections(res);
     });
@@ -157,13 +184,76 @@ const HomeScreen = () => {
     try {
       const { data } = await supabase
         .from("products")
-        .select("id, name, description, image_url, store_id, stores(name)")
+        .select("id, name, description, image_url, price_minor, store_id, created_at, stores(name)")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(10);
       setProducts(data || []);
     } catch (e) {
       console.error("Error fetching products:", e);
+    }
+  };
+
+  const fetchCustomerLocation = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [{ data: address }, { data: customer }, { data: zones }] = await Promise.all([
+        supabase
+          .from("customer_addresses")
+          .select("zone_id, latitude, longitude")
+          .eq("customer_id", user.id)
+          .eq("is_default", true)
+          .maybeSingle(),
+        supabase.from("customers").select("zone_id").eq("id", user.id).maybeSingle(),
+        supabase.from("zones").select("id, name").eq("city", "Ain Sefra"),
+      ]);
+
+      const names: Record<string, string> = {};
+      (zones || []).forEach((zone: any) => {
+        if (zone.id && zone.name) names[zone.id] = zone.name;
+      });
+      setZoneNames(names);
+      setCustomerLocation({
+        zoneId: address?.zone_id || customer?.zone_id || null,
+        latitude: toFiniteCoordinate(address?.latitude),
+        longitude: toFiniteCoordinate(address?.longitude),
+      });
+    } catch (e) {
+      console.warn("Market location unavailable; showing all stores safely.", e);
+    }
+  };
+
+  const fetchMostLikedProducts = async () => {
+    try {
+      const { data: favorites, error } = await supabase
+        .from("customer_favorites")
+        .select("target_id")
+        .eq("target_type", "product");
+      if (error) throw error;
+
+      const counts = new Map<string, number>();
+      (favorites || []).forEach((favorite: any) => {
+        if (favorite.target_id) counts.set(favorite.target_id, (counts.get(favorite.target_id) || 0) + 1);
+      });
+      const ids = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id]) => id);
+      if (ids.length === 0) {
+        setMostLikedProducts([]);
+        return;
+      }
+
+      const { data: likedProducts, error: productsError } = await supabase
+        .from("products")
+        .select("id, name, description, image_url, price_minor, store_id, created_at, stores(name)")
+        .eq("status", "active")
+        .in("id", ids);
+      if (productsError) throw productsError;
+      const rank = new Map(ids.map((id, index) => [id, index]));
+      setMostLikedProducts((likedProducts || []).sort((a: any, b: any) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999)));
+    } catch (e) {
+      console.warn("Most-liked products unavailable; keeping the market available.", e);
+      setMostLikedProducts([]);
     }
   };
 
@@ -462,6 +552,38 @@ const HomeScreen = () => {
 
   const displayedStores = searchQuery.length > 0 ? searchResults.stores : filteredStores;
   const platformProfiles = searchQuery.length > 0 ? searchResults.platformProfiles : [];
+  const featuredStores = useMemo(
+    () => displayedStores.filter((store: any) => store.is_featured === true && store.status === "active"),
+    [displayedStores],
+  );
+  const newStores = useMemo(
+    () => [...displayedStores].sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()),
+    [displayedStores],
+  );
+  const nearbyStores = useMemo(() => {
+    const stores = [...displayedStores];
+    const { zoneId, latitude, longitude } = customerLocation;
+    if (latitude !== null && longitude !== null) {
+      return stores.sort((a: any, b: any) => {
+        const aLat = toFiniteCoordinate(a.latitude);
+        const aLon = toFiniteCoordinate(a.longitude);
+        const bLat = toFiniteCoordinate(b.latitude);
+        const bLon = toFiniteCoordinate(b.longitude);
+        const aDistance = aLat !== null && aLon !== null ? distanceInKm(latitude, longitude, aLat, aLon) : Number.POSITIVE_INFINITY;
+        const bDistance = bLat !== null && bLon !== null ? distanceInKm(latitude, longitude, bLat, bLon) : Number.POSITIVE_INFINITY;
+        return aDistance - bDistance;
+      });
+    }
+    if (zoneId) {
+      return stores.sort((a: any, b: any) => {
+        const aSameZone = a.zone_id === zoneId ? 0 : 1;
+        const bSameZone = b.zone_id === zoneId ? 0 : 1;
+        if (aSameZone !== bSameZone) return aSameZone - bSameZone;
+        return zoneOrder(zoneNames[a.zone_id]) - zoneOrder(zoneNames[b.zone_id]);
+      });
+    }
+    return stores;
+  }, [displayedStores, customerLocation, zoneNames]);
   const loading = storesLoading || searchLoading || newStoresLoading;
   const error = storesError;
 
@@ -671,142 +793,88 @@ const HomeScreen = () => {
               </View>
             )}
 
-            {/* Featured Stores */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-المتاجر المميزة</Text>
-              <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                {(searchQuery.length > 0 ? displayedStores.slice(0, 6) : allStores.filter(s => s.is_featured).slice(0, 6)).map((store: any) => (
-                  <StoreCard
-                    key={store.id}
-                    id={store.id}
-                    name={store.name}
-                    category={getArabicCategoryName(store.main_category || store.category)}
-                    subcategory={store.sub_category}
-                    rating={store.rating?.toString() || "0.0"}
-                    coverImage={store.cover_url}
-                    logoImage={store.logo_url}
-                    isOpen={store.is_open ?? store.status === "active"}
-                    isFeatured={store.is_featured}
-	                    isFavorite={favoriteStoreIds.includes(store.id)}
-	                    onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
-                    address={store.address_line1 ?? store.city ?? ""}
-                    onPress={() => handleStorePress(store.id)}
+            {(() => {
+              const renderStore = (store: any) => (
+                <StoreCard
+                  key={store.id}
+                  id={store.id}
+                  name={store.name}
+                  category={getArabicCategoryName(store.main_category || store.category)}
+                  subcategory={store.sub_category}
+                  rating={store.rating?.toString() || "0.0"}
+                  coverImage={store.cover_url}
+                  logoImage={store.logo_url}
+                  isOpen={store.is_open ?? store.status === "active"}
+                  isFeatured={store.is_featured}
+                  isFavorite={favoriteStoreIds.includes(store.id)}
+                  onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
+                  address={store.address_line1 ?? store.city ?? ""}
+                  onPress={() => handleStorePress(store.id)}
+                />
+              );
+              const renderProduct = (product: any, index: number) => (
+                <View key={product.id || product.key || index} style={styles.productCol}>
+                  <ProductCard
+                    id={product.id}
+                    name={product.name}
+                    price={product.price_minor ? product.price_minor / 100 : 0}
+                    variant="grid"
+                    image={product.image_url}
+                    storeName={product.stores?.name}
+                    isFavorite={favoriteProductIds.includes(product.id)}
+                    onToggleFavorite={isGuest ? undefined : () => handleToggleProductFavorite(product.id)}
+                    onPress={() => router.push({ pathname: "/product-details", params: { id: product.id, ...marketContextParams } })}
                   />
-                ))}
-              </ScrollView>
-            </View>
+                </View>
+              );
+              return <>
+                <View style={styles.section}>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>⭐ المتاجر المميزة</Text>
+                  <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                    {(searchQuery.length > 0 ? displayedStores : featuredStores).slice(0, 6).map(renderStore)}
+                  </ScrollView>
+                </View>
 
-            {/* New Stores */}
-            {marketSections.showNewStores && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-متاجر جديدة</Text>
-                <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                  {(searchQuery.length > 0 ? [] : newStoresData).map((store: any) => (
-                    <StoreCard
-                      key={store.id}
-                      id={store.id}
-                      name={store.name}
-                      category={getArabicCategoryName(store.main_category || store.category)}
-                      subcategory={store.sub_category}
-                      rating={store.rating?.toString() || "0.0"}
-                      coverImage={store.cover_url}
-                      logoImage={store.logo_url}
-                      isOpen={store.is_open ?? store.status === "active"}
-                      isFeatured={store.is_featured}
-	                    isFavorite={favoriteStoreIds.includes(store.id)}
-	                    onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
-                      address={store.address_line1 ?? store.city ?? ""}
-                      onPress={() => handleStorePress(store.id)}
-                    />
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+                <View style={styles.section}>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>🆕 المتاجر الجديدة</Text>
+                  <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                    {newStores.slice(0, 6).map(renderStore)}
+                  </ScrollView>
+                </View>
 
-            {/* Nearby Stores (Placeholder) */}
-            {marketSections.showAllStores && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-متاجر قريبة</Text>
-                <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                  {displayedStores.slice(6, 9).map((store: any) => (
-                    <StoreCard
-                      key={store.id}
-                      id={store.id}
-                      name={store.name}
-                      category={getArabicCategoryName(store.main_category || store.category)}
-                      subcategory={store.sub_category}
-                      rating={store.rating?.toString() || "0.0"}
-                      coverImage={store.cover_url}
-                      logoImage={store.logo_url}
-                      isOpen={store.is_open ?? store.status === "active"}
-                      isFeatured={store.is_featured}
-	                    isFavorite={favoriteStoreIds.includes(store.id)}
-	                    onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
-                      address={store.address_line1 ?? store.city ?? ""}
-                      onPress={() => handleStorePress(store.id)}
-                    />
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+                <View style={styles.section}>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>📍 المتاجر القريبة منك</Text>
+                  <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                    {nearbyStores.slice(0, 6).map(renderStore)}
+                  </ScrollView>
+                </View>
 
-            {/* Special Offers (Placeholder / Promotions) */}
-            {marketSections.showSpecialOffers && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-عروض خاصة</Text>
-                <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                  {displayedStores.filter((s: any) => s.is_featured).slice(6, 9).map((store: any) => (
-                    <StoreCard
-                      key={store.id}
-                      id={store.id}
-                      name={store.name}
-                      category={getArabicCategoryName(store.main_category || store.category)}
-                      subcategory={store.sub_category}
-                      rating={store.rating?.toString() || "0.0"}
-                      coverImage={store.cover_url}
-                      logoImage={store.logo_url}
-                      isOpen={store.is_open ?? store.status === "active"}
-                      isFeatured={store.is_featured}
-	                    isFavorite={favoriteStoreIds.includes(store.id)}
-	                    onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
-                      address={store.address_line1 ?? store.city ?? ""}
-                      onPress={() => handleStorePress(store.id)}
-                    />
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+                <View style={styles.section}>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>كل المتاجر</Text>
+                  <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                    {displayedStores.map(renderStore)}
+                  </ScrollView>
+                </View>
 
-            {/* Featured Products - Guest only */}
-            {isGuest && products.length > 0 && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
-منتجات شائعة</Text>
-                <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                  {products.map((product: any, index: number) => (
-                    <View key={product.id || product.key || index} style={styles.productCol}>
-                      <ProductCard
-                        id={product.id}
-                        name={product.name}
-                        price={product.price_minor ? product.price_minor / 100 : 0}
-                        variant="grid"
-                        image={product.image_url}
-                        storeName={product.stores?.name}
-                        isFavorite={favoriteProductIds.includes(product.id)}
-                        onToggleFavorite={isGuest ? undefined : () => handleToggleProductFavorite(product.id)}
-                        onPress={() =>
-                          router.push({ pathname: "/product-details", params: { id: product.id, ...marketContextParams } })
-                        }
-                      />
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+                {products.length > 0 && (
+                  <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>🛍️ منتجات جديدة</Text>
+                    <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                      {products.map(renderProduct)}
+                    </ScrollView>
+                  </View>
+                )}
+
+                {mostLikedProducts.length > 0 && (
+                  <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>الأكثر إعجابًا</Text>
+                    <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                      {mostLikedProducts.map(renderProduct)}
+                    </ScrollView>
+                  </View>
+                )}
+              </>;
+            })()}
           </>
         )}
       </ScrollView>
