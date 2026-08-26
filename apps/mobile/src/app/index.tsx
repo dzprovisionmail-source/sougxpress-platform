@@ -103,14 +103,14 @@ export default function EntryScreen() {
         return;
       }
 
-      // Verify role = 'founder' in public.profiles
+      // Verify an authorized Founder workspace role in public.profiles
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", authData.user.id)
         .single();
 
-      if (profileError || !profile || profile.role !== "founder") {
+      if (profileError || !profile || !["founder", "admin"].includes(profile.role)) {
         // Sign the non-founder user back out immediately
         await supabase.auth.signOut();
         setErrorMsg("ليس لديك صلاحية دخول منطقة المؤسس.");
