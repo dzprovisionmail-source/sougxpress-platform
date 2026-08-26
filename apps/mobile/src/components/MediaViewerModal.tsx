@@ -18,6 +18,7 @@ import {
   TextStyle,
   useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { X, Heart, Star, Send, Trash2, MessageCircle, Eye } from "lucide-react-native";
 import { getPromotionalViews } from "@/services/promotional-views.service";
@@ -296,7 +297,14 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent={false}
+      navigationBarTranslucent={false}
+      onRequestClose={onClose}
+    >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={[styles.modalBackdrop]} />
       </TouchableWithoutFeedback>
@@ -426,41 +434,46 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
           </View>
         </ScrollView>
 
-        {currentUserId ? (
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={[styles.commentInputBar, { borderTopColor: colors.borderSubtle, backgroundColor: colors.bgElevated }]}
-          >
-            <TextInput
-              value={commentText}
-              onChangeText={setCommentText}
-              placeholder="أضف تعليقًا..."
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              style={[styles.commentInput, { color: colors.textPrimary, borderColor: colors.borderSubtle }]}
-            />
-            <TouchableOpacity
-              onPress={handlePostComment}
-              disabled={postingComment || !commentText.trim()}
-              style={{ padding: 8 }}
+        <SafeAreaView
+          edges={["bottom"]}
+          style={[styles.commentInputSafeArea, { backgroundColor: colors.bgElevated }]}
+        >
+          {currentUserId ? (
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={[styles.commentInputBar, { borderTopColor: colors.borderSubtle, backgroundColor: colors.bgElevated }]}
             >
-              {postingComment ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Send size={20} color={colors.primary} />
-              )}
+              <TextInput
+                value={commentText}
+                onChangeText={setCommentText}
+                placeholder="أضف تعليقًا..."
+                placeholderTextColor={colors.textDisabled}
+                textAlign="right"
+                style={[styles.commentInput, { color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+              />
+              <TouchableOpacity
+                onPress={handlePostComment}
+                disabled={postingComment || !commentText.trim()}
+                style={{ padding: 8 }}
+              >
+                {postingComment ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Send size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            </KeyboardAvoidingView>
+          ) : (
+            <TouchableOpacity
+              onPress={handleCommentPress}
+              style={[styles.commentInputBar, { borderTopColor: colors.borderSubtle, backgroundColor: colors.bgElevated, padding: 12 }]}
+            >
+              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "right" }}>
+                سجّل الدخول لإضافة تعليق
+              </Text>
             </TouchableOpacity>
-          </KeyboardAvoidingView>
-        ) : (
-          <TouchableOpacity
-            onPress={handleCommentPress}
-            style={[styles.commentInputBar, { borderTopColor: colors.borderSubtle, backgroundColor: colors.bgElevated, padding: 12 }]}
-          >
-            <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "right" }}>
-              سجّل الدخول لإضافة تعليق
-            </Text>
-          </TouchableOpacity>
-        )}
+          )}
+        </SafeAreaView>
       </View>
     </Modal>
   );
@@ -547,6 +560,9 @@ const styles = StyleSheet.create<{ [key: string]: ViewStyle | TextStyle | any }>
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderWidth: 1,
+  },
+  commentInputSafeArea: {
+    flexShrink: 0,
   },
   commentInputBar: {
     flexDirection: "row-reverse",

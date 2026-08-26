@@ -148,7 +148,7 @@ export default function CustomerCartScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
       <Header title={`سلة التسوق (${cartItems.length})`} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Cart Items List */}
         {cartItems.map((item) => {
           const itemTotalMinor = (item.product.price_minor || 0) * item.quantity;
@@ -230,7 +230,11 @@ export default function CustomerCartScreen() {
       </ScrollView>
 
       {/* Sticky Bottom Footer CTA */}
-      <View style={[styles.footer, { backgroundColor: colors.bgElevated, borderTopColor: colors.borderSubtle }]}>
+      <SafeAreaView
+        edges={["bottom"]}
+        style={[styles.footerSafeArea, { backgroundColor: colors.bgElevated, borderTopColor: colors.borderSubtle }]}
+      >
+        <View style={styles.footer}>
         <View style={[styles.footerTotalRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <View>
             <Typography variant="caption" color="secondary">المبلغ الكلي</Typography>
@@ -247,7 +251,8 @@ export default function CustomerCartScreen() {
             />
           </View>
         </View>
-      </View>
+        </View>
+      </SafeAreaView>
 
       {/* Remove Confirmation Dialog */}
       <Dialog
@@ -271,9 +276,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     padding: TOKENS.spacing.md,
-    paddingBottom: 110,
     gap: TOKENS.spacing.md,
   },
   cartCard: {
@@ -328,14 +335,12 @@ const styles = StyleSheet.create({
     borderRadius: TOKENS.radius.md,
     gap: TOKENS.spacing.sm,
   },
-  footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: TOKENS.spacing.lg,
+  footerSafeArea: {
     borderTopWidth: 1,
     ...TOKENS.shadows.medium,
+  },
+  footer: {
+    padding: TOKENS.spacing.lg,
   },
   footerTotalRow: {
     justifyContent: "space-between",
