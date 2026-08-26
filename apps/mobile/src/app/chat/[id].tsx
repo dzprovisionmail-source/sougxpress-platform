@@ -45,9 +45,12 @@ import {
   getConversationById,
   getCommercialPhone,
   logCallPress,
+  getChatProfileCard,
   Message,
   Conversation,
+  ChatProfileCard,
 } from "@/services/chat.service";
+import BottomSheet from "@/components/ui/BottomSheet";
 
 const AVAILABILITY_LABEL: Record<string, string> = {
   online: "متاح الآن",
@@ -98,6 +101,9 @@ export default function ChatScreen() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showCommercialActions, setShowCommercialActions] = useState(true);
   const [calling, setCalling] = useState(false);
+  const [profileCard, setProfileCard] = useState<ChatProfileCard | null>(null);
+  const [profileCardLoading, setProfileCardLoading] = useState(false);
+  const [profileCardVisible, setProfileCardVisible] = useState(false);
   const isSupportChat = support === "1";
 
   const currentUserIdRef = useRef<string | null>(null);
@@ -304,6 +310,22 @@ export default function ChatScreen() {
     }
   };
 
+  const handleOpenProfileCard = async (profileId: string) => {
+    if (!conversationId || profileCardLoading) return;
+    setProfileCardVisible(true);
+    setProfileCardLoading(true);
+    try {
+      const { data, error } = await getChatProfileCard(conversationId, profileId);
+      if (error) throw error;
+      setProfileCard(data);
+    } catch (error) {
+      console.error("Error loading chat profile card:", error);
+      setProfileCard(null);
+    } finally {
+      setProfileCardLoading(false);
+    }
+  };
+
   const handleCall = async () => {
     if (!orderContext?.order_id || !conversation?.other_participant?.id || calling) return;
     
@@ -393,7 +415,16 @@ export default function ChatScreen() {
           { alignItems: isMine ? "flex-start" : "flex-end" },
         ]}
       >
-        <TouchableOpacity
+        <View style={!isMine ? styles.messageWithAvatar : undefined}>
+          {!isMine && conversation?.other_participant ? (
+            <TouchableOpacity
+              onPress={() => handleOpenProfileCard(conversation.other_participant!.id)}
+              accessibilityLabel={`فتح ملف ${displayName}`}
+            >
+              <Avatar uri={displayAvatar || undefined} name={displayName} size={30} />
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity
           activeOpacity={failed ? 0.75 : 1}
           onPress={() => failed && handleRetry(item)}
           style={[
@@ -424,7 +455,8 @@ export default function ChatScreen() {
               )
             ) : null}
           </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -485,7 +517,12 @@ export default function ChatScreen() {
             {isCourierConversation ? (
               otherAvailability === "online" ? <Wifi size={16} color={colors.success} /> : <WifiOff size={16} color={colors.textSecondary} />
             ) : null}
-            <Avatar uri={displayAvatar || undefined} name={displayName} size={38} />
+            <TouchableOpacity
+              onPress={() => other?.id && handleOpenProfileCard(other.id)}
+              accessibilityLabel={`فتح ملف ${displayName}`}
+            >
+              <Avatar uri={displayAvatar || undefined} name={displayName} size={38} />
+            </TouchableOpacity>
           </View>
         }
       />
@@ -567,6 +604,53 @@ export default function ChatScreen() {
             )}
           </TouchableOpacity>
       </View>
+
+      <BottomSheet
+        visible={profileCardVisible}
+        onClose={() => {
+          setProfileCardVisible(false);
+          setProfileCard(null);
+        }}
+        title={profileCard?.full_name || displayName}
+      >
+        {profileCardLoading ? (
+          <ActivityIndicator size="small" color={colors.primary} />
+        ) : profileCard ? (
+          <View style={styles.profileCardBody}>
+            <Avatar uri={profileCard.avatar_url || undefined} name={profileCard.full_name || displayName} size={72} />
+            <Typography variant="h3" align="center" style={{ color: colors.textPrimary, marginTop: TOKENS.spacing.sm }}>
+              {profileCard.full_name || displayName}
+            </Typography>
+            <Typography variant="body" align="center" style={{ color: colors.textSecondary, marginTop: 4 }}>
+              {ROLE_LABEL[profileCard.role] || profileCard.role}
+            </Typography>
+            {profileCard.address ? (
+              <Typography variant="body" align="center" style={{ color: colors.textSecondary, marginTop: TOKENS.spacing.sm }}>
+                {profileCard.address}
+              </Typography>
+            ) : null}
+            {profileCard.role === "customer" ? (
+              <Typography variant="body" align="center" style={{ color: colors.textPrimary, marginTop: TOKENS.spacing.md }}>
+                عدد الطلبات: {profileCard.activity_count}
+              </Typography>
+            ) : null}
+            {profileCard.role === "merchant" ? (
+              <Typography variant="body" align="center" style={{ color: colors.textPrimary, marginTop: TOKENS.spacing.md }}>
+                عدد المبيعات: {profileCard.activity_count}
+              </Typography>
+            ) : null}
+            {(profileCard.role === "driver" || profileCard.role === "courier") ? (
+              <Typography variant="body" align="center" style={{ color: colors.textPrimary, marginTop: TOKENS.spacing.md }}>
+                عمليات التوصيل المكتملة: {profileCard.activity_count}
+              </Typography>
+            ) : null}
+          </View>
+        ) : (
+          <Typography variant="body" align="center" color="secondary">
+            تعذر تحميل معلومات الملف.
+          </Typography>
+        )}
+      </BottomSheet>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -629,11 +713,20 @@ const styles = StyleSheet.create({
     marginBottom: TOKENS.spacing.sm,
     width: "100%",
   },
+  messageWithAvatar: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-end",
+    gap: TOKENS.spacing.xs,
+  },
   myMessageWrapper: {
     justifyContent: "flex-start",
   },
   theirMessageWrapper: {
     justifyContent: "flex-end",
+  },
+  profileCardBody: {
+    alignItems: "center",
+    paddingVertical: TOKENS.spacing.md,
   },
   messageBubble: {
     maxWidth: "82%",

@@ -863,7 +863,7 @@ const styles = StyleSheet.create({
     marginTop: TOKENS.spacing.xs,
   },
   productCardWrapper: {
-    width: '50%',
+    width: '33.3333%',
     paddingHorizontal: 2,
     paddingVertical: 2,
   },

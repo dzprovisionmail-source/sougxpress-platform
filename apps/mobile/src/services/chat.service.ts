@@ -29,6 +29,15 @@ export interface Conversation {
 
 export type MessageDeliveryState = "sending" | "sent" | "failed";
 
+export type ChatProfileCard = {
+  profile_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: string;
+  address: string | null;
+  activity_count: number;
+};
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -145,6 +154,24 @@ export const getConversationById = async (id: string): Promise<{ data: Conversat
 /**
  * Fetches messages for a specific conversation.
  */
+export const getChatProfileCard = async (
+  conversationId: string,
+  profileId: string,
+): Promise<{ data: ChatProfileCard | null; error: any }> => {
+  try {
+    const { data, error } = await supabase.rpc("get_chat_profile_card", {
+      p_conversation_id: conversationId,
+      p_profile_id: profileId,
+    });
+    if (error) throw error;
+    const card = Array.isArray(data) ? data[0] : data;
+    return { data: (card as ChatProfileCard | undefined) || null, error: null };
+  } catch (err) {
+    console.error("Error fetching chat profile card:", err);
+    return { data: null, error: err };
+  }
+};
+
 export const getMessages = async (conversationId: string): Promise<{ data: Message[] | null; error: any }> => {
   try {
     const { data, error } = await supabase
