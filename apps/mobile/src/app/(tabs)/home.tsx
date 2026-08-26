@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart } from 'lucide-react-native';
+import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
 import { LOGO_ICON, ICON_MASCOT_SCOOTER, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button, BrandWordmark } from '@/components/ui';
@@ -829,21 +829,30 @@ const HomeScreen = () => {
               );
               return <>
                 <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>⭐ المتاجر المميزة</Text>
+                  <View style={styles.sectionTitleRow}>
+                  <Award color={colors.primary} size={iconSizes.default} strokeWidth={2} />
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>المتاجر المميزة</Text>
+                </View>
                   <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                     {(searchQuery.length > 0 ? displayedStores : featuredStores).slice(0, 6).map(renderStore)}
                   </ScrollView>
                 </View>
 
                 <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>🆕 المتاجر الجديدة</Text>
+                  <View style={styles.sectionTitleRow}>
+                  <BadgePlus color={colors.primary} size={iconSizes.default} strokeWidth={2} />
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>المتاجر الجديدة</Text>
+                </View>
                   <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                     {newStores.slice(0, 6).map(renderStore)}
                   </ScrollView>
                 </View>
 
                 <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>📍 المتاجر القريبة منك</Text>
+                  <View style={styles.sectionTitleRow}>
+                  <MapPin color={colors.primary} size={iconSizes.default} strokeWidth={2} />
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>المتاجر القريبة منك</Text>
+                </View>
                   <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                     {nearbyStores.slice(0, 6).map(renderStore)}
                   </ScrollView>
@@ -930,14 +939,23 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     paddingBottom: spacing.xl,
   },
-  sectionTitle: {
-    ...typography.title,
-    alignSelf: 'stretch',
+  sectionTitleRow: {
     width: '100%',
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     marginBottom: spacing.md,
     paddingHorizontal: spacing.lg,
+    gap: spacing.xs,
+  },
+  sectionTitle: {
+    ...typography.title,
+    flex: 1,
+    flexShrink: 1,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    marginBottom: 0,
+    paddingHorizontal: 0,
   },
   categoriesContainer: {
     paddingHorizontal: spacing.lg,
