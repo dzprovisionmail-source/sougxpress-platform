@@ -140,6 +140,13 @@ export default function StoreDetailsScreen() {
       return;
     }
 
+    // Founder/admin market mode is read-only for commercial chat; do not
+    // impersonate a customer when invoking the commercial relationship RPC.
+    if (currentUserRole !== "customer" && currentUserRole !== "driver") {
+      Alert.alert("تنبيه", "يرجى استخدام حساب زبون أو موصل لبدء محادثة تجارية");
+      return;
+    }
+
     try {
       setStartingChat(true);
       // Determine relationship type based on current user role

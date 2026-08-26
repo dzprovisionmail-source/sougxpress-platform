@@ -112,6 +112,7 @@ const HomeScreen = () => {
   const [mostLikedProducts, setMostLikedProducts] = useState<any[]>([]);
 
   const [activeSlide, setActiveSlide] = useState(0);
+  const activeSlideRef = useRef(0);
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(HERO_SLIDES_TEMPLATES);
   const [heroLoading, setHeroLoading] = useState(false);
@@ -387,6 +388,7 @@ const HomeScreen = () => {
     const interval = setInterval(() => {
       setActiveSlide((prev) => {
         const next = (prev + 1) % heroSlides.length;
+        activeSlideRef.current = next;
         try {
           heroScrollRef.current?.scrollToIndex({ index: next, animated: true });
         } catch (e) {
@@ -400,7 +402,9 @@ const HomeScreen = () => {
 
   const handleHeroScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const slideIndex = Math.round(contentOffsetX / SCREEN_WIDTH);
+    const slideIndex = Math.max(0, Math.min(heroSlides.length - 1, Math.round(contentOffsetX / SCREEN_WIDTH)));
+    if (slideIndex === activeSlideRef.current) return;
+    activeSlideRef.current = slideIndex;
     setActiveSlide(slideIndex);
   };
 
