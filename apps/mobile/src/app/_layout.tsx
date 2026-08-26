@@ -9,6 +9,12 @@ import { Stack, useRouter } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import * as Notifications from "expo-notifications";
+import {
+  registerForPushNotifications,
+  releasePushToken,
+  routeFromNotificationResponse,
+} from "@/services/push-notifications.service";
 
 // SougXpress is Arabic-only — force RTL layout direction app-wide.
 I18nManager.allowRTL(true);
@@ -21,13 +27,52 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
+    let activeToken: string | null = null;
+    let tokenSubscription: Notifications.Subscription | null = null;
+
+    const registerCurrentUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) return;
+
+      try {
+        const registration = await registerForPushNotifications(data.user.id);
+        if (registration) {
+          activeToken = registration.token;
+          tokenSubscription = registration.subscription;
+        }
+      } catch (error) {
+        console.warn("Push notification registration failed", error);
+      }
+    };
+
+    void registerCurrentUser();
+
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(
+      routeFromNotificationResponse,
+    );
+
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) routeFromNotificationResponse(response);
+    });
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        setTimeout(() => void registerCurrentUser(), 0);
+      }
       if (event === "SIGNED_OUT") {
+        if (activeToken) void releasePushToken(activeToken);
+        tokenSubscription?.remove();
+        activeToken = null;
+        tokenSubscription = null;
         router.replace("/");
       }
     });
 
-    return () => authListener.subscription.unsubscribe();
+    return () => {
+      responseSubscription.remove();
+      tokenSubscription?.remove();
+      authListener.subscription.unsubscribe();
+    };
   }, [router]);
 
   return (
