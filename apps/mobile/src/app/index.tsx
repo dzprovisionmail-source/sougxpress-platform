@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from "react";
-import { router } from "expo-router";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   Image,
   Modal,
@@ -42,8 +42,7 @@ import { getAuthenticatedEntryRoute } from "@/services/auth-entry.service";
  * - Primary action button: "الدخول إلى السوق"
  * - Button opens the existing role-selection flow (intent gateway)
  *
- * Hidden: Tapping the "Soug-XPRESS" footer text opens the Founder login dialog.
- * Not accessible or visible during normal customer / merchant / driver use.
+ * The admin entry is opened from the brand-name link on the role-selection screen.
  */
 
 type DialogState = "idle" | "loading" | "denied";
@@ -77,6 +76,14 @@ export default function EntryScreen() {
     setErrorMsg("");
   }, []);
 
+  const params = useLocalSearchParams<{ admin?: string }>();
+
+  useEffect(() => {
+    if (params.admin === "1") {
+      openFounderDialog();
+    }
+  }, [params.admin, openFounderDialog]);
+
   /* ── Authentication ── */
   const handleFounderLogin = async () => {
     if (!email.trim() || !password) {
@@ -88,9 +95,8 @@ export default function EntryScreen() {
     setErrorMsg("");
 
     try {
-      // Sign out any existing session first so it doesn't bleed into founder space
-      await supabase.auth.signOut();
-
+      // signInWithPassword replaces the current Supabase session; avoid emitting
+      // SIGNED_OUT first, which can race the navigation to the Founder workspace.
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
           email: email.trim().toLowerCase(),

@@ -1,6 +1,6 @@
 import { Link, router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, View, ScrollView, StyleSheet, I18nManager, Image } from "react-native";
+import { ActivityIndicator, View, ScrollView, StyleSheet, I18nManager, Image, Pressable, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography, Card } from "../components/ui";
 import { BRAND_NAME_AR, LOGO_OFFICIAL_WORDMARK, ICON_SHOPPING, ICON_STORE, ICON_DELIVERY } from "../constants/brand";
@@ -147,11 +147,23 @@ export default function RoleSelectionScreen() {
           ))}
         </View>
 
-        {/* Footer */}
+        {/* Footer: only the brand name opens the protected admin entry. */}
         <View style={styles.footer}>
-          <Typography variant="caption" color="disabled" align="center">
-            {BRAND_NAME_AR} — منصة التجارة المحلية الأولى في عين صفراء
-          </Typography>
+          <View style={styles.footerTextRow}>
+            <Pressable
+              onPress={() => router.push({ pathname: "/", params: { admin: "1" } })}
+              hitSlop={8}
+              accessibilityRole="link"
+              accessibilityLabel="دخول الإدارة"
+            >
+              <Text style={[styles.footerText, { color: colors.textPrimary }]}>
+                {BRAND_NAME_AR}
+              </Text>
+            </Pressable>
+            <Text style={[styles.footerText, { color: colors.textDisabled }]}>
+              {" — منصة التجارة المحلية الأولى في عين صفراء"}
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -225,5 +237,15 @@ const styles = StyleSheet.create({
     paddingTop: TOKENS.spacing.lg,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
+  },
+  footerTextRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  footerText: {
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "center",
   },
 });
