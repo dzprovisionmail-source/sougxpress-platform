@@ -87,7 +87,7 @@ const useCheckout = () => {
       delivery_address_id: selectedAddress.id,
       subtotal_minor: subtotal,
       delivery_fee_minor: deliveryFee,
-      platform_commission_minor: Math.round(subtotal * 0.1),
+      platform_commission_minor: 0,
       total_minor: total,
       notes,
       driver_id: preferredDriverId || null,

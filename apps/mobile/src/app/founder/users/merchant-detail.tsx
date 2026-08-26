@@ -189,7 +189,7 @@ export default function MerchantDetailScreen() {
           <InfoRow label="المنطقة"           value={zones.find((z) => z.id === merchant.zone_id)?.name ?? "—"} />
           <InfoRow label="العنوان"           value={merchant.address ?? "—"} />
           <InfoRow label="الوصف"            value={merchant.description ?? "—"} />
-          <InfoRow label="نسبة العمولة"      value={`${merchant.commission_rate ?? 0}%`} />
+          <InfoRow label="الاشتراك الشهري"    value="1000 دج — الشهر الأول مجاني" />
           <InfoRow label="إجمالي الطلبات"    value={String(ordersCount)} />
           <InfoRow label="تاريخ الانضمام"   value={new Date(merchant.created_at).toLocaleDateString("ar-DZ")} />
         </View>

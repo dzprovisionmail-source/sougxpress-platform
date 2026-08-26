@@ -238,11 +238,11 @@ export default function MerchantProfileScreen() {
           </SectionTitle>
           <WorkspaceRow
             label="نوع الاشتراك"
-            value="الباقة الأساسية"
+            value="اشتراك التاجر"
           />
           <WorkspaceRow
-            label="نسبة العمولة"
-            value={`${merchant?.commission_rate ?? 0}%`}
+            label="الاشتراك الشهري"
+            value="1000 دج — الشهر الأول مجاني"
             isLast
           />
         </SectionCard>

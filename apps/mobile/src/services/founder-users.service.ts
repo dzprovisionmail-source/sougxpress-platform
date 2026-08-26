@@ -84,13 +84,12 @@ export interface CustomerAddress {
   created_at:    string;
 }
 
-export interface CommissionCycle {
-  id:                    string;
-  status:                string;
-  deliveries_count:      number;
-  commission_earned_minor: number;
-  cycle_start_date:      string;
-  payment_due_at:        string | null;
+export interface DriverSubscription {
+  id: string;
+  status: string;
+  monthly_price_minor: number;
+  trial_end: string;
+  current_period_end: string;
 }
 
 // ─── Audit helper ─────────────────────────────────────────────────────────────
@@ -329,37 +328,24 @@ export async function getFounderDrivers(
 export async function getFounderDriver(id: string): Promise<{
   driver: FounderDriver | null;
   deliveriesCount: number;
-  activeCommissionCycle: CommissionCycle | null;
-  totalOwedMinor: number;
+  subscription: DriverSubscription | null;
   error: string | null;
 }> {
-  const [driverRes, cyclesRes] = await Promise.all([
+  const [driverRes, subscriptionRes] = await Promise.all([
     supabase.from("drivers").select(DRIVER_COLS).eq("id", id).single(),
     supabase
-      .from("delivery_commission_cycles")
-      .select(
-        "id,status,deliveries_count,commission_earned_minor,cycle_start_date,payment_due_at"
-      )
-      .eq("driver_id", id)
-      .order("cycle_start_date", { ascending: false })
-      .limit(10),
+      .from("account_subscriptions")
+      .select("id,status,monthly_price_minor,trial_end,current_period_end")
+      .eq("account_id", id)
+      .eq("role", "driver")
+      .maybeSingle(),
   ]);
-
-  const cycles = (cyclesRes.data ?? []) as CommissionCycle[];
-  const activeOrDueCycle =
-    cycles.find((c) => c.status === "payment_due") ??
-    cycles.find((c) => c.status === "active") ??
-    null;
-  const totalOwed = cycles
-    .filter((c) => c.status === "payment_due")
-    .reduce((sum, c) => sum + (c.commission_earned_minor ?? 0), 0);
 
   return {
     driver: (driverRes.data as FounderDriver) ?? null,
     deliveriesCount: (driverRes.data as FounderDriver)?.delivered_count ?? 0,
-    activeCommissionCycle: activeOrDueCycle,
-    totalOwedMinor: totalOwed,
-    error: driverRes.error?.message ?? null,
+    subscription: (subscriptionRes.data as DriverSubscription) ?? null,
+    error: driverRes.error?.message ?? subscriptionRes.error?.message ?? null,
   };
 }
 

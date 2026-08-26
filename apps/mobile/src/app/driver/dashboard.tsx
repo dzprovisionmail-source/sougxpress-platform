@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { ScrollView, RefreshControl, Switch, View, TouchableOpacity, TextInput, Alert } from "react-native";
+import { ScrollView, RefreshControl, Switch, View, TouchableOpacity, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { Bike, Wallet, PackageCheck, Bell, Search, X } from "lucide-react-native";
 
@@ -43,7 +43,7 @@ export default function DriverDashboardScreen() {
     const earningsToday = computeEarningsSplit(completedToday.length).driverShareMinor;
     const totalSplit = computeEarningsSplit(completedDeliveryCount);
     const totalEarnings = totalSplit.driverShareMinor;
-    const platformEarnings = totalSplit.platformShareMinor;
+    const platformEarnings = 0;
     const availableCount = availableOrders.length;
 
     return {
@@ -61,20 +61,7 @@ export default function DriverDashboardScreen() {
 
   const isOnline = driver?.availability === "online";
 
-  const unpaidDeliveryCount = Math.max(
-    (driver?.delivery_count ?? 0) - (driver?.commission_paid_through_count ?? 0),
-    0
-  );
-  const isCommissionLocked = Boolean(driver?.is_suspended_for_debt) || unpaidDeliveryCount >= 50;
-
   const handleToggleOnline = async (value: boolean) => {
-    if (value && isCommissionLocked) {
-      Alert.alert(
-        "الدفع مطلوب",
-        "وصلت إلى 50 توصيلة غير مسددة. افتح قسم الأرباح وعمولة المنصة لمعرفة تفاصيل الدفع عبر بريدي موب."
-      );
-      return;
-    }
     await updateDriver({ availability: value ? "online" : "offline" });
   };
 
@@ -156,29 +143,16 @@ export default function DriverDashboardScreen() {
           </SectionTitle>
           <StatGrid>
             <StatCard label="إجمالي أرباح الموصل" value={formatCurrency(stats.totalEarnings)} accent={colors.success} />
-            <StatCard label="ربح المنصة" value={formatCurrency(stats.platformEarnings)} accent={colors.warning} />
+            <StatCard label="مستحقات رسوم التوصيل" value={formatCurrency(stats.totalEarnings)} accent={colors.warning} />
             <StatCard label="أرباح اليوم" value={formatCurrency(stats.earningsToday)} accent={colors.info} />
           </StatGrid>
           <WorkspaceButton
-            title="عرض الأرباح وعمولة المنصة 20%"
+            title="عرض الأرباح والاشتراك"
             variant="outline"
             onPress={() => router.push("/driver/earnings")}
             style={{ marginTop: tokens.spacing.sm }}
           />
         </SectionCard>
-
-        {unpaidDeliveryCount >= 30 && (
-          <SectionCard>
-            <WorkspaceText color={isCommissionLocked ? "error" : "brand"} variant="title" style={{ textAlign: "right" }}>
-              {isCommissionLocked ? "تم تعليق الحساب بسبب عمولة المنصة" : "اقترب موعد دفع عمولة المنصة"}
-            </WorkspaceText>
-            <WorkspaceText color="secondary" style={{ textAlign: "right", marginTop: tokens.spacing.xs }}>
-              {isCommissionLocked
-                ? "افتح الأرباح وعمولة المنصة لمعرفة المبلغ وطريقة الدفع عبر بريدي موب."
-                : `لديك ${unpaidDeliveryCount} توصيلة غير مسددة. يصبح الدفع إلزامياً عند 50 توصيلة.`}
-            </WorkspaceText>
-          </SectionCard>
-        )}
 
         <SectionCard>
           <SectionTitle icon={<PackageCheck color={colors.primary} size={tokens.spacing.lg} />}>

@@ -52,8 +52,9 @@ export async function getFounderTransactions(limit = 100): Promise<FounderTransa
 
 export async function getFounderFinanceSummary(): Promise<{
   totalGMVMinor: number | null;
-  totalCommissionMinor: number | null;
+  totalSubscriptionRevenueMinor: number | null;
   totalDeliveryFeesMinor: number | null;
+  totalDriverDeliveryPayoutsMinor: number | null;
   totalPayoutsMinor: number | null;
   pendingPayoutsMinor: number | null;
   totalOrders: number | null;
@@ -61,29 +62,32 @@ export async function getFounderFinanceSummary(): Promise<{
 }> {
   const [
     gmvRes,
-    commissionRes,
+    subscriptionRes,
     deliveryRes,
+    driverPayoutRes,
     payoutsRes,
     pendingPayoutsRes,
     ordersRes,
   ] = await Promise.all([
     supabase.from("orders").select("order_total_minor").eq("status", "delivered"),
-    supabase.from("orders").select("platform_commission_minor").eq("status", "delivered"),
+    supabase.from("account_subscriptions").select("monthly_price_minor, status").in("status", ["active", "past_due"]),
+    supabase.from("orders").select("delivery_fee_minor").eq("status", "delivered"),
     supabase.from("orders").select("delivery_fee_minor").eq("status", "delivered"),
     supabase.from("payouts").select("amount_minor").eq("status", "paid"),
     supabase.from("payouts").select("amount_minor").eq("status", "pending"),
     supabase.from("orders").select("id", { count: "exact", head: true }),
   ]);
 
-  if (gmvRes.error) return { totalGMVMinor: null, totalCommissionMinor: null, totalDeliveryFeesMinor: null, totalPayoutsMinor: null, pendingPayoutsMinor: null, totalOrders: null, error: gmvRes.error.message };
+  if (gmvRes.error) return { totalGMVMinor: null, totalSubscriptionRevenueMinor: null, totalDeliveryFeesMinor: null, totalDriverDeliveryPayoutsMinor: null, totalPayoutsMinor: null, pendingPayoutsMinor: null, totalOrders: null, error: gmvRes.error.message };
 
   const sumMinor = (rows: Array<{ [key: string]: number | null }> | undefined, field: string): number =>
     (rows ?? []).reduce((sum, row) => sum + (row[field] ?? 0), 0);
 
   return {
     totalGMVMinor: sumMinor(gmvRes.data as any, "order_total_minor"),
-    totalCommissionMinor: sumMinor(commissionRes.data as any, "platform_commission_minor"),
+    totalSubscriptionRevenueMinor: sumMinor(subscriptionRes.data as any, "monthly_price_minor"),
     totalDeliveryFeesMinor: sumMinor(deliveryRes.data as any, "delivery_fee_minor"),
+    totalDriverDeliveryPayoutsMinor: sumMinor(driverPayoutRes.data as any, "delivery_fee_minor"),
     totalPayoutsMinor: sumMinor(payoutsRes.data as any, "amount_minor"),
     pendingPayoutsMinor: sumMinor(pendingPayoutsRes.data as any, "amount_minor"),
     totalOrders: ordersRes.count ?? null,

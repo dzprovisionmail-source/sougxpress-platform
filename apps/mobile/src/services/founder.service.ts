@@ -21,7 +21,8 @@ export interface FounderDashboardStats {
   cancelledOrders:             number | null;
   suspendedAccounts:           number | null;
   totalCompletedDeliveries:    number | null;
-  driverCommissionsOwedMinor:  number | null;
+  driverDeliveryPayoutsMinor: number | null;
+  subscriptionRevenueMinor:  number | null;
 }
 
 export interface ControlCenterStats {
@@ -49,11 +50,11 @@ export interface ControlCenterStats {
   activeStores: number | null;
   inactiveStores: number | null;
 
-  // Revenue & commissions
+  // Revenue & subscriptions
   totalGMVMinor: number | null;
-  platformCommissionMinor: number | null;
+  subscriptionRevenueMinor: number | null;
   deliveryFeesMinor: number | null;
-  driverCommissionsOwedMinor: number | null;
+  driverDeliveryPayoutsMinor: number | null;
   totalPayoutsMinor: number | null;
 
   // Deliveries
@@ -123,7 +124,8 @@ export async function getFounderDashboardStats(): Promise<FounderDashboardStats>
     suspMerchantsRes,
     suspDriversRes,
     deliveriesRes,
-    commissionsRes,
+    subscriptionsRes,
+    deliveryPayoutsRes,
   ] = await Promise.all([
     supabase.from("customers").select("id", { count: "exact", head: true }),
     supabase.from("merchants").select("id", { count: "exact", head: true }),
@@ -150,9 +152,13 @@ export async function getFounderDashboardStats(): Promise<FounderDashboardStats>
       .select("id", { count: "exact", head: true })
       .eq("status", "delivered"),
     supabase
-      .from("delivery_commission_cycles")
-      .select("commission_earned_minor")
-      .eq("status", "payment_due"),
+      .from("account_subscriptions")
+      .select("monthly_price_minor")
+      .in("status", ["active", "past_due"]),
+    supabase
+      .from("orders")
+      .select("delivery_fee_minor")
+      .eq("status", "delivered"),
   ]);
 
   const suspendedTotal =
@@ -160,13 +166,10 @@ export async function getFounderDashboardStats(): Promise<FounderDashboardStats>
     (suspMerchantsRes.count ?? 0) +
     (suspDriversRes.count ?? 0);
 
-  let commissionsOwed: number | null = null;
-  if (!commissionsRes.error && commissionsRes.data) {
-    commissionsOwed = (commissionsRes.data as Array<{ commission_earned_minor: number }>).reduce(
-      (sum, row) => sum + (row.commission_earned_minor ?? 0),
-      0
-    );
-  }
+  const sumMinor = (rows: Array<{ [key: string]: number | null }> | undefined, field: string): number | null => {
+    if (!rows || rows.length === 0) return null;
+    return rows.reduce((sum, row) => sum + (row[field] ?? 0), 0);
+  };
 
   return {
     totalCustomers:             customersRes.count ?? null,
@@ -182,7 +185,8 @@ export async function getFounderDashboardStats(): Promise<FounderDashboardStats>
     cancelledOrders:            cancelledOrdersRes.count ?? null,
     suspendedAccounts:          suspendedTotal,
     totalCompletedDeliveries:   deliveriesRes.count ?? null,
-    driverCommissionsOwedMinor: commissionsOwed,
+    driverDeliveryPayoutsMinor: sumMinor(deliveryPayoutsRes.data as any, "delivery_fee_minor"),
+    subscriptionRevenueMinor:  sumMinor(subscriptionsRes.data as any, "monthly_price_minor"),
   };
 }
 
@@ -212,8 +216,9 @@ export async function getControlCenterStats(): Promise<ControlCenterStats> {
     activeStoresRes,
     inactiveStoresRes,
     gmvRes,
-    commissionRes,
+    subscriptionRes,
     deliveryFeesRes,
+    deliveryPayoutRes,
     payoutsRes,
     activeDeliveriesRes,
   ] = await Promise.all([
@@ -244,8 +249,12 @@ export async function getControlCenterStats(): Promise<ControlCenterStats> {
       .select("order_total_minor")
       .eq("status", "delivered"),
     supabase
+      .from("account_subscriptions")
+      .select("monthly_price_minor")
+      .in("status", ["active", "past_due"]),
+    supabase
       .from("orders")
-      .select("platform_commission_minor")
+      .select("delivery_fee_minor")
       .eq("status", "delivered"),
     supabase
       .from("orders")
@@ -267,8 +276,9 @@ export async function getControlCenterStats(): Promise<ControlCenterStats> {
   };
 
   const gmv = sumMinor(gmvRes.data as any, "order_total_minor");
-  const commission = sumMinor(commissionRes.data as any, "platform_commission_minor");
+  const subscriptionRevenue = sumMinor(subscriptionRes.data as any, "monthly_price_minor");
   const deliveryFees = sumMinor(deliveryFeesRes.data as any, "delivery_fee_minor");
+  const driverDeliveryPayouts = sumMinor(deliveryPayoutRes.data as any, "delivery_fee_minor");
   const payouts = sumMinor(payoutsRes.data as any, "amount_minor");
 
   return {
@@ -289,9 +299,9 @@ export async function getControlCenterStats(): Promise<ControlCenterStats> {
     activeStores: activeStoresRes.count ?? null,
     inactiveStores: inactiveStoresRes.count ?? null,
     totalGMVMinor: gmv,
-    platformCommissionMinor: commission,
+    subscriptionRevenueMinor: subscriptionRevenue,
     deliveryFeesMinor: deliveryFees,
-    driverCommissionsOwedMinor: null,
+    driverDeliveryPayoutsMinor: driverDeliveryPayouts,
     totalPayoutsMinor: payouts,
     totalCompletedDeliveries: completedOrdersRes.count ?? null,
     activeDeliveries: activeDeliveriesRes.count ?? null,

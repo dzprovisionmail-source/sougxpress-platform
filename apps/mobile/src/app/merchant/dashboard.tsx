@@ -272,12 +272,12 @@ export default function MerchantDashboardScreen() {
               value={STATUS_LABELS[merchant.status] ?? merchant.status}
             />
             <WorkspaceRow
-              label="نسبة العمولة"
-              value={`${merchant.commission_rate ?? 0}%`}
+              label="الاشتراك الشهري"
+              value="1000 دج — الشهر الأول مجاني"
             />
             <WorkspaceRow
               label="نوع الاشتراك"
-              value="الباقة الأساسية"
+              value="اشتراك التاجر"
               isLast
             />
           </SectionCard>

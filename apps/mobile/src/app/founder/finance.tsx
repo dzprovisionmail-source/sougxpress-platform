@@ -23,7 +23,7 @@ const fmtMinor = (minor: number | null) => {
 export default function FounderFinanceScreen() {
   const { colors, tokens } = useAppTheme();
   const [tab, setTab] = useState<TabKey>("overview");
-  const [summary, setSummary] = useState<{ totalGMVMinor: number | null; totalCommissionMinor: number | null; totalDeliveryFeesMinor: number | null; totalPayoutsMinor: number | null; pendingPayoutsMinor: number | null; totalOrders: number | null; error: string | null }>({ totalGMVMinor: null, totalCommissionMinor: null, totalDeliveryFeesMinor: null, totalPayoutsMinor: null, pendingPayoutsMinor: null, totalOrders: null, error: null });
+  const [summary, setSummary] = useState<{ totalGMVMinor: number | null; totalSubscriptionRevenueMinor: number | null; totalDeliveryFeesMinor: number | null; totalDriverDeliveryPayoutsMinor: number | null; totalPayoutsMinor: number | null; pendingPayoutsMinor: number | null; totalOrders: number | null; error: string | null }>({ totalGMVMinor: null, totalSubscriptionRevenueMinor: null, totalDeliveryFeesMinor: null, totalDriverDeliveryPayoutsMinor: null, totalPayoutsMinor: null, pendingPayoutsMinor: null, totalOrders: null, error: null });
   const [payouts, setPayouts] = useState<FounderPayout[]>([]);
   const [transactions, setTransactions] = useState<FounderTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,11 +95,11 @@ export default function FounderFinanceScreen() {
             <View style={{ gap: tokens.spacing.md }}>
               <AdminStatCard label="إجمالي المبيعات (GMV)" value={fmtMinor(summary.totalGMVMinor)} accent={colors.primary} />
               <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.sm }}>
-                <AdminStatCard label="عمولة المنصة" value={fmtMinor(summary.totalCommissionMinor)} accent={colors.success} style={{ flex: 1 }} />
-                <AdminStatCard label="أجور التوصيل" value={fmtMinor(summary.totalDeliveryFeesMinor)} accent={colors.info} style={{ flex: 1 }} />
+                <AdminStatCard label="إيرادات الاشتراكات" value={fmtMinor(summary.totalSubscriptionRevenueMinor)} accent={colors.success} style={{ flex: 1 }} />
+                <AdminStatCard label="رسوم التوصيل" value={fmtMinor(summary.totalDeliveryFeesMinor)} accent={colors.info} style={{ flex: 1 }} />
               </View>
               <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.sm }}>
-                <AdminStatCard label="إجمالي المدفوعات" value={fmtMinor(summary.totalPayoutsMinor)} accent={colors.secondary} style={{ flex: 1 }} />
+                <AdminStatCard label="مستحقات الموصلين" value={fmtMinor(summary.totalDriverDeliveryPayoutsMinor)} accent={colors.secondary} style={{ flex: 1 }} />
                 <AdminStatCard label="معلقة الدفع" value={fmtMinor(summary.pendingPayoutsMinor)} accent={colors.warning} style={{ flex: 1 }} />
               </View>
               <AdminStatCard label="إجمالي الطلبات" value={summary.totalOrders ?? "—"} accent={colors.primary} />

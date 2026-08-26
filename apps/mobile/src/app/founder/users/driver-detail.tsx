@@ -4,7 +4,7 @@ import {
   ScrollView, Modal, ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { Edit2, CheckCircle, Trash2, Truck, DollarSign, RotateCcw, Lock } from "lucide-react-native";
+import { Edit2, CheckCircle, Trash2, Truck, Lock } from "lucide-react-native";
 import {
   AdminPageShell, AdminLoadingState, AdminErrorState,
 } from "@/components/admin";
@@ -12,7 +12,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import {
   getFounderDriver, updateFounderDriver, setFounderDriverStatus,
   softDeleteFounderDriver, resetUserPassword, getFounderZones,
-  type FounderDriver, type FounderZone, type CommissionCycle,
+  type FounderDriver, type FounderZone, type DriverSubscription,
 } from "@/services/founder-users.service";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -69,8 +69,7 @@ export default function DriverDetailScreen() {
 
   const [driver, setDriver] = useState<FounderDriver | null>(null);
   const [deliveriesCount, setDeliveriesCount] = useState(0);
-  const [commissionCycle, setCommissionCycle] = useState<CommissionCycle | null>(null);
-  const [totalOwedMinor, setTotalOwedMinor] = useState(0);
+  const [subscription, setSubscription] = useState<DriverSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [zones, setZones] = useState<FounderZone[]>([]);
@@ -80,7 +79,6 @@ export default function DriverDetailScreen() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showZonePicker, setShowZonePicker] = useState(false);
   const [showPwReset, setShowPwReset] = useState(false);
-  const [showSettlementConfirm, setShowSettlementConfirm] = useState(false);
 
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
@@ -110,8 +108,7 @@ export default function DriverDetailScreen() {
       const d = res.driver;
       setDriver(d);
       setDeliveriesCount(res.deliveriesCount);
-      setCommissionCycle(res.activeCommissionCycle);
-      setTotalOwedMinor(res.totalOwedMinor);
+      setSubscription(res.subscription);
       setEditName(d.full_name ?? "");
       setEditPhone(d.phone ?? "");
       setEditEmail(d.email ?? "");
@@ -218,35 +215,22 @@ export default function DriverDetailScreen() {
             </View>
           </View>
 
-          {commissionCycle && (
+          {subscription && (
             <View style={[styles.cycleBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
               <View style={{ flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>الدورة الحالية</Text>
-                <View style={[styles.cycleBadge, { backgroundColor: commissionCycle.status === "payment_due" ? colors.error + "22" : colors.success + "22" }]}>
-                  <Text style={{ color: commissionCycle.status === "payment_due" ? colors.error : colors.success, fontSize: 11, fontWeight: "700" }}>
-                    {commissionCycle.status === "payment_due" ? "مستحق الدفع" : commissionCycle.status === "active" ? "نشط" : commissionCycle.status}
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>اشتراك الموصل</Text>
+                <View style={[styles.cycleBadge, { backgroundColor: subscription.status === "active" ? colors.success + "22" : colors.warning + "22" }]}>
+                  <Text style={{ color: subscription.status === "active" ? colors.success : colors.warning, fontSize: 11, fontWeight: "700" }}>
+                    {subscription.status === "active" ? "نشط" : subscription.status === "trialing" ? "تجريبي" : subscription.status}
                   </Text>
                 </View>
               </View>
               <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "600", textAlign: "right", marginTop: 4 }}>
-                {commissionCycle.deliveries_count} توصيلة · {formatMinor(commissionCycle.commission_earned_minor)}
+                {formatMinor(subscription.monthly_price_minor)} شهرياً
               </Text>
-            </View>
-          )}
-
-          {totalOwedMinor > 0 && (
-            <View style={{ flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>المبلغ المستحق للمنصة</Text>
-                <Text style={{ color: colors.error, fontSize: 22, fontWeight: "800" }}>{formatMinor(totalOwedMinor)}</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setShowSettlementConfirm(true)}
-                style={[styles.settlementBtn, { backgroundColor: colors.success + "18", borderColor: colors.success + "44" }]}
-              >
-                <RotateCcw size={16} color={colors.success} />
-                <Text style={{ color: colors.success, fontSize: 13, fontWeight: "700", marginTop: 2 }}>تسوية</Text>
-              </TouchableOpacity>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginTop: 4 }}>
+                نهاية الفترة التجريبية: {new Date(subscription.trial_end).toLocaleDateString("ar-DZ")}
+              </Text>
             </View>
           )}
         </View>
@@ -378,38 +362,7 @@ export default function DriverDetailScreen() {
         </View>
       </Modal>
 
-      {/* Settlement confirm */}
-      <Modal visible={showSettlementConfirm} transparent animationType="fade">
-        <View style={[styles.overlay, { justifyContent: "center", padding: 24 }]}>
-          <View style={[styles.confirmBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <Text style={{ fontSize: 40, textAlign: "center", marginBottom: 12 }}>💰</Text>
-            <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "700", textAlign: "center", marginBottom: 8 }}>تأكيد التسوية</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: "center", lineHeight: 22 }}>
-              التسوية اليدوية ستُسجَّل في سجل العمليات. يتم التحقق منها عبر الدفع المادي الفعلي.
-            </Text>
-            <Text style={{ color: colors.success, fontSize: 22, fontWeight: "800", textAlign: "center", marginTop: 12 }}>
-              {formatMinor(totalOwedMinor)}
-            </Text>
-            <View style={{ flexDirection: "row-reverse", gap: 10, marginTop: 20 }}>
-              <TouchableOpacity
-                onPress={() => {
-                  // The actual commission confirmation goes through the existing
-                  // confirm_delivery_payment RPC on the commission cycle.
-                  // Here we just close and show a note — full settlement
-                  // implementation is in Founder Phase 3 (Finance module).
-                  setShowSettlementConfirm(false);
-                }}
-                style={[styles.saveBtn, { backgroundColor: colors.success, flex: 1 }]}
-              >
-                <Text style={{ color: "#fff", fontWeight: "700", textAlign: "center" }}>تم استلام الدفع</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowSettlementConfirm(false)} style={[styles.saveBtn, { backgroundColor: colors.bgElevated, flex: 1, borderWidth: 1, borderColor: colors.borderSubtle }]}>
-                <Text style={{ color: colors.textSecondary, textAlign: "center" }}>إلغاء</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+
 
       {/* Zone picker */}
       <Modal visible={showZonePicker} transparent animationType="slide">

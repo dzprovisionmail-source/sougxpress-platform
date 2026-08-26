@@ -9,8 +9,9 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { getFounderSettings, updateFounderSetting, getFounderAdminProfiles, type FounderPlatformSetting } from "@/services/founder-settings.service";
 
 const DEFAULT_SETTINGS: Record<string, { label: string; type: "number" | "text" | "boolean"; defaultValue: string | number | boolean }> = {
-  platform_delivery_fee_minor: { label: "أجور التوصيل الافتراضية (د.ج)", type: "number", defaultValue: 200 },
-  platform_commission_rate: { label: "نسبة عمولة المنصة (%)", type: "number", defaultValue: 10 },
+  base_delivery_fee_minor: { label: "رسوم التوصيل الثابتة (د.ج)", type: "number", defaultValue: 15000 },
+  merchant_subscription_fee_minor: { label: "اشتراك التاجر الشهري (د.ج)", type: "number", defaultValue: 100000 },
+  driver_subscription_fee_minor: { label: "اشتراك الموصل الشهري (د.ج)", type: "number", defaultValue: 50000 },
   require_merchant_approval: { label: "الموافقة على التجار الجدد", type: "boolean", defaultValue: true },
   require_driver_approval: { label: "الموافقة على الموصلين الجدد", type: "boolean", defaultValue: true },
   enable_notifications: { label: "تفعيل الإشعارات", type: "boolean", defaultValue: true },

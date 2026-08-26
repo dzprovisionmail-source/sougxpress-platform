@@ -151,7 +151,7 @@ export default function FounderMerchantsControlScreen() {
                       marginTop: 2,
                     }}
                   >
-                    المالك: {item.owner_full_name || "—"} · نسبة العمولة: {item.commission_rate != null ? `${item.commission_rate}%` : "غير متوفر"}
+                    المالك: {item.owner_full_name || "—"} · اشتراك التاجر: {item.status === "active" ? "متاح" : "بانتظار التفعيل"}
                   </Text>
                 </View>
                 <View

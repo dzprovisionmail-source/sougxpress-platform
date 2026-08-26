@@ -39,7 +39,7 @@ const useCart = () => {
   };
 
   const subtotal = cartItems.reduce((acc, item) => acc + (item.product.price_minor * item.quantity), 0);
-  const deliveryFee = cartItems.length > 0 ? 20000 : 0; // Fixed 200 DZD delivery fee for Soug-XPRESS
+  const deliveryFee = cartItems.length > 0 ? 15000 : 0; // Fixed 150 DZD delivery fee for Soug-XPRESS
   const total = subtotal + deliveryFee;
 
   return {

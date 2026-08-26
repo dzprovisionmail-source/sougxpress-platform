@@ -75,7 +75,7 @@ export function OrderContextCard({ context }: { context: ChatOrderContext | null
   );
   const deliveryFeeMinor = Number(context.delivery_fee_minor || 0) > 0
     ? Number(context.delivery_fee_minor)
-    : 20000;
+    : 15000;
   const totalMinor = Number(context.total_minor || 0) >= subtotalMinor + deliveryFeeMinor
     ? Number(context.total_minor)
     : subtotalMinor + deliveryFeeMinor;

@@ -21,10 +21,8 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
   try {
     // 1. Authoritative totals computation from cart items
     const computedSubtotal = data.cartItems.reduce((acc, item) => acc + (item.product.price_minor * item.quantity), 0);
-    const deliveryFee = typeof data.delivery_fee_minor === 'number' ? data.delivery_fee_minor : 0;
-    const platformCommission = typeof data.platform_commission_minor === 'number' 
-      ? data.platform_commission_minor 
-      : Math.round(computedSubtotal * 0.1);
+    const deliveryFee = typeof data.delivery_fee_minor === 'number' ? data.delivery_fee_minor : 15000;
+    const platformCommission = 0;
     const computedTotal = computedSubtotal + deliveryFee;
 
     if (computedTotal <= 0 || computedSubtotal <= 0) {

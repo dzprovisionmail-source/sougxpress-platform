@@ -512,16 +512,16 @@ export default function FounderControlCenterScreen() {
           </View>
           <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.sm, marginTop: tokens.spacing.sm, paddingHorizontal: tokens.spacing.lg }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right", fontFamily: tokens.typography.families.arabic }}>عمولة المنصة</Text>
-              <Text style={{ color: success, fontSize: 15, fontWeight: "700", textAlign: "right", marginTop: 2, fontFamily: tokens.typography.families.arabic }}>{fmt(stats?.platformCommissionMinor)}</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right", fontFamily: tokens.typography.families.arabic }}>إيرادات الاشتراكات</Text>
+              <Text style={{ color: success, fontSize: 15, fontWeight: "700", textAlign: "right", marginTop: 2, fontFamily: tokens.typography.families.arabic }}>{fmt(stats?.subscriptionRevenueMinor)}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right", fontFamily: tokens.typography.families.arabic }}>أجور التوصيل</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right", fontFamily: tokens.typography.families.arabic }}>رسوم التوصيل</Text>
               <Text style={{ color: info, fontSize: 15, fontWeight: "700", textAlign: "right", marginTop: 2, fontFamily: tokens.typography.families.arabic }}>{fmt(stats?.deliveryFeesMinor)}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right", fontFamily: tokens.typography.families.arabic }}>مستحق الموصلين</Text>
-              <Text style={{ color: warning, fontSize: 15, fontWeight: "700", textAlign: "right", marginTop: 2, fontFamily: tokens.typography.families.arabic }}>{fmt(stats?.driverCommissionsOwedMinor)}</Text>
+              <Text style={{ color: warning, fontSize: 15, fontWeight: "700", textAlign: "right", marginTop: 2, fontFamily: tokens.typography.families.arabic }}>{fmt(stats?.driverDeliveryPayoutsMinor)}</Text>
             </View>
           </View>
         </SectionBlock>

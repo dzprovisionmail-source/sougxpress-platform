@@ -101,7 +101,8 @@ export async function getFounderStatsForReports(): Promise<{
   activeOrders: number | null;
   completedOrders: number | null;
   gmvMinor: number | null;
-  commissionMinor: number | null;
+  subscriptionRevenueMinor: number | null;
+  deliveryFeesMinor: number | null;
   error: string | null;
 }> {
   const [
@@ -113,7 +114,8 @@ export async function getFounderStatsForReports(): Promise<{
     activeRes,
     completedRes,
     gmvRes,
-    commissionRes,
+    deliveryFeesRes,
+    subscriptionsRes,
   ] = await Promise.all([
     supabase.from("customers").select("id", { count: "exact", head: true }),
     supabase.from("merchants").select("id", { count: "exact", head: true }),
@@ -123,10 +125,11 @@ export async function getFounderStatsForReports(): Promise<{
     supabase.from("orders").select("id", { count: "exact", head: true }).in("status", ["accepted", "preparing", "ready_for_pickup", "picked_up"]),
     supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "delivered"),
     supabase.from("orders").select("order_total_minor").eq("status", "delivered"),
-    supabase.from("orders").select("platform_commission_minor").eq("status", "delivered"),
+    supabase.from("orders").select("delivery_fee_minor").eq("status", "delivered"),
+    supabase.from("account_subscriptions").select("monthly_price_minor").in("status", ["trial", "active"]),
   ]);
 
-  if (customersRes.error) return { totalCustomers: null, totalMerchants: null, totalDrivers: null, totalStores: null, totalOrders: null, activeOrders: null, completedOrders: null, gmvMinor: null, commissionMinor: null, error: customersRes.error.message };
+  if (customersRes.error) return { totalCustomers: null, totalMerchants: null, totalDrivers: null, totalStores: null, totalOrders: null, activeOrders: null, completedOrders: null, gmvMinor: null, subscriptionRevenueMinor: null, deliveryFeesMinor: null, error: customersRes.error.message };
 
   const sumMinor = (rows: Array<{ [key: string]: number | null }> | undefined, field: string): number =>
     (rows ?? []).reduce((sum, row) => sum + (row[field] ?? 0), 0);
@@ -140,7 +143,8 @@ export async function getFounderStatsForReports(): Promise<{
     activeOrders: activeRes.count ?? null,
     completedOrders: completedRes.count ?? null,
     gmvMinor: sumMinor(gmvRes.data as any, "order_total_minor"),
-    commissionMinor: sumMinor(commissionRes.data as any, "platform_commission_minor"),
+    subscriptionRevenueMinor: sumMinor(subscriptionsRes.data as any, "monthly_price_minor"),
+    deliveryFeesMinor: sumMinor(deliveryFeesRes.data as any, "delivery_fee_minor"),
     error: null,
   };
 }

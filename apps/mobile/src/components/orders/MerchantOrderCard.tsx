@@ -162,7 +162,7 @@ const MerchantOrderCard: React.FC<MerchantOrderCardProps> = ({ order, onUpdateSt
   ) ?? order.total_minor ?? 0);
   const deliveryFeeMinor = Number(order.delivery_fee_minor || 0) > 0
     ? Number(order.delivery_fee_minor)
-    : 20000; // Standard 200 DZD fee
+    : 15000; // Standard 150 DZD fee
   const totalMinor = Number(order.total_minor || 0) >= subtotalMinor + deliveryFeeMinor
     ? Number(order.total_minor)
     : subtotalMinor + deliveryFeeMinor;

@@ -1,12 +1,14 @@
 /**
- * Driver earnings policy for the Driver workspace.
- * The delivery fee paid by the customer is fixed at 200 DZD per delivery,
- * split 80% driver / 20% platform, confirmed by the product owner.
+ * Current delivery and subscription policy.
+ * All monetary values are stored in minor units (centimes).
  */
 
-export const FIXED_DELIVERY_FEE_MINOR = 20000; // 200.00 DZD
-export const DRIVER_SHARE_RATE = 0.8;
-export const PLATFORM_SHARE_RATE = 0.2;
+export const FIXED_DELIVERY_FEE_MINOR = 15000; // 150 DZD
+export const DRIVER_SUBSCRIPTION_PRICE_MINOR = 50000; // 500 DZD / month
+export const MERCHANT_SUBSCRIPTION_PRICE_MINOR = 100000; // 1000 DZD / month
+export const SUBSCRIPTION_TRIAL_MONTHS = 1;
+export const DRIVER_SHARE_RATE = 1;
+export const PLATFORM_SHARE_RATE = 0;
 
 export interface EarningsSplit {
   feeMinor: number;
@@ -15,11 +17,11 @@ export interface EarningsSplit {
 }
 
 export const computeEarningsSplit = (deliveredCount: number): EarningsSplit => {
-  const feeMinor = FIXED_DELIVERY_FEE_MINOR * deliveredCount;
+  const feeMinor = FIXED_DELIVERY_FEE_MINOR * Math.max(0, deliveredCount);
   return {
     feeMinor,
-    driverShareMinor: Math.round(feeMinor * DRIVER_SHARE_RATE),
-    platformShareMinor: Math.round(feeMinor * PLATFORM_SHARE_RATE),
+    driverShareMinor: feeMinor,
+    platformShareMinor: 0,
   };
 };
 

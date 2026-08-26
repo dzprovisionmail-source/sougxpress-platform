@@ -36,7 +36,7 @@ export default function FounderCouriersControlScreen() {
   const [selectedDriver, setSelectedDriver] = useState<{
     driver: FounderDriver;
     deliveriesCount: number;
-    activeCycles: Record<string, unknown>[];
+    subscription: { status: string; monthly_price_minor: number; trial_end: string; current_period_end: string } | null;
   } | null>(null);
   const [showDetail, setShowDetail] = useState(false);
 
@@ -65,12 +65,13 @@ export default function FounderCouriersControlScreen() {
     setSelectedDriver({
       driver: res.driver,
       deliveriesCount: res.deliveriesCount,
-      activeCycles: res.activeCycles,
+      subscription: res.subscription,
     });
     setShowDetail(true);
   };
 
   const fmtMinor = (minor: number) => `${(minor / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} د.ج`;
+  const subscriptionLabel = (status?: string) => ({ trial: "تجربة مجانية", active: "نشط", past_due: "متأخر", canceled: "ملغى" }[status ?? ""] ?? "غير مسجل");
 
   if (loading && !refreshing && !showDetail) {
     return (
@@ -216,9 +217,9 @@ export default function FounderCouriersControlScreen() {
                     <Text style={{ color: colors.success, fontSize: 13, textAlign: "right", flex: 2, fontWeight: "700" }}>{selectedDriver.deliveriesCount}</Text>
                   </View>
                   <View style={styles.infoRow}>
-                    <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "right", flex: 1, fontFamily: tokens.typography.families.arabic }}>الذمم المالية المستحقة</Text>
-                    <Text style={{ color: colors.warning, fontSize: 13, textAlign: "right", flex: 2, fontWeight: "700" }}>
-                      {selectedDriver.driver.commission_owed_minor != null ? fmtMinor(selectedDriver.driver.commission_owed_minor) : "غير متوفر"}
+                    <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "right", flex: 1, fontFamily: tokens.typography.families.arabic }}>الاشتراك الشهري</Text>
+                    <Text style={{ color: colors.success, fontSize: 13, textAlign: "right", flex: 2, fontWeight: "700" }}>
+                      {selectedDriver.subscription ? `${fmtMinor(selectedDriver.subscription.monthly_price_minor)} — ${subscriptionLabel(selectedDriver.subscription.status)}` : "غير مسجل"}
                     </Text>
                   </View>
                 </View>

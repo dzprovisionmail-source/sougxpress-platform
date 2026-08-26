@@ -18,7 +18,8 @@ const fmtMinor = (minor: number | null) => {
 export default function FounderContentScreen() {
   const { colors, tokens } = useAppTheme();
   const [period, setPeriod] = useState<Period>("daily");
-  const [stats, setStats] = useState<{ totalCustomers: number | null; totalMerchants: number | null; totalDrivers: number | null; totalStores: number | null; totalOrders: number | null; activeOrders: number | null; completedOrders: number | null; gmvMinor: number | null; commissionMinor: number | null; error: string | null }>({ totalCustomers: null, totalMerchants: null, totalDrivers: null, totalStores: null, totalOrders: null, activeOrders: null, completedOrders: null, gmvMinor: null, commissionMinor: null, error: null });
+  const [stats, setStats] = useState<{ totalCustomers: number | null; totalMerchants: number | null; totalDrivers: number | null; totalStores: number | null; totalOrders: number | null; activeOrders: number | null; completedOrders: number | null; gmvMinor: number | null; subscriptionRevenueMinor: number | null;
+    deliveryFeesMinor: number | null; error: string | null }>({ totalCustomers: null, totalMerchants: null, totalDrivers: null, totalStores: null, totalOrders: null, activeOrders: null, completedOrders: null, gmvMinor: null, subscriptionRevenueMinor: null, deliveryFeesMinor: null, error: null });
   const [metrics, setMetrics] = useState<FounderMetricsSnapshot[]>([]);
   const [delivery, setDelivery] = useState<{ total: number; delivered: number; cancelled: number; avgDeliveryTimeMin: number | null; completionRate: number; error: string | null }>({ total: 0, delivered: 0, cancelled: 0, avgDeliveryTimeMin: null, completionRate: 0, error: null });
   const [loading, setLoading] = useState(true);
@@ -58,7 +59,8 @@ export default function FounderContentScreen() {
       `نشطة: ${stats.activeOrders ?? "—"}`,
       `مكتملة: ${stats.completedOrders ?? "—"}`,
       `GMV: ${fmtMinor(stats.gmvMinor)}`,
-      `العمولة: ${fmtMinor(stats.commissionMinor)}`,
+      `إيرادات الاشتراكات: ${fmtMinor(stats.subscriptionRevenueMinor)}`,
+      `رسوم التوصيل: ${fmtMinor(stats.deliveryFeesMinor)}`,
       `────────────────────────`,
       `أداء التوصيل (30 يوم):`,
       `إجمالي: ${delivery.total}`,
@@ -137,7 +139,8 @@ export default function FounderContentScreen() {
         <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "700", textAlign: "right", marginBottom: 8, textTransform: "uppercase" }}>الإيرادات</Text>
         <View style={{ flexDirection: "row-reverse", gap: tokens.spacing.sm, marginBottom: tokens.spacing.lg }}>
           <AdminStatCard label="GMV" value={fmtMinor(stats.gmvMinor)} accent={colors.primary} style={{ flex: 1 }} />
-          <AdminStatCard label="العمولة" value={fmtMinor(stats.commissionMinor)} accent={colors.success} style={{ flex: 1 }} />
+          <AdminStatCard label="الاشتراكات" value={fmtMinor(stats.subscriptionRevenueMinor)} accent={colors.success} style={{ flex: 1 }} />
+          <AdminStatCard label="رسوم التوصيل" value={fmtMinor(stats.deliveryFeesMinor)} accent={colors.info} style={{ flex: 1 }} />
         </View>
 
         {/* Delivery performance */}
@@ -177,7 +180,7 @@ export default function FounderContentScreen() {
           metrics.slice(0, 10).map((m) => {
             const dateLabel = m.period_start ?? m.snapshot_time ?? "";
             const gmv = m.total_gmv_minor ?? m.total_revenue_minor ?? 0;
-            const commission = m.total_commission_minor ?? 0;
+            const deliveryFees = m.total_delivery_fees_minor ?? 0;
             const dateText = dateLabel ? new Date(dateLabel).toLocaleDateString("ar-DZ") : "—";
             return (
               <View key={m.id} style={[styles.metricRow, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
@@ -186,8 +189,8 @@ export default function FounderContentScreen() {
                   <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{m.total_orders} طلب · {fmtMinor(gmv)}</Text>
                 </View>
                 <View style={{ alignItems: "flex-end" }}>
-                  <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700" }}>{fmtMinor(commission)}</Text>
-                  <Text style={{ color: colors.textDisabled, fontSize: 10 }}>عمولة</Text>
+                  <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700" }}>{fmtMinor(deliveryFees)}</Text>
+                  <Text style={{ color: colors.textDisabled, fontSize: 10 }}>رسوم توصيل</Text>
                 </View>
               </View>
             );
