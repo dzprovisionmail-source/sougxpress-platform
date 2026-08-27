@@ -107,7 +107,7 @@ export default function CourierEarningsScreen() {
           <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>الحالة</Text>
           <Text style={[styles.rowValue, { color: trialActive ? colors.success : colors.primary }]}>{trialActive ? "الفترة التجريبية المجانية" : subscription?.status === "active" ? "نشط" : "بانتظار التفعيل"}</Text>
         </View>
-        <Text style={[styles.description, { color: colors.textSecondary }]}>الشهر الأول مجاني بالكامل. لا يوجد دين أو حد للتوصيلات بسبب العمولة.</Text>
+        <Text style={[styles.description, { color: colors.textSecondary }]}>الاشتراك الحالي مجاني (نسخة تجريبية)\n500 دج اشتراك شهري بعد انطلاق النسخة التجارية</Text>
       </View>
     </ScrollView>
   );

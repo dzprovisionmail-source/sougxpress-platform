@@ -51,7 +51,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   rating = 4.8,
   reviewCount,
   deliveryTime = '20-35 دقيقة',
-  deliveryFee = '200 د.ج',
+  deliveryFee = '150 د.ج',
   isOpen,
   isFeatured = false,
   isFavorite = false,
