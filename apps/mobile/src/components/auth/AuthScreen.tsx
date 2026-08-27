@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import { useRouter } from "expo-router";
 import {
   Typography,
@@ -635,7 +636,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   // ── Main auth form ──────────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
-      <KeyboardAvoidingView
+      <KeyboardAwareView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
@@ -787,7 +788,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             style={styles.backBtn}
           />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareView>
     </SafeAreaView>
   );
 };

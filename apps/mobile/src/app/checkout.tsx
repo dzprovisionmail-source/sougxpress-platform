@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform, I18nManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareView } from '@/components/ui/KeyboardAwareView';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { ShoppingBag, MessageSquareText, CheckCircle2 } from 'lucide-react-native';
 import { ICON_MASCOT_SCOOTER } from '@/constants/brand';
@@ -111,9 +112,9 @@ const CheckoutScreen = () => {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
       <Stack.Screen options={{ title: 'إتمام الطلب' }} />
-      <KeyboardAvoidingView
+      <KeyboardAwareView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.fullContainer}>
           <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -196,7 +197,7 @@ const CheckoutScreen = () => {
             />
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAwareView>
     </SafeAreaView>
   );
 };

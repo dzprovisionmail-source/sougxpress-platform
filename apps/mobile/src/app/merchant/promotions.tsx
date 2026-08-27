@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import {
   ScrollView,
   View,
@@ -291,7 +292,7 @@ export default function MerchantPromotionsScreen() {
 
       {/* ── Add / Edit Modal ───────────────────────────────── */}
       <Modal visible={modalOpen} animationType="slide" transparent onRequestClose={closeModal}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+        <KeyboardAwareView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
           <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.55)" }}>
             <View style={{ backgroundColor: colors.bgElevated, borderTopLeftRadius: tokens.radius.lg,
               borderTopRightRadius: tokens.radius.lg, padding: tokens.spacing.lg, maxHeight: "92%" }}>
@@ -374,7 +375,7 @@ export default function MerchantPromotionsScreen() {
               </ScrollView>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </KeyboardAwareView>
       </Modal>
     </WorkspaceScreen>
   );

@@ -12,6 +12,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import { useRouter } from "expo-router";
 import { Typography, Card, Badge, BrandWordmark } from "@/components/ui";
 import { AinSefraZoneSelect } from "@/components/ui/AinSefraZoneSelect";
@@ -96,9 +97,9 @@ function AddressFormModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
+      <KeyboardAwareView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface }]}>
@@ -188,7 +189,7 @@ function AddressFormModal({
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAwareView>
     </Modal>
   );
 }

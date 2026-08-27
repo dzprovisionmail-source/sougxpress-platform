@@ -14,6 +14,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowRight,
@@ -482,7 +483,7 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
+      <KeyboardAwareView
         style={styles.keyboardAvoiding}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={0}
@@ -651,7 +652,7 @@ export default function ChatScreen() {
           </Typography>
         )}
       </BottomSheet>
-      </KeyboardAvoidingView>
+      </KeyboardAwareView>
     </SafeAreaView>
   );
 }
