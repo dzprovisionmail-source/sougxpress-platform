@@ -136,6 +136,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {onAddToCart && actualInStock && (
           <TouchableOpacity
             onPress={handleAddToCart}
+            accessibilityRole="button"
+            accessibilityLabel="إضافة المنتج إلى السلة"
             style={[styles.quickAddBtn, { backgroundColor: colors.primary }]}
             activeOpacity={0.8}
           >
@@ -169,6 +171,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {onToggleFavorite && (
           <TouchableOpacity
             onPress={onToggleFavorite}
+            accessibilityRole="button"
+            accessibilityLabel={isFavorite ? "إزالة المنتج من المفضلة" : "إضافة المنتج إلى المفضلة"}
             style={[styles.favoriteBtn, { backgroundColor: colors.bgElevated }]}
             activeOpacity={0.8}
           >
@@ -213,6 +217,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {onAddToCart && actualInStock ? (
             <TouchableOpacity
               onPress={handleAddToCart}
+              accessibilityRole="button"
+              accessibilityLabel="إضافة المنتج إلى السلة"
               style={[styles.addCircle, { backgroundColor: colors.primary }]}
               activeOpacity={0.85}
             >
@@ -251,9 +257,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: TOKENS.spacing.sm,
     [I18nManager.isRTL ? 'right' : 'left']: TOKENS.spacing.sm,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: TOKENS.touchTarget.minWidth,
+    height: TOKENS.touchTarget.minHeight,
+    borderRadius: TOKENS.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     ...TOKENS.shadows.small,
@@ -297,9 +303,9 @@ const styles = StyleSheet.create({
     marginTop: TOKENS.spacing.xs,
   },
   addCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: TOKENS.touchTarget.minWidth,
+    height: TOKENS.touchTarget.minHeight,
+    borderRadius: TOKENS.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     ...TOKENS.shadows.neon,
@@ -346,9 +352,9 @@ const styles = StyleSheet.create({
     writingDirection: 'rtl',
   },
   quickAddBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: TOKENS.touchTarget.minWidth,
+    height: TOKENS.touchTarget.minHeight,
+    borderRadius: TOKENS.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     ...TOKENS.shadows.neon,

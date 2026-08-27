@@ -163,6 +163,8 @@ export const StoreCard: React.FC<StoreCardProps> = ({
           {onChatPress && (
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.bgSurface }]}
+              accessibilityRole="button"
+              accessibilityLabel="فتح المحادثة"
               onPress={(e) => {
                 e.stopPropagation();
                 onChatPress();
@@ -175,6 +177,8 @@ export const StoreCard: React.FC<StoreCardProps> = ({
           {onToggleFavorite && (
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.bgSurface }]}
+              accessibilityRole="button"
+              accessibilityLabel={isFavorite ? "إزالة المتجر من المفضلة" : "إضافة المتجر إلى المفضلة"}
               onPress={(e) => {
                 e.stopPropagation();
                 onToggleFavorite();
@@ -415,9 +419,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: TOKENS.touchTarget.minWidth,
+    height: TOKENS.touchTarget.minHeight,
+    borderRadius: TOKENS.radius.full,
     justifyContent: 'center',
     alignItems: 'center',
     ...TOKENS.shadows.small,
