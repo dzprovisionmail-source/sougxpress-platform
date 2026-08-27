@@ -10,6 +10,7 @@ import { Typography } from "./Typography";
 import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface NavItem {
   id: string;
@@ -32,6 +33,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const colors = getThemeColors(theme);
   const isRTL = I18nManager.isRTL;
   const insets = useSafeAreaInsets();
+  const { unreadCount } = useNotifications();
 
   const items: NavItem[] = [
     { id: "home", label: "الرئيسية", icon: "home-outline", activeIcon: "home" },
@@ -59,11 +61,20 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             style={styles.navItem}
             activeOpacity={0.7}
           >
-            <Ionicons 
-              name={isActive ? item.activeIcon : item.icon} 
-              size={24} 
-              color={isActive ? colors.primary : colors.textSecondary} 
-            />
+            <View style={styles.iconWrap}>
+              <Ionicons
+                name={isActive ? item.activeIcon : item.icon}
+                size={24}
+                color={isActive ? colors.primary : colors.textSecondary}
+              />
+              {item.id === "profile" && unreadCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                  <Typography variant="caption" style={styles.badgeText}>
+                    {unreadCount > 99 ? "99+" : String(unreadCount)}
+                  </Typography>
+                </View>
+              )}
+            </View>
             <Typography 
               variant="caption" 
               style={[
@@ -94,6 +105,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.05,
   },
+  iconWrap: { position: "relative" },
+  badge: { position: "absolute", top: -8, right: -12, minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FFF" },
+  badgeText: { color: "#FFF", fontSize: 9, lineHeight: 11, fontWeight: "800", marginTop: 0 },
   navItem: {
     flex: 1,
     alignItems: "center",

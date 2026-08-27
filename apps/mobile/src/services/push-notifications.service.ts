@@ -91,6 +91,9 @@ export function routeFromNotificationResponse(response: Notifications.Notificati
     route?: string;
     conversation_id?: string;
     order_id?: string;
+    store_id?: string;
+    product_id?: string;
+    assignment_id?: string;
   };
 
   if (data.route) {
@@ -104,6 +107,21 @@ export function routeFromNotificationResponse(response: Notifications.Notificati
   }
 
   if (data.order_id) {
-    router.push({ pathname: "/orders/[id]", params: { id: data.order_id } });
+    router.push({ pathname: "/customer/orders", params: { orderId: data.order_id } });
+    return;
+  }
+
+  if (data.store_id) {
+    router.push({ pathname: "/store-details", params: { id: data.store_id } });
+    return;
+  }
+
+  if (data.product_id) {
+    router.push({ pathname: "/product-details", params: { id: data.product_id } });
+    return;
+  }
+
+  if (data.assignment_id) {
+    router.push({ pathname: "/driver/deliveries", params: { assignmentId: data.assignment_id } });
   }
 }

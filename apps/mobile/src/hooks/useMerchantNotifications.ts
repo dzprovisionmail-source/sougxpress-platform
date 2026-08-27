@@ -1,55 +1,53 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import {
   getMerchantNotifications,
-  markNotificationRead,
   markAllNotificationsRead,
+  markNotificationRead,
   subscribeMerchantNotifications,
-  MerchantNotification,
-} from "../services/merchant-notifications.service";
+  type MerchantNotification,
+} from "@/services/merchant-notifications.service";
 
 export function useMerchantNotifications() {
+  const { userId } = useCurrentUserId();
   const [notifications, setNotifications] = useState<MerchantNotification[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchNotifications = useCallback(async () => {
+    if (!userId) {
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const data = await getMerchantNotifications();
-    setNotifications(data);
+    setNotifications(await getMerchantNotifications(userId));
     setLoading(false);
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
-    fetchNotifications();
-    const sub = subscribeMerchantNotifications(fetchNotifications);
+    void fetchNotifications();
+    if (!userId) return;
+    const channel = subscribeMerchantNotifications(userId, () => void fetchNotifications());
     return () => {
-      sub.unsubscribe();
+      void channel.unsubscribe();
     };
-  }, [fetchNotifications]);
+  }, [fetchNotifications, userId]);
 
   const markRead = async (id: string) => {
-    const ok = await markNotificationRead(id);
-    if (ok) {
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-      );
+    if (!userId) return;
+    if (await markNotificationRead(userId, id)) {
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true, read_at: n.read_at ?? new Date().toISOString() } : n)));
     }
   };
 
   const markAllRead = async () => {
-    const ok = await markAllNotificationsRead();
-    if (ok) {
-      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    if (!userId) return;
+    if (await markAllNotificationsRead(userId)) {
+      const now = new Date().toISOString();
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true, read_at: n.read_at ?? now })));
     }
   };
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
-
-  return {
-    notifications,
-    loading,
-    unreadCount,
-    refresh: fetchNotifications,
-    markRead,
-    markAllRead,
-  };
+  return { notifications, loading, unreadCount: notifications.filter((n) => !n.is_read).length, refresh: fetchNotifications, markRead, markAllRead };
 }

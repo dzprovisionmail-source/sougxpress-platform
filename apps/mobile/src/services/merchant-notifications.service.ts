@@ -1,61 +1,41 @@
-import { supabase } from "../lib/supabase";
+import {
+  deleteNotification,
+  getNotifications,
+  markAllNotificationsRead as markSharedAllRead,
+  markNotificationRead as markSharedRead,
+  subscribeToNotifications,
+  type AppNotification,
+} from "@/services/notification.service";
 
-export interface MerchantNotification {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  is_read: boolean;
-  created_at: string;
-}
+export type MerchantNotification = AppNotification & { is_read: boolean };
 
-export const getMerchantNotifications = async (): Promise<MerchantNotification[]> => {
-  const { data, error } = await supabase
-    .from("notifications")
-    .select("id, type, title, body, is_read, created_at")
-    .order("created_at", { ascending: false })
-    .limit(60);
-
+export async function getMerchantNotifications(userId: string): Promise<MerchantNotification[]> {
+  const { data, error } = await getNotifications(userId);
   if (error) {
     console.error("Error fetching merchant notifications:", error);
     return [];
   }
-  return (data ?? []) as MerchantNotification[];
-};
+  return data.map((item) => ({ ...item, is_read: Boolean(item.is_read || item.read_at) }));
+}
 
-export const markNotificationRead = async (notificationId: string): Promise<boolean> => {
-  const { error } = await supabase
-    .from("notifications")
-    .update({ is_read: true })
-    .eq("id", notificationId);
+export async function markNotificationRead(userId: string, notificationId: string): Promise<boolean> {
+  const { error } = await markSharedRead(userId, notificationId);
+  if (error) console.error("Error marking notification read:", error);
+  return !error;
+}
 
-  if (error) {
-    console.error("Error marking notification read:", error);
-    return false;
-  }
-  return true;
-};
+export async function markAllNotificationsRead(userId: string): Promise<boolean> {
+  const { error } = await markSharedAllRead(userId);
+  if (error) console.error("Error marking all notifications read:", error);
+  return !error;
+}
 
-export const markAllNotificationsRead = async (): Promise<boolean> => {
-  const { error } = await supabase
-    .from("notifications")
-    .update({ is_read: true })
-    .eq("is_read", false);
+export function subscribeMerchantNotifications(userId: string, callback: () => void) {
+  return subscribeToNotifications(userId, callback);
+}
 
-  if (error) {
-    console.error("Error marking all notifications read:", error);
-    return false;
-  }
-  return true;
-};
-
-export const subscribeMerchantNotifications = (callback: () => void) => {
-  return supabase
-    .channel("merchant_notifications_realtime")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "notifications" },
-      callback
-    )
-    .subscribe();
-};
+export async function deleteMerchantNotification(userId: string, notificationId: string): Promise<boolean> {
+  const { error } = await deleteNotification(userId, notificationId);
+  if (error) console.error("Error deleting notification:", error);
+  return !error;
+}

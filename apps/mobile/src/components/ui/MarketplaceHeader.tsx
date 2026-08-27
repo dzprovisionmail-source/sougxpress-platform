@@ -10,6 +10,7 @@ import { TOKENS } from "@/constants/tokens";
 import { getThemeColors, DEFAULT_THEME, ThemeType } from "@/constants/theme";
 import { Typography } from "./Typography";
 import { BrandWordmark } from "./BrandWordmark";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface MarketplaceHeaderProps {
   onNotificationPress?: () => void;
@@ -26,6 +27,7 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
 }) => {
   const colors = getThemeColors(theme);
   const isRTL = I18nManager.isRTL;
+  const { unreadCount } = useNotifications();
 
   return (
     <View style={[styles.container, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
@@ -47,7 +49,11 @@ export const MarketplaceHeader: React.FC<MarketplaceHeaderProps> = ({
           style={[styles.iconButton, { backgroundColor: colors.bgSurface }]}
         >
           <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
-          <View style={[styles.badge, { backgroundColor: TOKENS.colors.brandPrimary, borderColor: colors.bgBase }]} />
+          {unreadCount > 0 && (
+            <View style={[styles.badge, { backgroundColor: TOKENS.colors.brandPrimary, borderColor: colors.bgBase }]}>
+              <Typography variant="caption" style={styles.badgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Typography>
+            </View>
+          )}
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -96,11 +102,15 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    top: 3,
+    right: 3,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 9,
     borderWidth: 2,
-  }
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 2,
+  },
+  badgeText: { color: "#FFF", fontSize: 9, lineHeight: 11, fontWeight: "800", marginTop: 0 },
 });
