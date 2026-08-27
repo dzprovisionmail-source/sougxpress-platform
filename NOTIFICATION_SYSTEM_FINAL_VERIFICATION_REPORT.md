@@ -3,13 +3,13 @@
 **Project:** Soug-XPRESS
 **Scope:** Audit, local implementation, and non-destructive local verification only
 **Date:** 2026-08-27
-**Deployment state:** Local working tree only
+**Deployment state:** Database migrations applied to Supabase staging; code pushed to `origin/main`
 
 ## Executive Summary
 
-تمت مراجعة وتنفيذ الجزء المحلي من نظام الإشعارات الموحد داخل تطبيق Expo/Supabase دون تنفيذ أي عملية نشر أو رفع أو كتابة على قاعدة بيانات فعلية. شملت التعديلات طبقة خدمة مشتركة، hook موحد، حماية نطاق المستخدم في Realtime وعمليات القراءة، مركز إشعارات العميل، عدادات unread في واجهات السوق والتنقل، وتحسين routing لاستجابات Push.
+تمت مراجعة وتنفيذ الجزء المحلي من نظام الإشعارات الموحد داخل تطبيق Expo/Supabase، ثم طُبّقت migrations المخططية المطلوبة على Supabase staging ودُفع الكود إلى `origin/main`. شملت التعديلات طبقة خدمة مشتركة، hook موحد، حماية نطاق المستخدم في Realtime وعمليات القراءة، مركز إشعارات العميل، عدادات unread في واجهات السوق والتنقل، وتحسين routing لاستجابات Push.
 
-> **نقطة التوقف الإلزامية:** لا يوجد commit أو push أو OTA أو APK release أو Database Deployment أو Supabase write ضمن هذه المرحلة.
+> **حالة الإطلاق:** تم تنفيذ Database Deployment وcommit وpush بناءً على الأمر الصريح. لم يتم تنفيذ OTA أو APK release أو نشر Production/Staging أو أي كتابة تشغيلية للبيانات.
 
 ## Audit Findings
 
@@ -87,9 +87,9 @@ npx tsc --noEmit
 | APK release | **NOT RUN** |
 | EAS Submit | **NOT RUN** |
 | Production/Staging deployment | **NOT RUN** |
-| Database deployment | **NOT RUN** |
-| Supabase writes | **NOT EXECUTED** |
-| Migration application | **NOT RUN** |
+| Database deployment | **PASS** — Supabase staging |
+| Operational Supabase writes | **NOT EXECUTED** — لا إدخال أو تعديل بيانات تشغيلية |
+| Migration application | **PASS** — `push_device_lifecycle`, `chat_push_notifications` |
 
 ## Final Decision
 
@@ -97,9 +97,7 @@ npx tsc --noEmit
 **LOCAL IMPLEMENTATION PASS:** نعم.
 **LOCAL VERIFICATION PASS:** جزئي؛ `git diff --check` ناجح، بينما TypeScript العام محجوب بأخطاء سابقة خارج النطاق.
 **REPORT GENERATED:** نعم.
-**DEPLOYMENT:** متوقف عمدًا بانتظار أمر صريح ومحدد من المستخدم.
-
-لا تُنفّذ أي عملية رفع أو نشر أو كتابة بعيدة تلقائيًا بعد هذا التقرير.
+**DEPLOYMENT:** Database Deployment وGit push اكتملَا بناءً على أمر المستخدم. OTA وAPK Release لم يُنفّذا.
 
 ## End-to-End Notification Lifecycle
 
