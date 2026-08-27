@@ -24,6 +24,7 @@ import { X, Heart, Star, Send, Trash2, MessageCircle, Eye } from "lucide-react-n
 import { getPromotionalViews } from "@/services/promotional-views.service";
 import { StoreGalleryImage, StoreGalleryComment, Store, MediaType } from "@/types/schema-03-core";
 import { Avatar } from "@/components/ui/Avatar";
+import { getUserDisplayName } from "@/utils/user-display";
 import {
   getGalleryLikeCount,
   getUserGalleryLike,
@@ -266,7 +267,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
                 fontWeight: isPlatformComment ? "800" : "400",
               }}
             >
-              {item.user_name || "مستخدم"}
+              {item.user_name || getUserDisplayName(null, isPlatformComment ? "support" : "customer")}
             </Text>
             {` • ${formatDate(item.created_at)}`}
           </Text>

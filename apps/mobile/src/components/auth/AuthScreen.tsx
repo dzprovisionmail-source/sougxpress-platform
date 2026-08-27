@@ -279,9 +279,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             .from("customers")
             .upsert({
               id: userId,
-              first_name: provisioningFirstName || "مستخدم",
-              last_name: provisioningLastName || "جديد",
-              full_name: provisioningFullName || "مستخدم جديد",
+              first_name: provisioningFirstName || "الزبون",
+              last_name: provisioningLastName || "",
+              full_name: provisioningFullName || "الزبون",
               phone_number: provisioningPhone || null,
               phone: provisioningPhone || null,
               email: userEmail,
@@ -387,8 +387,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             .upsert({
               id: userId,
               first_name: provisioningFirstName || "موصل",
-              last_name: provisioningLastName || "جديد",
-              full_name: provisioningFullName || "موصل جديد",
+              last_name: provisioningLastName || "",
+              full_name: provisioningFullName || "الموصل",
               phone_number: provisioningPhone || "",
               phone: provisioningPhone || "",
               email: userEmail,

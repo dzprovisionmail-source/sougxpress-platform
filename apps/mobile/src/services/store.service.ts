@@ -507,9 +507,17 @@ export async function getUserDisplayInfo(userId: string): Promise<{ name: string
     const { data: driv } = await supabase.from("drivers").select("full_name, avatar_url").eq("id", userId).maybeSingle();
     if (driv?.full_name) return { name: driv.full_name, avatarUrl: driv.avatar_url || null };
 
-    return { name: "مستخدم", avatarUrl: null };
+    const roleFallbacks: Record<string, string> = {
+      customer: "الزبون",
+      driver: "الموصل",
+      courier: "الموصل",
+      merchant: "المتجر",
+      founder: "الإدارة",
+      admin: "الإدارة",
+    };
+    return { name: roleFallbacks[role || ""] || "العضو", avatarUrl: null };
   } catch {
-    return { name: "مستخدم", avatarUrl: null };
+    return { name: "العضو", avatarUrl: null };
   }
 }
 
@@ -534,7 +542,7 @@ export const addGalleryComment = async (
         gallery_image_id: imageId,
         user_id: userId,
         platform_profile_slug: platformProfile?.slug ?? null,
-        user_name: name || "مستخدم",
+        user_name: name,
         user_avatar_url: avatarUrl,
         content: content.trim(),
       })

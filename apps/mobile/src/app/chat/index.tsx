@@ -20,6 +20,7 @@ import {
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { getConversations, Conversation } from "@/services/chat.service";
+import { getUserDisplayName } from "@/utils/user-display";
 // Remove date-fns imports to avoid dependency issues
 
 export default function ChatListScreen() {
@@ -61,9 +62,9 @@ export default function ChatListScreen() {
       : "";
 
     // Identity Mapping: Use Store Name for Merchants
-    const displayName = other?.role === 'merchant' && other.store_name 
-      ? other.store_name 
-      : (other?.full_name || "مستخدم");
+    const displayName = other?.role === 'merchant' && other.store_name
+      ? other.store_name
+      : getUserDisplayName(other, other?.role);
       
     const displayAvatar = other?.role === 'merchant' && other.store_logo
       ? other.store_logo
