@@ -42,6 +42,7 @@ import {
   type CourierFavoritesHubData,
 } from "@/services/favorite.service";
 import { toggleFavoriteCourier } from "@/services/courierService";
+import { getUserDisplayName } from "@/utils/user-display";
 import {
   getOrCreateConversation,
   getCommercialPhone,
@@ -246,7 +247,7 @@ export default function FavoritesScreen() {
             </View>
             <View style={styles.nameContainer}>
               <WorkspaceText variant="subtitle" style={styles.name}>
-                {customer.full_name || 'زبون'}
+                {getUserDisplayName(customer, customer.role)}
               </WorkspaceText>
               <View style={styles.locationRow}>
                 <MapPin size={12} color={colors.textSecondary} />
