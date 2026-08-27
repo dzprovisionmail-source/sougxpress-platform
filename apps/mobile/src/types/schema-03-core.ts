@@ -85,6 +85,7 @@ export interface Store {
   status: StoreStatus;
   opens_at: string;
   closes_at: string;
+  closed_day?: "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | null;
   is_open?: boolean;
   phone_number?: string;
   address_line1?: string;

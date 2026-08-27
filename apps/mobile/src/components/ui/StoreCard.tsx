@@ -17,6 +17,7 @@ import { useAppTheme } from '@/contexts/ThemeContext';
 import { TOKENS } from '@/constants/tokens';
 import { getArabicCategoryName } from '@/config/storeCategories';
 import { getStoreMetrics } from '@/services/store-metrics.service';
+import { useStoreOpenState } from '@/services/store-open-state';
 
 export interface StoreCardProps {
   id?: string;
@@ -74,7 +75,9 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   const actualCover = coverImage || store?.cover_url || store?.coverImage || null;
   const actualLogo = logoImage || store?.logo_url || store?.logoImage || null;
   const actualRating = rating !== 4.8 ? rating : (store?.rating || 4.8);
-  const actualIsOpen = isOpen ?? store?.is_open ?? (store?.status === 'active');
+  const storeOpenState = useStoreOpenState(store);
+  const actualIsOpen = store ? storeOpenState.isOpen : (isOpen ?? null);
+  const actualOpenLabel = store ? storeOpenState.label : actualIsOpen === true ? 'مفتوح الآن' : actualIsOpen === false ? 'مغلق الآن' : 'ساعات العمل غير محددة';
   const actualIsFeatured = isFeatured || store?.is_featured || false;
   const actualAddress = address || store?.address_line1 || store?.city || '';
 
@@ -135,11 +138,11 @@ export const StoreCard: React.FC<StoreCardProps> = ({
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: actualIsOpen ? colors.success : colors.error },
+              { backgroundColor: actualIsOpen === true ? colors.success : actualIsOpen === false ? colors.error : colors.bgElevated },
             ]}
           >
-            <Text style={[styles.statusBadgeText, { color: colors.textOnBrand }]}>
-              {actualIsOpen ? 'مفتوح' : 'مغلق'}
+            <Text style={[styles.statusBadgeText, { color: actualIsOpen === null ? colors.textSecondary : colors.textOnBrand }]}>
+              {actualOpenLabel}
             </Text>
           </View>
 

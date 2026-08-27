@@ -33,6 +33,7 @@ import { getOrCreateConversation } from "@/services/chat.service";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
+import { useStoreOpenState } from "@/services/store-open-state";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -75,6 +76,7 @@ export default function StoreDetailsScreen() {
   const [promoViews, setPromoViews] = useState<number | null>(null);
   const [displayedOrderCount, setDisplayedOrderCount] = useState<number | null>(null);
   const reviewCount = getNumericMetric(store?.review_count);
+  const storeOpenState = useStoreOpenState(store);
   const viewCount = getNumericMetric(store?.view_count, store?.views_count, store?.views);
 
   useEffect(() => {
@@ -455,8 +457,8 @@ export default function StoreDetailsScreen() {
 
             <View style={[styles.statusItem, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
               <Badge
-                label={store.is_open !== false ? "مفتوح الآن" : "مغلق"}
-                variant={store.is_open !== false ? "success" : "error"}
+                label={storeOpenState.label}
+                variant={storeOpenState.isOpen === true ? "success" : storeOpenState.isOpen === false ? "error" : "default"}
               />
             </View>
           </View>

@@ -157,6 +157,7 @@ export const createStore = async (
     phone_number?: string;
     opens_at?: string;
     closes_at?: string;
+    closed_day?: Store["closed_day"];
   }
 ): Promise<Store | null> => {
   if (!merchantId || !isValidUUID(merchantId)) return null;
@@ -180,6 +181,7 @@ export const createStore = async (
     phone_number: data.phone_number,
     opens_at: data.opens_at,
     closes_at: data.closes_at,
+    closed_day: data.closed_day || null,
     status: "active",
     is_new: true,
     show_on_home: true,

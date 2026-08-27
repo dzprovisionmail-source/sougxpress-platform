@@ -808,7 +808,7 @@ const HomeScreen = () => {
                   rating={store.rating?.toString() || "0.0"}
                   coverImage={store.cover_url}
                   logoImage={store.logo_url}
-                  isOpen={store.is_open ?? store.status === "active"}
+                  store={store}
                   isFeatured={store.is_featured}
                   isFavorite={favoriteStoreIds.includes(store.id)}
                   onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}

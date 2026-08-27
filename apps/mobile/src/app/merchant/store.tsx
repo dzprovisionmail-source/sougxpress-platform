@@ -58,6 +58,16 @@ import {
 import { AdminPageShell } from "@/components/admin/AdminPageShell";
 import { AIN_SEFRA_ZONES } from "@/constants/ain-sefra-zones";
 
+const CLOSED_DAY_OPTIONS = [
+  { value: "sunday", label: "الأحد" },
+  { value: "monday", label: "الاثنين" },
+  { value: "tuesday", label: "الثلاثاء" },
+  { value: "wednesday", label: "الأربعاء" },
+  { value: "thursday", label: "الخميس" },
+  { value: "friday", label: "الجمعة" },
+  { value: "saturday", label: "السبت" },
+];
+
 interface StoreFormValues {
   name: string;
   category: string;
@@ -72,6 +82,7 @@ interface StoreFormValues {
   neighborhood?: string;
   opens_at: string;
   closes_at: string;
+  closed_day: NonNullable<Store["closed_day"]> | "";
 }
 
 const EMPTY_FORM: StoreFormValues = {
@@ -86,8 +97,9 @@ const EMPTY_FORM: StoreFormValues = {
   city: "عين الصفراء",
   zone_id: undefined,
   neighborhood: "",
-  opens_at: "09:00",
-  closes_at: "21:00",
+  opens_at: "",
+  closes_at: "",
+  closed_day: "",
 };
 
 export default function UnifiedMerchantStoreDashboard() {
@@ -189,6 +201,10 @@ export default function UnifiedMerchantStoreDashboard() {
       Alert.alert("خطأ", "عنوان المتجر مطلوب");
       return;
     }
+    if (!createForm.opens_at || !createForm.closes_at) {
+      Alert.alert("خطأ", "وقت الفتح ووقت الإغلاق مطلوبان");
+      return;
+    }
 
     setCreating(true);
     const created = await createStore(userId, {
@@ -203,8 +219,9 @@ export default function UnifiedMerchantStoreDashboard() {
       zone_id: createForm.zone_id,
       neighborhood: createForm.neighborhood,
       country: "Algeria",
-      opens_at: createForm.opens_at || "09:00",
-      closes_at: createForm.closes_at || "21:00",
+      opens_at: createForm.opens_at,
+      closes_at: createForm.closes_at,
+      closed_day: createForm.closed_day || null,
     });
     setCreating(false);
 
@@ -239,8 +256,9 @@ export default function UnifiedMerchantStoreDashboard() {
       city: store.city ?? "عين الصفراء",
       zone_id: (store as any).zone_id || undefined,
       neighborhood: (store as any).neighborhood || "",
-      opens_at: store.opens_at ? String(store.opens_at).slice(0, 5) : "09:00",
-      closes_at: store.closes_at ? String(store.closes_at).slice(0, 5) : "21:00",
+      opens_at: store.opens_at ? String(store.opens_at).slice(0, 5) : "",
+      closes_at: store.closes_at ? String(store.closes_at).slice(0, 5) : "",
+      closed_day: store.closed_day ?? "",
     });
     if (store.category_id) {
       getActiveSubcategories(store.category_id).then(setSubcategories);
@@ -255,6 +273,10 @@ export default function UnifiedMerchantStoreDashboard() {
       Alert.alert("خطأ", "اسم المتجر مطلوب");
       return;
     }
+    if (!editForm.opens_at || !editForm.closes_at) {
+      Alert.alert("خطأ", "وقت الفتح ووقت الإغلاق مطلوبان");
+      return;
+    }
     setSavingEdit(true);
     const updates: any = {
       name: editForm.name.trim(),
@@ -267,6 +289,7 @@ export default function UnifiedMerchantStoreDashboard() {
       neighborhood: editForm.neighborhood,
       opens_at: editForm.opens_at || undefined,
       closes_at: editForm.closes_at || undefined,
+      closed_day: editForm.closed_day || null,
       subcategory_ids: editForm.subcategory_ids || [],
     };
     if (editForm.category_id) updates.category_id = editForm.category_id;
@@ -414,7 +437,9 @@ export default function UnifiedMerchantStoreDashboard() {
               <SectionTitle icon={<Clock3 size={18} color={colors.primary} />}>أوقات العمل</SectionTitle>
               <View style={styles.infoRow}>
                 <Text style={[styles.infoVal, { color: colors.textPrimary }]}>
-                  {activeStore.opens_at ? String(activeStore.opens_at).slice(0, 5) : "09:00"} - {activeStore.closes_at ? String(activeStore.closes_at).slice(0, 5) : "21:00"}
+                  {activeStore.opens_at && activeStore.closes_at
+                    ? `${String(activeStore.opens_at).slice(0, 5)} - ${String(activeStore.closes_at).slice(0, 5)}`
+                    : "ساعات العمل غير محددة"}
                 </Text>
                 <Text style={[styles.infoKey, { color: colors.textSecondary }]}>ساعات العمل اليومية</Text>
               </View>
@@ -587,6 +612,40 @@ export default function UnifiedMerchantStoreDashboard() {
                 />
               </View>
 
+              <View style={styles.row}>
+                <View style={[styles.formGroup, { flex: 1 }]}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>وقت الفتح *</Text>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                    value={createForm.opens_at}
+                    onChangeText={(t) => setCreateForm({ ...createForm, opens_at: t })}
+                    placeholder="HH:MM"
+                    placeholderTextColor={colors.textDisabled}
+                    textAlign="right"
+                  />
+                </View>
+                <View style={[styles.formGroup, { flex: 1 }]}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>وقت الإغلاق *</Text>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
+                    value={createForm.closes_at}
+                    onChangeText={(t) => setCreateForm({ ...createForm, closes_at: t })}
+                    placeholder="HH:MM"
+                    placeholderTextColor={colors.textDisabled}
+                    textAlign="right"
+                  />
+                </View>
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>يوم الإغلاق (اختياري)</Text>
+                <SimpleSelect
+                  value={createForm.closed_day}
+                  onChange={(value) => setCreateForm({ ...createForm, closed_day: value as StoreFormValues["closed_day"] })}
+                  options={CLOSED_DAY_OPTIONS}
+                  placeholder="لا يوجد"
+                />
+              </View>
+
               <WorkspaceButton
                 title="إنشاء المتجر"
                 onPress={handleCreateStore}
@@ -702,23 +761,37 @@ export default function UnifiedMerchantStoreDashboard() {
               )}
               <View style={styles.row}>
                 <View style={[styles.formGroup, { flex: 1 }]}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>يفتح (09:00)</Text>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>وقت الفتح *</Text>
                   <TextInput
                     style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
                     value={editForm.opens_at}
                     onChangeText={(t) => setEditForm({ ...editForm, opens_at: t })}
+                    placeholder="HH:MM"
+                    placeholderTextColor={colors.textDisabled}
                     textAlign="right"
                   />
                 </View>
                 <View style={[styles.formGroup, { flex: 1 }]}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>يغلق (21:00)</Text>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>وقت الإغلاق *</Text>
                   <TextInput
                     style={[styles.input, { backgroundColor: colors.bgElevated, color: colors.textPrimary, borderColor: colors.borderSubtle }]}
                     value={editForm.closes_at}
                     onChangeText={(t) => setEditForm({ ...editForm, closes_at: t })}
+                    placeholder="HH:MM"
+                    placeholderTextColor={colors.textDisabled}
                     textAlign="right"
                   />
                 </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>يوم الإغلاق (اختياري)</Text>
+                <SimpleSelect
+                  value={editForm.closed_day}
+                  onChange={(value) => setEditForm({ ...editForm, closed_day: value as StoreFormValues["closed_day"] })}
+                  options={CLOSED_DAY_OPTIONS}
+                  placeholder="لا يوجد"
+                />
               </View>
 
               <WorkspaceButton
