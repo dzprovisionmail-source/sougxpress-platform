@@ -1,6 +1,5 @@
 import { supabase } from "@/lib/supabase";
 import { CourierServiceResponse } from "@/types/schema-04-couriers";
-import { getUserDisplayName } from "@/utils/user-display";
 
 export type DeliveryStatus =
   | "pending"
@@ -77,7 +76,7 @@ export const getCourierDeliveries = async (
         *,
         order:orders (
           *,
-          customer:customers (full_name, first_name, last_name),
+          customer:customers (full_name),
           store:stores (name, merchant_id, address_line1, city),
           address:customer_addresses (address_text),
           items:order_items (
@@ -119,7 +118,7 @@ export const getCourierDeliveries = async (
         special_instructions: order?.special_instructions ?? null,
         store_name: store?.name ?? "متجر Soug-XPRESS",
         store_address: store?.address_line1 || store?.city || "عين صفراء",
-        customer_name: getUserDisplayName(order?.customer, "customer"),
+        customer_name: order?.customer?.full_name ?? "زبون",
         address_text: order?.address?.address_text ?? "العنوان غير متوفر",
         created_at: assignment.created_at,
         assigned_at: assignment.assigned_at,

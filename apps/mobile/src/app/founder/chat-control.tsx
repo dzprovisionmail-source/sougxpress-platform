@@ -19,7 +19,6 @@ import {
   AdminErrorState,
 } from "@/components/admin";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { getUserDisplayName } from "@/utils/user-display";
 import { useRouter } from "expo-router";
 import {
   getFounderConversations,
@@ -199,9 +198,7 @@ export default function FounderChatControlScreen() {
                           }}
                           numberOfLines={1}
                         >
-                          {conversationMode === "support"
-                            ? getUserDisplayName(other, "support")
-                            : (other?.store_name || getUserDisplayName(other, other?.role))}
+                          {conversationMode === "support" ? (other?.full_name || "مستخدم") : (other?.store_name || other?.full_name || "مشارك")}
                         </Text>
                         <View style={[styles.badge, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "44" }]}>
                           <Text style={{ color: colors.primary, fontSize: 10, fontWeight: "700", fontFamily: tokens.typography.families.arabic }}>
@@ -297,7 +294,7 @@ export default function FounderChatControlScreen() {
               <>
                 <View style={{ flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "700", textAlign: "right", flex: 1, fontFamily: tokens.typography.families.arabic }}>
-                    سجل محادثة: {selectedConv.other_participant?.store_name || getUserDisplayName(selectedConv.other_participant, selectedConv.other_participant?.role)}
+                    سجل محادثة: {selectedConv.other_participant?.store_name || selectedConv.other_participant?.full_name || "مشارك"}
                   </Text>
                   <TouchableOpacity onPress={() => setShowDetail(false)}>
                     <X size={20} color={colors.textSecondary} />
