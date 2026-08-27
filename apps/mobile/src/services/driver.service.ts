@@ -19,6 +19,14 @@ export const getDriver = async (driverId: string): Promise<Driver | null> => {
 
 export const updateDriver = async (driverId: string, updates: Partial<Driver>): Promise<Driver | null> => {
   if (!driverId || driverId.length < 36) return null;
+
+  // The driver's primary key is also the auth.users foreign key. It is an
+  // ownership key, not profile data, so never allow this service to change it.
+  if (updates.id !== undefined) {
+    console.error("Refusing to update driver ownership key");
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("drivers")
     .update(updates)
