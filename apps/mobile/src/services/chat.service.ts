@@ -355,12 +355,37 @@ export const getOrCreateSupportConversation = async (): Promise<{ data: string |
   }
 };
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export const getOrCreateConversation = async (
   otherUserId: string,
   relationshipType: RelationshipType,
   referenceId: string | null = null
 ): Promise<{ data: string | null; error: any }> => {
   try {
+    if (!otherUserId || !UUID_PATTERN.test(otherUserId)) {
+      throw new Error("Chat participant profile not found");
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id || !UUID_PATTERN.test(user.id)) {
+      throw new Error("Not authenticated");
+    }
+    if (user.id === otherUserId) {
+      throw new Error("Cannot start a conversation with yourself");
+    }
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id")
+      .in("id", [user.id, otherUserId]);
+    if (profilesError) throw profilesError;
+    const profileIds = new Set((profiles || []).map((profile: { id: string }) => profile.id));
+    if (!profileIds.has(user.id) || !profileIds.has(otherUserId)) {
+      throw new Error("Chat participant profile not found");
+    }
+
+    // Relationship and authorization remain enforced by the database RPC/RLS.
     // RPC parameters renamed in migration 20260821160000 to p_other_user, p_relationship_type, p_reference_id
     const { data, error } = await supabase.rpc("get_or_create_chat_conversation", {
       p_other_user: otherUserId,

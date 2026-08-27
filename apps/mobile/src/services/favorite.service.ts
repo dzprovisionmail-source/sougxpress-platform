@@ -392,11 +392,18 @@ const courierError = (message: string) => ({
   error: message,
 });
 
+// Serialize toggles for the same target within this app instance. This avoids
+// the read-then-insert race caused by repeated taps or concurrent UI requests.
+const courierFavoriteToggleLocks = new Map<
+  string,
+  Promise<{ isFavorite: boolean; error: any }>
+>();
+
 /**
- * Toggles a courier's preferred store or customer.
- * The authenticated user must be a `driver` and must own the drivers row.
+ * Performs one courier favorite toggle. The public wrapper below serializes
+ * calls for the same target so the unique key cannot be hit by local races.
  */
-export const toggleCourierFavorite = async (
+const toggleCourierFavoriteOnce = async (
   targetType: CourierFavoriteTargetType,
   targetId: string,
 ): Promise<{ isFavorite: boolean; error: any }> => {
@@ -449,12 +456,60 @@ export const toggleCourierFavorite = async (
         target_type: targetType,
         target_id: targetId,
       });
-    if (insertError) throw insertError;
+    if (insertError) {
+      // Another client may have inserted the row between our read and insert.
+      // Reconcile that conflict as the second half of the toggle instead of
+      // surfacing a duplicate-key error to the user.
+      if (insertError.code === '23505') {
+        const { data: concurrentFavorite, error: concurrentFetchError } = await supabase
+          .from('courier_favorites')
+          .select('id')
+          .eq('courier_id', user.id)
+          .eq('target_type', targetType)
+          .eq('target_id', targetId)
+          .maybeSingle();
+        if (concurrentFetchError) throw concurrentFetchError;
+        if (concurrentFavorite) {
+          const { error: concurrentDeleteError } = await supabase
+            .from('courier_favorites')
+            .delete()
+            .eq('id', concurrentFavorite.id)
+            .eq('courier_id', user.id);
+          if (concurrentDeleteError) throw concurrentDeleteError;
+          return { isFavorite: false, error: null };
+        }
+      }
+      throw insertError;
+    }
     return { isFavorite: true, error: null };
   } catch (err) {
     console.error(`Error toggling courier ${targetType} favorite:`, err);
     return { isFavorite: false, error: err };
   }
+};
+
+/**
+ * Toggles a courier's preferred store or customer.
+ * The authenticated user must be a `driver` and must own the drivers row.
+ */
+export const toggleCourierFavorite = (
+  targetType: CourierFavoriteTargetType,
+  targetId: string,
+): Promise<{ isFavorite: boolean; error: any }> => {
+  const lockKey = `${targetType}:${targetId}`;
+  const previous = courierFavoriteToggleLocks.get(lockKey) ?? Promise.resolve({
+    isFavorite: false,
+    error: null,
+  });
+  const operation = previous.catch(() => undefined).then(() =>
+    toggleCourierFavoriteOnce(targetType, targetId),
+  );
+  courierFavoriteToggleLocks.set(lockKey, operation);
+  return operation.finally(() => {
+    if (courierFavoriteToggleLocks.get(lockKey) === operation) {
+      courierFavoriteToggleLocks.delete(lockKey);
+    }
+  });
 };
 
 /**
@@ -591,6 +646,7 @@ export interface MerchantFavoriteCourier {
   created_at: string | null;
   courier: {
     id: string;
+    profile_id: string | null;
     full_name: string | null;
     avatar_url: string | null;
     rating: number | null;
@@ -643,6 +699,13 @@ export const getMerchantFavoriteCouriers = async (
       .order('rating', { ascending: false });
     if (couriersError) throw couriersError;
 
+    const merchantCourierIds = (couriers || []).map(courier => courier.id);
+    const { data: courierProfiles, error: courierProfilesError } = merchantCourierIds.length > 0
+      ? await supabase.from('profiles').select('id').in('id', merchantCourierIds)
+      : { data: [], error: null };
+    if (courierProfilesError) throw courierProfilesError;
+    const courierProfileIds = new Set((courierProfiles || []).map((profile: { id: string }) => profile.id));
+
     const favoriteById = new Map((favoriteRows || []).map(row => [row.target_id, row]));
     const cards: MerchantFavoriteCourier[] = (couriers || []).map(courier => {
       const favorite = favoriteById.get(courier.id);
@@ -650,7 +713,10 @@ export const getMerchantFavoriteCouriers = async (
         id: favorite?.id || courier.id,
         target_id: courier.id,
         created_at: favorite?.created_at || null,
-        courier,
+        courier: {
+          ...courier,
+          profile_id: courierProfileIds.has(courier.id) ? courier.id : null,
+        },
         isFavorite: !!favorite,
       };
     });
@@ -712,6 +778,17 @@ export const getCustomerFavoritesDetailed = async (customerId: string) => {
         : Promise.resolve({ data: [], error: null })
     ]);
 
+    if (productsRes.error) throw productsRes.error;
+    if (storesRes.error) throw storesRes.error;
+    if (couriersRes.error) throw couriersRes.error;
+
+    const loadedCouriers = couriersRes.data || [];
+    const { data: courierProfiles, error: courierProfilesError } = loadedCouriers.length > 0
+      ? await supabase.from('profiles').select('id').in('id', loadedCouriers.map((driver: any) => driver.id))
+      : { data: [], error: null };
+    if (courierProfilesError) throw courierProfilesError;
+    const courierProfileIds = new Set((courierProfiles || []).map((profile: { id: string }) => profile.id));
+
     // 4. Map back to original favorite records
     return {
       data: {
@@ -723,9 +800,12 @@ export const getCustomerFavoritesDetailed = async (customerId: string) => {
           const fav = favs.find(f => f.target_type === 'store' && f.target_id === s.id);
           return { ...s, favorite_id: fav?.id };
         }),
-        couriers: (couriersRes.data || []).map(d => {
+        couriers: loadedCouriers.map(d => {
           const fav = courierFavs.find(f => f.courier_id === d.id);
-          return { driver: d, favorite_id: fav?.id };
+          return {
+            driver: { ...d, profile_id: courierProfileIds.has(d.id) ? d.id : null },
+            favorite_id: fav?.id,
+          };
         })
       },
       error: null

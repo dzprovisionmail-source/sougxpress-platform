@@ -202,8 +202,12 @@ export default function FavoritesScreen() {
     }
   };
 
-  const handleStartChat = async (targetId: string, type: RelationshipType, orderId: string | null) => {
+  const handleStartChat = async (targetId: string | null | undefined, type: RelationshipType, orderId: string | null) => {
     try {
+      if (!targetId) {
+        throw new Error("Chat participant profile not found");
+      }
+
       const { data: convId, error } = await getOrCreateConversation(targetId, type, orderId);
       if (error) throw error;
       if (convId) {
@@ -409,7 +413,7 @@ export default function FavoritesScreen() {
         <View style={styles.actionRow}>
           <TouchableOpacity 
             style={[styles.actionBtn, { borderColor: colors.borderSubtle }]} 
-            onPress={() => handleStartChat(courier.id, "customer_courier", null)}
+            onPress={() => handleStartChat(courier.profile_id, "customer_courier", null)}
           >
             <MessageCircle size={18} color={colors.primary} />
             <WorkspaceText variant="caption" color="primary">مراسلة</WorkspaceText>
