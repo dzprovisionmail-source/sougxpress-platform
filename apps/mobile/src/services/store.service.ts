@@ -111,12 +111,18 @@ export const searchStores = async (query: string): Promise<Store[]> => {
   return data as Store[];
 };
 
-export const updateStore = async (storeId: string, updates: Partial<Store> & { category?: string; category_id?: string; subcategory_id?: string; zone_id?: string }): Promise<Store | null> => {
+export const updateStore = async (storeId: string, updates: Partial<Store> & { category?: string; category_id?: string; subcategory_id?: string; zone_id?: string; neighborhood?: string }): Promise<Store | null> => {
   if (!storeId || !isValidUUID(storeId)) {
     return null;
   }
 
-  const payload: any = { ...updates };
+  // `neighborhood` is a legacy UI field; Staging stores persist this value
+  // in the canonical `state_province` column. Never send unknown columns to PostgREST.
+  const { neighborhood, ...updatesWithoutLegacyNeighborhood } = updates;
+  const payload: any = { ...updatesWithoutLegacyNeighborhood };
+  if (neighborhood !== undefined && payload.state_province === undefined) {
+    payload.state_province = neighborhood;
+  }
   if (payload.category && !payload.main_category && !payload.category_id) {
     payload.main_category = mapLegacyCategoryToMain(payload.category);
   }
@@ -173,7 +179,7 @@ export const createStore = async (
     address_line1: data.address_line1,
     city: data.city || "عين الصفراء",
     zone_id: data.zone_id || null,
-    neighborhood: data.neighborhood || null,
+    state_province: data.neighborhood || null,
     country: data.country || "Algeria",
     latitude: data.latitude ?? null,
     longitude: data.longitude,

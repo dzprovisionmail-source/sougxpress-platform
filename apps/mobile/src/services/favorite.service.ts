@@ -28,7 +28,9 @@ export const toggleFavorite = async (
       .eq('id', user.id)
       .maybeSingle();
 
-    if (profile?.role === 'driver') {
+    // Couriers use courier_favorites for commercial store/customer contacts,
+    // but products are marketplace favorites and belong in customer_favorites.
+    if (profile?.role === 'driver' && targetType !== 'product') {
       return toggleCourierFavorite(targetType as CourierFavoriteTargetType, targetId);
     }
 
@@ -110,8 +112,9 @@ export const checkIfFavorite = async (
       .eq('id', user.id)
       .maybeSingle();
 
-    const table = profile?.role === 'driver' ? 'courier_favorites' : 'customer_favorites';
-    const idField = profile?.role === 'driver' ? 'courier_id' : 'customer_id';
+    const useCourierFavorites = profile?.role === 'driver' && targetType !== 'product';
+    const table = useCourierFavorites ? 'courier_favorites' : 'customer_favorites';
+    const idField = useCourierFavorites ? 'courier_id' : 'customer_id';
 
     const { data, error } = await supabase
       .from(table)
@@ -143,8 +146,9 @@ export const getFavoriteIds = async (targetType: FavoriteType): Promise<string[]
       .eq('id', user.id)
       .maybeSingle();
 
-    const table = profile?.role === 'driver' ? 'courier_favorites' : 'customer_favorites';
-    const idField = profile?.role === 'driver' ? 'courier_id' : 'customer_id';
+    const useCourierFavorites = profile?.role === 'driver' && targetType !== 'product';
+    const table = useCourierFavorites ? 'courier_favorites' : 'customer_favorites';
+    const idField = useCourierFavorites ? 'courier_id' : 'customer_id';
 
     const { data, error } = await supabase
       .from(table)
