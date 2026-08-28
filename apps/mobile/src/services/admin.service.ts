@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 
 /**
  * Admin service — read queries + secure write operations.
- * Write operations use the calling user's JWT; no service_role in the mobile bundle.
+ * Write operations use the calling user's JWT; privileged server credentials never ship in the mobile bundle.
  * Account creation is delegated to the admin-provision-account Edge Function.
  */
 

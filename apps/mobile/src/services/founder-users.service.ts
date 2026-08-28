@@ -5,7 +5,7 @@ import { uploadToSupabase } from "@/utils/upload.utils";
 /**
  * Founder User Management Service
  * All write operations use the caller's JWT (admin/founder role).
- * Audit logging via SECURITY DEFINER RPC — never exposes service_role.
+ * Audit logging via a SECURITY DEFINER RPC — privileged server credentials never reach the client.
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────

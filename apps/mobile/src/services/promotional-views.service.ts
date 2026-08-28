@@ -76,14 +76,15 @@ export function calculateViews(record: PromotionalViewRecord | null, entityCreat
  */
 export async function getPromotionalViews(entityType: "store" | "courier", entityId: string, entityCreatedAt?: string | null): Promise<{ currentViews: number | null; record: PromotionalViewRecord | null }> {
   try {
-    const { data, error } = await withRetry(() =>
-      supabase
+    const { data, error } = await withRetry<PromotionalViewRecord>(async () => {
+      const result = await supabase
         .from("promotional_views")
         .select("*")
         .eq("entity_type", entityType)
         .eq("entity_id", entityId)
-        .single()
-    );
+        .single();
+      return { data: result.data as PromotionalViewRecord | null, error: result.error };
+    });
 
     if (error && error.code !== "PGRST116") {
       console.error("Error fetching promotional views:", error);
@@ -107,8 +108,8 @@ export async function getPromotionalViews(entityType: "store" | "courier", entit
       }
 
       // Create default record if not exists (only for founders)
-      const { data: created, error: createError } = await withRetry(() =>
-        supabase
+      const { data: created, error: createError } = await withRetry<PromotionalViewRecord>(async () => {
+        const result = await supabase
           .from("promotional_views")
           .insert({
             entity_type: entityType,
@@ -120,8 +121,9 @@ export async function getPromotionalViews(entityType: "store" | "courier", entit
             started_at: entityCreatedAt || new Date().toISOString(),
           })
           .select()
-          .single()
-      );
+          .single();
+        return { data: result.data as PromotionalViewRecord | null, error: result.error };
+      });
 
       if (createError) {
         console.error("Error creating promotional views record:", createError);

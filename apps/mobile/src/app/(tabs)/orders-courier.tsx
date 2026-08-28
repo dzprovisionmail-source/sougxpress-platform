@@ -181,7 +181,7 @@ export default function CourierOrdersTabScreen() {
             {items.map((sub: any) => (
               <View key={sub.id} style={[styles.itemRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
                 <Typography variant="caption" style={{ flex: 1 }}>{sub.product?.name || 'سلعة'} × {sub.quantity}</Typography>
-                <Price amount={sub.line_total_minor || 0} size="xs" color="secondary" />
+                <Price amount={sub.line_total_minor || 0} size="sm" variant="secondary" />
               </View>
             ))}
           </View>
@@ -193,11 +193,11 @@ export default function CourierOrdersTabScreen() {
         <View style={[styles.pricingRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <View>
             <Typography variant="caption" color="secondary">رسوم التوصيل</Typography>
-            <Price amount={deliveryFee} size="sm" color="primary" />
+            <Price amount={deliveryFee} size="sm" variant="primary" />
           </View>
           <View style={{ alignItems: isRTL ? 'flex-start' : 'flex-end' }}>
             <Typography variant="caption" color="secondary">الإجمالي</Typography>
-            <Price amount={total} size="md" color="text" />
+            <Price amount={total} size="md" variant="primary" />
           </View>
         </View>
 

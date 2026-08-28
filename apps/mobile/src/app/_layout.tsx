@@ -28,31 +28,46 @@ export default function RootLayout() {
 
   useEffect(() => {
     let activeToken: string | null = null;
+    let registeredUserId: string | null = null;
+    let registrationInFlight = false;
     let tokenSubscription: Notifications.Subscription | null = null;
+    const handledNotificationIds = new Set<string>();
+
+    const routeNotificationOnce = (response: Notifications.NotificationResponse) => {
+      const notificationId = response.notification.request.identifier;
+      if (handledNotificationIds.has(notificationId)) return;
+      handledNotificationIds.add(notificationId);
+      routeFromNotificationResponse(response);
+    };
 
     const registerCurrentUser = async () => {
       const { data } = await supabase.auth.getUser();
-      if (!data.user) return;
+      if (!data.user || registeredUserId === data.user.id || registrationInFlight) return;
 
+      registrationInFlight = true;
       try {
         const registration = await registerForPushNotifications(data.user.id);
         if (registration) {
           activeToken = registration.token;
+          tokenSubscription?.remove();
           tokenSubscription = registration.subscription;
+          registeredUserId = data.user.id;
         }
       } catch (error) {
         console.warn("Push notification registration failed", error);
+      } finally {
+        registrationInFlight = false;
       }
     };
 
     void registerCurrentUser();
 
     const responseSubscription = Notifications.addNotificationResponseReceivedListener(
-      routeFromNotificationResponse,
+      routeNotificationOnce,
     );
 
     void Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (response) routeFromNotificationResponse(response);
+      if (response) routeNotificationOnce(response);
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
@@ -64,6 +79,8 @@ export default function RootLayout() {
         tokenSubscription?.remove();
         activeToken = null;
         tokenSubscription = null;
+        registeredUserId = null;
+        registrationInFlight = false;
         router.replace("/");
       }
     });

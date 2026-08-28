@@ -189,7 +189,11 @@ export default function FavoritesScreen() {
         return;
       }
 
-      const rel = role === 'courier' ? 'customer_courier' : 'customer_merchant';
+      const rel: RelationshipType = targetRole === 'courier'
+        ? (role === 'merchant' ? 'merchant_courier' : 'customer_courier')
+        : targetRole === 'merchant'
+          ? 'customer_merchant'
+          : 'customer_courier';
       // Log audit - use zero UUID for permanent favorite calls
       const auditOrderId = orderId || "00000000-0000-0000-0000-000000000000";
       await logCallPress(auditOrderId, receiverId, rel);
@@ -246,7 +250,7 @@ export default function FavoritesScreen() {
               )}
             </View>
             <View style={styles.nameContainer}>
-              <WorkspaceText variant="subtitle" style={styles.name}>
+              <WorkspaceText variant="body" style={styles.name}>
                 {getUserDisplayName(customer, customer.role)}
               </WorkspaceText>
               <View style={styles.locationRow}>
@@ -337,7 +341,7 @@ export default function FavoritesScreen() {
               {store.logo_url ? <Image source={{ uri: store.logo_url }} style={styles.avatarImage} /> : <Store size={24} color={colors.textSecondary} />}
             </View>
             <View style={styles.nameContainer}>
-              <WorkspaceText variant="subtitle" style={styles.name}>{store.name}</WorkspaceText>
+              <WorkspaceText variant="body" style={styles.name}>{store.name}</WorkspaceText>
               <WorkspaceText variant="caption" color="secondary">{store.city || 'عين صفراء'}</WorkspaceText>
             </View>
           </View>
@@ -364,7 +368,7 @@ export default function FavoritesScreen() {
     ];
 
     return (
-      <WorkspaceScreen title="المفضلة التجارية" showHeader>
+      <WorkspaceScreen>
         <View style={styles.tabBar}>
           <TouchableOpacity style={[styles.tab, activeTab === 'connected' && styles.activeTab]} onPress={() => setActiveTab('connected')}>
             <WorkspaceText style={[styles.tabText, activeTab === 'connected' && { color: colors.primary, fontWeight: '700' }]}>الزبائن المتصلون</WorkspaceText>
@@ -377,14 +381,14 @@ export default function FavoritesScreen() {
         <FlatList
           data={activeTab === 'connected' ? connectedList : courierData?.favorites.stores}
           keyExtractor={(item: any) => {
-            const id = item.id || item.customer_id || item.target_id || item.driver?.id;
+            const id = item.id || item.customer_id || item.target_id || item.driver?.id || item.courier?.id;
             const prefix = activeTab === 'connected' ? 'customer' : 'store';
             return `${prefix}:${id}`;
           }}
           renderItem={({ item }) => activeTab === 'connected' ? renderCourierCustomer(item, courierData?.favorites.customers.some(f => f.target_id === (item.customer_id || item.id)) || false) : renderCourierStore(item)}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
-          ListEmptyComponent={<EmptyState title="لا توجد نتائج" description="سيظهر هنا الزبائن والمتاجر الذين تتعامل معهم." />}
+          ListEmptyComponent={<EmptyState message="لا توجد نتائج — سيظهر هنا الزبائن والمتاجر الذين تتعامل معهم." />}
         />
       </WorkspaceScreen>
     );
@@ -392,7 +396,7 @@ export default function FavoritesScreen() {
 
   // --- Customer / Merchant Renderer ---
   const renderFavoriteCourier = (card: MerchantFavoriteCourier) => {
-    const courier = card.driver;
+    const courier = card.courier;
     if (!courier) return null;
     return (
       <SectionCard style={styles.card}>
@@ -402,7 +406,7 @@ export default function FavoritesScreen() {
               {courier.avatar_url ? <Image source={{ uri: courier.avatar_url }} style={styles.avatarImage} /> : <User size={24} color={colors.textSecondary} />}
             </View>
             <View style={styles.nameContainer}>
-              <WorkspaceText variant="subtitle" style={styles.name}>{courier.full_name || 'موصل'}</WorkspaceText>
+              <WorkspaceText variant="body" style={styles.name}>{courier.full_name || 'موصل'}</WorkspaceText>
               <WorkspaceText variant="caption" color="secondary">{courier.neighborhood || 'عين صفراء'}</WorkspaceText>
             </View>
           </View>
@@ -414,7 +418,11 @@ export default function FavoritesScreen() {
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
-            onPress={() => handleStartChat(courier.profile_id, "customer_courier", null)}
+            onPress={() => handleStartChat(
+              courier.profile_id || courier.id,
+              role === 'merchant' ? 'merchant_courier' : 'customer_courier',
+              null,
+            )}
           >
             <MessageCircle size={18} color={colors.primary} />
             <WorkspaceText variant="caption" color="primary">مراسلة</WorkspaceText>
@@ -454,7 +462,7 @@ export default function FavoritesScreen() {
               {product.image_url ? <Image source={{ uri: product.image_url }} style={styles.avatarImage} /> : <ShoppingBag size={24} color={colors.textSecondary} />}
             </View>
             <View style={styles.nameContainer}>
-              <WorkspaceText variant="subtitle" style={styles.name}>{product.name || 'منتج'}</WorkspaceText>
+              <WorkspaceText variant="body" style={styles.name}>{product.name || 'منتج'}</WorkspaceText>
               <WorkspaceText variant="caption" color="secondary">{(product.price_minor / 100).toFixed(2)} دج</WorkspaceText>
             </View>
           </View>
@@ -479,7 +487,7 @@ export default function FavoritesScreen() {
               {store.logo_url ? <Image source={{ uri: store.logo_url }} style={styles.avatarImage} /> : <Store size={24} color={colors.textSecondary} />}
             </View>
             <View style={styles.nameContainer}>
-              <WorkspaceText variant="subtitle" style={styles.name}>{store.name || 'متجر'}</WorkspaceText>
+              <WorkspaceText variant="body" style={styles.name}>{store.name || 'متجر'}</WorkspaceText>
               <WorkspaceText variant="caption" color="secondary">{store.city || 'عين صفراء'}</WorkspaceText>
             </View>
           </View>
@@ -517,7 +525,7 @@ export default function FavoritesScreen() {
     };
 
     return (
-      <WorkspaceScreen title="المفضلة" showHeader>
+      <WorkspaceScreen>
         <View style={styles.tabBar}>
           <TouchableOpacity style={[styles.tab, activeTab === 'products' && styles.activeTab]} onPress={() => setActiveTab('products')}>
             <WorkspaceText style={[styles.tabText, activeTab === 'products' && { color: colors.primary, fontWeight: '700' }]}>المنتجات</WorkspaceText>
@@ -533,19 +541,19 @@ export default function FavoritesScreen() {
         <FlatList
           data={getListData()}
           keyExtractor={(item: any) => {
-            const id = item.id || item.courier_id || item.target_id || item.driver?.id;
+            const id = item.id || item.courier_id || item.target_id || item.driver?.id || item.courier?.id;
             const prefix = activeTab === 'couriers' ? 'courier' : activeTab === 'products' ? 'product' : 'store';
             return `${prefix}:${id}`;
           }}
           renderItem={({ item }) => {
-            if (activeTab === 'couriers') return renderFavoriteCourier(item.driver ? item : { driver: item });
+            if (activeTab === 'couriers') return renderFavoriteCourier(item.courier ? item : { ...item, courier: item.driver });
             if (activeTab === 'products') return renderProduct(item);
             if (activeTab === 'stores') return renderStore(item);
             return null;
           }}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
-          ListEmptyComponent={<EmptyState title="لا توجد نتائج" description="سيظهر هنا الموصلون والمنتجات المفضلة لديك." />}
+          ListEmptyComponent={<EmptyState message="لا توجد نتائج — سيظهر هنا الموصلون والمنتجات المفضلة لديك." />}
         />
       </WorkspaceScreen>
     );

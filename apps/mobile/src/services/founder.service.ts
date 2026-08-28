@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 
 /**
  * Founder Control Center service — live Supabase statistics and activity feed.
- * All reads use the calling user's JWT; no service_role in the mobile bundle.
+ * All reads use the calling user's JWT; privileged server credentials never ship in the mobile bundle.
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────

@@ -68,15 +68,16 @@ export const useNewStores = (limit: number = 10) => {
     const fetchNewStores = async () => {
       setLoading(true);
       try {
-        const { data, error } = await withRetry(() => 
-          supabase
+        const { data, error } = await withRetry<Store[]>(async () => {
+          const result = await supabase
             .from('stores')
             .select('*')
             .eq('status', 'active')
             .eq('is_new', true)
             .order('created_at', { ascending: false })
-            .limit(limit)
-        );
+            .limit(limit);
+          return { data: result.data as Store[] | null, error: result.error };
+        });
         
         if (error) throw error;
         setStores(data || []);

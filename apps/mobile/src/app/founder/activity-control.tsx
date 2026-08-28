@@ -108,7 +108,7 @@ export default function FounderActivityControlScreen() {
         <View style={[styles.topBar, { paddingHorizontal: tokens.spacing.lg, paddingTop: tokens.spacing.lg }]}>
           <SearchBar
             value={search}
-            onChangeText={search}
+            onChangeText={setSearch}
             placeholder="بحث في سجل النشاطات..."
             onSubmitEditing={() => loadLogs()}
             onClear={() => setSearch("")}

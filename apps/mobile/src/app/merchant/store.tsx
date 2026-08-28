@@ -79,7 +79,7 @@ interface StoreFormValues {
   address_line1: string;
   city: string;
   zone_id?: string;
-  neighborhood?: string;
+  state_province?: string;
   opens_at: string;
   closes_at: string;
   closed_day: NonNullable<Store["closed_day"]> | "";
@@ -96,7 +96,7 @@ const EMPTY_FORM: StoreFormValues = {
   address_line1: "",
   city: "عين الصفراء",
   zone_id: undefined,
-  neighborhood: "",
+  state_province: "",
   opens_at: "",
   closes_at: "",
   closed_day: "",
@@ -217,7 +217,7 @@ export default function UnifiedMerchantStoreDashboard() {
       address_line1: createForm.address_line1.trim(),
       city: createForm.city.trim() || "عين الصفراء",
       zone_id: createForm.zone_id,
-      neighborhood: createForm.neighborhood,
+      state_province: createForm.state_province,
       country: "Algeria",
       opens_at: createForm.opens_at,
       closes_at: createForm.closes_at,
@@ -255,7 +255,7 @@ export default function UnifiedMerchantStoreDashboard() {
       address_line1: store.address_line1 ?? "",
       city: store.city ?? "عين الصفراء",
       zone_id: (store as any).zone_id || undefined,
-      neighborhood: (store as any).neighborhood || "",
+      state_province: store.state_province || "",
       opens_at: store.opens_at ? String(store.opens_at).slice(0, 5) : "",
       closes_at: store.closes_at ? String(store.closes_at).slice(0, 5) : "",
       closed_day: store.closed_day ?? "",
@@ -286,7 +286,7 @@ export default function UnifiedMerchantStoreDashboard() {
       address_line1: editForm.address_line1.trim() || undefined,
       city: editForm.city.trim() || "عين الصفراء",
       zone_id: editForm.zone_id,
-      neighborhood: editForm.neighborhood,
+      state_province: editForm.state_province,
       opens_at: editForm.opens_at || undefined,
       closes_at: editForm.closes_at || undefined,
       closed_day: editForm.closed_day || null,
@@ -570,10 +570,10 @@ export default function UnifiedMerchantStoreDashboard() {
               <View style={styles.formGroup}>
                 <Text style={[styles.label, { color: colors.textSecondary }]}>الحي (عين الصفراء)</Text>
                 <SimpleSelect
-                  value={createForm.neighborhood || ""}
+                  value={createForm.state_province || ""}
                   onChange={(val) => {
                     const zone = allZones.find(z => z.name === val);
-                    setCreateForm({ ...createForm, neighborhood: val, zone_id: zone?.id });
+                    setCreateForm({ ...createForm, state_province: val, zone_id: zone?.id });
                   }}
                   options={AIN_SEFRA_ZONES.map((z) => ({ value: z, label: z }))}
                   placeholder="اختر الحي"
@@ -699,10 +699,10 @@ export default function UnifiedMerchantStoreDashboard() {
               <View style={styles.formGroup}>
                 <Text style={[styles.label, { color: colors.textSecondary }]}>الحي (عين الصفراء)</Text>
                 <SimpleSelect
-                  value={editForm.neighborhood || ""}
+                  value={editForm.state_province || ""}
                   onChange={(val) => {
                     const zone = allZones.find(z => z.name === val);
-                    setEditForm({ ...editForm, neighborhood: val, zone_id: zone?.id });
+                    setEditForm({ ...editForm, state_province: val, zone_id: zone?.id });
                   }}
                   options={AIN_SEFRA_ZONES.map((z) => ({ value: z, label: z }))}
                   placeholder="اختر الحي"

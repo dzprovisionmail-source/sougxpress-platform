@@ -155,6 +155,8 @@ export const createStore = async (
     address_line1: string;
     city?: string;
     zone_id?: string;
+    state_province?: string;
+    /** @deprecated Use state_province. Retained only for older callers. */
     neighborhood?: string;
     country?: string;
     latitude?: number;
@@ -179,7 +181,7 @@ export const createStore = async (
     address_line1: data.address_line1,
     city: data.city || "عين الصفراء",
     zone_id: data.zone_id || null,
-    state_province: data.neighborhood || null,
+    state_province: data.state_province ?? data.neighborhood ?? null,
     country: data.country || "Algeria",
     latitude: data.latitude ?? null,
     longitude: data.longitude,

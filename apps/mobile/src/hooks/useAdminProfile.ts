@@ -43,13 +43,14 @@ export function useAdminProfile(): UseAdminProfileResult {
         return;
       }
 
-      const { data: profileData, error } = await withRetry(() =>
-        supabase
+      const { data: profileData, error } = await withRetry<AdminProfile>(async () => {
+        const result = await supabase
           .from("profiles")
           .select("id, role, full_name")
           .eq("id", user.id)
-          .single()
-      );
+          .single();
+        return { data: result.data as AdminProfile | null, error: result.error };
+      });
 
       if (!mounted) return;
 
