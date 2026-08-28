@@ -147,8 +147,9 @@ export default function StoreDetailsScreen() {
           ? "merchant_courier"
           : "customer_merchant";
 
+      const chatTargetId = store.created_by || store.merchant_id;
       const { data: conversationId, error } = await getOrCreateConversation(
-        store.merchant_id,
+        chatTargetId,
         relationshipType
       );
 
@@ -330,7 +331,7 @@ export default function StoreDetailsScreen() {
         </View>
 
         {/* Merchant / Founder Management Banner */}
-        {currentUserId && (currentUserRole === 'founder' || currentUserRole === 'admin' || (currentUserRole === 'merchant' && store.merchant_id === currentUserId)) && (
+        {currentUserId && (currentUserRole === 'founder' || currentUserRole === 'admin' || (currentUserRole === 'merchant' && (store.created_by || store.merchant_id) === currentUserId)) && (
           <TouchableOpacity
             style={{
               backgroundColor: colors.primary,
@@ -392,7 +393,7 @@ export default function StoreDetailsScreen() {
 
             {/* Right Button: Quick Chat */}
             <View style={styles.sideActionContainer}>
-              {currentUserId && currentUserId !== store.merchant_id && (
+              {currentUserId && currentUserId !== (store.created_by || store.merchant_id) && (
                 <TouchableOpacity
                   onPress={handleStartChat}
                   style={[styles.iconAction, { backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}44` }]}
