@@ -35,7 +35,6 @@ import { Typography, Header, Avatar, Button } from "@/components/ui";
 import OrderContextCard, { ChatOrderContext } from "@/components/chat/OrderContextCard";
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { getUserDisplayName } from "@/utils/user-display";
 import { supabase } from "@/lib/supabase";
 import {
   getMessages,
@@ -477,7 +476,7 @@ export default function ChatScreen() {
   const other = conversation?.other_participant;
   const displayName = other?.role === "merchant" && other.store_name
     ? other.store_name
-    : getUserDisplayName(other, other?.role);
+    : other?.full_name || "محادثة آمنة";
   const displayAvatar = other?.role === "merchant" && other.store_logo
     ? other.store_logo
     : other?.avatar_url;
@@ -617,16 +616,15 @@ export default function ChatScreen() {
           setProfileCardVisible(false);
           setProfileCard(null);
         }}
-        title={profileCard ? getUserDisplayName(profileCard, profileCard.role) : displayName}
-
+        title={profileCard?.full_name || displayName}
       >
         {profileCardLoading ? (
           <ActivityIndicator size="small" color={colors.primary} />
         ) : profileCard ? (
           <View style={styles.profileCardBody}>
-            <Avatar uri={profileCard.avatar_url || undefined} name={getUserDisplayName(profileCard, profileCard.role)} size={72} />
+            <Avatar uri={profileCard.avatar_url || undefined} name={profileCard.full_name || displayName} size={72} />
             <Typography variant="h3" align="center" style={{ color: colors.textPrimary, marginTop: TOKENS.spacing.sm }}>
-              {getUserDisplayName(profileCard, profileCard.role)}
+              {profileCard.full_name || displayName}
             </Typography>
             <Typography variant="body" align="center" style={{ color: colors.textSecondary, marginTop: 4 }}>
               {ROLE_LABEL[profileCard.role] || profileCard.role}

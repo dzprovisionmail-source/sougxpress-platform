@@ -20,7 +20,6 @@ import {
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { getConversations, Conversation } from "@/services/chat.service";
-import { getUserDisplayName } from "@/utils/user-display";
 // Remove date-fns imports to avoid dependency issues
 
 export default function ChatListScreen() {
