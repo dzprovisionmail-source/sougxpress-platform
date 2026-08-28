@@ -14,6 +14,8 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import useMerchantOrders from "@/hooks/useMerchantOrders";
 import { getStoreByMerchantId, updateStore } from "@/services/store.service";
+import { getStoreHours } from "@/services/store-hours";
+import { useStoreOpenState } from "@/services/store-open-state";
 import { getMerchant } from "@/services/merchant.service";
 import { Merchant, Store } from "@/types/schema-03-core";
 import {
@@ -46,6 +48,8 @@ export default function MerchantDashboardScreen() {
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [store, setStore] = useState<Store | null>(null);
   const [togglingOpen, setTogglingOpen] = useState(false);
+  const scheduleState = useStoreOpenState(store);
+  const storeHours = getStoreHours(store);
 
   useEffect(() => {
     if (!userId) return;
@@ -103,7 +107,7 @@ export default function MerchantDashboardScreen() {
     );
   }
 
-  const isStoreOpen = store?.is_open ?? false;
+  const isStoreAvailable = store?.is_open ?? true;
 
   return (
     <WorkspaceScreen>
@@ -137,7 +141,7 @@ export default function MerchantDashboardScreen() {
                 }}
               >
                 <StoreIcon
-                  color={isStoreOpen ? colors.success : colors.error}
+                  color={scheduleState.isOpen === true ? colors.success : colors.error}
                   size={22}
                 />
                 <View style={{ marginRight: tokens.spacing.sm }}>
@@ -145,15 +149,15 @@ export default function MerchantDashboardScreen() {
                     {store.name}
                   </WorkspaceText>
                   <WorkspaceText
-                    color={isStoreOpen ? "success" : "error"}
+                    color={scheduleState.isOpen === true ? "success" : "error"}
                     style={{ fontSize: tokens.typography.sizes.sm }}
                   >
-                    {isStoreOpen ? "🟢 المتجر مفتوح" : "🔴 المتجر مغلق"}
+                    {scheduleState.label} · {storeHours.opens_at}–{storeHours.closes_at}
                   </WorkspaceText>
                 </View>
               </View>
               <Switch
-                value={isStoreOpen}
+                value={isStoreAvailable}
                 onValueChange={handleToggleOpen}
                 disabled={togglingOpen}
                 trackColor={{
@@ -163,6 +167,12 @@ export default function MerchantDashboardScreen() {
                 thumbColor={colors.textOnBrand}
               />
             </View>
+            <WorkspaceButton
+              title="إدارة أوقات العمل"
+              variant="outline"
+              onPress={() => router.push("/merchant/store")}
+              style={{ marginTop: tokens.spacing.md }}
+            />
           </SectionCard>
         )}
 

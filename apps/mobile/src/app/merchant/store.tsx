@@ -38,7 +38,8 @@ import * as ImagePicker from "expo-image-picker";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
-import { getStoresByMerchantId, updateStore, createStore } from "@/services/store.service";
+import { getStore, getStoresByMerchantId, updateStore, createStore } from "@/services/store.service";
+import { DEFAULT_STORE_HOURS, getStoreHours, validateStoreHours } from "@/services/store-hours";
 import useStore from "@/hooks/useStore";
 import { useMerchantProducts } from "@/hooks/useProducts";
 import { Store } from "@/types/schema-03-core";
@@ -97,8 +98,8 @@ const EMPTY_FORM: StoreFormValues = {
   city: "عين الصفراء",
   zone_id: undefined,
   state_province: "",
-  opens_at: "",
-  closes_at: "",
+  opens_at: DEFAULT_STORE_HOURS.opens_at,
+  closes_at: DEFAULT_STORE_HOURS.closes_at,
   closed_day: "",
 };
 
@@ -201,8 +202,9 @@ export default function UnifiedMerchantStoreDashboard() {
       Alert.alert("خطأ", "عنوان المتجر مطلوب");
       return;
     }
-    if (!createForm.opens_at || !createForm.closes_at) {
-      Alert.alert("خطأ", "وقت الفتح ووقت الإغلاق مطلوبان");
+    const hoursError = validateStoreHours(createForm.opens_at, createForm.closes_at);
+    if (hoursError) {
+      Alert.alert("خطأ", hoursError);
       return;
     }
 
@@ -256,8 +258,8 @@ export default function UnifiedMerchantStoreDashboard() {
       city: store.city ?? "عين الصفراء",
       zone_id: (store as any).zone_id || undefined,
       state_province: store.state_province || "",
-      opens_at: store.opens_at ? String(store.opens_at).slice(0, 5) : "",
-      closes_at: store.closes_at ? String(store.closes_at).slice(0, 5) : "",
+      opens_at: getStoreHours(store).opens_at,
+      closes_at: getStoreHours(store).closes_at,
       closed_day: store.closed_day ?? "",
     });
     if (store.category_id) {
@@ -273,8 +275,9 @@ export default function UnifiedMerchantStoreDashboard() {
       Alert.alert("خطأ", "اسم المتجر مطلوب");
       return;
     }
-    if (!editForm.opens_at || !editForm.closes_at) {
-      Alert.alert("خطأ", "وقت الفتح ووقت الإغلاق مطلوبان");
+    const hoursError = validateStoreHours(editForm.opens_at, editForm.closes_at);
+    if (hoursError) {
+      Alert.alert("خطأ", hoursError);
       return;
     }
     setSavingEdit(true);
@@ -296,11 +299,19 @@ export default function UnifiedMerchantStoreDashboard() {
     if (editForm.subcategory_id !== undefined) updates.subcategory_id = editForm.subcategory_id;
 
     const ok = await updateStoreHook(updates);
-    setSavingEdit(false);
-    if (ok !== undefined) {
+    if (ok) {
+      const refreshed = await getStore(store.id);
+      if (!refreshed) {
+        setSavingEdit(false);
+        Alert.alert("خطأ", "تم الحفظ لكن تعذر إعادة تحميل الإعدادات.");
+        return;
+      }
+      setStores((current) => current.map((item) => item.id === refreshed.id ? refreshed : item));
+      setSavingEdit(false);
       setShowEditModal(false);
-      Alert.alert("نجاح", "تم حفظ التعديلات بنجاح");
+      Alert.alert("نجاح", "تم حفظ التعديلات وإعادة تحميلها بنجاح");
     } else {
+      setSavingEdit(false);
       Alert.alert("خطأ", "تعذر حفظ التعديلات");
     }
   };
@@ -437,9 +448,10 @@ export default function UnifiedMerchantStoreDashboard() {
               <SectionTitle icon={<Clock3 size={18} color={colors.primary} />}>أوقات العمل</SectionTitle>
               <View style={styles.infoRow}>
                 <Text style={[styles.infoVal, { color: colors.textPrimary }]}>
-                  {activeStore.opens_at && activeStore.closes_at
-                    ? `${String(activeStore.opens_at).slice(0, 5)} - ${String(activeStore.closes_at).slice(0, 5)}`
-                    : "ساعات العمل غير محددة"}
+                  {(() => {
+                    const hours = getStoreHours(activeStore);
+                    return `${hours.opens_at} - ${hours.closes_at}`;
+                  })()}
                 </Text>
                 <Text style={[styles.infoKey, { color: colors.textSecondary }]}>ساعات العمل اليومية</Text>
               </View>

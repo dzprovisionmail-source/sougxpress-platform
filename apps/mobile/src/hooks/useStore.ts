@@ -47,8 +47,8 @@ const useStore = (storeId: string) => {
     };
   }, [storeId]);
 
-  const handleUpdateStore = async (updates: Partial<Store> & { subcategory_ids?: string[] }) => {
-    if (!store) return;
+  const handleUpdateStore = async (updates: Partial<Store> & { subcategory_ids?: string[] }): Promise<Store | null> => {
+    if (!store) return null;
     setLoading(true);
     
     const { subcategory_ids, ...storeUpdates } = updates;
@@ -66,6 +66,7 @@ const useStore = (storeId: string) => {
       setError("Failed to update store");
     }
     setLoading(false);
+    return updatedStore ?? null;
   };
 
   const handleImageUpload = (newImageUrl: string, _title?: string | null, _caption?: string | null) => {

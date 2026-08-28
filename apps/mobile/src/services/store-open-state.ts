@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Store } from "@/types/schema-03-core";
+import { getProjectLocalTime, getStoreHours } from "@/services/store-hours";
 
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
 
@@ -120,8 +121,9 @@ const getScheduleForDay = (store: Partial<Store>, dayIndex: number): { open: num
     if (isClosedOnDay(closedDay, dayIndex)) return "closed";
   }
 
-  const open = toMinutes(store?.opens_at);
-  const close = toMinutes(store?.closes_at);
+  const { opens_at, closes_at } = getStoreHours(store);
+  const open = toMinutes(opens_at);
+  const close = toMinutes(closes_at);
   return open !== null && close !== null ? { open, close } : null;
 };
 
@@ -140,7 +142,7 @@ export const getStoreOpenState = (store: Partial<Store> | null | undefined, now 
     return { isOpen: false, label: "غير متاح إداريًا", reason: "administrative" };
   }
 
-  const dayIndex = now.getDay();
+  const { dayIndex, minutes: nowMinutes } = getProjectLocalTime(now);
   const schedule = getScheduleForDay(store, dayIndex);
   if (schedule === "closed") {
     return { isOpen: false, label: "مغلق الآن", reason: "closed_day" };
@@ -150,7 +152,6 @@ export const getStoreOpenState = (store: Partial<Store> | null | undefined, now 
     return { isOpen: null, label: "ساعات العمل غير محددة", reason: "unknown" };
   }
 
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
   return isWithinSchedule(schedule, nowMinutes)
     ? { isOpen: true, label: "مفتوح الآن", reason: "schedule" }
     : { isOpen: false, label: "مغلق الآن", reason: "schedule" };

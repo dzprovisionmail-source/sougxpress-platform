@@ -346,7 +346,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               country: "Algeria",
               zone_id: resolvedZoneId,
               status: "pending",
-              is_open: false,
+              is_open: true,
             });
           if (storeInsertErr) {
             console.error("[AuthScreen] Failed to create initial store #1:", storeInsertErr);

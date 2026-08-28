@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { Store, StoreGalleryImage, StoreVideo, StoreGalleryLike, StoreGalleryComment, StoreGalleryRating } from "../types/schema-03-core";
 import { mapLegacyCategoryToMain } from "../config/storeCategories";
 import { getPlatformPublicProfile } from "./platform-profile.service";
+import { normalizeStoreTime, resolveStoreHours, withStoreHourDefaults } from "./store-hours";
 
 const isValidUUID = (uuid: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -24,7 +25,7 @@ export const getStore = async (storeId: string): Promise<Store | null> => {
     console.error("Error fetching store:", error);
     return null;
   }
-  return data as Store;
+  return withStoreHourDefaults(data as Store) as Store;
 };
 
 export const getStoreByMerchantId = async (merchantId: string): Promise<Store | null> => {
@@ -42,7 +43,7 @@ export const getStoreByMerchantId = async (merchantId: string): Promise<Store | 
     console.error("Error fetching store by merchant:", error);
     return null;
   }
-  return data as Store | null;
+  return data ? (withStoreHourDefaults(data as Store) as Store) : null;
 };
 
 export const getAllStores = async (): Promise<Store[]> => {
@@ -65,7 +66,7 @@ export const getAllStores = async (): Promise<Store[]> => {
     return [];
   }
   return ((data as Store[]) || []).map(s => ({
-    ...s,
+    ...withStoreHourDefaults(s),
     main_category: (s as any).main_category || mapLegacyCategoryToMain(s.category)
   }));
 };
@@ -92,7 +93,7 @@ export const getStoresByCategory = async (category: string): Promise<Store[]> =>
     return [];
   }
   return ((data as Store[]) || []).map(s => ({
-    ...s,
+    ...withStoreHourDefaults(s),
     main_category: (s as any).main_category || mapLegacyCategoryToMain(s.category)
   }));
 };
@@ -108,7 +109,7 @@ export const searchStores = async (query: string): Promise<Store[]> => {
     console.error("Error searching stores:", error);
     return [];
   }
-  return data as Store[];
+  return ((data as Store[]) || []).map((store) => withStoreHourDefaults(store) as Store);
 };
 
 export const updateStore = async (storeId: string, updates: Partial<Store> & { category?: string; category_id?: string; subcategory_id?: string; zone_id?: string; neighborhood?: string }): Promise<Store | null> => {
@@ -126,6 +127,8 @@ export const updateStore = async (storeId: string, updates: Partial<Store> & { c
   if (payload.category && !payload.main_category && !payload.category_id) {
     payload.main_category = mapLegacyCategoryToMain(payload.category);
   }
+  if ("opens_at" in payload && !normalizeStoreTime(payload.opens_at)) return null;
+  if ("closes_at" in payload && !normalizeStoreTime(payload.closes_at)) return null;
 
   const { data, error } = await supabase
     .from("stores")
@@ -138,7 +141,7 @@ export const updateStore = async (storeId: string, updates: Partial<Store> & { c
     console.error("Error updating store:", error);
     return null;
   }
-  return data as Store;
+  return withStoreHourDefaults(data as Store) as Store;
 };
 
 export const createStore = async (
@@ -169,6 +172,8 @@ export const createStore = async (
   }
 ): Promise<Store | null> => {
   if (!merchantId || !isValidUUID(merchantId)) return null;
+  const hours = resolveStoreHours(data.opens_at, data.closes_at);
+  if (!hours) return null;
 
   const payload: any = {
     merchant_id: merchantId,
@@ -187,13 +192,13 @@ export const createStore = async (
     longitude: data.longitude,
     description: data.description,
     phone_number: data.phone_number,
-    opens_at: data.opens_at,
-    closes_at: data.closes_at,
+    opens_at: hours.opens_at,
+    closes_at: hours.closes_at,
     closed_day: data.closed_day || null,
     status: "active",
     is_new: true,
     show_on_home: true,
-    is_open: false,
+    is_open: true,
   };
   if (data.category_id) payload.category_id = data.category_id;
   if (data.subcategory_id) payload.subcategory_id = data.subcategory_id;
@@ -208,7 +213,7 @@ export const createStore = async (
     console.error("Error creating store:", error);
     return null;
   }
-  return created as Store;
+  return withStoreHourDefaults(created as Store) as Store;
 };
 
 export const getStoreGalleryImages = async (storeId: string): Promise<string[]> => {

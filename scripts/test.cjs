@@ -5,6 +5,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const tests = [
   "tests/resolver-logic.test.ts",
   "tests/facebook-url.test.ts",
+  "tests/store-hours.test.ts",
 ];
 
 for (const test of tests) {
