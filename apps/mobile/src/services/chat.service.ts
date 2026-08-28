@@ -378,7 +378,9 @@ const resolveChatParticipantProfileId = async (
   if (directError) throw directError;
   if (directProfile?.id) return directProfile.id;
 
-  const roleTable: ChatRoleTable = relationshipType === "customer_merchant" ? "merchants" : "drivers";
+  const roleTable: ChatRoleTable = relationshipType === "customer_merchant" || relationshipType === "merchant_merchant"
+    ? "merchants"
+    : "drivers";
   const { data: roleRecord, error: roleError } = await supabase
     .from(roleTable)
     .select("email")

@@ -137,22 +137,15 @@ export default function StoreDetailsScreen() {
       return;
     }
 
-    if (currentUserId === store.merchant_id) {
-      Alert.alert("تنبيه", "أنت مالك هذا المتجر");
-      return;
-    }
-
-    // Founder/admin market mode is read-only for commercial chat; do not
-    // impersonate a customer when invoking the commercial relationship RPC.
-    if (currentUserRole !== "customer" && currentUserRole !== "driver") {
-      Alert.alert("تنبيه", "يرجى استخدام حساب زبون أو موصل لبدء محادثة تجارية");
-      return;
-    }
-
     try {
       setStartingChat(true);
-      // Determine relationship type based on current user role
-      const relationshipType = currentUserRole === "driver" ? "merchant_courier" : "customer_merchant";
+      // Merchants are also marketplace users: use the same account for
+      // merchant↔merchant communication instead of forcing a customer account.
+      const relationshipType = currentUserRole === "merchant"
+        ? "merchant_merchant"
+        : currentUserRole === "driver"
+          ? "merchant_courier"
+          : "customer_merchant";
 
       const { data: conversationId, error } = await getOrCreateConversation(
         store.merchant_id,
@@ -161,7 +154,7 @@ export default function StoreDetailsScreen() {
 
       if (error) {
         console.error("Chat error:", error);
-        Alert.alert("خطأ", "لا توجد علاقة تجارية مؤهلة لبدء محادثة (يجب أن يكون المتجر في المفضلة أو لديك طلب نشط معه)");
+        Alert.alert("خطأ", "لا توجد علاقة مؤهلة لبدء المحادثة. ضع قلبًا أولًا أو تحقق من وجود طلب سابق.");
         return;
       }
 
