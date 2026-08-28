@@ -357,13 +357,55 @@ export const getOrCreateSupportConversation = async (): Promise<{ data: string |
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+type ChatRoleTable = "drivers" | "merchants" | "customers";
+
+/**
+ * Chat participants are always profile IDs. Some legacy queries still expose
+ * a role-table ID (most notably drivers.id), so resolve it here before any
+ * FK/RPC operation. The direct profile lookup remains the fast path.
+ */
+const resolveChatParticipantProfileId = async (
+  rawId: string,
+  relationshipType: RelationshipType,
+): Promise<string | null> => {
+  if (!rawId || !UUID_PATTERN.test(rawId)) return null;
+
+  const { data: directProfile, error: directError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", rawId)
+    .maybeSingle();
+  if (directError) throw directError;
+  if (directProfile?.id) return directProfile.id;
+
+  const roleTable: ChatRoleTable = relationshipType === "customer_merchant" ? "merchants" : "drivers";
+  const { data: roleRecord, error: roleError } = await supabase
+    .from(roleTable)
+    .select("email")
+    .eq("id", rawId)
+    .maybeSingle();
+  if (roleError) throw roleError;
+
+  const email = typeof roleRecord?.email === "string" ? roleRecord.email.trim().toLowerCase() : "";
+  if (!email) return null;
+
+  const { data: profileByEmail, error: emailError } = await supabase
+    .from("profiles")
+    .select("id")
+    .ilike("email", email)
+    .maybeSingle();
+  if (emailError) throw emailError;
+  return profileByEmail?.id ?? null;
+};
+
 export const getOrCreateConversation = async (
   otherUserId: string,
   relationshipType: RelationshipType,
   referenceId: string | null = null
 ): Promise<{ data: string | null; error: any }> => {
   try {
-    if (!otherUserId || !UUID_PATTERN.test(otherUserId)) {
+    const resolvedOtherUserId = await resolveChatParticipantProfileId(otherUserId, relationshipType);
+    if (!resolvedOtherUserId) {
       throw new Error("Chat participant profile not found");
     }
 
@@ -371,24 +413,24 @@ export const getOrCreateConversation = async (
     if (!user?.id || !UUID_PATTERN.test(user.id)) {
       throw new Error("Not authenticated");
     }
-    if (user.id === otherUserId) {
+    if (user.id === resolvedOtherUserId) {
       throw new Error("Cannot start a conversation with yourself");
     }
 
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("id")
-      .in("id", [user.id, otherUserId]);
+      .in("id", [user.id, resolvedOtherUserId]);
     if (profilesError) throw profilesError;
     const profileIds = new Set((profiles || []).map((profile: { id: string }) => profile.id));
-    if (!profileIds.has(user.id) || !profileIds.has(otherUserId)) {
+    if (!profileIds.has(user.id) || !profileIds.has(resolvedOtherUserId)) {
       throw new Error("Chat participant profile not found");
     }
 
     // Relationship and authorization remain enforced by the database RPC/RLS.
     // RPC parameters renamed in migration 20260821160000 to p_other_user, p_relationship_type, p_reference_id
     const { data, error } = await supabase.rpc("get_or_create_chat_conversation", {
-      p_other_user: otherUserId,
+      p_other_user: resolvedOtherUserId,
       p_relationship_type: relationshipType,
       p_reference_id: referenceId,
     });
