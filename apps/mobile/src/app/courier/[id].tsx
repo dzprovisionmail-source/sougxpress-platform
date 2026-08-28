@@ -203,7 +203,7 @@ export default function CourierProfile() {
       Alert.alert("تسجيل الدخول", "يرجى تسجيل الدخول لبدء محادثة");
       return;
     }
-    
+
     if (userId === courier.id) {
       Alert.alert("تنبيه", "لا يمكنك بدء محادثة مع نفسك");
       return;
@@ -212,18 +212,18 @@ export default function CourierProfile() {
     try {
       setStartingChat(true);
       const relationshipType = userRole === "merchant" ? "merchant_courier" : "customer_courier";
-      
+
       const { data: conversationId, error } = await getOrCreateConversation(
         courier.id,
         relationshipType,
         null // Permanent chat for favorites
       );
-      
+
       if (error) {
         Alert.alert("تنبيه", "المحادثة متاحة فقط للمفضلين أو أثناء وجود طلب نشط.");
         return;
       }
-      
+
       if (conversationId) {
         router.push({
           pathname: "/chat/[id]",
@@ -249,7 +249,7 @@ export default function CourierProfile() {
         Alert.alert("تنبيه", "رقم الهاتف متاح فقط للمفضلين أو أثناء وجود طلب نشط.");
         return;
       }
-      
+
       const rel = userRole === "merchant" ? "merchant_courier" : "customer_courier";
       await logCallPress("00000000-0000-0000-0000-000000000000", courier.id, rel);
       Linking.openURL(`tel:${phone}`);

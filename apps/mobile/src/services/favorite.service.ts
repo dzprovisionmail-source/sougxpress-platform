@@ -49,7 +49,7 @@ export const toggleFavorite = async (
         .from('customer_favorites')
         .delete()
         .eq('id', existing.id);
-      
+
       if (deleteError) throw deleteError;
       return { isFavorite: false, error: null };
     } else {
@@ -164,7 +164,7 @@ export const getFavoriteIds = async (targetType: FavoriteType): Promise<string[]
  * Merchant Favorites Logic
  */
 
-export type MerchantFavoriteTargetType = 'customer' | 'courier';
+export type MerchantFavoriteTargetType = 'customer' | 'courier' | 'merchant';
 
 export interface MerchantFavorite {
   id: string;
@@ -202,7 +202,7 @@ export const toggleMerchantFavorite = async (
         .from('merchant_favorites')
         .delete()
         .eq('id', existing.id);
-      
+
       if (deleteError) throw deleteError;
       return { isFavorite: false, error: null };
     } else {
@@ -758,16 +758,16 @@ export const getCustomerFavoritesDetailed = async (customerId: string) => {
     const productIds = (favs || [])
       .filter(f => f.target_type === 'product' || f.product_id)
       .map(f => f.product_id || f.target_id);
-    
+
     const storeIds = (favs || [])
       .filter(f => f.target_type === 'store')
       .map(f => f.target_id);
-    
+
     const courierIds = (courierFavs || []).map(f => f.courier_id);
 
     // 3. Fetch detailed objects in parallel
     const [productsRes, storesRes, couriersRes] = await Promise.all([
-      productIds.length > 0 
+      productIds.length > 0
         ? supabase.from('products').select('*').in('id', productIds)
         : Promise.resolve({ data: [], error: null }),
       storeIds.length > 0

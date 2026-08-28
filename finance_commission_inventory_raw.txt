@@ -1,0 +1,405 @@
+=== TARGETED TERMS ===
+apps/mobile/package.json:18:    "expo-clipboard": "~8.0.8",
+apps/mobile/package.json:22:    "expo-file-system": "~19.0.23",
+apps/mobile/package.json:24:    "expo-image-manipulator": "~14.0.8",
+apps/mobile/package.json:26:    "expo-keep-awake": "~15.0.8",
+apps/mobile/package.json:29:    "expo-router": "~6.0.24",
+apps/mobile/package.json:30:    "expo-secure-store": "~15.0.8",
+apps/mobile/package.json:32:    "expo-updates": "~29.0.20",
+apps/mobile/package.json:37:    "react-native": "0.81.5",
+apps/mobile/package.json:42:    "react-native-web": "^0.21.0",
+apps/mobile/src/app/(tabs)/_layout.tsx:202:    backgroundColor: 'rgba(255,255,255,0.2)',
+apps/mobile/src/app/(tabs)/cart.tsx:90:  const deliveryFeeMinor = cartItems.length > 0 ? 20000 : 0; // 200 DZD
+apps/mobile/src/app/(tabs)/courier/[id].tsx:338:          <TouchableOpacity onPress={handleCall} activeOpacity={0.8}>
+apps/mobile/src/app/(tabs)/earnings.tsx:57:  const paidThroughCount = driver?.commission_paid_through_count ?? 0;
+apps/mobile/src/app/(tabs)/earnings.tsx:59:  const commissionOwedMinor = Math.max(
+apps/mobile/src/app/(tabs)/earnings.tsx:60:    driver?.commission_owed_minor ?? 0,
+apps/mobile/src/app/(tabs)/earnings.tsx:102:        <Text style={[styles.sectionTitle, { color: colors.primary }]}>عمولة المنصة — 20% من كل توصيل</Text>
+apps/mobile/src/app/(tabs)/earnings.tsx:109:          <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>حصة المنصة (20%)</Text>
+apps/mobile/src/app/(tabs)/earnings.tsx:122:          <Text style={[styles.amountSmall, { color: isPaymentRequired ? colors.error : colors.primary }]}>{formatCurrency(commissionOwedMinor)}</Text>
+apps/mobile/src/app/(tabs)/earnings.tsx:154:        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle, opacity: 0.8 }]}>
+apps/mobile/src/app/(tabs)/home.tsx:430:        activeOpacity={!!(item.storeId || heroStore) ? 0.8 : 1}
+apps/mobile/src/app/(tabs)/home.tsx:457:          <View style={[styles.heroOverlay, { backgroundColor: "rgba(0,0,0,0.25)" }]} />
+apps/mobile/src/app/(tabs)/home.tsx:496:                  { flexDirection: "row", alignItems: "center", backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, borderRadius: 4 }
+apps/mobile/src/app/(tabs)/home.tsx:676:            activeOpacity={0.8}
+apps/mobile/src/app/(tabs)/home.tsx:713:          activeOpacity={0.8}
+apps/mobile/src/app/(tabs)/home.tsx:783:                    activeOpacity={0.8}
+apps/mobile/src/app/(tabs)/orders-courier.tsx:115:    const deliveryFee = Number(item.delivery_fee_minor || 20000);
+apps/mobile/src/app/admin/content.tsx:22:            activeOpacity={0.8}
+apps/mobile/src/app/admin/finances.tsx:9:  { key: "commissions", label: "العمولات والرسوم" },
+apps/mobile/src/app/admin/finances.tsx:25:            activeOpacity={0.8}
+apps/mobile/src/app/admin/index.tsx:402:      activeOpacity={0.8}
+apps/mobile/src/app/admin/index.tsx:445:      activeOpacity={0.8}
+apps/mobile/src/app/admin/profile.tsx:140:          activeOpacity={0.8}
+apps/mobile/src/app/admin/reports.tsx:23:            activeOpacity={0.8}
+apps/mobile/src/app/admin/setup.tsx:91:            activeOpacity={0.8}
+apps/mobile/src/app/chat/[id].tsx:452:                <CheckCheck size={13} color="rgba(255,255,255,0.82)" />
+apps/mobile/src/app/customer/cart.tsx:80:  const deliveryFeeMinor = cartItems.length > 0 ? 20000 : 0; // 200 DZD
+apps/mobile/src/app/customer/orders.tsx:510:              <Price amount={selectedOrder.subtotal_minor || (selectedOrder.order_total_minor - (selectedOrder.delivery_fee_minor || 20000))} isMinor size="sm" />
+apps/mobile/src/app/customer/orders.tsx:515:              <Price amount={selectedOrder.delivery_fee_minor || 20000} isMinor size="sm" />
+apps/mobile/src/app/customer/profile.tsx:209:      quality: 0.85,
+apps/mobile/src/app/driver/dashboard.tsx:65:    (driver?.delivery_count ?? 0) - (driver?.commission_paid_through_count ?? 0),
+apps/mobile/src/app/driver/dashboard.tsx:163:            title="عرض الأرباح وعمولة المنصة 20%"
+apps/mobile/src/app/driver/deliveries.tsx:246:          {`رسوم التوصيل: ${Math.round(Number(order.delivery_fee_minor || 20000) / 100)} د.ج`}
+apps/mobile/src/app/driver/earnings.tsx:6: * The detailed commission and payment screen lives in /(tabs)/earnings.
+apps/mobile/src/app/driver/profile.tsx:98:      quality: 0.85,
+apps/mobile/src/app/driver/profile.tsx:126:      quality: 0.85,
+apps/mobile/src/app/facebook-video-player.tsx:132:    backgroundColor: "rgba(0,0,0,0.85)",
+apps/mobile/src/app/founder/activity-control.tsx:140:              activeOpacity={0.8}
+apps/mobile/src/app/founder/chat-control.tsx:175:              <TouchableOpacity onPress={() => openConversationDetail(item)} activeOpacity={0.8}>
+apps/mobile/src/app/founder/content.tsx:21:  const [stats, setStats] = useState<{ totalCustomers: number | null; totalMerchants: number | null; totalDrivers: number | null; totalStores: number | null; totalOrders: number | null; activeOrders: number | null; completedOrders: number | null; gmvMinor: number | null; commissionMinor: number | null; error: string | null }>({ totalCustomers: null, totalMerchants: null, totalDrivers: null, totalStores: null, totalOrders: null, activeOrders: null, completedOrders: null, gmvMinor: null, commissionMinor: null, error: null });
+apps/mobile/src/app/founder/content.tsx:61:      `العمولة: ${fmtMinor(stats.commissionMinor)}`,
+apps/mobile/src/app/founder/content.tsx:140:          <AdminStatCard label="العمولة" value={fmtMinor(stats.commissionMinor)} accent={colors.success} style={{ flex: 1 }} />
+apps/mobile/src/app/founder/content.tsx:180:            const commission = m.total_commission_minor ?? 0;
+apps/mobile/src/app/founder/content.tsx:189:                  <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700" }}>{fmtMinor(commission)}</Text>
+apps/mobile/src/app/founder/courier-form.tsx:105:      quality: 0.8,
+apps/mobile/src/app/founder/couriers-control.tsx:118:            <TouchableOpacity onPress={() => openDetail(item)} activeOpacity={0.8}>
+apps/mobile/src/app/founder/couriers-control.tsx:221:                      {selectedDriver.driver.commission_owed_minor != null ? fmtMinor(selectedDriver.driver.commission_owed_minor) : "غير متوفر"}
+apps/mobile/src/app/founder/customers-control.tsx:120:            <TouchableOpacity onPress={() => openDetail(item)} activeOpacity={0.8}>
+apps/mobile/src/app/founder/deliveries.tsx:146:                activeOpacity={0.8}
+apps/mobile/src/app/founder/finance.tsx:147:                  title={`${item.type === "order_payment" ? "دفع طلب" : item.type === "commission" ? "عمولة" : item.type === "payout" ? "تسوية" : item.type === "refund" ? "استرداد" : item.type}`}
+apps/mobile/src/app/founder/hero-slides.tsx:146:      quality: 0.85,
+apps/mobile/src/app/founder/index.tsx:189:      activeOpacity={0.8}
+apps/mobile/src/app/founder/index.tsx:254:      activeOpacity={0.8}
+apps/mobile/src/app/founder/market-presence.tsx:83:                activeOpacity={0.8}
+apps/mobile/src/app/founder/merchants-control.tsx:116:            <TouchableOpacity onPress={() => openDetail(item)} activeOpacity={0.8}>
+apps/mobile/src/app/founder/merchants-control.tsx:154:                    المالك: {item.owner_full_name || "—"} · نسبة العمولة: {item.commission_rate != null ? `${item.commission_rate}%` : "غير متوفر"}
+apps/mobile/src/app/founder/orders.tsx:267:                    <Text style={{ color: colors.success, fontSize: 13, textAlign: "right", flex: 2, fontWeight: "500" }}>{fmtMinor(selectedOrder.order.platform_commission_minor)}</Text>
+apps/mobile/src/app/founder/settings.tsx:13:  platform_commission_rate: { label: "نسبة عمولة المنصة (%)", type: "number", defaultValue: 10 },
+apps/mobile/src/app/founder/stores.tsx:274:    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+apps/mobile/src/app/founder/stores.tsx:296:    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+apps/mobile/src/app/founder/stores.tsx:333:    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+apps/mobile/src/app/founder/stores.tsx:408:    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+apps/mobile/src/app/founder/users/driver-detail.tsx:72:  const [commissionCycle, setCommissionCycle] = useState<CommissionCycle | null>(null);
+apps/mobile/src/app/founder/users/driver-detail.tsx:221:          {commissionCycle && (
+apps/mobile/src/app/founder/users/driver-detail.tsx:225:                <View style={[styles.cycleBadge, { backgroundColor: commissionCycle.status === "payment_due" ? colors.error + "22" : colors.success + "22" }]}>
+apps/mobile/src/app/founder/users/driver-detail.tsx:226:                  <Text style={{ color: commissionCycle.status === "payment_due" ? colors.error : colors.success, fontSize: 11, fontWeight: "700" }}>
+apps/mobile/src/app/founder/users/driver-detail.tsx:227:                    {commissionCycle.status === "payment_due" ? "مستحق الدفع" : commissionCycle.status === "active" ? "نشط" : commissionCycle.status}
+apps/mobile/src/app/founder/users/driver-detail.tsx:232:                {commissionCycle.deliveries_count} توصيلة · {formatMinor(commissionCycle.commission_earned_minor)}
+apps/mobile/src/app/founder/users/driver-detail.tsx:396:                  // The actual commission confirmation goes through the existing
+apps/mobile/src/app/founder/users/driver-detail.tsx:397:                  // confirm_delivery_payment RPC on the commission cycle.
+apps/mobile/src/app/founder/users/index.tsx:32:      activeOpacity={0.8}
+apps/mobile/src/app/founder/users/merchant-detail.tsx:192:          <InfoRow label="نسبة العمولة"      value={`${merchant.commission_rate ?? 0}%`} />
+apps/mobile/src/app/index.tsx:186:            activeOpacity={0.8}
+apps/mobile/src/app/index.tsx:319:                activeOpacity={0.8}
+apps/mobile/src/app/merchant/dashboard.tsx:276:              value={`${merchant.commission_rate ?? 0}%`}
+apps/mobile/src/app/merchant/earnings.tsx:181:                commission: "عمولة",
+apps/mobile/src/app/merchant/notifications.tsx:122:                activeOpacity={0.85}
+apps/mobile/src/app/merchant/profile.tsx:245:            value={`${merchant?.commission_rate ?? 0}%`}
+apps/mobile/src/app/merchant/promotions.tsx:145:      allowsEditing: true, aspect: [16, 9], quality: 0.85,
+apps/mobile/src/app/product-details.tsx:167:          <TouchableOpacity activeOpacity={0.8} onPress={() => setIsFavorite(!isFavorite)} style={{ padding: 4 }}>
+apps/mobile/src/app/product-details.tsx:227:          <TouchableOpacity activeOpacity={0.8}
+apps/mobile/src/app/store-details.tsx:344:            activeOpacity={0.85}
+apps/mobile/src/app/store-details.tsx:367:                  activeOpacity={0.8}
+apps/mobile/src/app/store-details.tsx:397:                  activeOpacity={0.8}
+apps/mobile/src/app/store-details.tsx:472:            <TouchableOpacity activeOpacity={0.8}
+apps/mobile/src/app/store-details.tsx:480:            <TouchableOpacity activeOpacity={0.8}
+apps/mobile/src/app/store-details.tsx:508:                    <TouchableOpacity activeOpacity={0.8} key={img.id} onPress={() => setViewingMediaItem(img)} style={styles.galleryItem}>
+apps/mobile/src/components/MediaViewerModal.tsx:485:    backgroundColor: "rgba(0,0,0,0.8)",
+apps/mobile/src/components/admin/AdminEmptyState.tsx:112:          activeOpacity={0.8}
+apps/mobile/src/components/admin/AdminStatCard.tsx:72:      <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[{ flex: 1 }, style]}>
+apps/mobile/src/components/chat/OrderContextCard.tsx:78:    : 20000;
+apps/mobile/src/components/courier/CourierProfileEditForm.jsx:55:      quality: 0.8,
+apps/mobile/src/components/courier/CourierProfileEditForm.jsx:131:          activeOpacity={0.8}
+apps/mobile/src/components/courier/CourierProfileModal.jsx:36:      activeOpacity={0.8}
+apps/mobile/src/components/courier/CouriersHorizontalBar.tsx:95:              activeOpacity={0.8}
+apps/mobile/src/components/orders/MerchantOrderCard.tsx:165:    : 20000; // Standard 200 DZD fee
+apps/mobile/src/components/profile/AvatarUploader.tsx:33:      quality: 0.85,
+apps/mobile/src/components/profile/StoreProductManagement.tsx:120:      allowsEditing: true, aspect: [1, 1], quality: 0.85,
+apps/mobile/src/components/ui/Avatar.tsx:103:              width: Math.max(dimension * 0.28, 10),
+apps/mobile/src/components/ui/Avatar.tsx:104:              height: Math.max(dimension * 0.28, 10),
+apps/mobile/src/components/ui/Avatar.tsx:105:              borderRadius: Math.max(dimension * 0.28, 10) / 2,
+apps/mobile/src/components/ui/Button.tsx:141:      activeOpacity={0.8}
+apps/mobile/src/components/ui/ImageOptimizerModal.tsx:103:    const newZoom = Math.min(3, zoom + 0.25);
+apps/mobile/src/components/ui/ImageOptimizerModal.tsx:109:    const newZoom = Math.max(1, zoom - 0.25);
+apps/mobile/src/components/ui/ImageOptimizerModal.tsx:157:      <View style={[styles.overlay, { backgroundColor: "rgba(0,0,0,0.8)" }]}>
+apps/mobile/src/components/ui/ProductCard.tsx:140:            activeOpacity={0.8}
+apps/mobile/src/components/ui/ProductCard.tsx:173:            activeOpacity={0.8}
+apps/mobile/src/components/ui/ProductCard.tsx:217:              activeOpacity={0.85}
+apps/mobile/src/components/video/PublicStoreVideoCard.tsx:166:    backgroundColor: "rgba(0,0,0,0.85)",
+apps/mobile/src/constants/earnings.ts:4: * split 80% driver / 20% platform, confirmed by the product owner.
+apps/mobile/src/constants/earnings.ts:7:export const FIXED_DELIVERY_FEE_MINOR = 20000; // 200.00 DZD
+apps/mobile/src/constants/earnings.ts:8:export const DRIVER_SHARE_RATE = 0.8;
+apps/mobile/src/constants/earnings.ts:9:export const PLATFORM_SHARE_RATE = 0.2;
+apps/mobile/src/constants/tokens.ts:112:      shadowOpacity: 0.22,
+apps/mobile/src/constants/tokens.ts:119:      shadowOpacity: 0.28,
+apps/mobile/src/constants/tokens.ts:133:      shadowOpacity: 0.8,
+apps/mobile/src/constants/tokens.ts:140:      shadowOpacity: 0.8,
+apps/mobile/src/design/motion.ts:35:    easeInOut: Easing.bezier(0.4, 0.0, 0.2, 1),
+apps/mobile/src/features/founder-os/dashboard/mockData.ts:13:  total_commission_minor: 0,
+apps/mobile/src/features/founder-os/dashboard/moduleCards.ts:23:  { key: "finance", labelAr: "المالية", route: "finance", count: MOCK_FOUNDER_DASHBOARD_SUMMARY.total_commission_minor },
+apps/mobile/src/features/workspace/ui.tsx:144:      activeOpacity={0.85}
+apps/mobile/src/hooks/useCart.ts:42:  const deliveryFee = cartItems.length > 0 ? 20000 : 0; // Fixed 200 DZD delivery fee for Soug-XPRESS
+apps/mobile/src/hooks/useCheckout.ts:90:      platform_commission_minor: Math.round(subtotal * 0.1),
+apps/mobile/src/services/checkout.service.ts:13:  platform_commission_minor: number;
+apps/mobile/src/services/checkout.service.ts:25:    const platformCommission = typeof data.platform_commission_minor === 'number'
+apps/mobile/src/services/checkout.service.ts:26:      ? data.platform_commission_minor
+apps/mobile/src/services/checkout.service.ts:44:      platform_commission_minor: platformCommission,
+apps/mobile/src/services/courier-delivery.service.ts:115:        delivery_fee_minor: order?.delivery_fee_minor ?? 20000, // Fallback to 200 DZD
+apps/mobile/src/services/courier-delivery.service.ts:117:        total_minor: (order?.order_total_minor ?? 0) + (order?.delivery_fee_minor ?? 20000),
+apps/mobile/src/services/driver-orders.service.ts:80:      .select("is_suspended_for_debt, delivery_count, commission_paid_through_count")
+apps/mobile/src/services/driver-orders.service.ts:86:      (driver?.delivery_count ?? 0) - (driver?.commission_paid_through_count ?? 0),
+apps/mobile/src/services/driver-orders.service.ts:90:      console.warn("Courier commission payment required before accepting deliveries");
+apps/mobile/src/services/founder-demo.service.ts:46:  const merchantPhone = `0${Math.floor(2000000000 + Math.random() * 8000000000)}`;
+apps/mobile/src/services/founder-finance.service.ts:64:    commissionRes,
+apps/mobile/src/services/founder-finance.service.ts:71:    supabase.from("orders").select("platform_commission_minor").eq("status", "delivered"),
+apps/mobile/src/services/founder-finance.service.ts:85:    totalCommissionMinor: sumMinor(commissionRes.data as any, "platform_commission_minor"),
+apps/mobile/src/services/founder-orders.service.ts:12:  platform_commission_minor: number;
+apps/mobile/src/services/founder-reports.service.ts:12:  total_commission_minor?: number;
+apps/mobile/src/services/founder-reports.service.ts:104:  commissionMinor: number | null;
+apps/mobile/src/services/founder-reports.service.ts:116:    commissionRes,
+apps/mobile/src/services/founder-reports.service.ts:126:    supabase.from("orders").select("platform_commission_minor").eq("status", "delivered"),
+apps/mobile/src/services/founder-reports.service.ts:129:  if (customersRes.error) return { totalCustomers: null, totalMerchants: null, totalDrivers: null, totalStores: null, totalOrders: null, activeOrders: null, completedOrders: null, gmvMinor: null, commissionMinor: null, error: customersRes.error.message };
+apps/mobile/src/services/founder-reports.service.ts:143:    commissionMinor: sumMinor(commissionRes.data as any, "platform_commission_minor"),
+apps/mobile/src/services/founder-users.service.ts:43:  commission_rate: number;
+apps/mobile/src/services/founder-users.service.ts:91:  commission_earned_minor: number;
+apps/mobile/src/services/founder-users.service.ts:216:  "id,owner_full_name,business_name,phone,email,status,zone_id,address,description,logo_url,commission_rate,deleted_at,admin_notes,is_demo,created_at,updated_at";
+apps/mobile/src/services/founder-users.service.ts:339:      .from("delivery_commission_cycles")
+apps/mobile/src/services/founder-users.service.ts:341:        "id,status,deliveries_count,commission_earned_minor,cycle_start_date,payment_due_at"
+apps/mobile/src/services/founder-users.service.ts:355:    .reduce((sum, c) => sum + (c.commission_earned_minor ?? 0), 0);
+apps/mobile/src/services/founder-users.service.ts:430:      quality: 0.8,
+apps/mobile/src/services/founder.service.ts:52:  // Revenue & commissions
+apps/mobile/src/services/founder.service.ts:126:    commissionsRes,
+apps/mobile/src/services/founder.service.ts:153:      .from("delivery_commission_cycles")
+apps/mobile/src/services/founder.service.ts:154:      .select("commission_earned_minor")
+apps/mobile/src/services/founder.service.ts:163:  let commissionsOwed: number | null = null;
+apps/mobile/src/services/founder.service.ts:164:  if (!commissionsRes.error && commissionsRes.data) {
+apps/mobile/src/services/founder.service.ts:165:    commissionsOwed = (commissionsRes.data as Array<{ commission_earned_minor: number }>).reduce(
+apps/mobile/src/services/founder.service.ts:166:      (sum, row) => sum + (row.commission_earned_minor ?? 0),
+apps/mobile/src/services/founder.service.ts:185:    driverCommissionsOwedMinor: commissionsOwed,
+apps/mobile/src/services/founder.service.ts:215:    commissionRes,
+apps/mobile/src/services/founder.service.ts:248:      .select("platform_commission_minor")
+apps/mobile/src/services/founder.service.ts:270:  const commission = sumMinor(commissionRes.data as any, "platform_commission_minor");
+apps/mobile/src/services/founder.service.ts:292:    platformCommissionMinor: commission,
+apps/mobile/src/types/schema-03-core.ts:62:  commission_rate: number | null;
+apps/mobile/src/types/schema-03-core.ts:283:  platform_commission_minor: number;
+apps/mobile/src/types/schema-03-core.ts:331:  commission_owed_minor?: number;
+apps/mobile/src/types/schema-03-core.ts:332:  commission_paid_through_count?: number;
+apps/mobile/src/types/schema-03-core.ts:367:export type TransactionType = "order_payment" | "commission" | "payout" | "refund" | "adjustment";
+apps/mobile/src/types/schema-03b-addendum.ts:38:  total_commission_minor: number;
+apps/mobile/src/types/schema-03c-market-interface.ts:21:  total_commission_minor: number;
+apps/mobile/src/utils/imageOptimizer.ts:58:const COMPRESSION_QUALITIES = [0.85, 0.78, 0.7, 0.62, 0.55, 0.45, 0.35, 0.25];
+apps/mobile/src/utils/imageOptimizer.ts:310:    compress: 0.8,
+supabase/migrations/202607110000400_orders.sql:12:    platform_commission_minor INTEGER NOT NULL,
+supabase/migrations/202607110000600_deliveries.sql:2:-- Purpose: Delivery assignments and commission tracking
+supabase/migrations/202607110000600_deliveries.sql:17:-- Create delivery_commission_cycles table
+supabase/migrations/202607110000600_deliveries.sql:18:CREATE TABLE IF NOT EXISTS public.delivery_commission_cycles (
+supabase/migrations/202607110000600_deliveries.sql:24:    commission_earned_minor INTEGER DEFAULT 0 NOT NULL, -- Total commission in minor units
+supabase/migrations/202607110000600_deliveries.sql:36:CREATE INDEX IF NOT EXISTS idx_delivery_commission_cycles_driver_id ON public.delivery_commission_cycles(driver_id);
+supabase/migrations/202607110000600_deliveries.sql:37:CREATE INDEX IF NOT EXISTS idx_delivery_commission_cycles_status ON public.delivery_commission_cycles(status);
+supabase/migrations/202607110000600_deliveries.sql:45:CREATE TRIGGER update_delivery_commission_cycles_updated_at
+supabase/migrations/202607110000600_deliveries.sql:46:BEFORE UPDATE ON public.delivery_commission_cycles
+supabase/migrations/202607110000700_finance_and_notifications.sql:35:    type TEXT NOT NULL, -- 'payment', 'refund', 'payout', 'commission'
+supabase/migrations/202607110001000_financial_logic_functions.sql:2:-- Purpose: Financial calculation and commission logic functions
+supabase/migrations/202607110001000_financial_logic_functions.sql:22:    platform_commission_minor INTEGER,
+supabase/migrations/202607110001000_financial_logic_functions.sql:28:    v_delivery_platform_share_percent INTEGER;
+supabase/migrations/202607110001000_financial_logic_functions.sql:30:    v_platform_commission_minor INTEGER;
+supabase/migrations/202607110001000_financial_logic_functions.sql:42:    v_delivery_platform_share_percent := public.get_platform_financial_setting(
+supabase/migrations/202607110001000_financial_logic_functions.sql:43:        'delivery_platform_share_percent'
+supabase/migrations/202607110001000_financial_logic_functions.sql:49:    -- Calculate platform commission from delivery fee
+supabase/migrations/202607110001000_financial_logic_functions.sql:50:    v_platform_commission_minor := (v_delivery_fee_minor * v_delivery_platform_share_percent) / 100;
+supabase/migrations/202607110001000_financial_logic_functions.sql:56:        v_platform_commission_minor,
+supabase/migrations/202607110001000_financial_logic_functions.sql:81:-- Function to increment driver delivery commission counter
+supabase/migrations/202607110001000_financial_logic_functions.sql:82:CREATE OR REPLACE FUNCTION public.increment_delivery_commission_counter(
+supabase/migrations/202607110001000_financial_logic_functions.sql:84:    p_commission_amount_minor INTEGER
+supabase/migrations/202607110001000_financial_logic_functions.sql:89:    v_commission_cycle_threshold INTEGER;
+supabase/migrations/202607110001000_financial_logic_functions.sql:91:    -- Get commission cycle threshold
+supabase/migrations/202607110001000_financial_logic_functions.sql:92:    v_commission_cycle_threshold := public.get_platform_financial_setting(
+supabase/migrations/202607110001000_financial_logic_functions.sql:93:        'commission_cycle_threshold'
+supabase/migrations/202607110001000_financial_logic_functions.sql:98:    FROM public.delivery_commission_cycles
+supabase/migrations/202607110001000_financial_logic_functions.sql:102:        INSERT INTO public.delivery_commission_cycles (
+supabase/migrations/202607110001000_financial_logic_functions.sql:103:            driver_id, deliveries_count, commission_earned_minor, status
+supabase/migrations/202607110001000_financial_logic_functions.sql:106:            p_driver_id, 1, p_commission_amount_minor, 'active'
+supabase/migrations/202607110001000_financial_logic_functions.sql:110:        UPDATE public.delivery_commission_cycles
+supabase/migrations/202607110001000_financial_logic_functions.sql:113:            commission_earned_minor = commission_earned_minor + p_commission_amount_minor
+supabase/migrations/202607110001000_financial_logic_functions.sql:118:    IF v_commission_cycle_threshold IS NOT NULL AND v_commission_cycle_threshold > 0 THEN
+supabase/migrations/202607110001000_financial_logic_functions.sql:119:        UPDATE public.delivery_commission_cycles
+supabase/migrations/202607110001000_financial_logic_functions.sql:123:        WHERE id = v_cycle_id AND deliveries_count >= v_commission_cycle_threshold AND status = 'active';
+supabase/migrations/202607110001000_financial_logic_functions.sql:138:        p_admin_user_id, 'payment_confirmed', 'delivery_commission_cycles', p_cycle_id,
+supabase/migrations/202607110001000_financial_logic_functions.sql:139:        (SELECT row_to_json(dcc) FROM public.delivery_commission_cycles dcc WHERE dcc.id = p_cycle_id),
+supabase/migrations/202607110001000_financial_logic_functions.sql:143:    UPDATE public.delivery_commission_cycles
+supabase/migrations/202607110001000_financial_logic_functions.sql:150:    INSERT INTO public.delivery_commission_cycles (
+supabase/migrations/202607110001000_financial_logic_functions.sql:151:        driver_id, deliveries_count, commission_earned_minor, status
+supabase/migrations/202607110001000_financial_logic_functions.sql:154:    FROM public.delivery_commission_cycles
+supabase/migrations/202607110001100_business_logic_triggers.sql:9:    v_platform_commission_minor INTEGER;
+supabase/migrations/202607110001100_business_logic_triggers.sql:24:        -- Get driver_id and platform_commission_minor for the delivered order
+supabase/migrations/202607110001100_business_logic_triggers.sql:25:        SELECT da.driver_id, o.platform_commission_minor
+supabase/migrations/202607110001100_business_logic_triggers.sql:26:        INTO v_driver_id, v_platform_commission_minor
+supabase/migrations/202607110001100_business_logic_triggers.sql:31:        IF v_driver_id IS NOT NULL AND v_platform_commission_minor IS NOT NULL THEN
+supabase/migrations/202607110001100_business_logic_triggers.sql:32:            PERFORM public.increment_delivery_commission_counter(v_driver_id, v_platform_commission_minor);
+supabase/migrations/202607110001100_business_logic_triggers.sql:35:        -- Create transaction for platform commission
+supabase/migrations/202607110001100_business_logic_triggers.sql:46:            NEW.platform_commission_minor,
+supabase/migrations/202607110001100_business_logic_triggers.sql:47:            'commission',
+supabase/migrations/202607110001200_rls_policies.sql:17:ALTER TABLE public.delivery_commission_cycles ENABLE ROW LEVEL SECURITY;
+supabase/migrations/202607110001200_rls_policies.sql:172:-- Policies for public.delivery_commission_cycles
+supabase/migrations/202607110001200_rls_policies.sql:173:CREATE POLICY rls_select_delivery_commission_cycles ON public.delivery_commission_cycles
+supabase/migrations/202607110001200_rls_policies.sql:177:CREATE POLICY rls_update_delivery_commission_cycles ON public.delivery_commission_cycles
+supabase/migrations/202607110001300_seed_ain_sefra_data.sql:15:SELECT 'delivery_platform_share_percent', '20', 'Platform''s share of delivery fee (%)'
+supabase/migrations/202607110001300_seed_ain_sefra_data.sql:16:WHERE NOT EXISTS (SELECT 1 FROM public.platform_financial_settings WHERE key = 'delivery_platform_share_percent');
+supabase/migrations/202607110001300_seed_ain_sefra_data.sql:19:SELECT 'default_merchant_commission_rate', '0', 'Default merchant commission (%)'
+supabase/migrations/202607110001300_seed_ain_sefra_data.sql:20:WHERE NOT EXISTS (SELECT 1 FROM public.platform_financial_settings WHERE key = 'default_merchant_commission_rate');
+supabase/migrations/202607110001300_seed_ain_sefra_data.sql:23:SELECT 'commission_cycle_threshold', '50', 'Deliveries before payment due'
+supabase/migrations/202607110001300_seed_ain_sefra_data.sql:24:WHERE NOT EXISTS (SELECT 1 FROM public.platform_financial_settings WHERE key = 'commission_cycle_threshold');
+supabase/migrations/202607110002200_notification_foundation.sql:254:                FROM public.delivery_commission_cycles
+supabase/migrations/202607110002400_schema_drift_reconciliation.sql:8:--   merchants  : add owner_full_name, phone, email, address, commission_rate
+supabase/migrations/202607110002400_schema_drift_reconciliation.sql:52:-- 2. merchants — add owner_full_name, phone, email, address, commission_rate
+supabase/migrations/202607110002400_schema_drift_reconciliation.sql:59:ALTER TABLE public.merchants ADD COLUMN IF NOT EXISTS commission_rate  NUMERIC DEFAULT 0;
+supabase/migrations/202607110002400_schema_drift_reconciliation.sql:379:    ('delivery_platform_share_percent', '20',    'Platform share of delivery fee: 20%'),
+supabase/migrations/202607110002400_schema_drift_reconciliation.sql:380:    ('default_merchant_commission_rate','0',     'Default merchant commission: 0%'),
+supabase/migrations/202607110002400_schema_drift_reconciliation.sql:381:    ('commission_cycle_threshold',      '50',    'Driver settlement threshold: 50 completed deliveries')
+supabase/migrations/20260711002300_fix_confirm_delivery_payment_audit_call.sql:15:        'delivery_commission_cycles',
+supabase/migrations/20260711002300_fix_confirm_delivery_payment_audit_call.sql:17:        (SELECT row_to_json(dcc)::jsonb FROM public.delivery_commission_cycles dcc WHERE dcc.id = p_cycle_id),
+supabase/migrations/20260711002300_fix_confirm_delivery_payment_audit_call.sql:21:    UPDATE public.delivery_commission_cycles
+supabase/migrations/20260711002300_fix_confirm_delivery_payment_audit_call.sql:28:    INSERT INTO public.delivery_commission_cycles (
+supabase/migrations/20260711002300_fix_confirm_delivery_payment_audit_call.sql:29:        driver_id, deliveries_count, commission_earned_minor, status
+supabase/migrations/20260711002300_fix_confirm_delivery_payment_audit_call.sql:32:    FROM public.delivery_commission_cycles
+supabase/migrations/202607190000600_metrics_schema_fix.sql:10:ALTER TABLE public.platform_metrics_snapshots ADD COLUMN IF NOT EXISTS total_commission_minor INTEGER DEFAULT 0;
+supabase/migrations/202607190000600_metrics_schema_fix.sql:21:  total_commission_minor = 0,
+supabase/migrations/202607240000100_cleanup_demo_data.sql:1:-- Migration: 202607240000100_cleanup_demo_data.sql
+supabase/migrations/202607240000100_cleanup_demo_data.sql:45:    THEN '0' || (2000000000 + floor(random() * 7999999999))::text
+supabase/migrations/202607240000100_cleanup_demo_data.sql:94:    THEN '0' || (2000000000 + floor(random() * 7999999999))::text
+supabase/migrations/202607240000100_cleanup_demo_data.sql:141:    THEN '0' || (2000000000 + floor(random() * 7999999999))::text
+supabase/migrations/202607240000200_store_videos_facebook_columns.sql:1:-- Migration: 202607240000200_store_videos_facebook_columns.sql
+supabase/migrations/202607240000300_store_video_rejections_and_missing_columns.sql:1:-- Migration: 202607240000300_store_video_rejections_and_missing_columns.sql
+supabase/migrations/202608120000000_delivery_assignment_trigger.sql:1:-- Migration: 202608120000000_delivery_assignment_trigger.sql
+supabase/migrations/20260812200000_hero_slider_targets.sql:1:-- 20260812200000_hero_slider_targets.sql
+supabase/migrations/20260814100000_courier_commission_tracking.sql:1:-- Add courier commission tracking and profile enhancements.
+supabase/migrations/20260814100000_courier_commission_tracking.sql:5:ADD COLUMN IF NOT EXISTS commission_owed_minor INTEGER DEFAULT 0,
+supabase/migrations/20260814100000_courier_commission_tracking.sql:6:ADD COLUMN IF NOT EXISTS commission_paid BOOLEAN DEFAULT false,
+supabase/migrations/20260814100000_courier_commission_tracking.sql:9:-- Trigger to increment delivery count and commission owed (20% of 200 DZD fixed delivery fee = 40 DZD per delivery)
+supabase/migrations/20260814100000_courier_commission_tracking.sql:13:  delivery_fee_minor INTEGER := 20000; -- 200.00 DZD in minor units (cents/centimes)
+supabase/migrations/20260814100000_courier_commission_tracking.sql:14:  commission_minor INTEGER := 4000;  -- 20% of 200 DZD = 40.00 DZD
+supabase/migrations/20260814100000_courier_commission_tracking.sql:21:      commission_owed_minor = COALESCE(commission_owed_minor, 0) + commission_minor,
+supabase/migrations/20260814100000_courier_commission_tracking.sql:22:      is_suspended_for_debt = CASE WHEN (COALESCE(delivery_count, 0) + 1) >= 50 AND NOT COALESCE(commission_paid, false) THEN true ELSE is_suspended_for_debt END
+supabase/migrations/20260814100000_courier_commission_tracking.sql:37:COMMENT ON COLUMN public.couriers.commission_owed_minor IS 'Commission owed to platform in minor units (20% of fixed delivery fee)';
+supabase/migrations/20260814100000_courier_commission_tracking.sql:38:COMMENT ON COLUMN public.couriers.is_suspended_for_debt IS 'True if courier reached 50 deliveries without paying commission';
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:1:-- Align courier commission accounting with the runtime driver workspace.
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:9:-- there is one authoritative commission model for the active driver workspace.
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:12:  DROP COLUMN IF EXISTS commission_owed_minor,
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:13:  DROP COLUMN IF EXISTS commission_paid,
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:26:-- Commission state for the 200 DZD fixed delivery fee and 20% platform share.
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:29:  ADD COLUMN IF NOT EXISTS commission_owed_minor INTEGER NOT NULL DEFAULT 0,
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:30:  ADD COLUMN IF NOT EXISTS commission_paid_through_count INTEGER NOT NULL DEFAULT 0,
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:40:  commission_minor INTEGER := 4000; -- 20% of 200 DZD, stored in minor units
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:50:      commission_owed_minor = COALESCE(commission_owed_minor, 0) + commission_minor,
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:52:        (COALESCE(delivery_count, 0) + 1) - COALESCE(commission_paid_through_count, 0) >= 50
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:55:    RETURNING delivery_count, commission_paid_through_count
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:71:CREATE OR REPLACE FUNCTION public.fn_protect_driver_commission_fields()
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:81:    NEW.commission_owed_minor := OLD.commission_owed_minor;
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:82:    NEW.commission_paid_through_count := OLD.commission_paid_through_count;
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:89:DROP TRIGGER IF EXISTS trg_protect_driver_commission_fields ON public.drivers;
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:90:CREATE TRIGGER trg_protect_driver_commission_fields
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:93:  EXECUTE FUNCTION public.fn_protect_driver_commission_fields();
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:96:COMMENT ON COLUMN public.drivers.commission_owed_minor IS 'Outstanding platform commission in minor units';
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql:97:COMMENT ON COLUMN public.drivers.commission_paid_through_count IS 'Completed deliveries reconciled by Founder/Admin';
+supabase/migrations/20260814120000_enforce_driver_commission_lock.sql:1:-- Enforce the 50-delivery unpaid commission lock at the database boundary.
+supabase/migrations/20260814120000_enforce_driver_commission_lock.sql:3:CREATE OR REPLACE FUNCTION public.fn_protect_driver_commission_fields()
+supabase/migrations/20260814120000_enforce_driver_commission_lock.sql:13:    NEW.commission_owed_minor := OLD.commission_owed_minor;
+supabase/migrations/20260814120000_enforce_driver_commission_lock.sql:14:    NEW.commission_paid_through_count := OLD.commission_paid_through_count;
+supabase/migrations/20260814120000_enforce_driver_commission_lock.sql:18:       OR (COALESCE(OLD.delivery_count, 0) - COALESCE(OLD.commission_paid_through_count, 0) >= 50) THEN
+supabase/migrations/20260814140000_block_suspended_driver_assignments.sql:18:           OR COALESCE(d.delivery_count, 0) - COALESCE(d.commission_paid_through_count, 0) >= 50
+supabase/migrations/20260821150000_enhance_courier_favorites_and_history.sql:5:    commission_minor INTEGER := 4000; -- 40 DZD
+supabase/migrations/20260821150000_enhance_courier_favorites_and_history.sql:15:            commission_owed_minor = COALESCE(commission_owed_minor, 0) + commission_minor,
+supabase/migrations/20260821150000_enhance_courier_favorites_and_history.sql:16:            is_suspended_for_debt = ((COALESCE(delivery_count, 0) + 1) - COALESCE(commission_paid_through_count, 0) >= 50)
+supabase/migrations/20260821150000_enhance_courier_favorites_and_history.sql:18:        RETURNING delivery_count, commission_paid_through_count INTO next_delivery_count, paid_through_count;
+supabase/migrations/20260822120000_promotional_views_system.sql:1:-- Migration: 20260822120000_promotional_views_system.sql
+=== FINANCIAL CANDIDATE FILES ===
+apps/mobile/assets/brand/icon-courier.png
+apps/mobile/assets/brand/orders_3d.png
+apps/mobile/src/app/(tabs)/couriers.tsx
+apps/mobile/src/app/(tabs)/driver.tsx
+apps/mobile/src/app/(tabs)/earnings.tsx
+apps/mobile/src/app/(tabs)/orders-courier.tsx
+apps/mobile/src/app/(tabs)/orders-customer.tsx
+apps/mobile/src/app/(tabs)/orders-merchant.tsx
+apps/mobile/src/app/(tabs)/orders.tsx
+apps/mobile/src/app/admin/drivers.tsx
+apps/mobile/src/app/admin/finance.tsx
+apps/mobile/src/app/admin/finances.tsx
+apps/mobile/src/app/admin/orders.tsx
+apps/mobile/src/app/admin/reports.tsx
+apps/mobile/src/app/admin/subscriptions.tsx
+apps/mobile/src/app/checkout.tsx
+apps/mobile/src/app/customer/couriers.tsx
+apps/mobile/src/app/customer/orders.tsx
+apps/mobile/src/app/driver-auth.tsx
+apps/mobile/src/app/driver/earnings.tsx
+apps/mobile/src/app/founder/add-demo-driver.tsx
+apps/mobile/src/app/founder/add-driver.tsx
+apps/mobile/src/app/founder/courier-form.tsx
+apps/mobile/src/app/founder/couriers-control.tsx
+apps/mobile/src/app/founder/couriers.tsx
+apps/mobile/src/app/founder/drivers.tsx
+apps/mobile/src/app/founder/finance.tsx
+apps/mobile/src/app/founder/orders.tsx
+apps/mobile/src/app/founder/users/driver-detail.tsx
+apps/mobile/src/app/founder/users/drivers.tsx
+apps/mobile/src/app/merchant-orders.tsx
+apps/mobile/src/app/merchant/earnings.tsx
+apps/mobile/src/app/merchant/orders.tsx
+apps/mobile/src/components/chat/OrderContextCard.tsx
+apps/mobile/src/components/checkout/OrderSummary.tsx
+apps/mobile/src/components/courier/CourierProfileEditForm.jsx
+apps/mobile/src/components/courier/CourierProfileModal.jsx
+apps/mobile/src/components/courier/CouriersHorizontalBar.tsx
+apps/mobile/src/components/orders/CourierSelectionModal.tsx
+apps/mobile/src/components/orders/MerchantOrderCard.tsx
+apps/mobile/src/components/orders/OrderStatusBadge.tsx
+apps/mobile/src/constants/earnings.ts
+apps/mobile/src/hooks/useCheckout.ts
+apps/mobile/src/hooks/useCourier.ts
+apps/mobile/src/hooks/useCourierOrders.ts
+apps/mobile/src/hooks/useDriver.ts
+apps/mobile/src/hooks/useDriverOrders.ts
+apps/mobile/src/hooks/useMerchantEarnings.ts
+apps/mobile/src/hooks/useMerchantOrders.ts
+apps/mobile/src/hooks/useRealtimeCourierList.ts
+apps/mobile/src/services/checkout.service.ts
+apps/mobile/src/services/courier-delivery.service.ts
+apps/mobile/src/services/courierService.ts
+apps/mobile/src/services/driver-orders.service.ts
+apps/mobile/src/services/driver.service.ts
+apps/mobile/src/services/founder-courier.service.ts
+apps/mobile/src/services/founder-finance.service.ts
+apps/mobile/src/services/founder-orders.service.ts
+apps/mobile/src/services/founder-reports.service.ts
+apps/mobile/src/services/merchant-earnings.service.ts
+apps/mobile/src/services/merchant-orders.service.ts
+apps/mobile/src/services/order.service.ts
+apps/mobile/src/types/schema-04-couriers.ts
+apps/mobile/src/utils/courier.utils.tsx
+supabase/migrations/202607110000400_orders.sql
+supabase/migrations/202607110000500_drivers.sql
+supabase/migrations/202607110000700_finance_and_notifications.sql
+supabase/migrations/202607110002100_order_delivery_lifecycle.sql
+supabase/migrations/20260802_couriers_system.sql
+supabase/migrations/202608040000100_courier_management.sql
+supabase/migrations/20260814100000_courier_commission_tracking.sql
+supabase/migrations/20260814110000_align_driver_commission_runtime.sql
+supabase/migrations/20260814120000_enforce_driver_commission_lock.sql
+supabase/migrations/20260814130000_driver_profile_storage_rls.sql
+supabase/migrations/20260814140000_block_suspended_driver_assignments.sql
+supabase/migrations/20260815233000_fix_order_status_history_rls.sql
+supabase/migrations/20260816140000_fix_orders_update_rls.sql
+supabase/migrations/20260816210000_update_stalled_orders_rule.sql
+supabase/migrations/20260816220000_fix_drivers_select_rls.sql
+supabase/migrations/20260816223000_seed_active_drivers.sql
+supabase/migrations/20260817233000_update_favorite_couriers_limit_10.sql
+supabase/migrations/20260817240000_add_courier_favorites.sql
+supabase/migrations/20260817241000_courier_favorites_safe_customer_profiles.sql
+supabase/migrations/20260817243000_allow_merchant_courier_favorites.sql
+supabase/migrations/20260817260000_courier_interested_customers.sql
+supabase/migrations/20260817270000_fix_courier_interested_customers_rpc.sql
+supabase/migrations/20260817280000_fix_courier_interested_customers_rpc_v3.sql
+supabase/migrations/20260817290000_fix_courier_visibility_rls.sql
+supabase/migrations/20260818272000_merchant_courier_order_context.sql
+supabase/migrations/20260820210000_merchant_courier_assignment.sql
+supabase/migrations/20260821030000_secure_commercial_order_details.sql
+supabase/migrations/20260821050000_refine_merchant_courier_selection.sql
+supabase/migrations/20260821051000_exclude_qa_driver_accounts.sql
+supabase/migrations/20260821120000_show_all_real_available_drivers.sql
+supabase/migrations/20260821130000_extend_courier_customer_relationships.sql
+supabase/migrations/20260821150000_enhance_courier_favorites_and_history.sql
+supabase/migrations/20260821160000_direct_orders_and_permanent_chat.sql
+supabase/migrations/20260822213000_store_order_count_overrides.sql
+supabase/migrations/20260822214000_store_order_count_rpc.sql

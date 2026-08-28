@@ -7,10 +7,12 @@ import {
   ActivityIndicator,
   RefreshControl,
   I18nManager,
+  Alert,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Heart, ChevronRight, ChevronLeft, Users } from "lucide-react-native";
+import { Heart, ChevronRight, ChevronLeft, Users, MessageCircle, Phone } from "lucide-react-native";
 import {
   Typography,
   EmptyState,
@@ -20,6 +22,15 @@ import {
 import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
+import { getUserDisplayName } from "@/utils/user-display";
+import { getCommercialPhone, getOrCreateConversation, type RelationshipType } from "@/services/chat.service";
+
+type FavoriteContact = {
+  id: string;
+  target_type: "customer" | "merchant";
+  target_id: string;
+  contact: any;
+};
 
 export default function MerchantFavoritesScreen() {
   const router = useRouter();
@@ -48,31 +59,31 @@ export default function MerchantFavoritesScreen() {
         return;
       }
 
-      // Fetch favorite customers
       const { data: favs, error: fetchError } = await supabase
         .from("merchant_favorites")
-        .select("id, target_id")
+        .select("id, target_id, target_type")
         .eq("merchant_id", user.id)
-        .eq("target_type", "customer");
-
+        .in("target_type", ["customer", "merchant"]);
       if (fetchError) throw fetchError;
 
-      if (favs && favs.length > 0) {
-        const customerIds = favs.map(f => f.target_id);
-        const { data: customerData, error: customerError } = await supabase
-          .from("customers")
-          .select("id, full_name, avatar_url, phone, neighborhood")
-          .in("id", customerIds);
-        
-        if (customerError) throw customerError;
-        
-        setFavorites(favs.map(f => ({
-          ...f,
-          customer: customerData.find(c => c.id === f.target_id)
-        })).filter(f => !!f.customer));
-      } else {
-        setFavorites([]);
-      }
+      const customerFavs = (favs || []).filter(f => f.target_type === "customer");
+      const merchantFavs = (favs || []).filter(f => f.target_type === "merchant");
+      const [customerResult, merchantResult] = await Promise.all([
+        customerFavs.length
+          ? supabase.from("customers").select("id, full_name, avatar_url, phone, neighborhood").in("id", customerFavs.map(f => f.target_id))
+          : Promise.resolve({ data: [], error: null } as any),
+        merchantFavs.length
+          ? supabase.from("profiles").select("id, full_name, avatar_url, phone_number, role").in("id", merchantFavs.map(f => f.target_id)).eq("role", "merchant")
+          : Promise.resolve({ data: [], error: null } as any),
+      ]);
+      if (customerResult.error) throw customerResult.error;
+      if (merchantResult.error) throw merchantResult.error;
+
+      const contacts: FavoriteContact[] = [
+        ...customerFavs.map(f => ({ id: f.id, target_type: "customer" as const, target_id: f.target_id, contact: customerResult.data?.find(c => c.id === f.target_id) })),
+        ...merchantFavs.map(f => ({ id: f.id, target_type: "merchant" as const, target_id: f.target_id, contact: merchantResult.data?.find(m => m.id === f.target_id) })),
+      ].filter(item => !!item.contact);
+      setFavorites(contacts);
     } catch (err: any) {
       console.error("Error fetching merchant favorites:", err);
       setError("حدث خطأ أثناء تحميل المفضلة");
@@ -85,6 +96,29 @@ export default function MerchantFavoritesScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchFavorites();
+  };
+
+  const handleStartChat = async (item: FavoriteContact) => {
+    const relationshipType: RelationshipType = item.target_type === "merchant" ? "merchant_merchant" : "customer_merchant";
+    const { data: conversationId, error: chatError } = await getOrCreateConversation(item.target_id, relationshipType);
+    if (chatError || !conversationId) {
+      Alert.alert("تنبيه", "لا يمكن بدء المحادثة حالياً.");
+      return;
+    }
+    router.push({ pathname: "/chat/[id]", params: { id: conversationId } });
+  };
+
+  const handleCall = async (item: FavoriteContact) => {
+    if (item.target_type !== "merchant") {
+      Alert.alert("تنبيه", "المكالمة غير متاحة مع الزبون.");
+      return;
+    }
+    const { data: phone, error } = await getCommercialPhone("FAVORITE", "merchant", item.target_id);
+    if (error || !phone) {
+      Alert.alert("تنبيه", "رقم الهاتف غير متاح حالياً.");
+      return;
+    }
+    await Linking.openURL(`tel:${phone}`);
   };
 
   const handleRemoveFavorite = async (favoriteId: string) => {
@@ -110,13 +144,13 @@ export default function MerchantFavoritesScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
-      <Header 
-        title="الزبائن المفضلون" 
+      <Header
+        title="جهات الاتصال المفضلة"
         leftContent={
           <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
             {isRTL ? <ChevronRight size={24} color={colors.textPrimary} /> : <ChevronLeft size={24} color={colors.textPrimary} />}
           </TouchableOpacity>
-        } 
+        }
       />
 
       <ScrollView
@@ -129,37 +163,49 @@ export default function MerchantFavoritesScreen() {
           <View style={styles.emptyContainer}>
             <Users size={64} color={colors.textDisabled} strokeWidth={1.5} />
             <Typography variant="subtitle" color="secondary" style={{ marginTop: 16 }}>
-              لا يوجد زبائن مفضلون بعد
+              لا توجد جهات اتصال مفضلة بعد
             </Typography>
           </View>
         ) : (
           <View style={styles.list}>
             {favorites.map((item) => {
-              const customer = item.customer;
+              const contact = item.contact;
+              const isMerchant = item.target_type === "merchant";
+              const displayName = getUserDisplayName(contact, item.target_type);
               return (
-                <View 
-                  key={item.id} 
+                <View
+                  key={item.id}
                   style={[styles.customerCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}
                 >
                   <View style={[styles.cardHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                    <Avatar uri={customer.avatar_url} name={customer.full_name} size="lg" />
+                    <Avatar uri={contact.avatar_url} name={displayName} size="lg" />
                     <View style={[styles.infoContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
                       <Typography variant="subtitle" style={{ fontWeight: '700' }}>
-                        {customer.full_name}
+                        {displayName}
                       </Typography>
                       <Typography variant="caption" color="secondary">
-                        {customer.neighborhood || "بدون عنوان"}
+                        {isMerchant ? "تاجر" : (contact.neighborhood || "بدون عنوان")}
                       </Typography>
                       <Typography variant="caption" color="secondary">
-                        {customer.phone || "بدون هاتف"}
+                        {(isMerchant ? contact.phone_number : contact.phone) || "بدون هاتف"}
                       </Typography>
                     </View>
-                    <TouchableOpacity
+                    <View style={styles.actions}>
+                      <TouchableOpacity onPress={() => handleStartChat(item)} style={styles.actionBtn}>
+                        <MessageCircle size={20} color={colors.primary} />
+                      </TouchableOpacity>
+                      {isMerchant && (
+                        <TouchableOpacity onPress={() => handleCall(item)} style={styles.actionBtn}>
+                          <Phone size={20} color={colors.primary} />
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity
                       onPress={() => handleRemoveFavorite(item.id)}
                       style={styles.removeBtn}
                     >
-                      <Heart size={20} color={colors.error} fill={colors.error} />
-                    </TouchableOpacity>
+                        <Heart size={20} color={colors.error} fill={colors.error} />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               );
@@ -193,6 +239,13 @@ const styles = StyleSheet.create({
   infoContainer: {
     flex: 1,
     gap: 2,
+  },
+  actions: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  actionBtn: {
+    padding: 8,
   },
   removeBtn: {
     padding: 8,

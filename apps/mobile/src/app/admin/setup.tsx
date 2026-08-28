@@ -919,7 +919,7 @@ function AccountForm({
           <View style={s.fieldBlock}>
             <BoolToggle label="السماح بالعمل فوراً" value={isAvailable} onToggle={() => setIsAvailable((v) => !v)} />
             <Text style={{ color: colors.textDisabled, fontFamily: tokens.typography.families.arabic, fontSize: tokens.typography.sizes.xs, textAlign: "right" }}>
-              عداد التوصيلات الابتدائي: 0 — رسوم التوصيل: 150 د.ج — حصة الموصل: 80%
+              عداد التوصيلات الابتدائي: 0 — رسوم التوصيل: 150 د.ج كاملة للموصل — اشتراك الموصل: 500 د.ج شهرياً، والشهر الأول مجاني
             </Text>
           </View>
         </>

@@ -329,7 +329,7 @@ export default function ChatScreen() {
   };
 
   const handleCall = async () => {
-    if (!orderContext?.order_id || !conversation?.other_participant?.id || calling) return;
+    if (!conversation?.other_participant?.id || calling) return;
     
     setCalling(true);
     try {
@@ -338,18 +338,21 @@ export default function ChatScreen() {
       if (otherRole === 'merchant') targetRole = 'merchant';
       else if (otherRole === 'driver' || otherRole === 'courier') targetRole = 'courier';
       
-      const { data: phone, error } = await getCommercialPhone(orderContext.order_id, targetRole);
+      const callReference = orderContext?.order_id || "FAVORITE";
+      const { data: phone, error } = await getCommercialPhone(callReference, targetRole);
       
       if (error || !phone) {
         Alert.alert("تنبيه", "لا يمكن استرجاع رقم الهاتف في هذه المرحلة أو أن العلاقة التجارية غير نشطة.");
         return;
       }
 
-      await logCallPress(
-        orderContext.order_id, 
-        conversation.other_participant.id, 
-        conversation.relationship_type
-      );
+      if (orderContext?.order_id) {
+        await logCallPress(
+          orderContext.order_id,
+          conversation.other_participant.id,
+          conversation.relationship_type
+        );
+      }
 
       Linking.openURL(`tel:${phone}`);
     } catch (err) {
@@ -481,6 +484,7 @@ export default function ChatScreen() {
   const availabilityLabel = otherAvailability ? AVAILABILITY_LABEL[otherAvailability] || otherAvailability : null;
   const isCourierConversation = other?.role === "driver" || other?.role === "courier";
   const relationshipType = conversation?.relationship_type || "";
+  const canCallRelationship = ["merchant_merchant", "merchant_courier", "courier_merchant", "courier_courier"].includes(relationshipType);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgBase }]} edges={["top", "bottom"]}>
@@ -503,7 +507,7 @@ export default function ChatScreen() {
         }
         rightContent={
           <View style={styles.headerIdentity}>
-            {orderContext?.order_id && (
+            {canCallRelationship && (
               <TouchableOpacity 
                 onPress={handleCall} 
                 style={[styles.callHeaderButton, { backgroundColor: colors.primary + '15' }]}
@@ -544,7 +548,7 @@ export default function ChatScreen() {
       <View style={[styles.commercialHint, { backgroundColor: colors.primary + "0B" }]}>
         <Info size={15} color={colors.primary} />
         <Typography variant="caption" style={{ color: colors.textSecondary, flex: 1, textAlign: "right" }}>
-          {isSupportChat ? "هذه محادثة دعم مباشرة مع Soug-XPRESS. لا تشارك كلمات المرور أو رموز التحقق." : "هذه محادثة مرتبطة بعلاقة تجارية. لا تشارك أرقام الهاتف أو بيانات الدفع."}
+              {isSupportChat ? "هذه محادثة دعم مباشرة مع Soug-XPRESS. لا تشارك كلمات المرور أو رموز التحقق." : canCallRelationship ? "هذه محادثة تجارية موثقة. يمكنك استخدام الشات أو الاتصال عند الحاجة." : "هذه محادثة مرتبطة بعلاقة تجارية. استخدم الشات للتواصل حول الطلب أو المنتج."}
         </Typography>
       </View>
 

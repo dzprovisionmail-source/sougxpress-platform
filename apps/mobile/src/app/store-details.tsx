@@ -90,7 +90,7 @@ export default function StoreDetailsScreen() {
           .eq("id", user.id)
           .maybeSingle();
         setCurrentUserRole(profileData?.role ?? undefined);
-        
+
         // Fetch favorites
         checkIfStoreFavorite();
         fetchFavoriteProducts();
@@ -153,18 +153,18 @@ export default function StoreDetailsScreen() {
       setStartingChat(true);
       // Determine relationship type based on current user role
       const relationshipType = currentUserRole === "driver" ? "merchant_courier" : "customer_merchant";
-      
+
       const { data: conversationId, error } = await getOrCreateConversation(
         store.merchant_id,
         relationshipType
       );
-      
+
       if (error) {
         console.error("Chat error:", error);
         Alert.alert("خطأ", "لا توجد علاقة تجارية مؤهلة لبدء محادثة (يجب أن يكون المتجر في المفضلة أو لديك طلب نشط معه)");
         return;
       }
-      
+
       if (conversationId) {
         router.push({
           pathname: "/chat/[id]",
@@ -182,7 +182,7 @@ export default function StoreDetailsScreen() {
   const handleToggleProductFavorite = async (productId: string) => {
     const { isFavorite: nextFav, error } = await toggleFavorite('product', productId);
     if (!error) {
-      setFavoriteProductIds(prev => 
+      setFavoriteProductIds(prev =>
         nextFav ? [...prev, productId] : prev.filter(pid => pid !== productId)
       );
     }
@@ -193,7 +193,7 @@ export default function StoreDetailsScreen() {
       setLoading(true);
       setLoadingGallery(true);
       setLoadingProducts(true);
-      
+
       // Fetch store basic info
       const { data: storeData, error: storeErr } = await supabase
         .from("stores")
@@ -364,7 +364,7 @@ export default function StoreDetailsScreen() {
 
         {/* Store Card Header Info */}
         <View style={[styles.storeCardInfo, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-          
+
           {/* Top Header Section with Side Buttons */}
           <View style={[styles.headerTopRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             {/* Left Button: Favorite */}
@@ -507,7 +507,7 @@ export default function StoreDetailsScreen() {
                 <View style={[styles.galleryArrow, { left: -5 }]}>
                   <ChevronLeft size={20} color={colors.textSecondary} opacity={0.5} />
                 </View>
-                
+
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}

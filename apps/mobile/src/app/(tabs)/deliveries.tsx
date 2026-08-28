@@ -32,7 +32,7 @@ export default function DeliveriesScreen() {
   const { colors, tokens } = useAppTheme();
   const { userId } = useCurrentUserId();
   const { activeDeliveries, completedDeliveries, loading, refreshDeliveries } = useCourierOrders(userId || "");
-  
+
   const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
   const [isGuest, setIsGuest] = useState(false);
   const [callingDeliveryId, setCallingDeliveryId] = useState<string | null>(null);
@@ -84,7 +84,7 @@ export default function DeliveriesScreen() {
   const handleStartChat = async (delivery: any, type: "customer_courier" | "merchant_courier") => {
     const targetId = type === "customer_courier" ? delivery.customer_id : delivery.merchant_id;
     if (!delivery.order_id || !targetId) return;
-    
+
     try {
       const { data: conversationId, error } = await getOrCreateConversation(
         targetId,
@@ -118,7 +118,7 @@ export default function DeliveriesScreen() {
 
   const renderDeliveryCard = (delivery: any) => {
     const isCompleted = ["delivered", "cancelled", "failed"].includes(delivery.status);
-    
+
     return (
       <View key={delivery.id} style={[styles.deliveryCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <View style={styles.deliveryHeader}>
@@ -224,7 +224,7 @@ export default function DeliveriesScreen() {
         </View>
       </View>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={{ padding: TOKENS.spacing.md, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refreshDeliveries} />}
       >

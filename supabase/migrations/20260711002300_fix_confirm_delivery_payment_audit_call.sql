@@ -10,9 +10,9 @@ BEGIN
     -- Capture the row before update for audit logging
     -- Fix: Explicitly cast row_to_json to JSONB to match log_audit_event signature
     PERFORM public.log_audit_event(
-        p_admin_user_id, 
-        'payment_confirmed', 
-        'delivery_commission_cycles', 
+        p_admin_user_id,
+        'payment_confirmed',
+        'delivery_commission_cycles',
         p_cycle_id,
         (SELECT row_to_json(dcc)::jsonb FROM public.delivery_commission_cycles dcc WHERE dcc.id = p_cycle_id),
         NULL::jsonb

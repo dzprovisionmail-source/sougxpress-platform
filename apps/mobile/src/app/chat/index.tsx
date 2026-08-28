@@ -57,7 +57,7 @@ export default function ChatListScreen() {
   const renderConversationItem = ({ item }: { item: Conversation }) => {
     const other = item.other_participant;
     const lastMessageTime = item.last_message?.created_at || item.last_message_at;
-    const timeStr = lastMessageTime 
+    const timeStr = lastMessageTime
       ? new Date(lastMessageTime).toLocaleTimeString("ar-DZ", { hour: '2-digit', minute: '2-digit' })
       : "";
 
@@ -65,7 +65,7 @@ export default function ChatListScreen() {
     const displayName = other?.role === 'merchant' && other.store_name
       ? other.store_name
       : getUserDisplayName(other, other?.role);
-      
+
     const displayAvatar = other?.role === 'merchant' && other.store_logo
       ? other.store_logo
       : other?.avatar_url;
@@ -92,20 +92,20 @@ export default function ChatListScreen() {
               {timeStr}
             </Typography>
           </View>
-          
+
           <View style={styles.convFooter}>
-            <Typography 
-              variant="body" 
-              numberOfLines={1} 
+            <Typography
+              variant="body"
+              numberOfLines={1}
               style={{ color: colors.textSecondary, flex: 1, textAlign: isRTL ? "right" : "left" }}
             >
               {item.last_message?.content || (
                 item.conversation_type === "support" ? "دعم Soug-XPRESS" :
-                item.relationship_type === 'customer_merchant' ? "متجر" : 
+                item.relationship_type === 'customer_merchant' ? "متجر" :
                 item.relationship_type === 'customer_courier' ? "موصل" : "تنسيق توصيل"
               )}
             </Typography>
-            
+
             {item.reference_id && (
               <View style={[styles.orderBadge, { backgroundColor: colors.primary + "20" }]}>
                 <Package size={12} color={colors.primary} />
@@ -124,7 +124,7 @@ export default function ChatListScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgBase }]} edges={["top"]}>
       <Header title="المحادثات" />
-      
+
       {loading && !refreshing ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} />

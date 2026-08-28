@@ -360,7 +360,7 @@ export default function UnifiedMerchantStoreDashboard() {
   return (
     <AdminPageShell title="لوحة تحكم التاجر">
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        
+
         {/* Store Header & Selector Card */}
         <SectionCard>
           <View style={styles.headerRow}>

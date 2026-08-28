@@ -101,7 +101,7 @@ BEGIN
     END IF;
 
     INSERT INTO public.notifications (
-        user_id, type, notification_type, title, body, data, 
+        user_id, type, notification_type, title, body, data,
         related_entity_type, related_entity_id
     )
     VALUES (
@@ -132,8 +132,8 @@ BEGIN
     IF TG_TABLE_NAME = 'orders' THEN
         v_order_id := NEW.id;
         v_customer_id := NEW.customer_id;
-        
-        SELECT merchant_id, name INTO v_merchant_id, v_store_name 
+
+        SELECT merchant_id, name INTO v_merchant_id, v_store_name
         FROM public.stores WHERE id = NEW.store_id;
 
         -- Merchant: New Order
@@ -198,7 +198,7 @@ BEGIN
     IF TG_TABLE_NAME = 'delivery_assignments' THEN
         v_order_id := NEW.order_id;
         v_driver_id := NEW.driver_id;
-        
+
         SELECT customer_id INTO v_customer_id FROM public.orders WHERE id = v_order_id;
 
         -- Driver: New Assignment
@@ -244,16 +244,16 @@ BEGIN
                 'Votre commande a été livrée. Bon appétit !',
                 jsonb_build_object('order_id', v_order_id), 'orders', v_order_id
             );
-            
+
             -- Driver Achievement: reaches 50 deliveries (simplified check)
             -- This is a placeholder for more complex achievement logic
             DECLARE
                 v_total_deliveries INTEGER;
             BEGIN
-                SELECT deliveries_count INTO v_total_deliveries 
-                FROM public.delivery_commission_cycles 
+                SELECT deliveries_count INTO v_total_deliveries
+                FROM public.delivery_commission_cycles
                 WHERE driver_id = v_driver_id AND status = 'active';
-                
+
                 IF v_total_deliveries = 50 THEN
                     PERFORM public.create_notification(
                         v_driver_id, 'achievement', 'Félicitations !',
@@ -338,14 +338,14 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS rls_select_notifications ON public.notifications;
 CREATE POLICY rls_select_notifications ON public.notifications
     FOR SELECT USING (
-        user_id = auth.uid() 
+        user_id = auth.uid()
         OR (SELECT (raw_app_meta_data->>'user_role') FROM auth.users WHERE id = auth.uid()) IN ('admin', 'founder')
     );
 
 DROP POLICY IF EXISTS rls_update_notifications ON public.notifications;
 CREATE POLICY rls_update_notifications ON public.notifications
     FOR UPDATE USING (
-        user_id = auth.uid() 
+        user_id = auth.uid()
         OR (SELECT (raw_app_meta_data->>'user_role') FROM auth.users WHERE id = auth.uid()) IN ('admin', 'founder')
     )
     WITH CHECK (

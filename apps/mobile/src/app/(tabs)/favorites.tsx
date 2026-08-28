@@ -15,8 +15,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useGlobalSearchParams, useRouter } from "expo-router";
-import { 
-  Star, Heart, User, MapPin, MessageCircle, Phone, 
+import {
+  Star, Heart, User, MapPin, MessageCircle, Phone,
   ShoppingBag, Info, Store, Search, CheckCircle
 } from "lucide-react-native";
 
@@ -82,7 +82,7 @@ export default function FavoritesScreen() {
     interested: any[];
     couriers: MerchantFavoriteCourier[];
   }>({ favorites: [], interested: [], couriers: [] });
-  
+
   const [courierData, setCourierData] = useState<CourierFavoritesHubData | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [calling, setCalling] = useState<string | null>(null);
@@ -98,9 +98,9 @@ export default function FavoritesScreen() {
         .eq("id", userId)
         .maybeSingle();
 
-      const userRole = profile?.role === "merchant" ? "merchant" : 
+      const userRole = profile?.role === "merchant" ? "merchant" :
                        profile?.role === "driver" ? "courier" : "customer";
-      
+
       setRole(prev => prev !== userRole ? userRole : prev);
 
       if (userRole === "courier") {
@@ -183,17 +183,17 @@ export default function FavoritesScreen() {
       // Use FAVORITE marker if no active order
       const effectiveOrderId = orderId || "FAVORITE";
       const { data: phone, error } = await getCommercialPhone(effectiveOrderId, targetRole as any, receiverId);
-      
+
       if (error || !phone) {
         Alert.alert("تنبيه", "رقم الهاتف متاح فقط للمفضلين أو أثناء وجود طلب نشط.");
         return;
       }
-      
+
       const rel = role === 'courier' ? 'customer_courier' : 'customer_merchant';
       // Log audit - use zero UUID for permanent favorite calls
       const auditOrderId = orderId || "00000000-0000-0000-0000-000000000000";
       await logCallPress(auditOrderId, receiverId, rel);
-      
+
       Linking.openURL(`tel:${phone}`);
     } catch (err) {
       console.error("Call error:", err);
@@ -231,7 +231,7 @@ export default function FavoritesScreen() {
 
   const renderCourierCustomer = (item: any, isFavorite: boolean) => {
     const customer = item.customer || item;
-    const hasActiveOrder = !!customer.last_order_id && 
+    const hasActiveOrder = !!customer.last_order_id &&
       ['pending', 'accepted', 'arrived_at_store', 'picked_up', 'out_for_delivery'].includes(customer.last_assignment_status || '');
 
     return (
@@ -293,15 +293,15 @@ export default function FavoritesScreen() {
         )}
 
         <View style={styles.actionRow}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
             onPress={() => handleStartChat(customer.id, "customer_courier", customer.last_order_id || null)}
           >
             <MessageCircle size={18} color={colors.primary} />
             <WorkspaceText variant="caption" color="primary">مراسلة</WorkspaceText>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
             onPress={() => handleCall(customer.last_order_id || null, customer.id, 'customer')}
             disabled={calling === customer.id}
@@ -314,7 +314,7 @@ export default function FavoritesScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
             onPress={() => customer.last_order_id ? router.push(`/driver/deliveries?orderId=${customer.last_order_id}`) : Alert.alert("تنبيه", "لا يوجد طلب نشط حالياً لعرض تفاصيله.")}
           >
@@ -410,18 +410,18 @@ export default function FavoritesScreen() {
             <Heart size={20} color={colors.error} fill={colors.error} />
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.actionRow}>
-          <TouchableOpacity 
-            style={[styles.actionBtn, { borderColor: colors.borderSubtle }]} 
+          <TouchableOpacity
+            style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
             onPress={() => handleStartChat(courier.profile_id, "customer_courier", null)}
           >
             <MessageCircle size={18} color={colors.primary} />
             <WorkspaceText variant="caption" color="primary">مراسلة</WorkspaceText>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionBtn, { borderColor: colors.borderSubtle }]} 
+
+          <TouchableOpacity
+            style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
             onPress={() => handleCall(null, courier.id, 'courier')}
             disabled={calling === courier.id}
           >
@@ -433,8 +433,8 @@ export default function FavoritesScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.actionBtn, { flex: 1.5, backgroundColor: colors.primary, borderColor: colors.primary }]} 
+          <TouchableOpacity
+            style={[styles.actionBtn, { flex: 1.5, backgroundColor: colors.primary, borderColor: colors.primary }]}
             onPress={() => handleDirectOrder(courier.id)}
           >
             <ShoppingBag size={18} color="#fff" />
@@ -462,7 +462,7 @@ export default function FavoritesScreen() {
             <Heart size={20} color={colors.error} fill={colors.error} />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
           onPress={() => router.push({ pathname: "/product-details", params: { id: product.id, ...marketContextParams } })}
         >
@@ -487,7 +487,7 @@ export default function FavoritesScreen() {
             <Heart size={20} color={colors.error} fill={colors.error} />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
           onPress={() => router.push({ pathname: "/store-details", params: { id: store.id, ...marketContextParams } })}
         >

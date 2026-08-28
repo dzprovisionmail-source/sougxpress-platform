@@ -86,7 +86,7 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
           p_order_id: newOrder.id,
           p_driver_id: data.driver_id
         });
-        
+
         if (directOfferError) {
           console.warn("Direct delivery offer RPC failed, falling back to manual assignment:", directOfferError);
           // Fallback to manual assignment if RPC fails (e.g. if eligibility check fails but we still want to record preference)

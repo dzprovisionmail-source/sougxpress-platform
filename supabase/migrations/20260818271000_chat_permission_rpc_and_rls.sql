@@ -37,7 +37,7 @@ BEGIN
                 FOR v_store_id IN SELECT id FROM public.stores WHERE merchant_id = v_merch_id LOOP
                     -- Check customer_favorites (store favorite)
                     IF EXISTS (
-                        SELECT 1 FROM public.customer_favorites 
+                        SELECT 1 FROM public.customer_favorites
                         WHERE customer_id = v_cust_id AND target_type = 'store' AND target_id = v_store_id
                     ) THEN
                         v_is_valid := true;
@@ -45,7 +45,7 @@ BEGIN
                     END IF;
                     -- Check merchant_favorites (customer favorite)
                     IF EXISTS (
-                        SELECT 1 FROM public.merchant_favorites 
+                        SELECT 1 FROM public.merchant_favorites
                         WHERE merchant_id = v_merch_id AND target_type = 'customer' AND target_id = v_cust_id
                     ) THEN
                         v_is_valid := true;
@@ -53,8 +53,8 @@ BEGIN
                     END IF;
                     -- Check orders linking customer and store
                     IF EXISTS (
-                        SELECT 1 FROM public.orders 
-                        WHERE customer_id = v_cust_id AND store_id = v_store_id 
+                        SELECT 1 FROM public.orders
+                        WHERE customer_id = v_cust_id AND store_id = v_store_id
                         AND (p_reference_id IS NULL OR id = p_reference_id)
                     ) THEN
                         v_is_valid := true;
@@ -73,7 +73,7 @@ BEGIN
             BEGIN
                 -- Check favorite_couriers (Customer favorite couriers, limit 10)
                 IF EXISTS (
-                    SELECT 1 FROM public.favorite_couriers 
+                    SELECT 1 FROM public.favorite_couriers
                     WHERE user_id = v_cust_id AND courier_id = v_driver_id
                 ) THEN
                     v_is_valid := true;
@@ -99,7 +99,7 @@ BEGIN
             BEGIN
                 -- Check merchant_favorites (courier favorite)
                 IF EXISTS (
-                    SELECT 1 FROM public.merchant_favorites 
+                    SELECT 1 FROM public.merchant_favorites
                     WHERE merchant_id = v_merch_id AND target_type = 'courier' AND target_id = v_driver_id
                 ) THEN
                     v_is_valid := true;
