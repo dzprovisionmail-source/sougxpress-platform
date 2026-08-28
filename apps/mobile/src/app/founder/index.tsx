@@ -557,6 +557,7 @@ export default function FounderControlCenterScreen() {
             <NavTile label="إدارة موصلين السوق" icon={<Truck size={20} color={primary} />} onPress={() => router.push("/founder/couriers" as never)} colors={colors} tokens={tokens} />
             <NavTile label="حسابات الموصلين" icon={<Users size={20} color={primary} />} onPress={() => router.push("/founder/users/drivers" as never)} colors={colors} tokens={tokens} />
             <NavTile label="المالية" icon={<DollarSign size={20} color={primary} />} onPress={() => router.push("/founder/finance" as never)} colors={colors} tokens={tokens} />
+            <NavTile label="إدارة Slider السوق" icon={<Megaphone size={20} color={primary} />} onPress={() => router.push("/founder/hero-slides" as never)} colors={colors} tokens={tokens} />
             <NavTile label="المحتوى" icon={<FileText size={20} color={primary} />} onPress={() => router.push("/founder/content" as never)} colors={colors} tokens={tokens} />
             <NavTile label="الإعدادات" icon={<Settings size={20} color={primary} />} onPress={() => router.push("/founder/settings" as never)} colors={colors} tokens={tokens} />
           </View>
