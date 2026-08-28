@@ -228,7 +228,7 @@ export default function StoreDetailsScreen() {
       // Fetch store basic info
       const { data: storeData, error: storeErr } = await supabase
         .from("stores")
-        .select("*")
+        .select("id, name, category, cover_url, logo_url, created_by, merchant_id, is_featured, rating, is_open, opens_at, closes_at, closed_day")
         .eq("id", id)
         .single();
 
@@ -236,22 +236,23 @@ export default function StoreDetailsScreen() {
       setStore(storeData);
       setLoading(false);
 
-      // Fetch gallery (active images only)
-      const { data: galleryData, error: galleryErr } = await supabase
-        .from("store_gallery")
-        .select("*")
-        .eq("store_id", id)
-        .eq("is_visible", true);
+      // Gallery and products are independent after the store record is available.
+      const [{ data: galleryData, error: galleryErr }, { data: prodsData, error: prodsErr }] = await Promise.all([
+        supabase
+          .from("store_gallery")
+          .select("id, store_id, image_url, title, caption, is_visible, created_at")
+          .eq("store_id", id)
+          .eq("is_visible", true),
+        supabase
+          .from("products")
+          .select("id, name, price_minor, image_url, category, store_id, status")
+          .eq("store_id", id)
+          .eq("status", "active"),
+      ]);
 
       if (galleryErr) console.error("Gallery fetch error:", galleryErr);
       setGallery(galleryData || []);
       setLoadingGallery(false);
-
-      // Fetch products
-      const { data: prodsData, error: prodsErr } = await supabase
-        .from("products")
-        .select("*")
-        .eq("store_id", id);
 
       if (prodsErr) throw prodsErr;
       setProducts(prodsData || []);

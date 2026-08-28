@@ -24,7 +24,7 @@
       "backgroundColor": "#0A1B33"
     },
     "notification": {
-      "icon": "./assets/brand/icon.png",
+      "icon": "./assets/brand/logo-icon-1024.png",
       "iosDisplayInForeground": true,
       "color": "#FF8A00"
     },
@@ -35,7 +35,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/brand/icon.png",
+          "icon": "./assets/brand/logo-icon-1024.png",
           "color": "#FF8A00",
           "sounds": []
         }

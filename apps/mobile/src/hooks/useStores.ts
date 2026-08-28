@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Store } from '../types/schema-03-core';
 import { getAllStores, getStoresByCategory, searchStores } from '../services/store.service';
 import { supabase, withRetry } from '../lib/supabase';
@@ -37,25 +37,38 @@ export const useStores = (category?: string) => {
 export const useSearch = () => {
   const [results, setResults] = useState<{ stores: Store[]; platformProfiles: PlatformPublicProfile[] }>({ stores: [], platformProfiles: [] });
   const [loading, setLoading] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchRequestRef = useRef(0);
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = (query: string) => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    const requestId = ++searchRequestRef.current;
+
     if (!query.trim()) {
+      setLoading(false);
       setResults({ stores: [], platformProfiles: [] });
       return;
     }
+
     setLoading(true);
-    try {
-      const [stores, platformProfiles] = await Promise.all([
-        searchStores(query),
-        searchPlatformPublicProfiles(query),
-      ]);
-      setResults({ stores, platformProfiles });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const [stores, platformProfiles] = await Promise.all([
+          searchStores(query),
+          searchPlatformPublicProfiles(query),
+        ]);
+        if (requestId === searchRequestRef.current) setResults({ stores, platformProfiles });
+      } catch (err) {
+        if (requestId === searchRequestRef.current) console.error(err);
+      } finally {
+        if (requestId === searchRequestRef.current) setLoading(false);
+      }
+    }, 250);
   };
+
+  useEffect(() => () => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+  }, []);
 
   return { results, loading, handleSearch };
 };

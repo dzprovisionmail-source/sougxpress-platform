@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     backgroundColor: "rgba(0,0,0,0.55)",
   },
-  backdrop: { ...StyleSheet.absoluteFillObject },
+  backdrop: { ...StyleSheet.absoluteFill },
   sheet: {
     borderTopLeftRadius: TOKENS.radius.lg,
     borderTopRightRadius: TOKENS.radius.lg,

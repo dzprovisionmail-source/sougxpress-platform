@@ -1,6 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import { getPromotionalViews } from "@/services/promotional-views.service";
 
+const METRICS_CACHE_TTL_MS = 60_000;
+const metricsCache = new Map<string, { expiresAt: number; value: StoreMetrics }>();
+
 export interface StoreOrderMetrics {
   actualOrderCount: number;
   orderCountOverride: number | null;
@@ -42,11 +45,16 @@ export async function getStoreOrderMetrics(storeId: string): Promise<StoreOrderM
 }
 
 export async function getStoreMetrics(storeId: string, entityCreatedAt?: string | null): Promise<StoreMetrics> {
+  const cached = metricsCache.get(storeId);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
   const [orderMetrics, promotional] = await Promise.all([
     getStoreOrderMetrics(storeId),
     getPromotionalViews("store", storeId, entityCreatedAt),
   ]);
-  return { ...orderMetrics, currentViews: promotional.currentViews };
+  const value = { ...orderMetrics, currentViews: promotional.currentViews };
+  metricsCache.set(storeId, { expiresAt: Date.now() + METRICS_CACHE_TTL_MS, value });
+  return value;
 }
 
 export async function setStoreOrderCountOverride(

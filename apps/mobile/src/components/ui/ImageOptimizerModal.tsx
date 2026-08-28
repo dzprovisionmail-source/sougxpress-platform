@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   cropGridOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderColor: "rgba(255,255,255,0.4)",
     borderWidth: 1,
     flexDirection: "column",
