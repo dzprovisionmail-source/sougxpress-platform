@@ -59,7 +59,7 @@ interface OrderItem {
   subtotal_minor?: number;
   delivery_fee_minor?: number;
   created_at: string;
-  stores?: { name: string; id?: string; merchant_id?: string };
+  stores?: { name: string; id?: string; merchant_id?: string; created_by?: string };
   delivery_address_id?: string;
   notes?: string;
   delivery_assignments?: {
@@ -117,7 +117,7 @@ export default function CustomerOrdersScreen() {
           subtotal_minor,
           delivery_fee_minor,
           created_at,
-          stores ( id, name, merchant_id ),
+          stores ( id, name, merchant_id, created_by ),
           delivery_address_id,
           notes,
           delivery_assignments (
@@ -359,7 +359,7 @@ export default function CustomerOrdersScreen() {
               <>
                 <Button
                   title="شات المتجر"
-                  onPress={() => handleStartChat(item.stores?.merchant_id as string, "customer_merchant", item.id)}
+                  onPress={() => handleStartChat((item.stores?.created_by || item.stores?.merchant_id) as string, "customer_merchant", item.id)}
                   variant="outline"
                   size="sm"
                   icon={<MessageCircle size={14} color={colors.primary} />}
@@ -367,7 +367,7 @@ export default function CustomerOrdersScreen() {
                 {item.stores?.merchant_id && (
                   <Button
                     title="اتصال"
-                    onPress={() => handleCall(item.id, 'merchant', item.stores?.merchant_id as string)}
+                    onPress={() => handleCall(item.id, 'merchant', (item.stores?.created_by || item.stores?.merchant_id) as string)}
                     variant="outline"
                     size="sm"
                     loading={calling === `${item.id}-merchant`}

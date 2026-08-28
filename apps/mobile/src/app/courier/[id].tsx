@@ -220,7 +220,7 @@ export default function CourierProfile() {
       );
 
       if (error) {
-        Alert.alert("تنبيه", "المحادثة متاحة فقط للمفضلين أو أثناء وجود طلب نشط.");
+        Alert.alert("تنبيه", "ضع قلبًا أولًا لفتح قناة التواصل مع هذا الموصل.");
         return;
       }
 
@@ -274,16 +274,32 @@ export default function CourierProfile() {
     const previousIsFavorite = courier.is_favorite;
     setCourier((prev: any) => ({ ...prev, is_favorite: !prev.is_favorite }));
     try {
-      const { error } = await toggleFavoriteCourier(userId, courier.id);
+      const { data: favoriteResult, error } = await toggleFavoriteCourier(userId, courier.id);
       if (error) {
         Alert.alert("خطأ", error);
         setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));
         return;
       }
-      const { data: updatedCourier } = await getCourierById(courier.id);
-      if (updatedCourier) {
-        setCourier((prev: any) => ({ ...prev, is_favorite: updatedCourier.is_favorite }));
+
+      const nextFavorite = favoriteResult?.is_favorite ?? true;
+      setCourier((prev: any) => ({ ...prev, is_favorite: nextFavorite }));
+      if (!nextFavorite) return;
+
+      const relationshipType = userRole === "merchant" ? "merchant_courier" : "customer_courier";
+      const { data: conversationId, error: chatError } = await getOrCreateConversation(
+        courier.id,
+        relationshipType,
+      );
+      if (chatError || !conversationId) {
+        console.error("Heart chat error:", chatError);
+        Alert.alert("تنبيه", "تم حفظ القلب، لكن تعذر فتح المحادثة الآن.");
+        return;
       }
+
+      router.push({
+        pathname: "/chat/[id]",
+        params: { id: conversationId, ...marketContextParams },
+      });
     } catch (e) {
       console.error("toggleFavorite failed:", e);
       setCourier((prev: any) => ({ ...prev, is_favorite: previousIsFavorite }));

@@ -120,9 +120,46 @@ export default function StoreDetailsScreen() {
   };
 
   const handleToggleStoreFavorite = async () => {
-    if (id) {
-      const { isFavorite: nextFav, error } = await toggleFavorite('store', id);
-      if (!error) setIsFavorite(nextFav);
+    if (!id) return;
+
+    const { isFavorite: nextFav, error } = await toggleFavorite('store', id);
+    if (error) {
+      console.error("Store favorite error:", error);
+      Alert.alert("خطأ", "تعذر تحديث المفضلة");
+      return;
+    }
+
+    setIsFavorite(nextFav);
+    if (!nextFav || !currentUserId || !store) return;
+
+    try {
+      setStartingChat(true);
+      const relationshipType = currentUserRole === "merchant"
+        ? "merchant_merchant"
+        : currentUserRole === "driver"
+          ? "merchant_courier"
+          : "customer_merchant";
+      const chatTargetId = store.created_by || store.merchant_id;
+      const { data: conversationId, error: chatError } = await getOrCreateConversation(
+        chatTargetId,
+        relationshipType,
+      );
+
+      if (chatError || !conversationId) {
+        console.error("Heart chat error:", chatError);
+        Alert.alert("تنبيه", "تم حفظ القلب، لكن تعذر فتح المحادثة الآن.");
+        return;
+      }
+
+      router.push({
+        pathname: "/chat/[id]",
+        params: { id: conversationId, ...marketContextParams },
+      });
+    } catch (err) {
+      console.error("Error opening chat after store heart:", err);
+      Alert.alert("تنبيه", "تم حفظ القلب، لكن تعذر فتح المحادثة الآن.");
+    } finally {
+      setStartingChat(false);
     }
   };
 
@@ -155,7 +192,7 @@ export default function StoreDetailsScreen() {
 
       if (error) {
         console.error("Chat error:", error);
-        Alert.alert("خطأ", "لا توجد علاقة مؤهلة لبدء المحادثة. ضع قلبًا أولًا أو تحقق من وجود طلب سابق.");
+        Alert.alert("تنبيه", "ضع قلبًا أولًا لفتح قناة التواصل مع هذا المتجر.");
         return;
       }
 

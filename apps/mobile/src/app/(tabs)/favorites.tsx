@@ -487,12 +487,25 @@ export default function FavoritesScreen() {
             <Heart size={20} color={colors.error} fill={colors.error} />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={[styles.actionBtn, { borderColor: colors.borderSubtle }]}
-          onPress={() => router.push({ pathname: "/store-details", params: { id: store.id, ...marketContextParams } })}
-        >
-          <WorkspaceText variant="caption" color="primary">زيارة المتجر</WorkspaceText>
-        </TouchableOpacity>
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.actionBtn, { flex: 1, borderColor: colors.borderSubtle }]}
+            onPress={() => router.push({ pathname: "/store-details", params: { id: store.id, ...marketContextParams } })}
+          >
+            <WorkspaceText variant="caption" color="primary">زيارة المتجر</WorkspaceText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, { flex: 1, borderColor: colors.borderSubtle }]}
+            onPress={() => handleStartChat(
+              store.created_by || store.merchant_id,
+              role === 'merchant' ? 'merchant_merchant' : 'customer_merchant',
+              null,
+            )}
+          >
+            <MessageCircle size={18} color={colors.primary} />
+            <WorkspaceText variant="caption" color="primary">مراسلة</WorkspaceText>
+          </TouchableOpacity>
+        </View>
       </SectionCard>
     );
 

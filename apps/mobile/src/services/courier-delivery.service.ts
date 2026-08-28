@@ -77,7 +77,7 @@ export const getCourierDeliveries = async (
         order:orders (
           *,
           customer:customers (full_name),
-          store:stores (name, merchant_id, address_line1, city),
+          store:stores (name, merchant_id, created_by, address_line1, city),
           address:customer_addresses (address_text),
           items:order_items (
             id,
@@ -110,7 +110,7 @@ export const getCourierDeliveries = async (
         status: assignment.status as DeliveryStatus,
         customer_id: order?.customer_id,
         store_id: order?.store_id,
-        merchant_id: store?.merchant_id || "",
+        merchant_id: store?.created_by || store?.merchant_id || "",
         delivery_address_id: order?.delivery_address_id,
         delivery_fee_minor: order?.delivery_fee_minor ?? 15000, // Fallback to 150 DZD
         subtotal_minor: order?.order_total_minor ?? 0,

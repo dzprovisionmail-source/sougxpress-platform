@@ -357,12 +357,11 @@ export const getOrCreateSupportConversation = async (): Promise<{ data: string |
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-type ChatRoleTable = "drivers" | "merchants" | "customers";
-
 /**
  * Chat participants are always profile IDs. Some legacy queries still expose
  * a role-table ID (most notably drivers.id), so resolve it here before any
- * FK/RPC operation. The direct profile lookup remains the fast path.
+ * FK/RPC operation. Resolution is performed server-side because profile RLS
+ * hides unrelated profiles from direct client reads.
  */
 const resolveChatParticipantProfileId = async (
   rawId: string,
@@ -370,34 +369,15 @@ const resolveChatParticipantProfileId = async (
 ): Promise<string | null> => {
   if (!rawId || !UUID_PATTERN.test(rawId)) return null;
 
-  const { data: directProfile, error: directError } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", rawId)
-    .maybeSingle();
-  if (directError) throw directError;
-  if (directProfile?.id) return directProfile.id;
-
-  const roleTable: ChatRoleTable = relationshipType === "customer_merchant" || relationshipType === "merchant_merchant"
-    ? "merchants"
-    : "drivers";
-  const { data: roleRecord, error: roleError } = await supabase
-    .from(roleTable)
-    .select("email")
-    .eq("id", rawId)
-    .maybeSingle();
-  if (roleError) throw roleError;
-
-  const email = typeof roleRecord?.email === "string" ? roleRecord.email.trim().toLowerCase() : "";
-  if (!email) return null;
-
-  const { data: profileByEmail, error: emailError } = await supabase
-    .from("profiles")
-    .select("id")
-    .ilike("email", email)
-    .maybeSingle();
-  if (emailError) throw emailError;
-  return profileByEmail?.id ?? null;
+  // Profile RLS intentionally hides unrelated profiles from direct client reads.
+  // Resolve legacy role IDs through the SECURITY DEFINER RPC instead of guessing
+  // from email or treating a missing SELECT row as a missing profile.
+  const { data, error } = await supabase.rpc("resolve_chat_participant_profile", {
+    p_raw_id: rawId,
+    p_relationship_type: relationshipType,
+  });
+  if (error) throw error;
+  return typeof data === "string" && UUID_PATTERN.test(data) ? data : null;
 };
 
 export const getOrCreateConversation = async (
@@ -417,16 +397,6 @@ export const getOrCreateConversation = async (
     }
     if (user.id === resolvedOtherUserId) {
       throw new Error("Cannot start a conversation with yourself");
-    }
-
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id")
-      .in("id", [user.id, resolvedOtherUserId]);
-    if (profilesError) throw profilesError;
-    const profileIds = new Set((profiles || []).map((profile: { id: string }) => profile.id));
-    if (!profileIds.has(user.id) || !profileIds.has(resolvedOtherUserId)) {
-      throw new Error("Chat participant profile not found");
     }
 
     // Relationship and authorization remain enforced by the database RPC/RLS.
