@@ -1,4 +1,4 @@
-import Constants from "expo-constants";
+import Constants, { AppOwnership } from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
@@ -10,14 +10,29 @@ export type PushRegistration = {
   subscription: Notifications.Subscription;
 };
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+let notificationHandlerConfigured = false;
+
+/**
+ * Remote push notifications are not available in Expo Go on Android/iOS.
+ * Development builds and standalone builds keep full notification support.
+ */
+export function isRemotePushNotificationsAvailable(): boolean {
+  return Platform.OS !== "web" && Constants.appOwnership !== AppOwnership.Expo;
+}
+
+function configureNotificationHandler(): void {
+  if (notificationHandlerConfigured || !isRemotePushNotificationsAvailable()) return;
+
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+  notificationHandlerConfigured = true;
+}
 
 function getProjectId(): string | undefined {
   return Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
@@ -28,9 +43,11 @@ function getPushTokenValue(data: Notifications.ExpoPushToken | Notifications.Dev
 }
 
 export async function registerForPushNotifications(userId: string): Promise<PushRegistration | null> {
-  if (!Device.isDevice) {
+  if (!isRemotePushNotificationsAvailable() || !Device.isDevice) {
     return null;
   }
+
+  configureNotificationHandler();
 
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
@@ -83,6 +100,7 @@ export async function registerForPushNotifications(userId: string): Promise<Push
 }
 
 export async function releasePushToken(token: string): Promise<void> {
+  if (!isRemotePushNotificationsAvailable()) return;
   await supabase.rpc("release_user_device", { p_push_token: token });
 }
 

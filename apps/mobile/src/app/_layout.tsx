@@ -14,6 +14,7 @@ import {
   registerForPushNotifications,
   releasePushToken,
   routeFromNotificationResponse,
+  isRemotePushNotificationsAvailable,
 } from "@/services/push-notifications.service";
 
 // SougXpress is Arabic-only — force RTL layout direction app-wide.
@@ -31,6 +32,8 @@ export default function RootLayout() {
     let registeredUserId: string | null = null;
     let registrationInFlight = false;
     let tokenSubscription: Notifications.Subscription | null = null;
+    let responseSubscription: Notifications.Subscription | null = null;
+    const notificationsAvailable = isRemotePushNotificationsAvailable();
     const handledNotificationIds = new Set<string>();
 
     const routeNotificationOnce = (response: Notifications.NotificationResponse) => {
@@ -60,18 +63,20 @@ export default function RootLayout() {
       }
     };
 
-    void registerCurrentUser();
+    if (notificationsAvailable) {
+      void registerCurrentUser();
 
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener(
-      routeNotificationOnce,
-    );
+      responseSubscription = Notifications.addNotificationResponseReceivedListener(
+        routeNotificationOnce,
+      );
 
-    void Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (response) routeNotificationOnce(response);
-    });
+      void Notifications.getLastNotificationResponseAsync().then((response) => {
+        if (response) routeNotificationOnce(response);
+      });
+    }
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+      if (notificationsAvailable && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")) {
         setTimeout(() => void registerCurrentUser(), 0);
       }
       if (event === "SIGNED_OUT") {
@@ -86,7 +91,7 @@ export default function RootLayout() {
     });
 
     return () => {
-      responseSubscription.remove();
+      responseSubscription?.remove();
       tokenSubscription?.remove();
       authListener.subscription.unsubscribe();
     };
