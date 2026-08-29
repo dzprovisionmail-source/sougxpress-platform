@@ -1,4 +1,4 @@
-import Constants, { AppOwnership } from "expo-constants";
+import Constants, { AppOwnership, ExecutionEnvironment } from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
@@ -17,7 +17,13 @@ let notificationHandlerConfigured = false;
  * Development builds and standalone builds keep full notification support.
  */
 export function isRemotePushNotificationsAvailable(): boolean {
-  return Platform.OS !== "web" && Constants.appOwnership !== AppOwnership.Expo;
+  if (Platform.OS === "web") return false;
+
+  const isExpoGo =
+    Constants.appOwnership === AppOwnership.Expo ||
+    Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+  return !isExpoGo;
 }
 
 function configureNotificationHandler(): void {
