@@ -11,7 +11,7 @@
       "url": "https://u.expo.dev/eb7659b4-30d9-4522-a73b-a507a87b4a70"
     },
     "orientation": "portrait",
-    "icon": "./assets/brand/logo-icon.png",
+    "icon": "./assets/brand/sougxpress-app-icon.png",
     "userInterfaceStyle": "automatic",
     "extra": {
       "eas": {
@@ -48,8 +48,8 @@
     "android": {
       "package": "com.sougxpress.founder",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/brand/logo-icon.png",
-        "backgroundColor": "#FF8A00"
+        "foregroundImage": "./assets/brand/sougxpress-app-icon.png",
+        "backgroundColor": "#0A1B33"
       },
       "permissions": [
         "NOTIFICATIONS",
