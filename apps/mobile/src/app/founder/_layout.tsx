@@ -10,7 +10,7 @@ function FounderLoadingScreen() {
   const { colors } = useAppTheme();
   return (
     <SafeAreaView
-      style={[styles.center, { backgroundColor: colors.bgBase }]}
+      style={StyleSheet.flatten([styles.center, { backgroundColor: colors.bgBase }])}
       edges={["top", "bottom"]}
     >
       <ActivityIndicator size="large" color={TOKENS.colors.brandPrimary} />
@@ -25,7 +25,7 @@ function FounderUnauthorizedScreen() {
   const { colors } = useAppTheme();
   return (
     <SafeAreaView
-      style={[styles.center, { backgroundColor: colors.bgBase }]}
+      style={StyleSheet.flatten([styles.center, { backgroundColor: colors.bgBase }])}
       edges={["top", "bottom"]}
     >
       <Text style={styles.icon}>🚫</Text>

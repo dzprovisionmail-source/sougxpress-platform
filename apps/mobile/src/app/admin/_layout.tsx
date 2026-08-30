@@ -14,7 +14,7 @@ import { TOKENS } from "@/constants/tokens";
 function AdminLoadingScreen() {
   const { colors } = useAppTheme();
   return (
-    <SafeAreaView style={[styles.center, { backgroundColor: colors.bgBase }]}>
+    <SafeAreaView style={StyleSheet.flatten([styles.center, { backgroundColor: colors.bgBase }])}>
       <ActivityIndicator size="large" color={TOKENS.colors.brandPrimary} />
       <Text
         style={[
@@ -35,7 +35,7 @@ function AdminLoadingScreen() {
 function AdminUnauthorizedScreen() {
   const { colors } = useAppTheme();
   return (
-    <SafeAreaView style={[styles.center, { backgroundColor: colors.bgBase }]}>
+    <SafeAreaView style={StyleSheet.flatten([styles.center, { backgroundColor: colors.bgBase }])}>
       <Text style={styles.icon}>🚫</Text>
       <Text
         style={[
