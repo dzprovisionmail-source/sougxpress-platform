@@ -16,7 +16,7 @@ type Role = 'customer' | 'courier' | 'merchant' | 'guest';
 
 export default function OrdersGateway() {
   const router = useRouter();
-  const params = useGlobalSearchParams<{ preview?: string; identity?: string }>();
+  const params = useGlobalSearchParams<{ preview?: string; identity?: string; orderId?: string }>();
   const isSougAdminPreview = params.preview === "1" && params.identity === "soug-admin";
   const { colors } = useAppTheme();
   const [role, setRole] = useState<Role | null>(null);
@@ -109,7 +109,7 @@ export default function OrdersGateway() {
 
   switch (role) {
     case 'customer':
-      return <CustomerOrdersScreen />;
+      return <CustomerOrdersScreen orderId={params.orderId} />;
     case 'courier':
       return <CourierOrdersScreen />;
     case 'merchant':

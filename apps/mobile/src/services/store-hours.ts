@@ -3,8 +3,8 @@ import type { Store } from "@/types/schema-03-core";
 export const PROJECT_TIME_ZONE = "Africa/Algiers";
 
 export const DEFAULT_STORE_HOURS = Object.freeze({
-  opens_at: "09:00",
-  closes_at: "22:00",
+  opens_at: "",
+  closes_at: "",
 });
 
 const STORE_TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/;
@@ -20,8 +20,8 @@ export const resolveStoreHours = (
   opensAt?: unknown,
   closesAt?: unknown,
 ): { opens_at: string; closes_at: string } | null => {
-  const opens_at = opensAt === undefined ? DEFAULT_STORE_HOURS.opens_at : normalizeStoreTime(opensAt);
-  const closes_at = closesAt === undefined ? DEFAULT_STORE_HOURS.closes_at : normalizeStoreTime(closesAt);
+  const opens_at = opensAt === undefined ? null : normalizeStoreTime(opensAt);
+  const closes_at = closesAt === undefined ? null : normalizeStoreTime(closesAt);
   if (!opens_at || !closes_at) return null;
   return { opens_at, closes_at };
 };

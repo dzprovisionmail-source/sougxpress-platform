@@ -11,7 +11,7 @@ import {
   I18nManager,
   Image,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useGlobalSearchParams } from "expo-router";
 import {
   Typography,
   Card,
@@ -64,8 +64,10 @@ interface OrderItem {
   }[];
 }
 
-export default function CustomerOrdersScreen() {
+export default function CustomerOrdersScreen({ orderId: orderIdProp }: { orderId?: string }) {
   const router = useRouter();
+  const { orderId: routeOrderId } = useGlobalSearchParams<{ orderId?: string }>();
+  const orderId = orderIdProp || routeOrderId;
   const { colors, tokens } = useAppTheme();
   const isRTL = I18nManager.isRTL;
 
@@ -132,7 +134,12 @@ export default function CustomerOrdersScreen() {
         .order("created_at", { ascending: false });
 
       if (fetchError) throw fetchError;
-      setOrders((data as any[]) || []);
+      const nextOrders = (data as any[]) || [];
+      setOrders(nextOrders);
+      if (orderId) {
+        const requested = nextOrders.find((item) => item.id === orderId);
+        if (requested) setSelectedOrder(requested);
+      }
     } catch (err) {
       console.error("Error fetching orders:", err);
       setError("حدث خطأ أثناء تحميل الطلبات");
@@ -140,7 +147,7 @@ export default function CustomerOrdersScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [orderId]);
 
   useEffect(() => {
     fetchOrders();

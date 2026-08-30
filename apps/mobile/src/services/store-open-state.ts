@@ -149,7 +149,7 @@ export const getStoreOpenState = (store: Partial<Store> | null | undefined, now 
   }
 
   if (!schedule) {
-    return { isOpen: null, label: "ساعات العمل غير محددة", reason: "unknown" };
+    return { isOpen: true, label: "مفتوح الآن", reason: "schedule" };
   }
 
   return isWithinSchedule(schedule, nowMinutes)

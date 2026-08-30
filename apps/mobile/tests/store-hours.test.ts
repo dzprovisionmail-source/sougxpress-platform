@@ -22,8 +22,8 @@ const activeStore = {
 console.log("\n=== Store Hours Tests ===\n");
 
 const defaults = resolveStoreHours(undefined, undefined);
-assert(defaults?.opens_at === "09:00" && defaults?.closes_at === "22:00", "default is 09:00–22:00");
-assert(getStoreHours({}).opens_at === "09:00" && getStoreHours({}).closes_at === "22:00", "legacy empty store receives service defaults");
+assert(defaults === null, "no custom hours remain unset");
+assert(getStoreHours({}).opens_at === "" && getStoreHours({}).closes_at === "", "empty store has no injected schedule");
 assert(validateStoreHours("", "22:00") !== null, "empty opening time is rejected");
 assert(validateStoreHours("09:00", "25:00") !== null, "invalid closing time is rejected");
 assert(validateStoreHours("09:00", "22:00") === null, "valid time values are accepted");
@@ -37,6 +37,7 @@ const atOpening = new Date("2026-08-28T08:00:00.000Z"); // 09:00 in Africa/Algie
 const inside = new Date("2026-08-28T20:59:00.000Z"); // 21:59 in Africa/Algiers
 const atClosing = new Date("2026-08-28T21:00:00.000Z"); // 22:00 in Africa/Algiers
 const beforeOpening = new Date("2026-08-28T07:59:00.000Z"); // 08:59 in Africa/Algiers
+assert(getStoreOpenState({}, atOpening).isOpen === true, "store without custom hours is open by default");
 const scheduledStore = { ...activeStore, opens_at: "09:00", closes_at: "22:00" };
 assert(getStoreOpenState(scheduledStore, atOpening).isOpen === true, "Open at the opening boundary 09:00");
 assert(getStoreOpenState(scheduledStore, inside).isOpen === true, "Open inside the configured period");
