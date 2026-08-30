@@ -3,14 +3,15 @@ import { LogBox, I18nManager } from "react-native";
 LogBox.ignoreLogs([
   "SafeAreaView has been deprecated",
   "MediaTypeOptions` have been deprecated",
-  "Method getInfoAsync imported from \"expo-file-system\" is deprecated"
+  "Method getInfoAsync imported from \"expo-file-system\" is deprecated",
 ]);
 import { Stack, useRouter } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import * as Notifications from "expo-notifications";
+import type * as Notifications from "expo-notifications";
 import {
+  getNotificationsModule,
   registerForPushNotifications,
   releasePushToken,
   routeFromNotificationResponse,
@@ -28,6 +29,7 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
+    let disposed = false;
     let activeToken: string | null = null;
     let registeredUserId: string | null = null;
     let registrationInFlight = false;
@@ -36,21 +38,14 @@ export default function RootLayout() {
     const notificationsAvailable = isRemotePushNotificationsAvailable();
     const handledNotificationIds = new Set<string>();
 
-    const routeNotificationOnce = (response: Notifications.NotificationResponse) => {
-      const notificationId = response.notification.request.identifier;
-      if (handledNotificationIds.has(notificationId)) return;
-      handledNotificationIds.add(notificationId);
-      routeFromNotificationResponse(response);
-    };
-
     const registerCurrentUser = async () => {
       const { data } = await supabase.auth.getUser();
-      if (!data.user || registeredUserId === data.user.id || registrationInFlight) return;
+      if (disposed || !data.user || registeredUserId === data.user.id || registrationInFlight) return;
 
       registrationInFlight = true;
       try {
         const registration = await registerForPushNotifications(data.user.id);
-        if (registration) {
+        if (!disposed && registration) {
           activeToken = registration.token;
           tokenSubscription?.remove();
           tokenSubscription = registration.subscription;
@@ -63,17 +58,29 @@ export default function RootLayout() {
       }
     };
 
-    if (notificationsAvailable) {
-      void registerCurrentUser();
+    const initializeNotificationListeners = async () => {
+      if (!notificationsAvailable) return;
+      const notifications = await getNotificationsModule();
+      if (!notifications || disposed) return;
 
-      responseSubscription = Notifications.addNotificationResponseReceivedListener(
+      const routeNotificationOnce = (response: Notifications.NotificationResponse) => {
+        const notificationId = response.notification.request.identifier;
+        if (handledNotificationIds.has(notificationId)) return;
+        handledNotificationIds.add(notificationId);
+        routeFromNotificationResponse(response);
+      };
+
+      void registerCurrentUser();
+      responseSubscription = notifications.addNotificationResponseReceivedListener(
         routeNotificationOnce,
       );
 
-      void Notifications.getLastNotificationResponseAsync().then((response) => {
-        if (response) routeNotificationOnce(response);
+      void notifications.getLastNotificationResponseAsync().then((response) => {
+        if (!disposed && response) routeNotificationOnce(response);
       });
-    }
+    };
+
+    void initializeNotificationListeners();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
       if (notificationsAvailable && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")) {
@@ -91,6 +98,7 @@ export default function RootLayout() {
     });
 
     return () => {
+      disposed = true;
       responseSubscription?.remove();
       tokenSubscription?.remove();
       authListener.subscription.unsubscribe();
@@ -101,21 +109,21 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="admin" />
-        <Stack.Screen name="founder" />
-        <Stack.Screen name="customer-auth" />
-        <Stack.Screen name="merchant-auth" />
-        <Stack.Screen name="driver-auth" />
-        <Stack.Screen name="store-details" />
-        <Stack.Screen name="product-details" />
-        <Stack.Screen name="checkout" />
-        <Stack.Screen name="merchant-orders" />
-        {/* Legacy role trees - kept as hidden to prevent route errors but not used for navigation */}
-        <Stack.Screen name="merchant" />
-        <Stack.Screen name="driver" />
-        <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="index" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="admin" />
+          <Stack.Screen name="founder" />
+          <Stack.Screen name="customer-auth" />
+          <Stack.Screen name="merchant-auth" />
+          <Stack.Screen name="driver-auth" />
+          <Stack.Screen name="store-details" />
+          <Stack.Screen name="product-details" />
+          <Stack.Screen name="checkout" />
+          <Stack.Screen name="merchant-orders" />
+          {/* Legacy role trees - kept as hidden to prevent route errors but not used for navigation */}
+          <Stack.Screen name="merchant" />
+          <Stack.Screen name="driver" />
+          <Stack.Screen name="(tabs)" />
         </Stack>
       </ThemeProvider>
     </SafeAreaProvider>

@@ -1,6 +1,6 @@
 import Constants, { AppOwnership, ExecutionEnvironment } from "expo-constants";
 import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
+import type * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
@@ -10,6 +10,9 @@ export type PushRegistration = {
   subscription: Notifications.Subscription;
 };
 
+type NotificationsModule = typeof import("expo-notifications");
+
+let notificationsModule: NotificationsModule | null = null;
 let notificationHandlerConfigured = false;
 
 /**
@@ -26,10 +29,23 @@ export function isRemotePushNotificationsAvailable(): boolean {
   return !isExpoGo;
 }
 
-function configureNotificationHandler(): void {
-  if (notificationHandlerConfigured || !isRemotePushNotificationsAvailable()) return;
+/**
+ * expo-notifications is intentionally loaded lazily. Expo Go still bundles
+ * the package in the JS graph, but its native remote-notification module is
+ * unavailable there, so no native notification API is touched in Expo Go.
+ */
+export async function getNotificationsModule(): Promise<NotificationsModule | null> {
+  if (!isRemotePushNotificationsAvailable()) return null;
+  notificationsModule ??= await import("expo-notifications");
+  return notificationsModule;
+}
 
-  Notifications.setNotificationHandler({
+async function configureNotificationHandler(): Promise<NotificationsModule | null> {
+  if (!isRemotePushNotificationsAvailable()) return null;
+  const notifications = await getNotificationsModule();
+  if (!notifications || notificationHandlerConfigured) return notifications;
+
+  notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
       shouldShowList: true,
@@ -38,6 +54,7 @@ function configureNotificationHandler(): void {
     }),
   });
   notificationHandlerConfigured = true;
+  return notifications;
 }
 
 function getProjectId(): string | undefined {
@@ -53,26 +70,27 @@ export async function registerForPushNotifications(userId: string): Promise<Push
     return null;
   }
 
-  configureNotificationHandler();
+  const notifications = await configureNotificationHandler();
+  if (!notifications) return null;
 
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
+    await notifications.setNotificationChannelAsync("default", {
       name: "Soug-XPRESS",
-      importance: Notifications.AndroidImportance.MAX,
+      importance: notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       sound: "default",
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      lockscreenVisibility: notifications.AndroidNotificationVisibility.PUBLIC,
     });
   }
 
-  const permissions = await Notifications.getPermissionsAsync();
+  const permissions = await notifications.getPermissionsAsync();
   let finalStatus = permissions.status;
-  if (finalStatus !== Notifications.PermissionStatus.GRANTED) {
-    const requested = await Notifications.requestPermissionsAsync();
+  if (finalStatus !== notifications.PermissionStatus.GRANTED) {
+    const requested = await notifications.requestPermissionsAsync();
     finalStatus = requested.status;
   }
 
-  if (finalStatus !== Notifications.PermissionStatus.GRANTED) {
+  if (finalStatus !== notifications.PermissionStatus.GRANTED) {
     return null;
   }
 
@@ -81,7 +99,7 @@ export async function registerForPushNotifications(userId: string): Promise<Push
     throw new Error("Expo EAS project ID is not configured");
   }
 
-  const expoToken = await Notifications.getExpoPushTokenAsync({ projectId });
+  const expoToken = await notifications.getExpoPushTokenAsync({ projectId });
   const token = getPushTokenValue(expoToken);
   const { error } = await supabase.rpc("claim_user_device", {
     p_push_token: token,
@@ -93,7 +111,7 @@ export async function registerForPushNotifications(userId: string): Promise<Push
     throw error;
   }
 
-  const subscription = Notifications.addPushTokenListener(async (nextToken) => {
+  const subscription = notifications.addPushTokenListener(async (nextToken) => {
     const nextValue = getPushTokenValue(nextToken);
     await supabase.rpc("claim_user_device", {
       p_push_token: nextValue,
