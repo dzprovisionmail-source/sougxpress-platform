@@ -103,17 +103,72 @@ serve(async (req) => {
         query = query.or("is_available.eq.true,is_mock.eq.true");
       }
 
-      const { data, error } = await query;
+      const { data: configuredCouriers, error } = await query;
       if (error) return fail(error.message);
+
+      // The live registration flow creates public.drivers, whereas this
+      // Founder surface historically read only public.couriers. Merge live
+      // drivers without creating duplicate courier rows and without bypassing
+      // the existing availability/status rules.
+      let data = configuredCouriers ?? [];
+      const { data: liveDrivers, error: driverErr } = await adminClient
+        .from("drivers")
+        .select("id, full_name, first_name, last_name, phone_number, phone, email, vehicle_type, rating, delivered_count, delivery_count, status, availability, is_available, is_demo, deleted_at, created_at")
+        .eq("is_demo", false)
+        .is("deleted_at", null)
+        .limit(500);
+      if (driverErr) return fail(driverErr.message);
+
+      const linkedUserIds = new Set(
+        data.map((courier: any) => courier.user_id).filter(Boolean)
+      );
+      const normalizedSearch = typeof search === "string" ? search.trim().toLowerCase() : "";
+      const liveAsCouriers = (liveDrivers ?? [])
+        .filter((driver: any) => {
+          if (linkedUserIds.has(driver.id)) return false;
+          if (status_filter === "available" && !(driver.status === "active" && driver.availability === "online" && driver.is_available === true)) return false;
+          if (status_filter === "unavailable" && driver.is_available === true) return false;
+          if (["demo", "verified", "pinned", "hidden"].includes(status_filter)) return false;
+          if (!include_inactive && !(driver.status === "active" && driver.availability === "online" && driver.is_available === true)) return false;
+          if (normalizedSearch) {
+            const haystack = [driver.full_name, driver.first_name, driver.last_name, driver.phone_number, driver.phone, driver.email]
+              .filter(Boolean).join(" ").toLowerCase();
+            if (!haystack.includes(normalizedSearch)) return false;
+          }
+          return true;
+        })
+        .map((driver: any) => ({
+          id: driver.id,
+          user_id: driver.id,
+          full_name: driver.full_name || [driver.first_name, driver.last_name].filter(Boolean).join(" ") || "موصل",
+          phone_number: driver.phone_number || driver.phone || "",
+          bio: "",
+          avatar_url: null,
+          vehicle_type: driver.vehicle_type || "motorcycle",
+          vehicle_photo_url: null,
+          rating: driver.rating ?? 5,
+          delivery_count: driver.delivery_count ?? driver.delivered_count ?? 0,
+          is_available: driver.status === "active" && driver.availability === "online" && driver.is_available === true,
+          is_mock: false,
+          is_verified: driver.status === "active",
+          is_pinned: false,
+          display_order: 0,
+          show_on_home: driver.status === "active" && driver.availability === "online" && driver.is_available === true,
+          created_at: driver.created_at,
+          source: "drivers",
+          status: driver.status,
+          availability: driver.availability,
+        }));
+      data = [...data, ...liveAsCouriers];
 
       await adminClient.from("admin_audit_logs").insert({
         admin_user_id: caller.id,
         action: "list_couriers",
         entity_type: "courier",
-        details: { count: data?.length ?? 0, filter: status_filter },
+        details: { count: data.length, filter: status_filter, included_live_drivers: liveAsCouriers.length },
       });
 
-      return ok({ success: true, data: data ?? [] });
+      return ok({ success: true, data });
     }
 
     // ─── CREATE ──────────────────────────────────────────────────────────────
@@ -303,9 +358,53 @@ serve(async (req) => {
         .from("couriers")
         .select(field)
         .eq("id", id)
-        .single();
+        .maybeSingle();
       if (fetchErr) return fail(fetchErr.message);
 
+      // Live accounts are keyed by auth.users.id in public.drivers and do not
+      // have a public.couriers row. Availability is the only Founder toggle
+      // that is meaningful for them; keep the two availability columns aligned.
+      if (!current && action === "toggle_availability") {
+        const { data: liveDriver, error: liveFetchErr } = await adminClient
+          .from("drivers")
+          .select("id, availability, is_available, full_name, first_name, last_name, phone_number, phone, vehicle_type, rating, delivered_count, delivery_count, status, is_demo, created_at")
+          .eq("id", id)
+          .maybeSingle();
+        if (liveFetchErr) return fail(liveFetchErr.message);
+        if (!liveDriver) return fail("الموصل غير موجود");
+
+        const nextAvailable = !(liveDriver.status === "active" && liveDriver.availability === "online" && liveDriver.is_available === true);
+        const { error: liveUpdateErr } = await adminClient
+          .from("drivers")
+          .update({ availability: nextAvailable ? "online" : "offline", is_available: nextAvailable })
+          .eq("id", id);
+        if (liveUpdateErr) return fail(liveUpdateErr.message);
+
+        const courier = {
+          id: liveDriver.id,
+          user_id: liveDriver.id,
+          full_name: liveDriver.full_name || [liveDriver.first_name, liveDriver.last_name].filter(Boolean).join(" ") || "موصل",
+          phone_number: liveDriver.phone_number || liveDriver.phone || "",
+          vehicle_type: liveDriver.vehicle_type || "motorcycle",
+          rating: liveDriver.rating ?? 5,
+          delivery_count: liveDriver.delivery_count ?? liveDriver.delivered_count ?? 0,
+          is_available: nextAvailable,
+          is_mock: false,
+          is_verified: liveDriver.status === "active",
+          created_at: liveDriver.created_at,
+          source: "drivers",
+        };
+        await adminClient.from("admin_audit_logs").insert({
+          admin_user_id: caller.id,
+          action: "toggle_availability_courier",
+          entity_type: "driver",
+          entity_id: id,
+          details: { field: "availability", previous: !nextAvailable, next: nextAvailable },
+        });
+        return ok({ success: true, data: courier, toggled: nextAvailable });
+      }
+
+      if (!current) return fail("هذا الإجراء متاح للموصلين الإداريين فقط");
       const currentVal = Boolean(current?.[field]);
       const { data: courier, error: updateErr } = await adminClient
         .from("couriers")
