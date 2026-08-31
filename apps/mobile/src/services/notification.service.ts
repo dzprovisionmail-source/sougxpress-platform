@@ -15,10 +15,12 @@ export type AppNotification = {
   read_at: string | null;
   created_at: string;
   delivery_status: string | null;
+  related_entity_type: string | null;
+  related_entity_id: string | null;
 };
 
 const NOTIFICATION_COLUMNS =
-  "id, title, body, type, notification_type, data, is_read, read_at, created_at, delivery_status";
+  "id, title, body, type, notification_type, data, is_read, read_at, created_at, delivery_status, related_entity_type, related_entity_id";
 
 export async function getNotifications(
   userId: string,
@@ -33,7 +35,7 @@ export async function getNotifications(
     .limit(limit);
 
   if (filter === "unread") {
-    query = query.or("is_read.eq.false,is_read.is.null,read_at.is.null");
+    query = query.is("read_at", null).or("is_read.eq.false,is_read.is.null");
   }
 
   const { data, error } = await query;
@@ -65,7 +67,8 @@ export async function markAllNotificationsRead(
     .from("notifications")
     .update({ is_read: true, read_at: now })
     .eq("user_id", userId)
-    .or("is_read.eq.false,is_read.is.null,read_at.is.null");
+    .is("read_at", null)
+    .or("is_read.eq.false,is_read.is.null");
 
   return { error: error ? new Error(error.message) : null };
 }

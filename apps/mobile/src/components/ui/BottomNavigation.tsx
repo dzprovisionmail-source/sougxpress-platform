@@ -39,6 +39,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     { id: "home", label: "الرئيسية", icon: "home-outline", activeIcon: "home" },
     { id: "search", label: "البحث", icon: "search-outline", activeIcon: "search" },
     { id: "orders", label: "طلباتي", icon: "cart-outline", activeIcon: "cart" },
+    { id: "notifications", label: "الإشعارات", icon: "notifications-outline", activeIcon: "notifications" },
     { id: "profile", label: "حسابي", icon: "person-outline", activeIcon: "person" },
   ];
 
@@ -67,7 +68,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
                 size={24}
                 color={isActive ? colors.primary : colors.textSecondary}
               />
-              {item.id === "profile" && unreadCount > 0 && (
+              {item.id === "notifications" && unreadCount > 0 && (
                 <View style={[styles.badge, { backgroundColor: colors.primary }]}>
                   <Typography variant="caption" style={styles.badgeText}>
                     {unreadCount > 99 ? "99+" : String(unreadCount)}

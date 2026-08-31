@@ -19,6 +19,7 @@ interface DriverNotification {
   title: string | null;
   body: string | null;
   read_at: string | null;
+  is_read: boolean | null;
   created_at: string;
   type?: string | null;
 }
@@ -97,10 +98,12 @@ export default function DriverNotificationsScreen() {
     try {
       const { error } = await supabase
         .from("notifications")
-        .update({ read_at: new Date().toISOString() })
-        .eq("id", id);
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
-      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
+      const now = new Date().toISOString();
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true, read_at: now } : n)));
     } catch (error) {
       console.error("Error marking driver notification as read:", error);
     }
@@ -108,14 +111,16 @@ export default function DriverNotificationsScreen() {
 
   const markAllAsRead = async () => {
     try {
-      const unreadIds = notifications.filter((n) => !n.read_at).map((n) => n.id);
+      const unreadIds = notifications.filter((n) => !n.is_read && !n.read_at).map((n) => n.id);
       if (unreadIds.length === 0) return;
       const { error } = await supabase
         .from("notifications")
-        .update({ read_at: new Date().toISOString() })
-        .in("id", unreadIds);
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .in("id", unreadIds)
+        .eq("user_id", userId);
       if (error) throw error;
-      setNotifications((prev) => prev.map((n) => (n.read_at ? n : { ...n, read_at: new Date().toISOString() })));
+      const now = new Date().toISOString();
+      setNotifications((prev) => prev.map((n) => (n.is_read || n.read_at ? n : { ...n, is_read: true, read_at: now })));
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
     }
@@ -123,7 +128,11 @@ export default function DriverNotificationsScreen() {
 
   const deleteNotification = async (id: string) => {
     try {
-      const { error } = await supabase.from("notifications").delete().eq("id", id);
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (error) {
@@ -136,7 +145,7 @@ export default function DriverNotificationsScreen() {
     fetchNotifications();
   };
 
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
+  const unreadCount = notifications.filter((n) => !n.is_read && !n.read_at).length;
 
   if (loading && !refreshing) {
     return (
@@ -238,7 +247,7 @@ export default function DriverNotificationsScreen() {
           />
         }
         renderItem={({ item }) => {
-          const unread = !item.read_at;
+          const unread = !item.is_read && !item.read_at;
           const typeLabel = item.type ? NOTIFICATION_TYPES[item.type] || item.type : "تنبيه";
           return (
             <TouchableOpacity

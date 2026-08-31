@@ -49,5 +49,12 @@ export function useMerchantNotifications() {
     }
   };
 
-  return { notifications, loading, unreadCount: notifications.filter((n) => !n.is_read).length, refresh: fetchNotifications, markRead, markAllRead };
+  return {
+    notifications,
+    loading,
+    unreadCount: notifications.filter((n) => !n.is_read && !n.read_at).length,
+    refresh: fetchNotifications,
+    markRead,
+    markAllRead,
+  };
 }

@@ -50,7 +50,7 @@ function safeData(record: NotificationRecord): Record<string, unknown> {
   if (result.conversation_id) {
     result.route = `/chat/${result.conversation_id}`;
   } else if (result.order_id) {
-    result.route = `/orders/${result.order_id}`;
+    result.route = `/customer/orders?orderId=${result.order_id}`;
   }
 
   return result;
