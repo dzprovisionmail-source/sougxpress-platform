@@ -20,17 +20,20 @@ const STATUS_COLORS: Record<string, string> = {
   active:         "#00C853",
   offline:        "#64748B",
   suspended:      "#D50000",
+  rejected:       "#D50000",
 };
 const STATUS_LABELS: Record<string, string> = {
   pending_review: "ينتظر الموافقة",
   active:         "نشط",
   offline:        "غير متصل",
   suspended:      "موقوف",
+  rejected:       "مرفوض",
 };
 const STATUS_TRANSITIONS: Array<{ value: string; label: string; color: string }> = [
   { value: "active",         label: "تفعيل / الموافقة",  color: "#00C853" },
   { value: "offline",        label: "تعيين كغير متصل",   color: "#64748B" },
   { value: "suspended",      label: "تعليق الحساب",      color: "#D50000" },
+  { value: "rejected",       label: "رفض الطلب",          color: "#D50000" },
   { value: "pending_review", label: "إعادة للمراجعة",   color: "#FFD600" },
 ];
 

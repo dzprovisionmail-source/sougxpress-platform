@@ -322,7 +322,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               status: "pending_review",
             }, { onConflict: "id" });
           if (mInsertError) throw mInsertError;
-          status = "pending";
+          status = "pending_review";
         } else {
           status = merchant.status;
         }
@@ -401,7 +401,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               status: "pending_review",
             }, { onConflict: "id" });
           if (dInsertError) throw dInsertError;
-          status = "pending";
+          status = "pending_review";
         } else {
           // Repair only missing fields from trusted Auth metadata/current form
           // data; never overwrite an existing value with an empty fallback.

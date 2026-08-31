@@ -34,7 +34,8 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     ordersPendingRes,
     ordersInDeliveryRes,
     ordersCompletedRes,
-    pendingApprovalsRes,
+    pendingMerchantsRes,
+    pendingDriversRes,
   ] = await Promise.all([
     supabase.from("customers").select("id", { count: "exact", head: true }),
     supabase.from("merchants").select("id", { count: "exact", head: true }),
@@ -60,6 +61,10 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
       .from("merchants")
       .select("id", { count: "exact", head: true })
       .eq("status", "pending_review"),
+    supabase
+      .from("drivers")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending_review"),
   ]);
 
   return {
@@ -71,7 +76,8 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     ordersPending: ordersPendingRes.count ?? null,
     ordersInDelivery: ordersInDeliveryRes.count ?? null,
     ordersCompleted: ordersCompletedRes.count ?? null,
-    pendingApprovals: pendingApprovalsRes.count ?? null,
+    pendingApprovals:
+      (pendingMerchantsRes.count ?? 0) + (pendingDriversRes.count ?? 0),
   };
 }
 

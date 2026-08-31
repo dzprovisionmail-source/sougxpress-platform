@@ -20,7 +20,7 @@ import {
 
 type TabKey = "merchants" | "drivers";
 type MerchantStatus = "all" | "pending_review" | "active" | "suspended" | "rejected";
-type DriverStatus = "all" | "pending_review" | "active" | "suspended" | "offline";
+type DriverStatus = "all" | "pending_review" | "active" | "suspended" | "rejected" | "offline";
 
 const MERCHANT_STATUS_OPTS: Array<{ value: MerchantStatus; label: string; color?: string }> = [
   { value: "all", label: "الكل" },
@@ -35,6 +35,7 @@ const DRIVER_STATUS_OPTS: Array<{ value: DriverStatus; label: string; color?: st
   { value: "pending_review", label: "ينتظر الموافقة", color: "#FFD600" },
   { value: "active", label: "نشط", color: "#00C853" },
   { value: "suspended", label: "موقوف", color: "#FF8A00" },
+  { value: "rejected", label: "مرفوض", color: "#D50000" },
   { value: "offline", label: "غير متصل", color: "#64748B" },
 ];
 
@@ -42,13 +43,13 @@ const MERCHANT_STATUS_COLORS: Record<string, string> = {
   pending_review: "#FFD600", active: "#00C853", suspended: "#FF8A00", rejected: "#D50000",
 };
 const DRIVER_STATUS_COLORS: Record<string, string> = {
-  pending_review: "#FFD600", active: "#00C853", suspended: "#FF8A00", offline: "#64748B",
+  pending_review: "#FFD600", active: "#00C853", suspended: "#FF8A00", rejected: "#D50000", offline: "#64748B",
 };
 const MERCHANT_STATUS_LABELS: Record<string, string> = {
   pending_review: "ينتظر", active: "نشط", suspended: "موقوف", rejected: "مرفوض",
 };
 const DRIVER_STATUS_LABELS: Record<string, string> = {
-  pending_review: "ينتظر", active: "نشط", suspended: "موقوف", offline: "غير متصل",
+  pending_review: "ينتظر", active: "نشط", suspended: "موقوف", rejected: "مرفوض", offline: "غير متصل",
 };
 
 export default function FounderApprovalsScreen() {
