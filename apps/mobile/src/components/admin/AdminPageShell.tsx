@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  ScrollView,
   ViewStyle,
   StyleProp,
   I18nManager,
@@ -19,6 +18,7 @@ import { ArrowRight, Bell, CircleUserRound, LogOut } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { LOGO_OFFICIAL_WORDMARK } from "@/constants/brand";
 import { supabase } from "@/lib/supabase";
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 
 interface AdminPageShellProps {
   title: string;
@@ -167,18 +167,20 @@ export const AdminPageShell: React.FC<AdminPageShellProps> = ({
 
       {/* Content */}
       {scrollable ? (
-        <ScrollView
+        <KeyboardAwareView
+          scrollable
           style={{ flex: 1 }}
           contentContainerStyle={[
             { paddingHorizontal: tokens.spacing.lg, paddingBottom: tokens.spacing["3xl"] },
             contentStyle,
           ]}
-          showsVerticalScrollIndicator={false}
         >
           {children}
-        </ScrollView>
+        </KeyboardAwareView>
       ) : (
-        <View style={[{ flex: 1 }, contentStyle]}>{children}</View>
+        <KeyboardAwareView style={{ flex: 1 }}>
+          <View style={[{ flex: 1 }, contentStyle]}>{children}</View>
+        </KeyboardAwareView>
       )}
     </SafeAreaView>
   );

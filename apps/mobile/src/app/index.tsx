@@ -1,10 +1,10 @@
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   Image,
   Modal,
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   TextInput,
   Pressable,
@@ -222,7 +222,7 @@ export default function EntryScreen() {
         >
           {/* Prevent taps inside the card from closing the modal */}
           <Pressable style={[styles.dialogCard, { backgroundColor: colors.bgElevated }]}>
-            <KeyboardAvoidingView
+            <KeyboardAwareView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
               {/* Header */}
@@ -346,7 +346,7 @@ export default function EntryScreen() {
                   إلغاء
                 </Typography>
               </TouchableOpacity>
-            </KeyboardAvoidingView>
+            </KeyboardAwareView>
           </Pressable>
         </Pressable>
       </Modal>

@@ -1,3 +1,4 @@
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import React, { useEffect, useState } from "react";
 import {
   ScrollView,
@@ -6,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -310,7 +310,7 @@ export default function MerchantProfileScreen() {
         transparent
         onRequestClose={() => setEditModalOpen(false)}
       >
-        <KeyboardAvoidingView
+        <KeyboardAwareView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
         >
@@ -389,7 +389,7 @@ export default function MerchantProfileScreen() {
               </ScrollView>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </KeyboardAwareView>
       </Modal>
     </WorkspaceScreen>
   );

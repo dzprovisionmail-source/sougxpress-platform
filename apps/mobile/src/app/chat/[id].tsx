@@ -4,7 +4,6 @@ import {
   FlatList,
   I18nManager,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   TouchableOpacity,

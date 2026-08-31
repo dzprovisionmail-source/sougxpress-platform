@@ -1,3 +1,4 @@
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
@@ -8,7 +9,6 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
   Platform,
   Image,
 } from "react-native";
@@ -472,7 +472,7 @@ export default function CustomerProfileScreen() {
         transparent
         onRequestClose={() => setShowEditModal(false)}
       >
-        <KeyboardAvoidingView
+        <KeyboardAwareView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
@@ -549,7 +549,7 @@ export default function CustomerProfileScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </KeyboardAwareView>
       </Modal>
     </SafeAreaView>
   );

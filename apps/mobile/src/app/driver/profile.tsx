@@ -1,5 +1,6 @@
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import React, { useMemo, useState } from "react";
-import { ScrollView, Alert, Switch, View, TouchableOpacity, Image, Modal, TextInput, KeyboardAvoidingView, Platform } from "react-native";
+import { ScrollView, Alert, Switch, View, TouchableOpacity, Image, Modal, TextInput, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { Camera, BadgeInfo, Bike, Car, FolderClosed, LogOut, Palette, TrendingUp, User, X, MessageCircle } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -378,7 +379,7 @@ export default function DriverProfileScreen() {
         transparent
         onRequestClose={() => setShowEditModal(false)}
       >
-        <KeyboardAvoidingView
+        <KeyboardAwareView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
         >
@@ -460,7 +461,7 @@ export default function DriverProfileScreen() {
               </ScrollView>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </KeyboardAwareView>
       </Modal>
     </WorkspaceScreen>
   );

@@ -1,3 +1,4 @@
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Modal,
@@ -12,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableWithoutFeedback,
-  KeyboardAvoidingView,
   Platform,
   ViewStyle,
   TextStyle,
@@ -439,7 +439,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
           style={[styles.commentInputSafeArea, { backgroundColor: colors.bgElevated }]}
         >
           {currentUserId ? (
-            <KeyboardAvoidingView
+            <KeyboardAwareView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
               style={[styles.commentInputBar, { borderTopColor: colors.borderSubtle, backgroundColor: colors.bgElevated }]}
             >
@@ -462,7 +462,7 @@ const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
                   <Send size={20} color={colors.primary} />
                 )}
               </TouchableOpacity>
-            </KeyboardAvoidingView>
+            </KeyboardAwareView>
           ) : (
             <TouchableOpacity
               onPress={handleCommentPress}

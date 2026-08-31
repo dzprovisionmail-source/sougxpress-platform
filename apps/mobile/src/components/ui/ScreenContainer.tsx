@@ -2,6 +2,8 @@ import React from 'react';
 import {
   View,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   StatusBar,
   StyleProp,
@@ -49,18 +51,25 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
     >
       <StatusBar barStyle={barStyle} backgroundColor={colors.bgBase} />
       {header}
-      {scrollable ? (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {children}
-        </ScrollView>
-      ) : (
-        <View style={[styles.content, contentContainerStyle]}>{children}</View>
-      )}
+      <KeyboardAvoidingView
+        style={styles.keyboardBoundary}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        {scrollable ? (
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: TOKENS.spacing.xl }, contentContainerStyle]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+          >
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={[styles.content, contentContainerStyle]}>{children}</View>
+        )}
+      </KeyboardAvoidingView>
       {footer}
     </SafeAreaView>
   );
@@ -68,6 +77,9 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
 
 const styles = StyleSheet.create({
   safeArea: {
+    flex: 1,
+  },
+  keyboardBoundary: {
     flex: 1,
   },
   scrollView: {

@@ -18,6 +18,7 @@ interface KeyboardAwareViewProps {
   behavior?: "height" | "position" | "padding";
   keyboardShouldPersistTaps?: "always" | "never" | "handled";
   showsVerticalScrollIndicator?: boolean;
+  keyboardDismissMode?: "none" | "on-drag" | "interactive";
 }
 
 /**
@@ -34,6 +35,7 @@ export const KeyboardAwareView: React.FC<KeyboardAwareViewProps> = ({
   behavior,
   keyboardShouldPersistTaps = "handled",
   showsVerticalScrollIndicator = false,
+  keyboardDismissMode = "on-drag",
 }) => {
   const insets = useSafeAreaInsets();
   const offset = keyboardVerticalOffset ?? (Platform.OS === "ios" ? insets.top : 0);
@@ -49,7 +51,8 @@ export const KeyboardAwareView: React.FC<KeyboardAwareViewProps> = ({
         <ScrollView
           keyboardShouldPersistTaps={keyboardShouldPersistTaps}
           showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-          contentContainerStyle={[{ paddingBottom: bottomInset }, contentContainerStyle]}
+          keyboardDismissMode={keyboardDismissMode}
+          contentContainerStyle={[{ paddingBottom: bottomInset, flexGrow: 1 }, contentContainerStyle]}
         >
           {children}
         </ScrollView>

@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  ScrollView,
   StyleProp,
   ViewStyle,
   I18nManager,
@@ -14,6 +13,7 @@ import {
 import { X } from 'lucide-react-native';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { TOKENS } from '@/constants/tokens';
+import { KeyboardAwareView } from './KeyboardAwareView';
 
 export interface BottomSheetProps {
   visible: boolean;
@@ -73,13 +73,13 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                 </View>
               ) : null}
 
-              {/* Sheet Body */}
-              <ScrollView
-                showsVerticalScrollIndicator={false}
+              {/* Sheet Body: one shared keyboard-aware scroll boundary for every sheet form */}
+              <KeyboardAwareView
+                scrollable
                 contentContainerStyle={styles.bodyContent}
               >
                 {children}
-              </ScrollView>
+              </KeyboardAwareView>
             </View>
           </TouchableWithoutFeedback>
         </View>
