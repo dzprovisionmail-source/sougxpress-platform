@@ -36,7 +36,7 @@ function safeData(record: NotificationRecord): Record<string, unknown> {
   const data = record.data ?? {};
   const result: Record<string, unknown> = { notification_type: record.notification_type };
 
-  for (const key of ["conversation_id", "order_id", "delivery_id", "sender_id"]) {
+  for (const key of ["conversation_id", "message_id", "order_id", "delivery_id", "assignment_id", "store_id", "product_id", "sender_id"]) {
     if (typeof data[key] === "string") result[key] = data[key];
   }
 
@@ -51,6 +51,12 @@ function safeData(record: NotificationRecord): Record<string, unknown> {
     result.route = `/chat/${result.conversation_id}`;
   } else if (result.order_id) {
     result.route = `/customer/orders?orderId=${result.order_id}`;
+  } else if (result.store_id) {
+    result.route = `/store-details?id=${result.store_id}`;
+  } else if (result.product_id) {
+    result.route = `/product-details?id=${result.product_id}`;
+  } else if (result.assignment_id) {
+    result.route = `/driver/deliveries?assignmentId=${result.assignment_id}`;
   }
 
   return result;
