@@ -5,7 +5,6 @@ import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import useDriver from "@/hooks/useDriver";
 import useDriverOrders from "@/hooks/useDriverOrders";
 import {
-  DRIVER_SUBSCRIPTION_PRICE_MINOR,
   FIXED_DELIVERY_FEE_MINOR,
   formatCurrency,
   computeEarningsSplit,
@@ -99,15 +98,7 @@ export default function CourierEarningsScreen() {
 
       <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>اشتراك الموصل</Text>
-        <View style={styles.row}>
-          <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>السعر الشهري بعد التجربة</Text>
-          <Text style={[styles.rowValue, { color: colors.textPrimary }]}>{formatCurrency(subscription?.monthly_price_minor ?? DRIVER_SUBSCRIPTION_PRICE_MINOR)}</Text>
-        </View>
-        <View style={[styles.row, styles.lastRow]}>
-          <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>الحالة</Text>
-          <Text style={[styles.rowValue, { color: trialActive ? colors.success : colors.primary }]}>{trialActive ? "الفترة التجريبية المجانية" : subscription?.status === "active" ? "نشط" : "بانتظار التفعيل"}</Text>
-        </View>
-        <Text style={[styles.description, { color: colors.textSecondary }]}>الاشتراك الحالي مجاني (نسخة تجريبية)\n500 دج اشتراك شهري بعد انطلاق النسخة التجارية</Text>
+        <Text style={[styles.description, { color: colors.success }]}>أنت في النسخة التجريبية المجانية</Text>
       </View>
     </ScrollView>
   );

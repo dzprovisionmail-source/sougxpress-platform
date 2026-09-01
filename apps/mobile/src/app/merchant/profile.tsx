@@ -242,7 +242,7 @@ export default function MerchantProfileScreen() {
           />
           <WorkspaceRow
             label="الاشتراك الشهري"
-            value={'الاشتراك الحالي مجاني (نسخة تجريبية)\n1000 دج اشتراك شهري بعد انطلاق النسخة التجارية'}
+            value="أنت في النسخة التجريبية المجانية"
             isLast
           />
         </SectionCard>

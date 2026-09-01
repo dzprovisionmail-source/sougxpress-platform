@@ -283,7 +283,7 @@ export default function MerchantDashboardScreen() {
             />
             <WorkspaceRow
               label="الاشتراك الشهري"
-              value="1000 دج — الشهر الأول مجاني"
+              value="أنت في النسخة التجريبية المجانية"
             />
             <WorkspaceRow
               label="نوع الاشتراك"
