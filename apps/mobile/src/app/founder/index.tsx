@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Activity,
   Megaphone,
+  Bell,
   Eye,
   ChevronLeft,
   AlertTriangle,
@@ -39,6 +40,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
 import { AdminPageShell, AdminStatCard, AdminErrorState } from "@/components/admin";
 import { SearchBar } from "@/components/ui/SearchBar";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
   getControlCenterStats,
   subscribeToFounderStats,
@@ -240,6 +242,7 @@ function QuickAction({
   accentColor,
   colors,
   tokens,
+  badge,
 }: {
   label: string;
   icon: React.ReactNode;
@@ -247,6 +250,7 @@ function QuickAction({
   accentColor: string;
   colors: ReturnType<typeof useAppTheme>["colors"];
   tokens: ReturnType<typeof useAppTheme>["tokens"];
+  badge?: number;
 }) {
   return (
     <TouchableOpacity
@@ -265,6 +269,11 @@ function QuickAction({
     >
       <View style={[styles.quickActionIcon, { backgroundColor: accentColor + "18" }]}>
         {icon}
+        {badge !== undefined && badge > 0 && (
+          <View style={[styles.quickActionBadge, { backgroundColor: colors.primary }]}>
+            <Text style={styles.quickActionBadgeText}>{badge > 99 ? "99+" : badge}</Text>
+          </View>
+        )}
       </View>
       <Text
         style={{
@@ -287,6 +296,7 @@ function QuickAction({
 
 export default function FounderControlCenterScreen() {
   const { colors, tokens } = useAppTheme();
+  const { unreadCount } = useNotifications();
   const [stats, setStats] = useState<ControlCenterStats | null>(null);
   const [alerts, setAlerts] = useState<OperationalAlert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -529,6 +539,7 @@ export default function FounderControlCenterScreen() {
         {/* ── Quick Actions ────────────────────────────────────────────── */}
         <SectionBlock title="الإجراءات السريعة">
           <View style={styles.quickActionsGrid}>
+            <QuickAction label="إشعارات المؤسس" icon={<Bell size={18} color={primary} />} badge={unreadCount} accentColor={primary} onPress={() => router.push("/founder/notifications" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="مركز الموافقات" icon={<CheckCircle size={18} color={warning} />} accentColor={warning} onPress={() => router.push("/founder/approvals" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إدارة الطلبات" icon={<ClipboardList size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/orders" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إدارة التوصيلات" icon={<Truck size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/deliveries" as never)} colors={colors} tokens={tokens} />
@@ -650,6 +661,8 @@ const styles = StyleSheet.create({
   quickActionsGrid: { gap: TOKENS.spacing.sm },
   quickAction: { flexDirection: "row-reverse", alignItems: "center", gap: 12 },
   quickActionIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  quickActionBadge: { position: "absolute", top: -7, right: -7, minWidth: 17, height: 17, borderRadius: 9, alignItems: "center", justifyContent: "center", paddingHorizontal: 2 },
+  quickActionBadgeText: { color: "#FFF", fontSize: 9, lineHeight: 11, fontWeight: "800" },
   navGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "space-between" },
   navTile: {},
   navTileIcon: {},

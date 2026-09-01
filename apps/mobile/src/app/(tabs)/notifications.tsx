@@ -1,7 +1,7 @@
 import CustomerNotificationsScreen from "@/app/customer/notifications";
 import MerchantNotificationsScreen from "@/app/merchant/notifications";
 import DriverNotificationsScreen from "@/app/driver/notifications";
-import AdminNotificationsScreen from "@/app/admin/notifications";
+import FounderNotificationsScreen from "@/app/founder/notifications";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -32,6 +32,6 @@ export default function NotificationsTab() {
   if (!role) return null;
   if (role === "merchant") return <MerchantNotificationsScreen />;
   if (role === "driver") return <DriverNotificationsScreen />;
-  if (role === "founder" || role === "admin") return <AdminNotificationsScreen />;
+  if (role === "founder" || role === "admin") return <FounderNotificationsScreen />;
   return <CustomerNotificationsScreen />;
 }

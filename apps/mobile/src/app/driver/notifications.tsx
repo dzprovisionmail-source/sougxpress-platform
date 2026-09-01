@@ -1,12 +1,11 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import { FlatList, RefreshControl, TouchableOpacity, View, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { routeNotification } from "@/utils/notification-routing";
 import { Bell, ChevronRight, Circle, X } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
-import { supabase } from "@/lib/supabase";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
   WorkspaceScreen,
   SectionCard,
@@ -39,117 +38,12 @@ const NOTIFICATION_TYPES: Record<string, string> = {
 export default function DriverNotificationsScreen() {
   const router = useRouter();
   const { colors, tokens } = useAppTheme();
-  const { userId } = useCurrentUserId();
-  const [notifications, setNotifications] = useState<DriverNotification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<"all" | "unread">("all");
-
-  const fetchNotifications = useCallback(async () => {
-    if (!userId) return;
-    try {
-      setLoading(true);
-      let query = supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-
-      if (filter === "unread") {
-        query = query.is("read_at", null);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setNotifications(data || []);
-    } catch (error) {
-      console.error("Error fetching driver notifications:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [userId, filter]);
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
-
-  useEffect(() => {
-    if (!userId) return;
-    const channel = supabase
-      .channel(`driver_notifications_${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          fetchNotifications();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, fetchNotifications]);
-
-  const markAsRead = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ is_read: true, read_at: new Date().toISOString() })
-        .eq("id", id)
-        .eq("user_id", userId);
-      if (error) throw error;
-      const now = new Date().toISOString();
-      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true, read_at: now } : n)));
-    } catch (error) {
-      console.error("Error marking driver notification as read:", error);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      const unreadIds = notifications.filter((n) => !n.is_read && !n.read_at).map((n) => n.id);
-      if (unreadIds.length === 0) return;
-      const { error } = await supabase
-        .from("notifications")
-        .update({ is_read: true, read_at: new Date().toISOString() })
-        .in("id", unreadIds)
-        .eq("user_id", userId);
-      if (error) throw error;
-      const now = new Date().toISOString();
-      setNotifications((prev) => prev.map((n) => (n.is_read || n.read_at ? n : { ...n, is_read: true, read_at: now })));
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-    }
-  };
-
-  const deleteNotification = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .delete()
-        .eq("id", id)
-        .eq("user_id", userId);
-      if (error) throw error;
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-    }
-  };
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchNotifications();
-  };
-
-  const unreadCount = notifications.filter((n) => !n.is_read && !n.read_at).length;
+  const { notifications, loading, refreshing, unreadCount, refresh, markRead, markAllRead, remove } = useNotifications(filter);
+  const markAsRead = async (id: string) => { await markRead(id); };
+  const markAllAsRead = async () => { await markAllRead(); };
+  const deleteNotification = async (id: string) => { await remove(id); };
+  const onRefresh = () => { void refresh(true); };
 
   if (loading && !refreshing) {
     return (

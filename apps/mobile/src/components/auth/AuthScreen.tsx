@@ -22,6 +22,7 @@ import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
 import { supabase } from "@/lib/supabase";
 import { AIN_SEFRA_ZONES } from "@/constants/ain-sefra-zones";
 import type { VehicleType } from "@/types/schema-04-couriers";
+import { getRegistrationStatus } from "@/services/trial-approval.service";
 
 type Role = "customer" | "merchant" | "driver";
 
@@ -305,6 +306,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         if (mQueryError) throw mQueryError;
 
         const bName = businessName.trim() || merchant?.business_name || fullName || "متجر";
+        const merchantRegistrationStatus = getRegistrationStatus("merchant");
         if (!merchant) {
           const { error: mInsertError } = await supabase
             .from("merchants")
@@ -318,10 +320,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               email: userEmail,
               zone_id: resolvedZoneId,
               address: address.trim() || null,
-              status: "pending_review",
+              status: merchantRegistrationStatus,
             }, { onConflict: "id" });
           if (mInsertError) throw mInsertError;
-          status = "pending_review";
+          status = merchantRegistrationStatus;
         } else {
           status = merchant.status;
         }
@@ -344,7 +346,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               city: "عين الصفراء",
               country: "Algeria",
               zone_id: resolvedZoneId,
-              status: "pending",
+              status: status === "active" ? "active" : "pending",
               is_open: true,
             });
           if (storeInsertErr) {
@@ -381,6 +383,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         }
 
         if (!driver) {
+          const registrationStatus = getRegistrationStatus("driver");
           const { error: dInsertError } = await supabase
             .from("drivers")
             .upsert({
@@ -397,10 +400,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               zone_id: resolvedZoneId,
               availability: "offline",
               is_available: false,
-              status: "pending_review",
+              status: registrationStatus,
             }, { onConflict: "id" });
           if (dInsertError) throw dInsertError;
-          status = "pending_review";
+          status = registrationStatus;
         } else {
           // Repair only missing fields from trusted Auth metadata/current form
           // data; never overwrite an existing value with an empty fallback.

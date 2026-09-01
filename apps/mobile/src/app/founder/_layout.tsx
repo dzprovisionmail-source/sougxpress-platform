@@ -61,6 +61,7 @@ export default function FounderLayout() {
       <Stack.Screen name="content" />
       <Stack.Screen name="settings" />
       <Stack.Screen name="audit-log" />
+      <Stack.Screen name="notifications" />
       {/* Phase 2 / 3 account-creation placeholders */}
       <Stack.Screen name="add-customer" />
       <Stack.Screen name="add-merchant" />

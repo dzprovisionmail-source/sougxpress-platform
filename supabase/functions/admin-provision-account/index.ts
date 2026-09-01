@@ -134,7 +134,18 @@ serve(async (req) => {
     const nameParts = full_name.trim().split(" ");
 
     const demoFlag = Boolean(is_demo);
-    const demoStatus = demoFlag ? "active" : (status?.trim() || "pending_review");
+    // Keep admin-created accounts consistent with the public registration flow.
+    // Edge Functions cannot read EXPO_PUBLIC_* values, so use server-side
+    // deployment flags with the same safe ON-by-default behavior. Set the
+    // corresponding flag to "false" to require Founder/Admin approval.
+    const trialAutoApprove =
+      role === "merchant"
+        ? (Deno.env.get("TRIAL_AUTO_APPROVE_MERCHANTS") ?? "true").toLowerCase() === "true"
+        : role === "driver"
+          ? (Deno.env.get("TRIAL_AUTO_APPROVE_DRIVERS") ?? "true").toLowerCase() === "true"
+          : false;
+    const registrationStatus = trialAutoApprove ? "active" : (status?.trim() || "pending_review");
+    const demoStatus = demoFlag ? "active" : registrationStatus;
 
     // Insert role-specific record (base columns + demo flag)
     let insertErr: unknown = null;
