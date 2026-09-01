@@ -22,6 +22,12 @@ export type AppNotification = {
 const NOTIFICATION_COLUMNS =
   "id, title, body, type, notification_type, data, is_read, read_at, created_at, delivery_status, related_entity_type, related_entity_id";
 
+type NotificationSubscription = {
+  channel: RealtimeChannel;
+  listeners: Set<() => void>;
+};
+const notificationSubscriptions = new Map<string, NotificationSubscription>();
+
 export async function getNotifications(
   userId: string,
   filter: NotificationFilter = "all",
@@ -89,18 +95,44 @@ export async function deleteNotification(
 export function subscribeToNotifications(
   userId: string,
   onChange: () => void,
-): RealtimeChannel {
-  return supabase
-    .channel(`notifications:user:${userId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "notifications",
-        filter: `user_id=eq.${userId}`,
-      },
-      onChange,
-    )
-    .subscribe();
+): () => void {
+  let subscription = notificationSubscriptions.get(userId);
+  if (!subscription) {
+    const topic = `realtime:notifications:user:${userId}`;
+    const staleChannel = supabase
+      .getChannels()
+      .find((candidate) => candidate.topic === topic);
+    if (staleChannel) {
+      void supabase.removeChannel(staleChannel);
+    }
+    const listeners = new Set<() => void>();
+    const channel = supabase
+      .channel(`notifications:user:${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        () => listeners.forEach((listener) => listener()),
+      )
+      .subscribe();
+    subscription = { channel, listeners };
+    notificationSubscriptions.set(userId, subscription);
+  }
+  subscription.listeners.add(onChange);
+  let active = true;
+  return () => {
+    if (!active) return;
+    active = false;
+    const current = notificationSubscriptions.get(userId);
+    if (!current) return;
+    current.listeners.delete(onChange);
+    if (current.listeners.size === 0) {
+      notificationSubscriptions.delete(userId);
+      void supabase.removeChannel(current.channel);
+    }
+  };
 }

@@ -29,9 +29,7 @@ export function useMerchantNotifications() {
     void fetchNotifications();
     if (!userId) return;
     const channel = subscribeMerchantNotifications(userId, () => void fetchNotifications());
-    return () => {
-      void channel.unsubscribe();
-    };
+    return channel;
   }, [fetchNotifications, userId]);
 
   const markRead = async (id: string) => {

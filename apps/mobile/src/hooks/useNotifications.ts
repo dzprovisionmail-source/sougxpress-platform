@@ -50,9 +50,7 @@ export function useNotifications(filter: NotificationFilter = "all") {
       void refresh();
     });
 
-    return () => {
-      void channel.unsubscribe();
-    };
+    return channel;
   }, [refresh, userId]);
 
   const unreadCount = useMemo(

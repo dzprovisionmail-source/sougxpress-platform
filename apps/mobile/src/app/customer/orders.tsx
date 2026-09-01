@@ -42,6 +42,8 @@ import { supabase } from "@/lib/supabase";
 import { getOrCreateConversation, getCommercialPhone, logCallPress } from "@/services/chat.service";
 import { MessageCircle } from "lucide-react-native";
 
+let customerOrdersChannelSequence = 0;
+
 interface CourierInfo {
   id: string;
   full_name: string;
@@ -151,7 +153,12 @@ export default function CustomerOrdersScreen() {
   useEffect(() => {
     fetchOrders();
     const channel = supabase
-      .channel("customer_orders_all")
+      // Use a unique topic for each screen lifecycle. The tab and deep-link
+      // routes can coexist, and Realtime channels must not be reused after
+      // they have been subscribed to.
+      .channel(
+        `customer_orders_all_route_${Date.now()}_${++customerOrdersChannelSequence}`,
+      )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },

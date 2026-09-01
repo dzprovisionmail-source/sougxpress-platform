@@ -14,7 +14,9 @@ import {
   Package,
   Wallet,
   Heart,
+  Bell,
 } from 'lucide-react-native';
+import { useNotifications } from '@/hooks/useNotifications';
 type Role = 'guest' | 'customer' | 'courier' | 'merchant';
 
 interface TabConfig {
@@ -26,6 +28,7 @@ interface TabConfig {
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { colors, tokens } = useAppTheme();
+  const { unreadCount } = useNotifications();
   const [role, setRole] = useState<Role>('guest');
   const params = useGlobalSearchParams<{ preview?: string; identity?: string }>();
   const isSougAdminPreview = params.identity === 'soug-admin';
@@ -85,6 +88,7 @@ export default function TabLayout() {
       { name: 'favorites', title: 'المفضلة', Icon: Heart },
       { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
       { name: 'cart', title: 'السلة', Icon: ShoppingCart },
+      { name: 'notifications', title: 'الإشعارات', Icon: Bell },
       { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
     ],
     merchant: [
@@ -92,6 +96,7 @@ export default function TabLayout() {
       { name: 'orders', title: 'الطلبات', Icon: ClipboardList },
       { name: 'favorites', title: 'المفضلة', Icon: Heart },
       { name: 'my-store', title: 'المتجر', Icon: Store },
+      { name: 'notifications', title: 'الإشعارات', Icon: Bell },
       { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
     ],
     courier: [
@@ -100,6 +105,7 @@ export default function TabLayout() {
       { name: 'favorites', title: 'المفضلة', Icon: Heart },
       { name: 'deliveries', title: 'التوصيلات', Icon: Bike },
       { name: 'earnings', title: 'الأرباح', Icon: Wallet },
+      { name: 'notifications', title: 'الإشعارات', Icon: Bell },
       { name: 'profile', title: 'حسابي', Icon: CircleUserRound },
     ],
   };
@@ -117,6 +123,9 @@ export default function TabLayout() {
     const IconComponent = approvedTab.Icon;
     return {
       title: approvedTab.title,
+      tabBarBadge: routeName === 'notifications' && unreadCount > 0
+        ? unreadCount > 99 ? '99+' : unreadCount
+        : undefined,
       tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
         <IconComponent
           color={color}
@@ -163,6 +172,7 @@ export default function TabLayout() {
         <Tabs.Screen name="home" options={getTabOptions('home')} />
         <Tabs.Screen name="market" options={getTabOptions('market')} />
         <Tabs.Screen name="orders" options={getTabOptions('orders')} />
+        <Tabs.Screen name="notifications" options={getTabOptions('notifications')} />
         <Tabs.Screen name="cart" options={getTabOptions('cart')} />
         <Tabs.Screen name="profile" options={getTabOptions('profile')} />
         <Tabs.Screen name="products" options={getTabOptions('products')} />
