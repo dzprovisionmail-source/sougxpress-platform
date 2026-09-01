@@ -27,6 +27,26 @@ export interface CourierProfileUpdate {
   availability?: string;
 }
 
+export interface CourierReview {
+  id: string;
+  courier_id: string;
+  reviewer_id: string;
+  reviewer_role: "customer" | "merchant";
+  reviewer_name: string;
+  order_id: string;
+  delivery_assignment_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface CourierReviewEligibility {
+  order_id: string;
+  delivery_assignment_id: string;
+  reviewer_role: "customer" | "merchant";
+  already_reviewed: boolean;
+}
+
 /**
  * Maps a database driver row to the standard Courier interface.
  */
@@ -44,6 +64,7 @@ function mapDriverRowToCourier(row: any): Courier {
     vehicle_type: mapVehicleType(row.vehicle_type) as VehicleType,
     vehicle_photo_url: row.vehicle_photo_url || null,
     rating: Number.isFinite(rating) ? rating : 5.0,
+    review_count: Number.isFinite(Number(row.review_count)) ? Number(row.review_count) : null,
     delivery_count: Number.isFinite(deliveryCount) ? deliveryCount : null,
     is_available: row.availability === "online" || row.is_available === true,
     is_mock: row.is_demo === true,
@@ -152,6 +173,64 @@ export const getCourierById = async (
     console.error("getCourierById failed:", err);
     return { data: null, error: err?.message ?? "فشل جلب تفاصيل الموصل" };
   }
+};
+
+export const getCourierReviews = async (
+  courierId: string
+): Promise<CourierServiceResponse<CourierReview[]>> => {
+  const { data, error } = await supabase.rpc("get_courier_reviews", {
+    p_courier_id: courierId,
+  });
+  if (error) {
+    console.error("getCourierReviews failed:", error);
+    return { data: null, error: error.message };
+  }
+  return { data: (data ?? []) as CourierReview[], error: null };
+};
+
+export const getCourierReviewEligibility = async (
+  courierId: string
+): Promise<CourierServiceResponse<CourierReviewEligibility[]>> => {
+  const { data, error } = await supabase.rpc("get_courier_review_eligibility", {
+    p_courier_id: courierId,
+  });
+  if (error) {
+    console.error("getCourierReviewEligibility failed:", error);
+    return { data: null, error: error.message };
+  }
+  return { data: (data ?? []) as CourierReviewEligibility[], error: null };
+};
+
+export const submitCourierReview = async (payload: {
+  courierId: string;
+  orderId: string;
+  rating: number;
+  comment?: string;
+}): Promise<CourierServiceResponse<CourierReview>> => {
+  const { data, error } = await supabase.rpc("submit_courier_review", {
+    p_courier_id: payload.courierId,
+    p_order_id: payload.orderId,
+    p_rating: payload.rating,
+    p_comment: payload.comment?.trim() || null,
+  });
+  if (error) {
+    console.error("submitCourierReview failed:", error);
+    return { data: null, error: error.message };
+  }
+  return { data: data as CourierReview, error: null };
+};
+
+export const deleteCourierReview = async (
+  reviewId: string
+): Promise<CourierServiceResponse<boolean>> => {
+  const { data, error } = await supabase.rpc("delete_courier_review", {
+    p_review_id: reviewId,
+  });
+  if (error) {
+    console.error("deleteCourierReview failed:", error);
+    return { data: null, error: error.message };
+  }
+  return { data: data === true, error: null };
 };
 
 /**

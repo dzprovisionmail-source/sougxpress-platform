@@ -15,6 +15,7 @@ export interface Courier {
   vehicle_type: VehicleType;
   vehicle_photo_url: string | null;
   rating: number;
+  review_count?: number | null;
   delivery_count: number | null;
   is_available: boolean;
   is_mock: boolean;

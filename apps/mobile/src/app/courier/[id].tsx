@@ -8,13 +8,13 @@ import {
   ActivityIndicator,
   I18nManager,
   Alert,
-  Share,
   Image,
   Linking,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Phone, Star, Share2, Heart, Image as ImageIcon, ClipboardList, TrendingUp, MessageCircle, ShoppingBag } from "lucide-react-native";
+import { ArrowLeft, Phone, Star, Heart, ClipboardList, TrendingUp, MessageCircle, ShoppingBag, MoreVertical } from "lucide-react-native";
 import {
   Typography,
   Avatar,
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { TOKENS } from "@/constants/tokens";
-import { getCourierById, toggleFavoriteCourier } from "@/services/courierService";
+import { getCourierById, toggleFavoriteCourier, getCourierReviews, getCourierReviewEligibility, submitCourierReview, deleteCourierReview, CourierReview } from "@/services/courierService";
 import { supabase } from "@/lib/supabase";
 import { getVehicleIcon, isCourierAvailable, vehicleLabel } from "@/utils/courier.utils";
 import { getCommercialPhone, logCallPress, getOrCreateConversation } from "@/services/chat.service";
@@ -83,8 +83,22 @@ const getStyles = (colors: ReturnType<typeof useAppTheme>["colors"]) =>
     },
     vehiclePhoto: {
       width: "100%",
-      height: 200,
+      height: 220,
       borderRadius: TOKENS.radius.lg,
+    },
+    vehicleCard: {
+      padding: TOKENS.spacing.md,
+      borderRadius: TOKENS.radius.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.bgElevated,
+      gap: TOKENS.spacing.md,
+    },
+    vehicleMeta: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: TOKENS.spacing.sm,
     },
     contactRow: {
       flexDirection: "row",
@@ -146,6 +160,35 @@ const getStyles = (colors: ReturnType<typeof useAppTheme>["colors"]) =>
       backgroundColor: `${colors.primary}08`,
       flex: 1,
     },
+    reviewForm: {
+      gap: TOKENS.spacing.md,
+      width: "100%",
+    },
+    starsRow: {
+      flexDirection: "row-reverse",
+      justifyContent: "center",
+      gap: TOKENS.spacing.sm,
+    },
+    reviewInput: {
+      minHeight: 96,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      borderRadius: TOKENS.radius.md,
+      paddingHorizontal: TOKENS.spacing.md,
+      paddingVertical: TOKENS.spacing.sm,
+      color: colors.textPrimary,
+      textAlign: "right",
+      textAlignVertical: "top",
+    },
+    reviewCard: {
+      padding: TOKENS.spacing.md,
+      gap: TOKENS.spacing.sm,
+    },
+    reviewHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
   });
 
 export default function CourierProfile() {
@@ -167,6 +210,11 @@ export default function CourierProfile() {
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [startingChat, setStartingChat] = useState(false);
+  const [reviews, setReviews] = useState<CourierReview[]>([]);
+  const [eligibleOrders, setEligibleOrders] = useState<{ order_id: string; already_reviewed: boolean }[]>([]);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -197,6 +245,68 @@ export default function CourierProfile() {
     };
     load();
   }, [id]);
+
+  const loadReviews = async () => {
+    if (!id) return;
+    const [{ data: reviewRows }, { data: eligibleRows }, { data: refreshedCourier }] = await Promise.all([
+      getCourierReviews(id),
+      getCourierReviewEligibility(id),
+      getCourierById(id),
+    ]);
+    setReviews(reviewRows ?? []);
+    setEligibleOrders((eligibleRows ?? []).filter((row) => !row.already_reviewed));
+    if (refreshedCourier) {
+      setCourier((previous: any) => ({
+        ...previous,
+        rating: refreshedCourier.rating,
+        delivery_count: refreshedCourier.delivery_count,
+      }));
+    }
+  };
+
+  useEffect(() => {
+    loadReviews();
+  }, [id, userId]);
+
+  const handleSubmitReview = async () => {
+    const order = eligibleOrders[0];
+    if (!order || reviewRating < 1 || submittingReview) return;
+    setSubmittingReview(true);
+    const { error } = await submitCourierReview({
+      courierId: id,
+      orderId: order.order_id,
+      rating: reviewRating,
+      comment: reviewComment,
+    });
+    setSubmittingReview(false);
+    if (error) {
+      Alert.alert("تعذر إرسال التقييم", error);
+      return;
+    }
+    setReviewRating(0);
+    setReviewComment("");
+    await loadReviews();
+    Alert.alert("تم إرسال التقييم", "شكرًا لمشاركتك تقييمك.");
+  };
+
+  const handleDeleteReview = (reviewId: string) => {
+    Alert.alert("حذف التقييم", "هل أنت متأكد من حذف هذا التقييم؟", [
+      { text: "إلغاء", style: "cancel" },
+      {
+        text: "حذف",
+        style: "destructive",
+        onPress: async () => {
+          const { error } = await deleteCourierReview(reviewId);
+          if (error) {
+            Alert.alert("تعذر حذف التقييم", error);
+            return;
+          }
+          await loadReviews();
+          Alert.alert("تم الحذف", "تم حذف التقييم وتحديث الملخص.");
+        },
+      },
+    ]);
+  };
 
   const handleStartChat = async () => {
     if (!userId) {
@@ -306,17 +416,6 @@ export default function CourierProfile() {
     }
   };
 
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `تحقق من ${courier?.full_name} على SougXPRESS!`,
-        title: courier?.full_name,
-      });
-    } catch (e) {
-      console.error("Share failed:", e);
-    }
-  };
-
   if (loading) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]}>
@@ -411,18 +510,33 @@ export default function CourierProfile() {
           <Typography style={[styles.bio, { color: colors.textPrimary }]}>{courier.bio || "لا توجد نبذة"}</Typography>
         </View>
 
-        {courier.vehicle_photo_url ? (
-          <View style={styles.section}>
-            <SectionHeader title="صورة المركبة" />
-            <Image
-              source={{ uri: courier.vehicle_photo_url }}
-              style={styles.vehiclePhoto}
-              resizeMode="cover"
-              onError={() => {}}
-              accessibilityLabel="صورة المركبة"
-            />
-          </View>
-        ) : null}
+        <View style={styles.section}>
+          <SectionHeader title="مركبة التوصيل" />
+          <Card variant="outlined" style={styles.vehicleCard}>
+            <View style={[styles.vehicleMeta, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <View style={[styles.vehicleChip, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                {getVehicleIcon(courier.vehicle_type, colors.primary, 18)}
+                <Typography variant="body" style={{ marginHorizontal: TOKENS.spacing.xs }}>
+                  {vehicleType}
+                </Typography>
+              </View>
+              <Badge variant="accent" label="معلومات المركبة" />
+            </View>
+            {courier.vehicle_photo_url ? (
+              <Image
+                source={{ uri: courier.vehicle_photo_url }}
+                style={styles.vehiclePhoto}
+                resizeMode="cover"
+                onError={() => {}}
+                accessibilityLabel="صورة مركبة التوصيل"
+              />
+            ) : (
+              <Typography variant="caption" color="secondary" align="center">
+                لم تتم إضافة صورة للمركبة بعد
+              </Typography>
+            )}
+          </Card>
+        </View>
 
         {/* Contact Info - Phone Hidden as per Privacy Rules */}
         <View style={styles.section}>
@@ -437,29 +551,64 @@ export default function CourierProfile() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="آراء العملاء" icon={<Star size={18} color={colors.primary} />} />
-          <Card variant="outlined" style={styles.futureSection}>
-            <Star size={32} color={colors.textDisabled} />
-            <Typography variant="body" color="secondary" align="center">
-              ستظهر آراء العملاء هنا
-            </Typography>
-            <Typography variant="caption" color="secondary" align="center">
-              قريباً
-            </Typography>
-          </Card>
-        </View>
+          <SectionHeader title="التقييمات والتعليقات" icon={<Star size={18} color={colors.primary} />} />
+          {reviews.length === 0 ? (
+            <Card variant="outlined" style={styles.futureSection}>
+              <Star size={32} color={colors.textDisabled} />
+              <Typography variant="body" color="secondary" align="center">لا توجد تقييمات بعد</Typography>
+            </Card>
+          ) : (
+            <View style={{ gap: TOKENS.spacing.sm }}>
+              <Card variant="outlined" style={styles.reviewCard}>
+                <Typography variant="h3" align="center">{courier.rating.toFixed(1)} / 5</Typography>
+                <Typography variant="caption" color="secondary" align="center">{reviews.length} تقييم موثق</Typography>
+              </Card>
+              {reviews.map((review) => (
+                <Card key={review.id} variant="outlined" style={styles.reviewCard}>
+                  <View style={styles.reviewHeader}>
+                    <Typography variant="body">{review.reviewer_name}</Typography>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} size={14} color="#F5B301" fill={star <= review.rating ? "#F5B301" : "none"} />
+                      ))}
+                      {(userRole === "founder" || userRole === "admin") && (
+                        <TouchableOpacity onPress={() => handleDeleteReview(review.id)} style={{ marginStart: TOKENS.spacing.sm }} accessibilityLabel="إدارة التقييم">
+                          <MoreVertical size={18} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                  {review.comment ? <Typography color="secondary">{review.comment}</Typography> : null}
+                  <Typography variant="caption" color="secondary">{new Date(review.created_at).toLocaleDateString("ar-DZ")}</Typography>
+                </Card>
+              ))}
+            </View>
+          )}
 
-        <View style={styles.section}>
-          <SectionHeader title="معرض الصور" icon={<ImageIcon size={18} color={colors.primary} />} />
-          <Card variant="outlined" style={styles.futureSection}>
-            <ImageIcon size={32} color={colors.textDisabled} />
-            <Typography variant="body" color="secondary" align="center">
-              ستظهر معرض الصور هنا
-            </Typography>
-            <Typography variant="caption" color="secondary" align="center">
-              قريباً
-            </Typography>
-          </Card>
+          {eligibleOrders.length > 0 && (userRole === "customer" || userRole === "merchant") && (
+            <Card variant="outlined" style={[styles.reviewCard, { marginTop: TOKENS.spacing.md }]}>
+              <Typography variant="h3" align="right">قيّم هذا الموصل</Typography>
+              <View style={styles.reviewForm}>
+                <View style={styles.starsRow}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity key={star} onPress={() => setReviewRating(star)} accessibilityLabel={`تقييم ${star} نجوم`}>
+                      <Star size={30} color="#F5B301" fill={star <= reviewRating ? "#F5B301" : "none"} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TextInput
+                  value={reviewComment}
+                  onChangeText={setReviewComment}
+                  placeholder="اكتب تعليقك (اختياري)"
+                  placeholderTextColor={colors.textDisabled}
+                  multiline
+                  maxLength={1000}
+                  style={styles.reviewInput}
+                />
+                <Button title="إرسال التقييم" onPress={handleSubmitReview} loading={submittingReview} disabled={reviewRating === 0 || submittingReview} />
+              </View>
+            </Card>
+          )}
         </View>
 
         <View style={[styles.actions, { flexDirection: isRTL ? "row-reverse" : "row" }]}>

@@ -8,13 +8,12 @@ import {
   ActivityIndicator,
   I18nManager,
   Alert,
-  Share,
   RefreshControl,
   Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useGlobalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Star, Share2, Heart, Truck, Bike, Car, Eye } from "lucide-react-native";
+import { ArrowLeft, Star, Heart, Truck, Eye } from "lucide-react-native";
 import { getPromotionalViews } from "@/services/promotional-views.service";
 import {
   Typography,
@@ -120,17 +119,6 @@ export default function CouriersDirectoryScreen() {
     }
   };
 
-  const handleShare = async (courier: any) => {
-    try {
-      await Share.share({
-        message: `تحقق من ${courier.full_name} على SougXPRESS!`,
-        title: courier.full_name,
-      });
-    } catch (e) {
-      console.error("Share failed:", e);
-    }
-  };
-
   const [promoViewsMap, setPromoViewsMap] = useState<Record<string, number | null>>({});
 
   useEffect(() => {
@@ -202,6 +190,9 @@ export default function CouriersDirectoryScreen() {
             <Typography variant="body" style={{ marginHorizontal: TOKENS.spacing.xs }}>
               {typeof courier.rating === "number" ? courier.rating.toFixed(1) : courier.rating}
             </Typography>
+            {typeof courier.review_count === "number" ? (
+              <Typography variant="caption" color="secondary">({courier.review_count})</Typography>
+            ) : null}
           </View>
           {typeof courier.delivery_count === "number" && Number.isFinite(courier.delivery_count) ? (
             <View style={[styles.statItem, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
@@ -221,14 +212,11 @@ export default function CouriersDirectoryScreen() {
           ) : null}
         </View>
 
-        <View style={styles.bioRow}>
-          <Typography variant="body" color="secondary" numberOfLines={2}>
-            {courier.bio || "لا توجد نبذة"}
-          </Typography>
-        </View>
-
         {courier.vehicle_photo_url ? (
           <View style={styles.vehiclePhotoWrapper}>
+            <Typography variant="caption" color="secondary" style={styles.vehiclePhotoLabel}>
+              مركبة التوصيل
+            </Typography>
             <Image
               source={{ uri: courier.vehicle_photo_url }}
               style={styles.vehiclePhoto}
@@ -246,14 +234,6 @@ export default function CouriersDirectoryScreen() {
             onPress={() => handleViewProfile(courier.id)}
             style={styles.actionBtn}
             icon={<ArrowLeft size={16} color={colors.textOnBrand} />}
-          />
-          <Button
-            title="مشاركة"
-            variant="outline"
-            size="sm"
-            icon={<Share2 size={16} color={colors.primary} />}
-            onPress={() => handleShare(courier)}
-            style={styles.actionBtn}
           />
         </View>
       </Card>
@@ -395,11 +375,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: TOKENS.spacing.xs,
   },
-  bioRow: {
-    marginTop: TOKENS.spacing.xs,
-  },
   vehiclePhotoWrapper: {
     marginTop: TOKENS.spacing.sm,
+  },
+  vehiclePhotoLabel: {
+    marginBottom: TOKENS.spacing.xs,
+    textAlign: "right",
   },
   vehiclePhoto: {
     width: "100%",
