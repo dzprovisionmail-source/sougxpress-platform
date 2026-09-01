@@ -22,6 +22,7 @@ import {
 } from "@/components/ui";
 import { Trash2, ArrowLeft, ArrowRight, ShoppingBag, ShieldCheck, LogIn } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
+import { FIXED_DELIVERY_FEE_MINOR } from "@/constants/earnings";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import {
@@ -87,7 +88,7 @@ export default function CustomerCartScreen() {
     );
   };
 
-  const deliveryFeeMinor = cartItems.length > 0 ? 20000 : 0; // 200 DZD
+  const deliveryFeeMinor = cartItems.length > 0 ? FIXED_DELIVERY_FEE_MINOR : 0;
   const subtotalMinor = calculateSubtotalMinor();
   const totalMinor = subtotalMinor + deliveryFeeMinor;
 
