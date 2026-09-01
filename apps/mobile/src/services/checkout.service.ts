@@ -34,7 +34,8 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
       customer_id: data.customer_id,
       store_id: data.store_id,
       zone_id: data.zone_id,
-      driver_id: data.driver_id || null,
+      // A preferred courier is stored by the validated offer RPC; do not mark the order as assigned before acceptance.
+      driver_id: null,
       status: "pending",
       order_total_minor: computedTotal,
       subtotal_minor: computedSubtotal,
@@ -88,16 +89,10 @@ export const processCheckout = async (data: CheckoutData): Promise<{ success: bo
         });
 
         if (directOfferError) {
-          console.warn("Direct delivery offer RPC failed, falling back to manual assignment:", directOfferError);
-          // Fallback to manual assignment if RPC fails (e.g. if eligibility check fails but we still want to record preference)
-          await supabase.from("delivery_assignments").insert({
-            order_id: newOrder.id,
-            driver_id: data.driver_id,
-            status: "pending"
-          });
+          throw new Error(directOfferError.message || "تعذر إرسال عرض الموصل المفضل وفق قواعد الأهلية الحالية.");
         }
-      } catch (assignErr) {
-        console.warn("Could not assign driver:", assignErr);
+      } catch (assignErr: any) {
+        throw new Error(assignErr?.message || "تعذر إرسال عرض الموصل المفضل.");
       }
     }
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, Platform, I18nManager } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, Platform, I18nManager, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareView } from '@/components/ui/KeyboardAwareView';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
@@ -17,6 +17,7 @@ import { getThemeColors, DEFAULT_THEME } from '@/constants/theme';
 
 import useCheckout from '@/hooks/useCheckout';
 import { supabase } from '@/lib/supabase';
+import { getAvailableCouriers } from '@/services/courierService';
 
 const CheckoutScreen = () => {
   const router = useRouter();
@@ -49,9 +50,31 @@ const CheckoutScreen = () => {
 
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [availableCouriers, setAvailableCouriers] = useState<any[]>([]);
+  const [couriersLoading, setCouriersLoading] = useState(false);
+  const [selectedPreferredDriverId, setSelectedPreferredDriverId] = useState<string | null>(preferredDriverId || null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const loadCouriers = async () => {
+      setCouriersLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        if (!cancelled) setCouriersLoading(false);
+        return;
+      }
+      const result = await getAvailableCouriers(user.id);
+      if (!cancelled) {
+        setAvailableCouriers((result.data || []).filter((courier: any) => courier.is_available));
+        setCouriersLoading(false);
+      }
+    };
+    loadCouriers();
+    return () => { cancelled = true; };
+  }, []);
 
   const onConfirm = async () => {
-    const result = await handleConfirmOrder(preferredDriverId);
+    const result = await handleConfirmOrder(selectedPreferredDriverId);
     if (result.success) {
       setCreatedOrderId(result.orderId || null);
       setOrderSuccess(true);
@@ -139,6 +162,44 @@ const CheckoutScreen = () => {
                 </View>
               </Card>
             )}
+
+            {/* Preferred courier */}
+            <Card style={styles.sectionCard}>
+              <Typography variant="h3" align="right" style={styles.sectionTitle}>الموصل المفضل (اختياري)</Typography>
+              <Typography variant="caption" color="secondary" align="right" style={{ marginBottom: TOKENS.spacing.sm }}>
+                سيصل إليه عرض التوصيل، ولا يصبح موصلًا مقبولًا حتى يوافق وفق workflow النظام.
+              </Typography>
+              {couriersLoading ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : availableCouriers.length === 0 ? (
+                <Typography variant="caption" color="secondary" align="right">لا يوجد موصل مؤهل ومتاح حاليًا.</Typography>
+              ) : (
+                <View style={{ gap: TOKENS.spacing.sm }}>
+                  <TouchableOpacity
+                    onPress={() => setSelectedPreferredDriverId(null)}
+                    style={[styles.courierOption, { borderColor: selectedPreferredDriverId === null ? colors.primary : colors.borderSubtle, backgroundColor: selectedPreferredDriverId === null ? `${colors.primary}12` : colors.bgBase }]}
+                  >
+                    <Typography variant="body">بدون موصل مفضل</Typography>
+                  </TouchableOpacity>
+                  {availableCouriers.map((courier: any) => {
+                    const selected = selectedPreferredDriverId === courier.id;
+                    return (
+                      <TouchableOpacity
+                        key={courier.id}
+                        onPress={() => setSelectedPreferredDriverId(courier.id)}
+                        style={[styles.courierOption, { borderColor: selected ? colors.primary : colors.borderSubtle, backgroundColor: selected ? `${colors.primary}12` : colors.bgBase }]}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Typography variant="body" align="right">{courier.full_name}</Typography>
+                          <Typography variant="caption" color="secondary" align="right">متاح الآن · تقييم {Number(courier.rating || 0).toFixed(1)}</Typography>
+                        </View>
+                        <View style={[styles.courierRadio, { borderColor: selected ? colors.primary : colors.borderSubtle, backgroundColor: selected ? colors.primary : "transparent" }]} />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </Card>
 
             {/* Cart Items Summary */}
             <Card style={styles.sectionCard}>
@@ -248,6 +309,22 @@ const styles = StyleSheet.create({
   },
   itemInfo: {
     flex: 1,
+  },
+  courierOption: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderRadius: TOKENS.radius.md,
+    padding: TOKENS.spacing.sm,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: TOKENS.spacing.sm,
+  },
+  courierRadio: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
   },
   notesHeader: {
     alignItems: 'center',

@@ -1,5 +1,7 @@
 import React from "react";
 import { FlatList, TouchableOpacity, View, RefreshControl } from "react-native";
+import { useRouter } from "expo-router";
+import { routeNotification } from "@/utils/notification-routing";
 import { Bell, BellOff, CheckCheck } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -23,6 +25,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function MerchantNotificationsScreen() {
   const { colors, tokens } = useAppTheme();
+  const router = useRouter();
   const { notifications, loading, unreadCount, refresh, markRead, markAllRead } =
     useMerchantNotifications();
 
@@ -118,7 +121,10 @@ export default function MerchantNotificationsScreen() {
             const isUnread = !item.is_read;
             return (
               <TouchableOpacity
-                onPress={() => markRead(item.id)}
+                onPress={async () => {
+                  if (!item.is_read) await markRead(item.id);
+                  routeNotification(router, item, "merchant");
+                }}
                 activeOpacity={0.85}
                 style={{
                   flexDirection: "row-reverse",

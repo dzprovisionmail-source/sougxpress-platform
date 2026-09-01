@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { FlatList, RefreshControl, TouchableOpacity, View, Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { routeNotification } from "@/utils/notification-routing";
 import { Bell, ChevronRight, Circle, X } from "lucide-react-native";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -22,6 +23,9 @@ interface DriverNotification {
   is_read: boolean | null;
   created_at: string;
   type?: string | null;
+  data?: Record<string, unknown> | null;
+  related_entity_type?: string | null;
+  related_entity_id?: string | null;
 }
 
 const NOTIFICATION_TYPES: Record<string, string> = {
@@ -251,7 +255,10 @@ export default function DriverNotificationsScreen() {
           const typeLabel = item.type ? NOTIFICATION_TYPES[item.type] || item.type : "تنبيه";
           return (
             <TouchableOpacity
-              onPress={() => unread && markAsRead(item.id)}
+              onPress={async () => {
+                if (unread) await markAsRead(item.id);
+                routeNotification(router, item, "courier");
+              }}
               activeOpacity={0.7}
               style={{ marginBottom: tokens.spacing.sm }}
             >

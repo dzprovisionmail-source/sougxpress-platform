@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { LogBox, I18nManager } from "react-native";
+import { LogBox, I18nManager, Platform } from "react-native";
 LogBox.ignoreLogs([
   "SafeAreaView has been deprecated",
   "MediaTypeOptions` have been deprecated",
@@ -19,10 +19,11 @@ import {
 } from "@/services/push-notifications.service";
 
 // SougXpress is Arabic-only — force RTL layout direction app-wide.
-I18nManager.allowRTL(true);
-I18nManager.swapLeftAndRightInRTL(true);
-if (!I18nManager.isRTL) {
-  I18nManager.forceRTL(true);
+if (Platform.OS !== "web") {
+  I18nManager.allowRTL(true);
+  if (!I18nManager.isRTL) {
+    I18nManager.forceRTL(true);
+  }
 }
 
 export default function RootLayout() {

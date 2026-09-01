@@ -26,6 +26,10 @@ import DriverDashboardScreen from '../driver/dashboard';
 import { AIN_SEFRA_ZONES } from '@/constants/ain-sefra-zones';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const assetUri = (asset: number): string => {
+  const resolver = (Image as typeof Image & { resolveAssetSource?: (value: number) => { uri?: string } }).resolveAssetSource;
+  return typeof resolver === "function" ? resolver(asset).uri ?? "" : String(asset);
+};
 
 const toFiniteCoordinate = (value: unknown): number | null => {
   const numberValue = typeof value === "number" ? value : Number(value);
@@ -63,21 +67,21 @@ interface HeroSlide {
 const HERO_SLIDES_TEMPLATES: Omit<HeroSlide, "storeId" | "storeName">[] = [
   {
     id: "1",
-    image: Image.resolveAssetSource(BANNER_FRESH).uri,
+    image: assetUri(BANNER_FRESH),
     title: "عروض الأسبوع",
     description: "خصومات حصرية على الخضروات والفواكه الطازجة",
     buttonLabel: "تسوق الآن",
   },
   {
     id: "2",
-    image: Image.resolveAssetSource(BANNER_BAKERY).uri,
+    image: assetUri(BANNER_BAKERY),
     title: "متجر جديد في السوق",
     description: "مخبزة السعادة تفتح أبوابها — خبز طازج يومياً",
     buttonLabel: "اكتشف المتجر",
   },
   {
     id: "3",
-    image: Image.resolveAssetSource(BANNER_DELIVERY).uri,
+    image: assetUri(BANNER_DELIVERY),
     title: "توصيل مجاني",
     description: "لأول طلب لك — يوصلك لبابك بدون رسوم",
     buttonLabel: "اطلب الآن",
