@@ -1,4 +1,7 @@
-import { Redirect } from "expo-router";
+import CustomerNotificationsScreen from "@/app/customer/notifications";
+import MerchantNotificationsScreen from "@/app/merchant/notifications";
+import DriverNotificationsScreen from "@/app/driver/notifications";
+import AdminNotificationsScreen from "@/app/admin/notifications";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -27,8 +30,8 @@ export default function NotificationsTab() {
   }, []);
 
   if (!role) return null;
-  if (role === "merchant") return <Redirect href="/merchant/notifications" />;
-  if (role === "driver") return <Redirect href="/driver/notifications" />;
-  if (role === "founder" || role === "admin") return <Redirect href="/admin/notifications" />;
-  return <Redirect href="/customer/notifications" />;
+  if (role === "merchant") return <MerchantNotificationsScreen />;
+  if (role === "driver") return <DriverNotificationsScreen />;
+  if (role === "founder" || role === "admin") return <AdminNotificationsScreen />;
+  return <CustomerNotificationsScreen />;
 }
