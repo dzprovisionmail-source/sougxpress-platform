@@ -308,22 +308,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         const bName = businessName.trim() || merchant?.business_name || fullName || "متجر";
         const merchantRegistrationStatus = getRegistrationStatus("merchant");
         if (!merchant) {
-          const { error: mInsertError } = await supabase
-            .from("merchants")
-            .upsert({
-              id: userId,
-              owner_full_name: provisioningFullName || "تاجر",
-              business_name: bName,
-              phone: provisioningPhone || "",
-              contact_phone: provisioningPhone || "",
-              contact_email: userEmail,
-              email: userEmail,
-              zone_id: resolvedZoneId,
-              address: address.trim() || null,
-              status: merchantRegistrationStatus,
-            }, { onConflict: "id" });
+          const { data: provisioned, error: mInsertError } = await supabase.functions.invoke(
+            "provision-self-account",
+            {
+              body: {
+                role: "merchant",
+                full_name: provisioningFullName,
+                business_name: bName,
+                phone: provisioningPhone,
+                email: userEmail,
+                zone_id: resolvedZoneId,
+                address: address.trim() || null,
+              },
+            },
+          );
           if (mInsertError) throw mInsertError;
-          status = merchantRegistrationStatus;
+          if (provisioned?.error) throw new Error(String(provisioned.error));
+          status = provisioned?.status || merchantRegistrationStatus;
         } else {
           status = merchant.status;
         }
@@ -384,26 +385,26 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
         if (!driver) {
           const registrationStatus = getRegistrationStatus("driver");
-          const { error: dInsertError } = await supabase
-            .from("drivers")
-            .upsert({
-              id: userId,
-              first_name: provisioningFirstName || "موصل",
-              last_name: provisioningLastName || "جديد",
-              full_name: provisioningFullName || "موصل جديد",
-              phone_number: provisioningPhone || "",
-              phone: provisioningPhone || "",
-              email: userEmail,
-              vehicle_type: resolvedVehicleType,
-              city: "Ain Sefra",
-              neighborhood: resolvedNeighborhood,
-              zone_id: resolvedZoneId,
-              availability: "offline",
-              is_available: false,
-              status: registrationStatus,
-            }, { onConflict: "id" });
+          const { data: provisioned, error: dInsertError } = await supabase.functions.invoke(
+            "provision-self-account",
+            {
+              body: {
+                role: "driver",
+                first_name: provisioningFirstName,
+                last_name: provisioningLastName,
+                full_name: provisioningFullName,
+                phone: provisioningPhone,
+                email: userEmail,
+                vehicle_type: resolvedVehicleType,
+                city: "Ain Sefra",
+                neighborhood: resolvedNeighborhood,
+                zone_id: resolvedZoneId,
+              },
+            },
+          );
           if (dInsertError) throw dInsertError;
-          status = registrationStatus;
+          if (provisioned?.error) throw new Error(String(provisioned.error));
+          status = provisioned?.status || registrationStatus;
         } else {
           // Repair only missing fields from trusted Auth metadata/current form
           // data; never overwrite an existing value with an empty fallback.
