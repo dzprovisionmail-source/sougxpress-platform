@@ -261,7 +261,7 @@ export default function EntryScreen() {
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
                 editable={!isLoading}
-                textAlign="right"
+                textAlign="left"
               />
 
               {/* Password */}
@@ -288,7 +288,7 @@ export default function EntryScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleFounderLogin}
                 editable={!isLoading}
-                textAlign="right"
+                textAlign="left"
               />
 
               {/* Error / denied message */}
@@ -450,10 +450,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: TOKENS.radius.md,
     paddingHorizontal: TOKENS.spacing.md,
-    paddingVertical: TOKENS.spacing.sm + 4,
+    paddingVertical: 0,
     fontSize: 15,
+    lineHeight: 20,
+    height: 52,
     marginBottom: TOKENS.spacing.md,
-    writingDirection: "rtl",
+    writingDirection: "ltr",
   },
   errorRow: {
     marginBottom: TOKENS.spacing.sm,
