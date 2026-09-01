@@ -26,6 +26,7 @@ import {
 } from "@/components/ui";
 import { Store as StoreIcon, Heart, Share2, ShoppingBag } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import { addToCart } from "@/services/cart.service";
@@ -170,7 +171,13 @@ export default function ProductDetailsScreen() {
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareView style={{ flex: 1 }}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
         {/* Product Image Gallery Fallback */}
         <View style={styles.imageGalleryWrapper}>
           <ImageFallback
@@ -285,7 +292,8 @@ export default function ProductDetailsScreen() {
             ]}
           />
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAwareView>
 
       {/* Sticky Bottom Add to Cart CTA */}
       <View

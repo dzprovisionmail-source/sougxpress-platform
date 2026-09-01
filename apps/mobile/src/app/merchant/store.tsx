@@ -36,6 +36,7 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
 import { getStore, getStoresByMerchantId, updateStore, createStore } from "@/services/store.service";
 import { DEFAULT_STORE_HOURS, getStoreHours, validateStoreHours } from "@/services/store-hours";
@@ -566,7 +567,12 @@ export default function UnifiedMerchantStoreDashboard() {
               </TouchableOpacity>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>إضافة متجر جديد</Text>
             </View>
-            <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+            <KeyboardAwareView style={{ flex: 1 }}>
+              <ScrollView
+                contentContainerStyle={{ paddingBottom: 24 }}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+              >
               <View style={styles.formGroup}>
                 <Text style={[styles.label, { color: colors.textSecondary }]}>اسم المتجر *</Text>
                 <TextInput
@@ -663,7 +669,8 @@ export default function UnifiedMerchantStoreDashboard() {
                 isLoading={creating}
                 style={{ marginTop: 16 }}
               />
-            </ScrollView>
+              </ScrollView>
+            </KeyboardAwareView>
           </View>
         </View>
       </Modal>
@@ -678,7 +685,12 @@ export default function UnifiedMerchantStoreDashboard() {
               </TouchableOpacity>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>تعديل بيانات المتجر</Text>
             </View>
-            <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+            <KeyboardAwareView style={{ flex: 1 }}>
+              <ScrollView
+                contentContainerStyle={{ paddingBottom: 24 }}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+              >
               <View style={styles.formGroup}>
                 <Text style={[styles.label, { color: colors.textSecondary }]}>اسم المتجر *</Text>
                 <TextInput
@@ -811,7 +823,8 @@ export default function UnifiedMerchantStoreDashboard() {
                 isLoading={savingEdit}
                 style={{ marginTop: 16 }}
               />
-            </ScrollView>
+              </ScrollView>
+            </KeyboardAwareView>
           </View>
         </View>
       </Modal>

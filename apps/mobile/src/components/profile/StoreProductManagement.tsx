@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import ProfileCard from './ProfileCard';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { SimpleSelect } from '@/components/ui';
+import { KeyboardAwareView } from '@/components/ui/KeyboardAwareView';
 import { Product } from '@/types/schema-03-core';
 import { uploadToSupabase } from '@/utils/upload.utils';
 import { prepareImageForUpload } from '@/utils/imageOptimizer';
@@ -291,7 +292,12 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
               </Text>
             </View>
 
-            <ScrollView>
+            <KeyboardAwareView style={{ flex: 1 }}>
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                contentContainerStyle={{ paddingBottom: tokens.spacing.lg }}
+              >
               {/* Image picker */}
               <Text style={fieldLabel(colors, tokens)}>صورة المنتج</Text>
               <TouchableOpacity onPress={pickImage} style={[styles.imagePicker, { borderColor: colors.borderSubtle, borderRadius: tokens.radius.sm }]}>
@@ -352,7 +358,8 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
                   {submitting ? 'جاري الحفظ...' : editingProduct ? 'حفظ التعديلات' : 'إضافة المنتج'}
                 </Text>
               </TouchableOpacity>
-            </ScrollView>
+              </ScrollView>
+            </KeyboardAwareView>
           </View>
         </View>
       </Modal>

@@ -34,6 +34,7 @@ import { TOKENS } from "@/constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import { useStoreOpenState } from "@/services/store-open-state";
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -348,9 +349,12 @@ export default function StoreDetailsScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bgBase }]} edges={["top"]}>
       <Header title={store.name} />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAwareView style={{ flex: 1 }}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
         }
@@ -656,9 +660,9 @@ export default function StoreDetailsScreen() {
             />
           )}
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAwareView>
 
-      {/* Media Viewer */}
       {viewingMediaItem && (
         <MediaViewerModal
           visible={!!viewingMediaItem}

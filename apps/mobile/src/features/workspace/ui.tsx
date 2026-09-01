@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { ThemeType } from "@/constants/theme";
+import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 
 /**
  * Theme-aware primitives for the Merchant and Driver workspaces.
@@ -25,7 +26,11 @@ export const WorkspaceScreen: React.FC<{ children: React.ReactNode; style?: Styl
   style,
 }) => {
   const { colors } = useAppTheme();
-  return <View style={[{ flex: 1, backgroundColor: colors.bgBase }, style]}>{children}</View>;
+  return (
+    <KeyboardAwareView style={[{ flex: 1, backgroundColor: colors.bgBase }, style]}>
+      {children}
+    </KeyboardAwareView>
+  );
 };
 
 export const SectionCard: React.FC<{

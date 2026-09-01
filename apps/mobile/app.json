@@ -47,6 +47,7 @@
     },
     "android": {
       "package": "com.sougxpress.founder",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/brand/sougxpress-app-icon.png",
         "backgroundColor": "#0A1B33"
