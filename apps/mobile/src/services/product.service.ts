@@ -36,7 +36,9 @@ export const createProduct = async (input: {
       category: input.category ?? "عام",
       stock_quantity: input.stock_quantity ?? 0,
       image_url: input.image_url ?? null,
-      status: "active",
+      // Merchant INSERT policy requires newly created products to start as draft.
+      // The merchant UI can activate the product afterward via the guarded UPDATE path.
+      status: "draft",
       is_demo: input.is_demo ?? false,
     })
     .select()
