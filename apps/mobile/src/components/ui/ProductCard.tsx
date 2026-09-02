@@ -101,7 +101,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 color: colors.textPrimary,
                 fontFamily: TOKENS.typography.families.arabic,
                 textAlign: isRTL ? 'right' : 'left',
-                writingDirection: isRTL ? 'rtl' : 'ltr',
               },
             ]}
           >
@@ -117,7 +116,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 color: colors.textSecondary,
                 fontFamily: TOKENS.typography.families.arabic,
                 textAlign: isRTL ? 'right' : 'left',
-                writingDirection: isRTL ? 'rtl' : 'ltr',
               },
               ]}
             >
@@ -293,12 +291,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     minHeight: 36,
     textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+      },
   footerRow: {
     flexDirection: 'row',
-    direction: 'rtl',
-    justifyContent: 'space-between',
+        justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: TOKENS.spacing.xs,
   },
@@ -314,8 +310,7 @@ const styles = StyleSheet.create({
   // Horizontal Variant
   horizontalCard: {
     flexDirection: 'row',
-    direction: 'rtl',
-    padding: TOKENS.spacing.sm,
+        padding: TOKENS.spacing.sm,
     alignItems: 'center',
     marginVertical: TOKENS.spacing.xs,
   },
@@ -332,25 +327,21 @@ const styles = StyleSheet.create({
     fontSize: TOKENS.typography.sizes.base,
     fontWeight: '700',
     textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+      },
   storeSubtitle: {
     fontSize: TOKENS.typography.sizes.xs,
     marginTop: 2,
     textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+      },
   priceRow: {
     flexDirection: 'row',
-    direction: 'rtl',
-    alignItems: 'baseline',
+        alignItems: 'baseline',
     marginTop: 6,
   },
   unitText: {
     fontSize: 11,
     textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+      },
   quickAddBtn: {
     width: TOKENS.touchTarget.minWidth,
     height: TOKENS.touchTarget.minHeight,

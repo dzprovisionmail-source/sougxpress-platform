@@ -61,7 +61,7 @@ export const Typography: React.FC<TypographyProps> = ({
       case 'success':
         return colors.success;
       case 'white':
-        return '#FFFFFF';
+        return colors.textInverse;
       case 'primary':
       default:
         return colors.textPrimary;

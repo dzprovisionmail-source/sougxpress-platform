@@ -600,7 +600,7 @@ const HomeScreen = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.fullContainer, { backgroundColor: colors.bgBase, direction: isRTL ? 'rtl' : 'ltr' }]}>
+    <SafeAreaView style={[styles.fullContainer, { backgroundColor: colors.bgBase,  }]}>
       <StatusBar barStyle="dark-content" />
       <Stack.Screen
         options={{
@@ -624,7 +624,7 @@ const HomeScreen = () => {
         }}
       />
 
-      <ScrollView style={[styles.container, { direction: isRTL ? 'rtl' : 'ltr' }]} contentContainerStyle={styles.pageContent}>
+      <ScrollView style={[styles.container, {  }]} contentContainerStyle={styles.pageContent}>
 
 
         {/* Brand + Search */}
@@ -746,7 +746,7 @@ const HomeScreen = () => {
           <>
             {/* Categories */}
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>
 الفئات</Text>
               <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
                 <TouchableOpacity key="all" onPress={() => { setActiveCategory("all"); setActiveSubcategory("all"); setSubcategories([]); }} style={[styles.categoryItem, { backgroundColor: activeCategory === "all" ? colors.primary + "18" : colors.bgSurface }]}>
@@ -783,7 +783,7 @@ const HomeScreen = () => {
             {/* Official platform profiles */}
             {platformProfiles.length > 0 && (
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>الحسابات الرسمية</Text>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>الحسابات الرسمية</Text>
                 {platformProfiles.map((profile) => (
                   <TouchableOpacity
                     key={profile.id}
@@ -839,7 +839,7 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}>
                   <Award color={colors.primary} size={iconSizes.default} strokeWidth={2} />
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>المتاجر المميزة</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>المتاجر المميزة</Text>
                 </View>
                   <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                     {(searchQuery.length > 0 ? displayedStores : featuredStores).slice(0, 6).map(renderStore)}
@@ -849,7 +849,7 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}>
                   <BadgePlus color={colors.primary} size={iconSizes.default} strokeWidth={2} />
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>المتاجر الجديدة</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>المتاجر الجديدة</Text>
                 </View>
                   <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                     {newStores.slice(0, 6).map(renderStore)}
@@ -859,7 +859,7 @@ const HomeScreen = () => {
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}>
                   <MapPin color={colors.primary} size={iconSizes.default} strokeWidth={2} />
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>المتاجر القريبة منك</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>المتاجر القريبة منك</Text>
                 </View>
                   <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                     {nearbyStores.slice(0, 6).map(renderStore)}
@@ -867,7 +867,7 @@ const HomeScreen = () => {
                 </View>
 
                 <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>كل المتاجر</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>كل المتاجر</Text>
                   <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                     {displayedStores.map(renderStore)}
                   </ScrollView>
@@ -875,7 +875,7 @@ const HomeScreen = () => {
 
                 {products.length > 0 && (
                   <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>🛍️ منتجات جديدة</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>🛍️ منتجات جديدة</Text>
                     <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                       {products.map(renderProduct)}
                     </ScrollView>
@@ -884,7 +884,7 @@ const HomeScreen = () => {
 
                 {mostLikedProducts.length > 0 && (
                   <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>الأكثر إعجابًا</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>الأكثر إعجابًا</Text>
                     <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                       {mostLikedProducts.map(renderProduct)}
                     </ScrollView>
@@ -940,11 +940,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing['2xl'],
     width: '100%',
     alignItems: 'stretch',
-    direction: 'rtl',
-  },
+      },
   pageContent: {
-    direction: 'rtl',
-    alignItems: 'stretch',
+        alignItems: 'stretch',
     paddingBottom: spacing.xl,
   },
   sectionTitleRow: {
@@ -961,15 +959,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexShrink: 1,
     textAlign: 'right',
-    writingDirection: 'rtl',
-    marginBottom: 0,
+        marginBottom: 0,
     paddingHorizontal: 0,
   },
   categoriesContainer: {
     paddingHorizontal: spacing.lg,
     flexDirection: 'row',
-    direction: 'rtl',
-    justifyContent: 'flex-start',
+        justifyContent: 'flex-start',
   },
   categoryItem: {
     alignItems: 'center',
@@ -983,17 +979,14 @@ const styles = StyleSheet.create({
     ...typography.caption,
     marginTop: spacing.xs,
     textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+      },
   horizontalRtl: {
-    direction: 'rtl',
-  },
+      },
   storesScroll: {
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
     flexDirection: 'row',
-    direction: 'rtl',
-  },
+      },
   productCol: {
     width: 160,
     marginEnd: spacing.md,
@@ -1073,8 +1066,7 @@ const styles = StyleSheet.create({
   },
   dotsContainer: {
     flexDirection: 'row',
-    direction: 'rtl',
-    justifyContent: "center",
+        justifyContent: "center",
     alignItems: "center",
     marginTop: spacing.sm,
     gap: spacing.xs,
@@ -1095,8 +1087,7 @@ const styles = StyleSheet.create({
   },
   couriersBannerContent: {
     flexDirection: 'row',
-    direction: 'rtl',
-    alignItems: 'center',
+        alignItems: 'center',
     justifyContent: 'space-between',
   },
   couriersBannerText: {
@@ -1106,8 +1097,7 @@ const styles = StyleSheet.create({
     ...typography.title,
     fontWeight: '700',
     textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+      },
   couriersBannerIcon: {
     marginEnd: spacing.sm,
   },
@@ -1120,8 +1110,7 @@ const styles = StyleSheet.create({
   },
   loginBannerContent: {
     flexDirection: 'row',
-    direction: 'rtl',
-    alignItems: 'center',
+        alignItems: 'center',
     justifyContent: 'space-between',
   },
   loginBannerText: {

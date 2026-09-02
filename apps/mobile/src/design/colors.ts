@@ -9,7 +9,7 @@ export const colors = {
   warning: TOKENS.colors.statusWarning,       // #F59E0B
   error: TOKENS.colors.statusError,           // #EF4444
   backgroundLight: TOKENS.colors.light.bgBase,// #FFFFFF
-  backgroundDark: TOKENS.colors.dark.bgBase,  // #121212
+  backgroundDark: TOKENS.colors.dark.bgBase,
   card: TOKENS.colors.dark.bgSurface,
   text: TOKENS.colors.dark.textPrimary,
   textSecondary: TOKENS.colors.dark.textSecondary,

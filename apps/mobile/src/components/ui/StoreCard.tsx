@@ -232,7 +232,6 @@ export const StoreCard: React.FC<StoreCardProps> = ({
                 color: colors.textPrimary,
                 fontFamily: TOKENS.typography.families.arabic,
                 textAlign: isRTL ? 'right' : 'left',
-                writingDirection: isRTL ? 'rtl' : 'ltr',
               },
             ]}
           >
@@ -251,7 +250,6 @@ export const StoreCard: React.FC<StoreCardProps> = ({
                 color: colors.textSecondary,
                 fontFamily: TOKENS.typography.families.arabic,
                 textAlign: isRTL ? 'right' : 'left',
-                writingDirection: isRTL ? 'rtl' : 'ltr',
               },
             ]}
           >
@@ -266,7 +264,6 @@ export const StoreCard: React.FC<StoreCardProps> = ({
                 color: colors.textDisabled,
                 fontFamily: TOKENS.typography.families.arabic,
                 textAlign: isRTL ? 'right' : 'left',
-                writingDirection: isRTL ? 'rtl' : 'ltr',
               },
               ]}
             >
@@ -331,8 +328,7 @@ const styles = StyleSheet.create({
     top: TOKENS.spacing.sm,
     end: TOKENS.spacing.sm,
     flexDirection: 'row',
-    direction: 'rtl',
-    gap: TOKENS.spacing.xs,
+        gap: TOKENS.spacing.xs,
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -363,8 +359,7 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: 'row',
-    direction: 'rtl',
-    justifyContent: 'space-between',
+        justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: TOKENS.spacing.xs,
   },
@@ -374,12 +369,10 @@ const styles = StyleSheet.create({
     flex: 1,
     marginEnd: 8,
     textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+      },
   metaRow: {
     flexDirection: 'row',
-    direction: 'rtl',
-    alignItems: 'center',
+        alignItems: 'center',
     gap: 4,
     marginBottom: TOKENS.spacing.md,
   },
@@ -387,33 +380,28 @@ const styles = StyleSheet.create({
     fontSize: TOKENS.typography.sizes.xs,
     fontWeight: '600',
     textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+      },
   addressText: {
     fontSize: TOKENS.typography.sizes.xs,
     flex: 1,
     textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+      },
   footerRow: {
     flexDirection: 'row',
-    direction: 'rtl',
-    alignItems: 'center',
+        alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 4,
   },
   infoPill: {
     flexDirection: 'row',
-    direction: 'rtl',
-    alignItems: 'center',
+        alignItems: 'center',
     gap: 4,
   },
   infoPillText: {
     fontSize: TOKENS.typography.sizes.xs,
     fontFamily: TOKENS.typography.families.arabic,
     textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+      },
   actionsRow: {
     position: 'absolute',
     top: TOKENS.spacing.sm,

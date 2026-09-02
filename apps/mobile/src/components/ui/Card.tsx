@@ -70,8 +70,7 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   baseCard: {
-    direction: 'rtl',
-    borderRadius: TOKENS.radius.lg,
+        borderRadius: TOKENS.radius.lg,
     padding: TOKENS.spacing.md,
     marginVertical: TOKENS.spacing.sm,
     overflow: 'hidden',
