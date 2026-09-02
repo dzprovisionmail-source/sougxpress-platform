@@ -10,12 +10,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Typography, Card, BrandWordmark } from "@/components/ui";
 import {
-  Moon, Bell, Shield, Globe, HelpCircle,
+  Bell, Shield, Globe, HelpCircle,
   ChevronRight, ChevronLeft, Info,
 } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
-import { I18nManager } from "react-native";
+import { useAppTheme } from "@/contexts/ThemeContext";
+import { ThemeSwitcher } from "@/features/workspace/ui";
 
 type SettingItem = {
   id: string;
@@ -34,25 +34,14 @@ type SettingGroup = {
 
 export default function CustomerSettingsScreen() {
   const router = useRouter();
-  const colors = getThemeColors(DEFAULT_THEME);
-  const isRTL = I18nManager.isRTL;
+  const { colors, isRTL } = useAppTheme();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
 
   const settingsGroups: SettingGroup[] = [
     {
       title: "الإعدادات العامة",
       items: [
-        {
-          id: "appearance",
-          title: "الوضع الداكن",
-          subtitle: "تفعيل المظهر الداكن للتطبيق",
-          icon: <Moon size={20} color={colors.primary} />,
-          type: "switch",
-          value: darkMode,
-          onValueChange: setDarkMode,
-        },
         {
           id: "language",
           title: "لغة التطبيق",
@@ -124,6 +113,12 @@ export default function CustomerSettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.groupContainer}>
+          <Typography variant="caption" color="secondary" style={[styles.groupTitle, { textAlign: isRTL ? "right" : "left" }]}>المظهر</Typography>
+          <Card style={[styles.groupCard, styles.themeCard]}>
+            <ThemeSwitcher />
+          </Card>
+        </View>
         {settingsGroups.map((group, groupIndex) => (
           <View key={groupIndex} style={styles.groupContainer}>
             <Typography
@@ -206,6 +201,7 @@ const styles = StyleSheet.create({
   groupContainer: { gap: TOKENS.spacing.sm },
   groupTitle: { fontWeight: "600", paddingHorizontal: 4 },
   groupCard: { padding: 0, overflow: "hidden" },
+  themeCard: { padding: TOKENS.spacing.md },
   settingItem: {
     padding: TOKENS.spacing.md,
     alignItems: "center",

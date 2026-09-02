@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Typography } from "./Typography";
 import { TOKENS } from "@/constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
 
 interface Zone {
   id: string;
@@ -35,7 +35,7 @@ export const AinSefraZoneSelect: React.FC<AinSefraZoneSelectProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const colors = getThemeColors(DEFAULT_THEME);
+  const { colors } = useAppTheme();
 
   const selectedZone = zones.find((z) => z.id === value);
 

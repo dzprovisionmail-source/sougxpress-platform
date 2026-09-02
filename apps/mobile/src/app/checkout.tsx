@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, Platform, I18nManager, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareView } from '@/components/ui/KeyboardAwareView';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
@@ -13,7 +13,7 @@ import OrderSummary from '@/components/checkout/OrderSummary';
 import PaymentMethod from '@/components/checkout/PaymentMethod';
 
 import { TOKENS } from '@/constants/tokens';
-import { getThemeColors, DEFAULT_THEME } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 import useCheckout from '@/hooks/useCheckout';
 import { supabase } from '@/lib/supabase';
@@ -30,8 +30,7 @@ const CheckoutScreen = () => {
       }
     });
   }, []);
-  const colors = getThemeColors(DEFAULT_THEME);
-  const isRTL = I18nManager.isRTL;
+  const { colors, isRTL } = useAppTheme();
   
   const { id: preferredDriverId } = useLocalSearchParams<{ id?: string }>();
   const {

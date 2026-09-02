@@ -28,7 +28,7 @@ import {
   LOGO_OFFICIAL_WORDMARK,
 } from "@/constants/brand";
 import { TOKENS } from "@/constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import { getAuthenticatedEntryRoute } from "@/services/auth-entry.service";
 
@@ -48,7 +48,7 @@ import { getAuthenticatedEntryRoute } from "@/services/auth-entry.service";
 type DialogState = "idle" | "loading" | "denied";
 
 export default function EntryScreen() {
-  const colors = getThemeColors(DEFAULT_THEME);
+  const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
 
   /* ── Founder dialog state ─ */

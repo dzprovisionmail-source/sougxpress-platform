@@ -6,9 +6,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { CircleUserRound, LogOut, Shield, Moon, Sun } from "lucide-react-native";
+import { CircleUserRound, LogOut, Shield } from "lucide-react-native";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { AdminPageShell } from "@/components/admin";
+import { ThemeSwitcher } from "@/features/workspace/ui";
 import { supabase } from "@/lib/supabase";
 
 interface AdminProfileData {
@@ -19,7 +20,7 @@ interface AdminProfileData {
 }
 
 export default function AdminProfileScreen() {
-  const { colors, tokens, theme, setTheme } = useAppTheme();
+  const { colors, tokens } = useAppTheme();
   const [profile, setProfile] = useState<AdminProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
@@ -89,28 +90,7 @@ export default function AdminProfileScreen() {
           <Text style={[styles.sectionTitle, { color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, fontSize: tokens.typography.sizes.base }]}>
             المظهر
           </Text>
-          <View style={[styles.themeRow]}>
-            {(["dark", "light", "ivory"] as const).map((t) => (
-              <TouchableOpacity
-                key={t}
-                onPress={() => setTheme(t)}
-                style={[
-                  styles.themeChip,
-                  {
-                    backgroundColor: theme === t ? colors.primary : colors.bgSurface,
-                    borderColor: theme === t ? colors.primary : colors.borderSubtle,
-                    borderRadius: tokens.radius.full,
-                    paddingHorizontal: tokens.spacing.md,
-                    paddingVertical: tokens.spacing.xs,
-                  },
-                ]}
-              >
-                <Text style={[styles.themeChipText, { color: theme === t ? "#000" : colors.textSecondary, fontFamily: tokens.typography.families.arabic, fontSize: tokens.typography.sizes.sm }]}>
-                  {t === "dark" ? "داكن" : t === "light" ? "فاتح" : "عاجي"}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <ThemeSwitcher />
         </View>
 
         {/* Info rows */}
@@ -186,9 +166,6 @@ const styles = StyleSheet.create({
   roleText: { fontWeight: "600" },
   section: { borderWidth: 1 },
   sectionTitle: { fontWeight: "700", textAlign: "right", marginBottom: 12 },
-  themeRow: { flexDirection: "row-reverse", gap: 8 },
-  themeChip: { borderWidth: 1 },
-  themeChipText: { fontWeight: "600" },
   infoRow: {},
   signOutBtn: { borderWidth: 1 },
   signOutText: { fontWeight: "700" },

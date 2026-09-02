@@ -18,7 +18,7 @@ import {
   SimpleSelect,
 } from "../ui";
 import { TOKENS } from "@/constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import { AIN_SEFRA_ZONES } from "@/constants/ain-sefra-zones";
 import type { VehicleType } from "@/types/schema-04-couriers";
@@ -89,7 +89,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   subtitleAr,
 }) => {
   const router = useRouter();
-  const colors = getThemeColors(DEFAULT_THEME);
+  const { colors } = useAppTheme();
 
   // UI state
   const [isLogin, setIsLogin] = useState(true);

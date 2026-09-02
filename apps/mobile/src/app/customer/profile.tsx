@@ -29,19 +29,19 @@ import {
   X,
   User,
   MessageCircle,
+  Palette,
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { TOKENS } from "@/constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
+import { ThemeSwitcher } from "@/features/workspace/ui";
 import { supabase } from "@/lib/supabase";
-import { I18nManager } from "react-native";
 import { getOrCreateSupportConversation } from "@/services/chat.service";
 import { uploadToSupabase } from "@/utils/upload.utils";
 
 export default function CustomerProfileScreen() {
   const router = useRouter();
-  const colors = getThemeColors(DEFAULT_THEME);
-  const isRTL = I18nManager.isRTL;
+  const { colors, isRTL } = useAppTheme();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [address, setAddress] = useState<any>(null);
@@ -216,7 +216,7 @@ export default function CustomerProfileScreen() {
       const contentType = ext === "png" ? "image/png" : "image/jpeg";
       // Match the RLS policy: auth.uid()/profile-%
       const filePath = `${profile.id}/profile-${Date.now()}.${ext}`;
-      
+
       await uploadToSupabase(supabase, "avatars", filePath, uri, contentType);
 
       const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
@@ -456,6 +456,15 @@ export default function CustomerProfileScreen() {
               <Typography variant="body" style={[styles.menuTitle, { color: colors.textPrimary }]}>الاتصال بـ Soug-Admin</Typography>
             </View>
           </TouchableOpacity>
+          <View style={[styles.themeCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            <View style={[styles.themeHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <View style={[styles.menuIconWrapper, { backgroundColor: colors.primary + "12" }]}>
+                <Palette color={colors.primary} size={22} />
+              </View>
+              <Typography variant="body" style={styles.menuTitle}>مظهر التطبيق</Typography>
+            </View>
+            <ThemeSwitcher />
+          </View>
         </View>
 
         <View style={styles.footer}>
@@ -601,6 +610,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  themeCard: {
+    padding: TOKENS.spacing.md,
+    borderRadius: TOKENS.radius.md,
+    borderWidth: 1,
+  },
+  themeHeader: { alignItems: "center", gap: TOKENS.spacing.md, marginBottom: TOKENS.spacing.md },
   menuTitle: { flex: 1, fontWeight: "600" },
   logoutBtn: { marginTop: TOKENS.spacing.lg, borderColor: "rgba(255, 0, 0, 0.1)" },
   footer: { marginTop: TOKENS.spacing["3xl"], paddingBottom: TOKENS.spacing.xl },

@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, TouchableOpacity, View } from "react-native";
-import { I18nManager } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Bell, ChevronLeft, ChevronRight, Circle, X } from "lucide-react-native";
 
 import { Typography, Card, BrandWordmark } from "@/components/ui";
 import { TOKENS } from "@/constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { AppNotification } from "@/services/notification.service";
 import { routeNotification } from "@/utils/notification-routing";
@@ -21,7 +20,7 @@ function matches(item: AppNotification, filter: ViewFilter) { const type = typeO
 function groupFor(date: string) { const now = new Date(); const value = new Date(date); const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); const valueStart = new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime(); const days = Math.round((start - valueStart) / 86400000); return days === 0 ? "اليوم" : days === 1 ? "أمس" : value.toLocaleDateString("ar-DZ", { day: "numeric", month: "long" }); }
 
 export default function CustomerNotificationsScreen() {
-  const router = useRouter(); const colors = getThemeColors(DEFAULT_THEME); const rtl = I18nManager.isRTL; const [filter, setFilter] = useState<ViewFilter>("all");
+  const router = useRouter(); const { colors, isRTL: rtl } = useAppTheme(); const [filter, setFilter] = useState<ViewFilter>("all");
   const { notifications, loading, refreshing, unreadCount, refresh, markRead, markAllRead, remove } = useNotifications(filter === "unread" ? "unread" : "all");
   const visible = useMemo(() => notifications.filter((item) => matches(item, filter)), [notifications, filter]);
   const rows = useMemo<Row[]>(() => { const result: Row[] = []; let last = ""; visible.forEach((item) => { const group = groupFor(item.created_at); if (group !== last) { result.push({ kind: "header", id: `group-${group}`, title: group }); last = group; } result.push({ kind: "notification", item }); }); return result; }, [visible]);

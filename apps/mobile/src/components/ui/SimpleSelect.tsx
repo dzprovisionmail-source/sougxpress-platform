@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Typography } from "./Typography";
 import { TOKENS } from "@/constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
 
 export interface SelectOption {
   value: string;
@@ -34,7 +34,7 @@ export const SimpleSelect: React.FC<SimpleSelectProps> = ({
   error,
 }) => {
   const [open, setOpen] = useState(false);
-  const colors = getThemeColors(DEFAULT_THEME);
+  const { colors } = useAppTheme();
   const selected = options.find((o) => o.value === value);
 
   return (

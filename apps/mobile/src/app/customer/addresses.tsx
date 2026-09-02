@@ -20,9 +20,8 @@ import {
   Map as MapIcon, ChevronRight, ChevronLeft, Check, Pencil, X,
 } from "lucide-react-native";
 import { TOKENS } from "@/constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "@/constants/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
-import { I18nManager } from "react-native";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -72,7 +71,7 @@ function AddressFormModal({
   onSave: (data: AddressFormData) => void;
   onClose: () => void;
   saving: boolean;
-  colors: ReturnType<typeof getThemeColors>;
+  colors: ReturnType<typeof useAppTheme>["colors"];
   isRTL: boolean;
 }) {
   const [form, setForm] = useState<AddressFormData>(initial);
@@ -197,8 +196,7 @@ function AddressFormModal({
 
 export default function CustomerAddressesScreen() {
   const router = useRouter();
-  const colors = getThemeColors(DEFAULT_THEME);
-  const isRTL = I18nManager.isRTL;
+  const { colors, isRTL } = useAppTheme();
   const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState(true);

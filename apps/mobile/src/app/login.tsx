@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography, Card } from "../components/ui";
 import { BRAND_NAME_AR, LOGO_OFFICIAL_WORDMARK, ICON_SHOPPING, ICON_STORE, ICON_DELIVERY } from "../constants/brand";
 import { TOKENS } from "../constants/tokens";
-import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
+import { useAppTheme } from "@/contexts/ThemeContext";
 import { getAuthenticatedEntryRoute } from "../services/auth-entry.service";
 
 /**
@@ -62,7 +62,7 @@ const INTENT_OPTIONS: IntentOption[] = [
 ];
 
 export default function RoleSelectionScreen() {
-  const colors = getThemeColors(DEFAULT_THEME);
+  const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
   const [checkingSession, setCheckingSession] = useState(true);
 
