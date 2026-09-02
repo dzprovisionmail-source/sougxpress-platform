@@ -46,8 +46,12 @@ export const useMerchantProducts = (storeId: string) => {
     image_url?: string | null;
   }) => {
     const created = await createProduct({ store_id: storeId, ...input });
-    if (created) await fetchProducts();
-    return !!created;
+    if (!created) return false;
+
+    // Products must enter as draft for INSERT RLS, then publish through the guarded UPDATE policy.
+    const published = await updateProduct(created.id, { status: 'active' });
+    if (published) await fetchProducts();
+    return !!published;
   };
 
   const editProduct = async (
