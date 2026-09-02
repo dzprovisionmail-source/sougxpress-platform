@@ -419,7 +419,8 @@ const styles = StyleSheet.create({
   imagePicker: { borderWidth: 1, borderStyle: 'dashed', overflow: 'hidden', marginBottom: 4 },
   clearImageButton: { position: 'absolute', top: 8, left: 8, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   modalOverlay: { flex: 1, justifyContent: 'center', padding: 20 },
-  modalContent: { maxHeight: '92%' },
+  // The form body uses flex: 1; an un-sized modal collapses it to header height.
+  modalContent: { height: '92%', maxHeight: '92%' },
   modalHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
   textArea: { minHeight: 70, textAlignVertical: 'top' },
   submitButton: { alignItems: 'center' },
