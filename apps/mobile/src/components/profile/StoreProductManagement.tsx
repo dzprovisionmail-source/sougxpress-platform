@@ -143,9 +143,12 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
     if (!form.name.trim()) { Alert.alert('خطأ', 'يرجى إدخال اسم المنتج'); return; }
     const priceValue = parseFloat(form.price);
     if (isNaN(priceValue) || priceValue < 0) { Alert.alert('خطأ', 'يرجى إدخال سعر صحيح'); return; }
-    if (!form.imageUri && !form.existingImageUrl) { Alert.alert('خطأ', 'يرجى اختيار صورة للمنتج'); return; }
 
     const stockValue = form.stock_quantity.trim() === '' ? null : parseInt(form.stock_quantity, 10);
+    if (stockValue !== null && (!Number.isInteger(stockValue) || stockValue < 0)) {
+      Alert.alert('خطأ', 'يرجى إدخال كمية صحيحة (رقم صحيح أكبر من أو يساوي صفر)');
+      return;
+    }
     const priceMinor = Math.round(priceValue * 100);
 
     if (form.imageUri && !editingProduct && products.filter((product) => Boolean(product.image_url)).length >= 50) {
@@ -161,6 +164,11 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
       const tmpId = editingProduct?.id ?? `new_${Date.now()}`;
       imageUrl = await uploadImage(form.imageUri, tmpId);
       setUploadingImage(false);
+      if (!imageUrl) {
+        setSubmitting(false);
+        Alert.alert('خطأ في الصورة', 'تعذر رفع صورة المنتج. لم يتم إنشاء المنتج، ويمكنك المحاولة مرة أخرى.');
+        return;
+      }
     }
 
     const payload = {
@@ -172,13 +180,19 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
       image_url: imageUrl,
     };
 
-    const success = editingProduct
-      ? await onEditProduct(editingProduct.id, payload)
-      : await onAddProduct(payload);
+    try {
+      const success = editingProduct
+        ? await onEditProduct(editingProduct.id, payload)
+        : await onAddProduct(payload);
 
-    setSubmitting(false);
-    if (success) { closeModal(); }
-    else { Alert.alert('خطأ', 'حدث خطأ أثناء حفظ المنتج، حاول مرة أخرى.'); }
+      if (success) { closeModal(); }
+      else { Alert.alert('خطأ', 'حدث خطأ أثناء حفظ المنتج، حاول مرة أخرى.'); }
+    } catch (err) {
+      console.error('[product] save failed:', err);
+      Alert.alert('خطأ', 'تعذر حفظ المنتج. تحقق من الاتصال والصلاحيات ثم حاول مرة أخرى.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDelete = (product: Product) => {
@@ -304,8 +318,17 @@ const StoreProductManagement: React.FC<StoreProductManagementProps> = ({
                 {uploadingImage ? (
                   <ActivityIndicator color={colors.primary} />
                 ) : form.imageUri || form.existingImageUrl ? (
-                  <Image source={{ uri: form.imageUri ?? form.existingImageUrl! }}
-                    style={{ width: '100%', height: 140, borderRadius: tokens.radius.sm }} resizeMode="cover" />
+                  <View>
+                    <Image source={{ uri: form.imageUri ?? form.existingImageUrl! }}
+                      style={{ width: '100%', height: 140, borderRadius: tokens.radius.sm }} resizeMode="cover" />
+                    <TouchableOpacity
+                      onPress={() => setForm((current) => ({ ...current, imageUri: null, existingImageUrl: null }))}
+                      style={[styles.clearImageButton, { backgroundColor: colors.bgElevated }]}
+                      accessibilityLabel="حذف صورة المنتج"
+                    >
+                      <X color={colors.error} size={18} />
+                    </TouchableOpacity>
+                  </View>
                 ) : (
                   <View style={{ alignItems: 'center', paddingVertical: tokens.spacing.lg }}>
                     <ImagePlus color={colors.textSecondary} size={28} />
@@ -394,6 +417,7 @@ const styles = StyleSheet.create({
   productActions: { flexDirection: 'row-reverse', alignItems: 'center' },
   iconButton: { marginLeft: 10 },
   imagePicker: { borderWidth: 1, borderStyle: 'dashed', overflow: 'hidden', marginBottom: 4 },
+  clearImageButton: { position: 'absolute', top: 8, left: 8, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   modalOverlay: { flex: 1, justifyContent: 'center', padding: 20 },
   modalContent: { maxHeight: '92%' },
   modalHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
