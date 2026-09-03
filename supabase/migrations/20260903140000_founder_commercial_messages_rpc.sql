@@ -1,5 +1,9 @@
 -- Read-only Founder/Admin access to existing commercial message history.
 -- Reuses existing conversation/message rows and preserves all IDs and participants.
+-- The function is new; dropping only this exact signature allows safe replacement
+-- if a previous attempt created an incompatible return type.
+DROP FUNCTION IF EXISTS public.get_founder_commercial_messages(UUID);
+
 CREATE OR REPLACE FUNCTION public.get_founder_commercial_messages(
   p_conversation_id UUID
 )
