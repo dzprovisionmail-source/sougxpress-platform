@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
+import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus, Sparkles } from 'lucide-react-native';
 import { LOGO_ICON, ICON_MASCOT_SCOOTER, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button, BrandWordmark } from '@/components/ui';
@@ -14,7 +14,8 @@ import { iconSizes } from '@/design/icons';
 import { radius } from '@/design/radius';
 import { shadows } from '@/design/shadows';
 
-import { useStores, useSearch, useNewStores } from '@/hooks/useStores';
+import { useStores, useSearch } from '@/hooks/useStores';
+import { useDiscovery } from '@/hooks/useDiscovery';
 import useCart from '@/hooks/useCart';
 import { toggleFavorite, getFavoriteIds } from '@/services/favorite.service';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
@@ -103,7 +104,6 @@ const HomeScreen = () => {
   const [categories, setCategories] = useState<Array<{ id: string; name_ar: string; icon?: string; subtitle?: string }>>([]);
   const [subcategories, setSubcategories] = useState<Array<{ id: string; name_ar: string }>>([]);
   const { stores: allStores, loading: storesLoading, error: storesError } = useStores();
-  const { stores: newStoresData, loading: newStoresLoading } = useNewStores(6);
   const { results: searchResults, loading: searchLoading, handleSearch } = useSearch();
   const { itemCount } = useCart();
   const [isGuest, setIsGuest] = useState(true);
@@ -122,6 +122,7 @@ const HomeScreen = () => {
   const [heroLoading, setHeroLoading] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [rotationInterval, setRotationInterval] = useState(3);
+  const [refreshing, setRefreshing] = useState(false);
   const [marketSections, setMarketSections] = useState<MarketSectionSettings>({
     showSpecialOffers: true,
     showNewStores: true,
@@ -259,6 +260,16 @@ const HomeScreen = () => {
     } catch (e) {
       console.warn("Most-liked products unavailable; keeping the market available.", e);
       setMostLikedProducts([]);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    refreshDiscovery();
+    try {
+      await Promise.all([fetchProducts(), fetchFavorites(), fetchCustomerLocation(), fetchMostLikedProducts()]);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -560,39 +571,21 @@ const HomeScreen = () => {
 
   const displayedStores = searchQuery.length > 0 ? searchResults.stores : filteredStores;
   const platformProfiles = searchQuery.length > 0 ? searchResults.platformProfiles : [];
-  const featuredStores = useMemo(
-    () => displayedStores.filter((store: any) => store.is_featured === true && store.status === "active"),
-    [displayedStores],
-  );
-  const newStores = useMemo(
-    () => [...displayedStores].sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()),
-    [displayedStores],
-  );
-  const nearbyStores = useMemo(() => {
-    const stores = [...displayedStores];
-    const { zoneId, latitude, longitude } = customerLocation;
-    if (latitude !== null && longitude !== null) {
-      return stores.sort((a: any, b: any) => {
-        const aLat = toFiniteCoordinate(a.latitude);
-        const aLon = toFiniteCoordinate(a.longitude);
-        const bLat = toFiniteCoordinate(b.latitude);
-        const bLon = toFiniteCoordinate(b.longitude);
-        const aDistance = aLat !== null && aLon !== null ? distanceInKm(latitude, longitude, aLat, aLon) : Number.POSITIVE_INFINITY;
-        const bDistance = bLat !== null && bLon !== null ? distanceInKm(latitude, longitude, bLat, bLon) : Number.POSITIVE_INFINITY;
-        return aDistance - bDistance;
-      });
-    }
-    if (zoneId) {
-      return stores.sort((a: any, b: any) => {
-        const aSameZone = a.zone_id === zoneId ? 0 : 1;
-        const bSameZone = b.zone_id === zoneId ? 0 : 1;
-        if (aSameZone !== bSameZone) return aSameZone - bSameZone;
-        return zoneOrder(zoneNames[a.zone_id]) - zoneOrder(zoneNames[b.zone_id]);
-      });
-    }
-    return stores;
-  }, [displayedStores, customerLocation, zoneNames]);
-  const loading = storesLoading || searchLoading || newStoresLoading;
+  const {
+    featuredStores,
+    newStores,
+    nearbyStores,
+    newProducts: discoveryProducts,
+    mostLikedProducts: discoveryMostLikedProducts,
+    refresh: refreshDiscovery,
+  } = useDiscovery({
+    stores: displayedStores,
+    products,
+    mostLikedProducts,
+    location: customerLocation,
+    zoneNames,
+  });
+  const loading = storesLoading || searchLoading;
   const error = storesError;
 
   if (userRole === 'courier') {
@@ -624,7 +617,11 @@ const HomeScreen = () => {
         }}
       />
 
-      <ScrollView style={[styles.container, {  }]} contentContainerStyle={styles.pageContent}>
+      <ScrollView
+        style={[styles.container, {  }]}
+        contentContainerStyle={styles.pageContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
+      >
 
 
         {/* Brand + Search */}
@@ -873,20 +870,26 @@ const HomeScreen = () => {
                   </ScrollView>
                 </View>
 
-                {products.length > 0 && (
+                {discoveryProducts.length > 0 && (
                   <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>🛍️ منتجات جديدة</Text>
+                    <View style={styles.sectionTitleRow}>
+                      <Sparkles color={colors.primary} size={iconSizes.default} strokeWidth={2} />
+                      <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>منتجات جديدة</Text>
+                    </View>
                     <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                      {products.map(renderProduct)}
+                      {discoveryProducts.map(renderProduct)}
                     </ScrollView>
                   </View>
                 )}
 
-                {mostLikedProducts.length > 0 && (
+                {discoveryMostLikedProducts.length > 0 && (
                   <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>الأكثر إعجابًا</Text>
+                    <View style={styles.sectionTitleRow}>
+                      <Heart color={colors.primary} size={iconSizes.default} strokeWidth={2} />
+                      <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>الأكثر إعجابًا</Text>
+                    </View>
                     <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                      {mostLikedProducts.map(renderProduct)}
+                      {discoveryMostLikedProducts.map(renderProduct)}
                     </ScrollView>
                   </View>
                 )}
