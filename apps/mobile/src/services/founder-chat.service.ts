@@ -33,7 +33,16 @@ export async function getFounderConversations(
 
     const rows = (data ?? []) as Record<string, unknown>[];
     return rows.map((conv) => {
-      const supportOtherIsP1 = conversationType === "support" && currentUser?.id === String(conv.participant_two ?? "");
+      const p1Role = conv.p1_role ? String(conv.p1_role) : "";
+      const p2Role = conv.p2_role ? String(conv.p2_role) : "";
+      const p1IsStaff = p1Role === "founder" || p1Role === "admin";
+      const p2IsStaff = p2Role === "founder" || p2Role === "admin";
+      // Support conversations pair a customer/merchant/courier with staff.
+      // Prefer the non-staff participant even if the auth user is not returned
+      // by getUser yet, preventing Founder from being shown as the caller.
+      const supportOtherIsP1 = conversationType === "support"
+        ? (p2IsStaff && !p1IsStaff ? true : p1IsStaff && !p2IsStaff ? false : currentUser?.id === String(conv.participant_two ?? ""))
+        : false;
       const otherPrefix = supportOtherIsP1 ? "p1" : "p2";
       const participantOne: ParticipantIdentity = {
         id: String(conv.participant_one ?? ""),
