@@ -23,6 +23,8 @@ import { useRouter } from "expo-router";
 import {
   getFounderConversations,
   getFounderConversationMessages,
+  subscribeToFounderConversations,
+  subscribeToFounderConversationMessages,
   subscribeToFounderSupportConversations,
 } from "@/services/founder-chat.service";
 import type { Conversation, Message } from "@/services/chat.service";
@@ -78,26 +80,38 @@ export default function FounderChatControlScreen() {
   }, [loadConversations, relationshipFilter, conversationMode]);
 
   useEffect(() => {
-    if (conversationMode !== "support") return;
-    const cleanup = subscribeToFounderSupportConversations(() => {
-      void loadConversations("all", true);
-    });
+    const cleanup = conversationMode === "commercial"
+      ? subscribeToFounderConversations(() => { void loadConversations(relationshipFilter, true); })
+      : subscribeToFounderSupportConversations(() => { void loadConversations("all", true); });
     return cleanup;
-  }, [conversationMode, loadConversations]);
+  }, [conversationMode, relationshipFilter, loadConversations]);
 
   const openConversationDetail = async (conv: Conversation) => {
     setSelectedConv(conv);
     setShowDetail(true);
+    setMessages([]);
     setLoadingMessages(true);
-    try {
+    const refreshMessages = async () => {
       const msgs = await getFounderConversationMessages(conv.id);
       setMessages(msgs);
+      setLoadingMessages(false);
+    };
+    try {
+      await refreshMessages();
     } catch {
       setMessages([]);
-    } finally {
       setLoadingMessages(false);
     }
   };
+
+  useEffect(() => {
+    if (!showDetail || !selectedConv || selectedConv.conversation_type !== "commercial") return;
+    const cleanup = subscribeToFounderConversationMessages(selectedConv.id, async () => {
+      const msgs = await getFounderConversationMessages(selectedConv.id);
+      setMessages(msgs);
+    });
+    return cleanup;
+  }, [showDetail, selectedConv]);
 
   const filteredConversations = conversations.filter((c) => {
     if (!search.trim()) return true;
@@ -352,11 +366,15 @@ export default function FounderChatControlScreen() {
                         },
                       ]}
                     >
-                      <Text style={{ color: colors.textPrimary, fontSize: 13, textAlign: "right", fontFamily: tokens.typography.families.arabic }}>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right", fontWeight: "700", fontFamily: tokens.typography.families.arabic }}>
+                        {((m as Message & { sender_full_name?: string | null; sender_role?: string }).sender_full_name || "مشارك")}
+                        {((m as Message & { sender_role?: string }).sender_role) ? ` · ${(m as Message & { sender_role?: string }).sender_role}` : ""}
+                      </Text>
+                      <Text style={{ color: colors.textPrimary, fontSize: 13, textAlign: "right", marginTop: 4, fontFamily: tokens.typography.families.arabic }}>
                         {m.content}
                       </Text>
                       <Text style={{ color: colors.textDisabled, fontSize: 10, textAlign: "left", marginTop: 4 }}>
-                        {new Date(m.created_at).toLocaleTimeString("ar-DZ", { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(m.created_at).toLocaleString("ar-DZ")}
                       </Text>
                     </View>
                   ))
