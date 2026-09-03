@@ -35,7 +35,12 @@
         {
           "icon": "./assets/brand/logo-icon.png",
           "color": "#FF8A00",
-          "sounds": []
+          "sounds": [
+            "./assets/notifications/market_message.wav",
+            "./assets/notifications/market_order.wav",
+            "./assets/notifications/market_success.wav",
+            "./assets/notifications/market_alert.wav"
+          ]
         }
       ]
     ],

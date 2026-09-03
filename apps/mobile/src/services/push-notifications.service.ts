@@ -15,6 +15,61 @@ type NotificationsModule = typeof import("expo-notifications");
 let notificationsModule: NotificationsModule | null = null;
 let notificationHandlerConfigured = false;
 
+export const NOTIFICATION_SOUNDS = {
+  chat: "market_message.wav",
+  transaction: "market_order.wav",
+  delivery: "market_success.wav",
+  founder: "market_alert.wav",
+} as const;
+
+export const NOTIFICATION_CHANNELS = {
+  chat: "chat_messages",
+  transaction: "transactions",
+  delivery: "delivery_updates",
+  founder: "founder_alerts",
+} as const;
+
+function createAndroidNotificationChannels(notifications: NotificationsModule): Promise<unknown[]> {
+  return Promise.all([
+    notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.chat, {
+      name: "رسائل المحادثات",
+      importance: notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      sound: NOTIFICATION_SOUNDS.chat,
+      lockscreenVisibility: notifications.AndroidNotificationVisibility.PUBLIC,
+    }),
+    notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.transaction, {
+      name: "الطلبات والمعاملات",
+      importance: notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      sound: NOTIFICATION_SOUNDS.transaction,
+      lockscreenVisibility: notifications.AndroidNotificationVisibility.PUBLIC,
+    }),
+    notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.delivery, {
+      name: "تحديثات التوصيل",
+      importance: notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 180, 180, 180],
+      sound: NOTIFICATION_SOUNDS.delivery,
+      lockscreenVisibility: notifications.AndroidNotificationVisibility.PUBLIC,
+    }),
+    notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.founder, {
+      name: "تنبيهات الإدارة",
+      importance: notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 300, 200, 300],
+      sound: NOTIFICATION_SOUNDS.founder,
+      lockscreenVisibility: notifications.AndroidNotificationVisibility.PUBLIC,
+    }),
+    // Keep the pre-existing default channel for unclassified notifications.
+    notifications.setNotificationChannelAsync("default", {
+      name: "Soug-XPRESS",
+      importance: notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      sound: "default",
+      lockscreenVisibility: notifications.AndroidNotificationVisibility.PUBLIC,
+    }),
+  ]);
+}
+
 /**
  * Remote push notifications are not available in Expo Go on Android/iOS.
  * Development builds and standalone builds keep full notification support.
@@ -74,13 +129,7 @@ export async function registerForPushNotifications(userId: string): Promise<Push
   if (!notifications) return null;
 
   if (Platform.OS === "android") {
-    await notifications.setNotificationChannelAsync("default", {
-      name: "Soug-XPRESS",
-      importance: notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      sound: "default",
-      lockscreenVisibility: notifications.AndroidNotificationVisibility.PUBLIC,
-    });
+    await createAndroidNotificationChannels(notifications);
   }
 
   const permissions = await notifications.getPermissionsAsync();

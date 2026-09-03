@@ -32,6 +32,28 @@ function json(body: unknown, status = 200) {
   });
 }
 
+type NotificationPresentation = {
+  sound: string;
+  channelId: string;
+};
+
+function getNotificationPresentation(notificationType: string): NotificationPresentation {
+  const type = notificationType.toLowerCase();
+  if (["message", "chat", "chat_message"].includes(type)) {
+    return { sound: "market_message.wav", channelId: "chat_messages" };
+  }
+  if (["new_order", "order_created", "transaction", "payment", "settlement"].includes(type)) {
+    return { sound: "market_order.wav", channelId: "transactions" };
+  }
+  if (["delivery", "courier", "order_status", "delivery_status", "status_change"].includes(type)) {
+    return { sound: "market_success.wav", channelId: "delivery_updates" };
+  }
+  if (["founder", "admin", "system_alert"].includes(type)) {
+    return { sound: "market_alert.wav", channelId: "founder_alerts" };
+  }
+  return { sound: "default", channelId: "default" };
+}
+
 function safeData(record: NotificationRecord): Record<string, unknown> {
   const data = record.data ?? {};
   const result: Record<string, unknown> = { notification_type: record.notification_type };
@@ -96,15 +118,16 @@ Deno.serve(async (request) => {
     return json({ sent: 0, reason: "no_active_devices" });
   }
 
+  const presentation = getNotificationPresentation(record.notification_type);
   const messages = devices
     .filter((device) => device.platform === "android" || device.platform === "ios")
     .map((device) => ({
       to: device.push_token,
-      sound: "default",
+      sound: presentation.sound,
       title: record.title,
       body: record.body,
       data: safeData(record),
-      channelId: "default",
+      channelId: presentation.channelId,
       priority: "high",
     }));
 
