@@ -33,7 +33,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/brand/logo-icon.png",
+          "icon": "./assets/notifications/soug_xpress_notification_small_icon.png",
           "color": "#FF8A00",
           "sounds": [
             "./assets/notifications/market_message.wav",
@@ -52,7 +52,7 @@
     },
     "android": {
       "package": "com.sougxpress.founder",
-      "versionCode": 4,
+      "versionCode": 5,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/brand/sougxpress-app-icon.png",
