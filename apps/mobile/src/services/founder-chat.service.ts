@@ -15,23 +15,27 @@ export async function getFounderConversations(
 ): Promise<Conversation[]> {
   try {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
-    let query = supabase
-      .from("v_chat_conversations_list")
-      .select("*")
-      .order("last_message_at", { ascending: false, nullsFirst: false });
+    let data: unknown[] | null = null;
+    let error: { message?: string } | null = null;
 
     if (conversationType === "commercial") {
-      // Older market conversations predate conversation_type and are NULL.
-      // They are commercial by legacy schema semantics and must remain visible.
-      query = query.or("conversation_type.eq.commercial,conversation_type.is.null");
+      // Read every existing market conversation through the staff-only RPC.
+      // This avoids the security_invoker view being filtered by participant RLS.
+      const result = await supabase.rpc("get_founder_commercial_conversations", {
+        p_relationship_type: relationshipType && relationshipType !== "all" ? relationshipType : null,
+      });
+      data = result.data as unknown[] | null;
+      error = result.error;
     } else {
-      query = query.eq("conversation_type", conversationType);
+      let query = supabase
+        .from("v_chat_conversations_list")
+        .select("*")
+        .eq("conversation_type", conversationType)
+        .order("last_message_at", { ascending: false, nullsFirst: false });
+      const result = await query;
+      data = result.data as unknown[] | null;
+      error = result.error;
     }
-    if (relationshipType && relationshipType !== "all") {
-      query = query.eq("relationship_type", relationshipType);
-    }
-
-    const { data, error } = await query;
     if (error) {
       console.error("getFounderConversations error:", error.message);
       return [];
