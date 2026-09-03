@@ -119,17 +119,17 @@ Deno.serve(async (request) => {
   }
 
   const presentation = getNotificationPresentation(record.notification_type);
-  const messages = devices
-    .filter((device) => device.platform === "android" || device.platform === "ios")
-    .map((device) => ({
-      to: device.push_token,
-      sound: presentation.sound,
-      title: record.title,
-      body: record.body,
-      data: safeData(record),
-      channelId: presentation.channelId,
-      priority: "high",
-    }));
+  const mobileDevices = devices.filter((device) => device.platform === "android" || device.platform === "ios");
+  const messages = mobileDevices.map((device) => ({
+    to: device.push_token,
+    sound: presentation.sound,
+    title: record.title,
+    body: record.body,
+    data: safeData(record),
+    channelId: presentation.channelId,
+    badge: 1,
+    priority: "high",
+  }));
 
   if (!messages.length) return json({ sent: 0, reason: "no_mobile_devices" });
 
@@ -140,7 +140,16 @@ Deno.serve(async (request) => {
   });
 
   const expoResult = await expoResponse.json();
-  const hasErrors = !expoResponse.ok || expoResult?.data?.some((item: { status?: string }) => item.status === "error");
+  const tickets = Array.isArray(expoResult?.data) ? expoResult.data : [];
+  const invalidDeviceIds = tickets
+    .map((item: { status?: string; details?: { error?: string } }, index: number) =>
+      item.status === "error" && item.details?.error === "DeviceNotRegistered" ? mobileDevices[index]?.id : null,
+    )
+    .filter((id): id is string => Boolean(id));
+  if (invalidDeviceIds.length) {
+    await supabaseAdmin.from("user_devices").update({ is_active: false }).in("id", invalidDeviceIds);
+  }
+  const hasErrors = !expoResponse.ok || tickets.some((item: { status?: string }) => item.status === "error");
   await supabaseAdmin
     .from("notifications")
     .update({ delivery_status: hasErrors ? "failed" : "sent" })
