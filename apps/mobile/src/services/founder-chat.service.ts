@@ -20,7 +20,13 @@ export async function getFounderConversations(
       .select("*")
       .order("last_message_at", { ascending: false, nullsFirst: false });
 
-    query = query.eq("conversation_type", conversationType);
+    if (conversationType === "commercial") {
+      // Older market conversations predate conversation_type and are NULL.
+      // They are commercial by legacy schema semantics and must remain visible.
+      query = query.or("conversation_type.eq.commercial,conversation_type.is.null");
+    } else {
+      query = query.eq("conversation_type", conversationType);
+    }
     if (relationshipType && relationshipType !== "all") {
       query = query.eq("relationship_type", relationshipType);
     }
