@@ -148,6 +148,27 @@ export const getConversationById = async (id: string): Promise<{ data: Conversat
       store_logo: isP1 ? data.p2_store_logo : data.p1_store_logo,
     };
 
+    // The list view can be readable while profile RLS hides the unrelated
+    // participant columns. Use the existing role-aware SECURITY DEFINER RPC
+    // as a single-conversation fallback; IDs and routing remain unchanged.
+    if (!other.full_name || !other.role) {
+      const { data: identityCard, error: identityError } = await supabase.rpc("get_chat_profile_card", {
+        p_conversation_id: id,
+        p_profile_id: other.id,
+      });
+      if (!identityError && identityCard) {
+        const card = Array.isArray(identityCard) ? identityCard[0] : identityCard;
+        if (card) {
+          other.full_name = card.full_name ?? other.full_name;
+          other.avatar_url = card.avatar_url ?? other.avatar_url;
+          other.role = card.role ?? other.role;
+          if (card.role === "merchant" && card.full_name) {
+            other.store_name = card.full_name;
+          }
+        }
+      }
+    }
+
     const formatted: Conversation = {
       id: data.id,
       participant_one: data.participant_one,
