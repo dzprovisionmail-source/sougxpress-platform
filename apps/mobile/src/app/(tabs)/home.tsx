@@ -15,6 +15,7 @@ import { radius } from '@/design/radius';
 import { shadows } from '@/design/shadows';
 
 import { useStores, useSearch } from '@/hooks/useStores';
+import { useDiscovery } from '@/hooks/useDiscovery';
 import useCart from '@/hooks/useCart';
 import { toggleFavorite, getFavoriteIds } from '@/services/favorite.service';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
@@ -23,11 +24,33 @@ import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
 import { getActiveHeroSlides, getHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
 import { supabase } from '@/lib/supabase';
 import DriverDashboardScreen from '../driver/dashboard';
+import { AIN_SEFRA_ZONES } from '@/constants/ain-sefra-zones';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const assetUri = (asset: number): string => {
   const resolver = (Image as typeof Image & { resolveAssetSource?: (value: number) => { uri?: string } }).resolveAssetSource;
   return typeof resolver === "function" ? resolver(asset).uri ?? "" : String(asset);
+};
+
+const toFiniteCoordinate = (value: unknown): number | null => {
+  const numberValue = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+};
+
+const distanceInKm = (aLat: number, aLon: number, bLat: number, bLon: number): number => {
+  const earthRadiusKm = 6371;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLon = ((bLon - aLon) * Math.PI) / 180;
+  const lat1 = (aLat * Math.PI) / 180;
+  const lat2 = (bLat * Math.PI) / 180;
+  const haversine = Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+};
+
+const zoneOrder = (zoneName?: string | null): number => {
+  if (!zoneName) return AIN_SEFRA_ZONES.length + 1;
+  const index = AIN_SEFRA_ZONES.findIndex((name) => name === zoneName);
+  return index === -1 ? AIN_SEFRA_ZONES.length + 1 : index;
 };
 
 interface HeroSlide {
@@ -88,6 +111,8 @@ const HomeScreen = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [favoriteStoreIds, setFavoriteStoreIds] = useState<string[]>([]);
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
+  const [customerLocation, setCustomerLocation] = useState<{ zoneId: string | null; latitude: number | null; longitude: number | null }>({ zoneId: null, latitude: null, longitude: null });
+  const [zoneNames, setZoneNames] = useState<Record<string, string>>({});
   const [mostLikedProducts, setMostLikedProducts] = useState<any[]>([]);
 
   const [activeSlide, setActiveSlide] = useState(0);
@@ -111,6 +136,7 @@ const HomeScreen = () => {
     });
     fetchProducts();
     fetchFavorites();
+    fetchCustomerLocation();
     fetchMostLikedProducts();
     getMarketSectionSettings().then((res) => {
       setMarketSections(res);
@@ -176,6 +202,37 @@ const HomeScreen = () => {
     }
   };
 
+  const fetchCustomerLocation = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [{ data: address }, { data: customer }, { data: zones }] = await Promise.all([
+        supabase
+          .from("customer_addresses")
+          .select("zone_id, latitude, longitude")
+          .eq("customer_id", user.id)
+          .eq("is_default", true)
+          .maybeSingle(),
+        supabase.from("customers").select("zone_id").eq("id", user.id).maybeSingle(),
+        supabase.from("zones").select("id, name").eq("city", "Ain Sefra"),
+      ]);
+
+      const names: Record<string, string> = {};
+      (zones || []).forEach((zone: any) => {
+        if (zone.id && zone.name) names[zone.id] = zone.name;
+      });
+      setZoneNames(names);
+      setCustomerLocation({
+        zoneId: address?.zone_id || customer?.zone_id || null,
+        latitude: toFiniteCoordinate(address?.latitude),
+        longitude: toFiniteCoordinate(address?.longitude),
+      });
+    } catch (e) {
+      console.warn("Market location unavailable; showing all stores safely.", e);
+    }
+  };
+
   const fetchMostLikedProducts = async () => {
     try {
       const { data: favorites, error } = await supabase
@@ -212,8 +269,9 @@ const HomeScreen = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    refreshDiscovery();
     try {
-      await Promise.all([fetchProducts(), fetchFavorites(), fetchMostLikedProducts()]);
+      await Promise.all([fetchProducts(), fetchFavorites(), fetchCustomerLocation(), fetchMostLikedProducts()]);
     } finally {
       setRefreshing(false);
     }
@@ -517,18 +575,20 @@ const HomeScreen = () => {
 
   const displayedStores = searchQuery.length > 0 ? searchResults.stores : filteredStores;
   const platformProfiles = searchQuery.length > 0 ? searchResults.platformProfiles : [];
-  const featuredStores = useMemo(
-    () => allStores
-      .filter((store: any) => store.status === "active" && store.is_featured === true)
-      .sort((a: any, b: any) => String(a.id).localeCompare(String(b.id))),
-    [allStores],
-  );
-  const newStores = useMemo(
-    () => allStores
-      .filter((store: any) => store.status === "active" && store.is_new === true)
-      .sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime() || String(a.id).localeCompare(String(b.id))),
-    [allStores],
-  );
+  const {
+    featuredStores,
+    newStores,
+    nearbyStores,
+    newProducts: discoveryProducts,
+    mostLikedProducts: discoveryMostLikedProducts,
+    refresh: refreshDiscovery,
+  } = useDiscovery({
+    stores: allStores,
+    products,
+    mostLikedProducts,
+    location: customerLocation,
+    zoneNames,
+  });
   const loading = storesLoading || searchLoading;
   const error = storesError;
 
@@ -797,27 +857,36 @@ const HomeScreen = () => {
                   </ScrollView>
                 </View>
 
+                <View style={styles.section}>
+                  <View style={styles.sectionTitleRow}>
+                  <MapPin color={colors.primary} size={iconSizes.default} strokeWidth={2} />
+                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>المتاجر القريبة منك</Text>
+                </View>
+                  <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
+                    {nearbyStores.slice(0, 6).map(renderStore)}
+                  </ScrollView>
+                </View>
 
-                {products.length > 0 && (
+                {discoveryProducts.length > 0 && (
                   <View style={styles.section}>
                     <View style={styles.sectionTitleRow}>
                       <Sparkles color={colors.primary} size={iconSizes.default} strokeWidth={2} />
                       <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>منتجات جديدة</Text>
                     </View>
                     <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                      {products.map(renderProduct)}
+                      {discoveryProducts.map(renderProduct)}
                     </ScrollView>
                   </View>
                 )}
 
-                {mostLikedProducts.length > 0 && (
+                {discoveryMostLikedProducts.length > 0 && (
                   <View style={styles.section}>
                     <View style={styles.sectionTitleRow}>
                       <Heart color={colors.primary} size={iconSizes.default} strokeWidth={2} />
                       <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>الأكثر إعجابًا</Text>
                     </View>
                     <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                      {mostLikedProducts.map(renderProduct)}
+                      {discoveryMostLikedProducts.map(renderProduct)}
                     </ScrollView>
                   </View>
                 )}
