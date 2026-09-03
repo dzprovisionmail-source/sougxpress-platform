@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { LogBox, I18nManager, Platform } from "react-native";
+import { AppState, LogBox, I18nManager, Platform } from "react-native";
 LogBox.ignoreLogs([
   "SafeAreaView has been deprecated",
   "MediaTypeOptions` have been deprecated",
@@ -39,9 +39,9 @@ export default function RootLayout() {
     const notificationsAvailable = isRemotePushNotificationsAvailable();
     const handledNotificationIds = new Set<string>();
 
-    const registerCurrentUser = async () => {
+    const registerCurrentUser = async (force = false) => {
       const { data } = await supabase.auth.getUser();
-      if (disposed || !data.user || registeredUserId === data.user.id || registrationInFlight) return;
+      if (disposed || !data.user || (!force && registeredUserId === data.user.id) || registrationInFlight) return;
 
       registrationInFlight = true;
       try {
@@ -83,6 +83,12 @@ export default function RootLayout() {
 
     void initializeNotificationListeners();
 
+    const appStateSubscription = AppState.addEventListener("change", (state) => {
+      if (state === "active" && notificationsAvailable) {
+        void registerCurrentUser(true);
+      }
+    });
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
       if (notificationsAvailable && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")) {
         setTimeout(() => void registerCurrentUser(), 0);
@@ -102,6 +108,7 @@ export default function RootLayout() {
       disposed = true;
       responseSubscription?.remove();
       tokenSubscription?.remove();
+      appStateSubscription.remove();
       authListener.subscription.unsubscribe();
     };
   }, [router]);
