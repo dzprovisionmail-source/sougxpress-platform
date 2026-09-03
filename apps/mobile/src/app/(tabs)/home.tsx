@@ -188,15 +188,17 @@ const HomeScreen = () => {
 
   const fetchProducts = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("products")
         .select("id, name, description, image_url, price_minor, store_id, created_at, stores(name)")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(10);
+      if (error) throw error;
       setProducts(data || []);
     } catch (e) {
-      console.error("Error fetching products:", e);
+      console.error("Marketplace products query failed:", e);
+      setProducts([]);
     }
   };
 
@@ -256,7 +258,9 @@ const HomeScreen = () => {
         .in("id", ids);
       if (productsError) throw productsError;
       const rank = new Map(ids.map((id, index) => [id, index]));
-      setMostLikedProducts((likedProducts || []).sort((a: any, b: any) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999)));
+      setMostLikedProducts((likedProducts || [])
+        .map((product: any) => ({ ...product, favorite_count: counts.get(product.id) || 0 }))
+        .sort((a: any, b: any) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999)));
     } catch (e) {
       console.warn("Most-liked products unavailable; keeping the market available.", e);
       setMostLikedProducts([]);
@@ -579,7 +583,7 @@ const HomeScreen = () => {
     mostLikedProducts: discoveryMostLikedProducts,
     refresh: refreshDiscovery,
   } = useDiscovery({
-    stores: displayedStores,
+    stores: allStores,
     products,
     mostLikedProducts,
     location: customerLocation,
@@ -839,7 +843,7 @@ const HomeScreen = () => {
                   <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>المتاجر المميزة</Text>
                 </View>
                   <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                    {(searchQuery.length > 0 ? displayedStores : featuredStores).slice(0, 6).map(renderStore)}
+                    {featuredStores.slice(0, 6).map(renderStore)}
                   </ScrollView>
                 </View>
 
@@ -860,13 +864,6 @@ const HomeScreen = () => {
                 </View>
                   <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
                     {nearbyStores.slice(0, 6).map(renderStore)}
-                  </ScrollView>
-                </View>
-
-                <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>كل المتاجر</Text>
-                  <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                    {displayedStores.map(renderStore)}
                   </ScrollView>
                 </View>
 
