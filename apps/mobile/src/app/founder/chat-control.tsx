@@ -220,6 +220,11 @@ export default function FounderChatControlScreen() {
                           </Text>
                         </View>
                       </View>
+                      {conversationMode === "support" && other?.role === "merchant" && other.full_name ? (
+                        <Text style={{ color: colors.textSecondary, fontSize: tokens.typography.sizes.xs, textAlign: "right", fontFamily: tokens.typography.families.arabic, marginTop: 4 }} numberOfLines={1}>
+                          Owner: {other.full_name} · Support
+                        </Text>
+                      ) : null}
                       <Text
                         style={{
                           color: colors.textSecondary,

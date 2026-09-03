@@ -59,10 +59,12 @@ const AVAILABILITY_LABEL: Record<string, string> = {
 };
 
 const ROLE_LABEL: Record<string, string> = {
-  merchant: "التاجر",
-  driver: "الموصل",
-  courier: "الموصل",
-  customer: "الزبون",
+  merchant: "Merchant",
+  driver: "Courier",
+  courier: "Courier",
+  customer: "Customer",
+  founder: "Founder",
+  admin: "Admin",
 };
 
 const statusLabel = (status?: string | null) => {
@@ -480,6 +482,10 @@ export default function ChatScreen() {
     ? other.store_logo
     : other?.avatar_url;
   const availabilityLabel = otherAvailability ? AVAILABILITY_LABEL[otherAvailability] || otherAvailability : null;
+  const roleLabel = ROLE_LABEL[other?.role || ""] || "Participant";
+  const supportOwnerLabel = isSupportChat && other?.role === "merchant" && other.full_name
+    ? ` · Owner: ${other.full_name}`
+    : "";
   const isCourierConversation = other?.role === "driver" || other?.role === "courier";
   const relationshipType = conversation?.relationship_type || "";
   const canCallRelationship = ["merchant_merchant", "merchant_courier", "courier_merchant", "courier_courier"].includes(relationshipType);
@@ -494,9 +500,7 @@ export default function ChatScreen() {
       <Header
         title={displayName}
         subtitle={
-          isCourierConversation && availabilityLabel
-            ? availabilityLabel
-            : isSupportChat ? "فريق دعم Soug-XPRESS" : ROLE_LABEL[other?.role || ""] || "تواصل تجاري آمن"
+            `${roleLabel}${isSupportChat ? " · Support" : ""}${supportOwnerLabel}${isCourierConversation && availabilityLabel ? ` · ${availabilityLabel}` : ""}`
         }
         leftContent={
           <TouchableOpacity onPress={() => router.back()} style={styles.headerAction} accessibilityLabel="رجوع">
