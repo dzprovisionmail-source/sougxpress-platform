@@ -69,6 +69,10 @@ export default function ChatListScreen() {
     const displayAvatar = other?.role === 'merchant' && other.store_logo
       ? other.store_logo
       : other?.avatar_url;
+    const roleLabel = other?.role === "merchant" ? "Merchant" :
+      other?.role === "driver" || other?.role === "courier" ? "Courier" :
+      other?.role === "founder" || other?.role === "admin" ? "Founder" :
+      other?.role === "customer" ? "Customer" : "Participant";
 
     return (
       <TouchableOpacity
@@ -85,9 +89,14 @@ export default function ChatListScreen() {
         />
         <View style={styles.convInfo}>
           <View style={styles.convHeader}>
-            <Typography variant="h3" style={{ color: colors.textPrimary }}>
-              {displayName}
-            </Typography>
+            <View style={{ flex: 1 }}>
+              <Typography variant="h3" style={{ color: colors.textPrimary }} numberOfLines={1}>
+                {displayName}
+              </Typography>
+              <Typography variant="caption" style={{ color: colors.primary }}>
+                {roleLabel}{item.conversation_type === "support" ? " · Support" : ""}
+              </Typography>
+            </View>
             <Typography variant="caption" style={{ color: colors.textSecondary }}>
               {timeStr}
             </Typography>

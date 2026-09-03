@@ -4,7 +4,7 @@
  */
 
 import { supabase } from "@/lib/supabase";
-import type { Conversation, Message } from "./chat.service";
+import type { Conversation, Message, ParticipantIdentity } from "./chat.service";
 
 export type FounderConversationType = "commercial" | "support";
 
@@ -35,6 +35,22 @@ export async function getFounderConversations(
     return rows.map((conv) => {
       const supportOtherIsP1 = conversationType === "support" && currentUser?.id === String(conv.participant_two ?? "");
       const otherPrefix = supportOtherIsP1 ? "p1" : "p2";
+      const participantOne: ParticipantIdentity = {
+        id: String(conv.participant_one ?? ""),
+        full_name: conv.p1_full_name ? String(conv.p1_full_name) : null,
+        avatar_url: conv.p1_avatar_url ? String(conv.p1_avatar_url) : null,
+        role: conv.p1_role ? String(conv.p1_role) : "",
+        store_name: conv.p1_store_name ? String(conv.p1_store_name) : null,
+        store_logo: conv.p1_store_logo ? String(conv.p1_store_logo) : null,
+      };
+      const participantTwo: ParticipantIdentity = {
+        id: String(conv.participant_two ?? ""),
+        full_name: conv.p2_full_name ? String(conv.p2_full_name) : null,
+        avatar_url: conv.p2_avatar_url ? String(conv.p2_avatar_url) : null,
+        role: conv.p2_role ? String(conv.p2_role) : "",
+        store_name: conv.p2_store_name ? String(conv.p2_store_name) : null,
+        store_logo: conv.p2_store_logo ? String(conv.p2_store_logo) : null,
+      };
       const other = {
         id: String(supportOtherIsP1 ? conv.participant_one : conv.participant_two ?? ""),
         full_name: conv[`${otherPrefix}_full_name`] ? String(conv[`${otherPrefix}_full_name`]) : null,
@@ -54,6 +70,8 @@ export async function getFounderConversations(
         last_message_at: String(conv.last_message_at ?? conv.created_at),
         created_at: String(conv.created_at),
         other_participant: other,
+        participant_one_identity: participantOne,
+        participant_two_identity: participantTwo,
         last_message: conv.last_message_content
           ? {
               content: String(conv.last_message_content),

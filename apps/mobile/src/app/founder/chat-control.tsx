@@ -171,6 +171,18 @@ export default function FounderChatControlScreen() {
           renderItem={({ item }) => {
             const relLabel = conversationMode === "support" ? "دعم Soug-XPRESS" : RELATIONSHIP_LABELS[item.relationship_type ?? ""] ?? item.relationship_type ?? "علاقة تجارية";
             const other = item.other_participant;
+            const participantOne = item.participant_one_identity;
+            const participantTwo = item.participant_two_identity;
+            const participantTitle = (participant: typeof other) => participant?.role === "merchant" && participant.store_name
+              ? participant.store_name
+              : participant?.full_name || "مشارك";
+            const participantRole = (participant: typeof other) => participant?.role === "driver" || participant?.role === "courier"
+              ? "Courier"
+              : participant?.role === "merchant"
+                ? "Merchant"
+                : participant?.role === "customer"
+                  ? "Customer"
+                  : participant?.role || "Participant";
             return (
               <TouchableOpacity onPress={() => openConversationDetail(item)} activeOpacity={0.8}>
                 <View
@@ -198,7 +210,9 @@ export default function FounderChatControlScreen() {
                           }}
                           numberOfLines={1}
                         >
-                          {conversationMode === "support" ? (other?.full_name || "مستخدم") : (other?.store_name || other?.full_name || "مشارك")}
+                          {conversationMode === "support"
+                            ? `${participantTitle(other)} · ${participantRole(other)}`
+                            : `${participantTitle(participantOne)} ↔ ${participantTitle(participantTwo)}`}
                         </Text>
                         <View style={[styles.badge, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "44" }]}>
                           <Text style={{ color: colors.primary, fontSize: 10, fontWeight: "700", fontFamily: tokens.typography.families.arabic }}>
@@ -302,9 +316,12 @@ export default function FounderChatControlScreen() {
                 </View>
 
                 <View style={[styles.infoCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 8, fontFamily: tokens.typography.families.arabic }}>
-                    نوع العلاقة: {RELATIONSHIP_LABELS[selectedConv.relationship_type] ?? selectedConv.relationship_type}
-                  </Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 8, fontFamily: tokens.typography.families.arabic }}>
+                            المشاركون: {selectedConv.participant_one_identity?.full_name || "مشارك"} ({selectedConv.participant_one_identity?.role || "unknown"}) ↔ {selectedConv.participant_two_identity?.full_name || "مشارك"} ({selectedConv.participant_two_identity?.role || "unknown"})
+                          </Text>
+                          <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 8, fontFamily: tokens.typography.families.arabic }}>
+                            نوع العلاقة: {selectedConv.conversation_type === "support" ? "Support" : RELATIONSHIP_LABELS[selectedConv.relationship_type] ?? selectedConv.relationship_type}
+                          </Text>
                   <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: "right", marginBottom: 12, fontFamily: tokens.typography.families.arabic }}>
                     المرجع المرتبط: {selectedConv.reference_id || "غير متوفر"}
                   </Text>

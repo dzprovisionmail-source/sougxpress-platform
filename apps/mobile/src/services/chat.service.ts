@@ -3,6 +3,15 @@ import { supabase } from "@/lib/supabase";
 export type RelationshipType = 'customer_merchant' | 'customer_courier' | 'merchant_courier' | 'merchant_merchant' | 'courier_courier';
 export type ConversationType = 'commercial' | 'support';
 
+export type ParticipantIdentity = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: string;
+  store_name?: string | null;
+  store_logo?: string | null;
+};
+
 export interface Conversation {
   id: string;
   participant_one: string;
@@ -12,14 +21,9 @@ export interface Conversation {
   reference_id: string | null;
   last_message_at: string;
   created_at: string;
-  other_participant?: {
-    id: string;
-    full_name: string | null;
-    avatar_url: string | null;
-    role: string;
-    store_name?: string | null;
-    store_logo?: string | null;
-  };
+  other_participant?: ParticipantIdentity;
+  participant_one_identity?: ParticipantIdentity;
+  participant_two_identity?: ParticipantIdentity;
   last_message?: {
     content: string;
     created_at: string;
@@ -88,6 +92,22 @@ export const getConversations = async (): Promise<{ data: Conversation[] | null;
         last_message_at: conv.last_message_at,
         created_at: conv.created_at,
         other_participant: other,
+        participant_one_identity: {
+          id: conv.participant_one,
+          full_name: conv.p1_full_name,
+          avatar_url: conv.p1_avatar_url,
+          role: conv.p1_role,
+          store_name: conv.p1_store_name,
+          store_logo: conv.p1_store_logo,
+        },
+        participant_two_identity: {
+          id: conv.participant_two,
+          full_name: conv.p2_full_name,
+          avatar_url: conv.p2_avatar_url,
+          role: conv.p2_role,
+          store_name: conv.p2_store_name,
+          store_logo: conv.p2_store_logo,
+        },
         last_message: conv.last_message_content ? {
           content: conv.last_message_content,
           created_at: conv.last_message_time
@@ -138,6 +158,22 @@ export const getConversationById = async (id: string): Promise<{ data: Conversat
       last_message_at: data.last_message_at,
       created_at: data.created_at,
       other_participant: other,
+      participant_one_identity: {
+        id: data.participant_one,
+        full_name: data.p1_full_name,
+        avatar_url: data.p1_avatar_url,
+        role: data.p1_role,
+        store_name: data.p1_store_name,
+        store_logo: data.p1_store_logo,
+      },
+      participant_two_identity: {
+        id: data.participant_two,
+        full_name: data.p2_full_name,
+        avatar_url: data.p2_avatar_url,
+        role: data.p2_role,
+        store_name: data.p2_store_name,
+        store_logo: data.p2_store_logo,
+      },
       last_message: data.last_message_content ? {
         content: data.last_message_content,
         created_at: data.last_message_time
