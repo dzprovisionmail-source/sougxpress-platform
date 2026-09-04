@@ -249,8 +249,10 @@ export default function UnifiedMerchantStoreDashboard() {
     });
   }, []);
 
-  const openEditModal = () => {
+  const openEditModal = async () => {
     if (!store) return;
+    const availableCategories = categories.length > 0 ? categories : await getActiveCategories();
+    if (categories.length === 0) setCategories(availableCategories);
     setEditForm({
       name: store.name ?? "",
       category: store.category ?? "",
