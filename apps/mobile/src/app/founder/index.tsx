@@ -540,6 +540,7 @@ export default function FounderControlCenterScreen() {
         <SectionBlock title="الإجراءات السريعة">
           <View style={styles.quickActionsGrid}>
             <QuickAction label="إشعارات المؤسس" icon={<Bell size={18} color={primary} />} badge={unreadCount} accentColor={primary} onPress={() => router.push("/founder/notifications" as never)} colors={colors} tokens={tokens} />
+            <QuickAction label="تشخيص Push Token" icon={<Bell size={18} color={error} />} accentColor={error} onPress={() => router.push("/admin/push-diagnostics" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="مركز الموافقات" icon={<CheckCircle size={18} color={warning} />} accentColor={warning} onPress={() => router.push("/founder/approvals" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إدارة الطلبات" icon={<ClipboardList size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/orders" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إدارة التوصيلات" icon={<Truck size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/deliveries" as never)} colors={colors} tokens={tokens} />
