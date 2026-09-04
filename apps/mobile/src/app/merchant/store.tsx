@@ -252,6 +252,7 @@ export default function UnifiedMerchantStoreDashboard() {
   const openEditModal = async () => {
     const editableStore = store ?? stores.find((item) => item.id === storeId) ?? stores[0];
     if (!editableStore) return;
+    setShowEditModal(true);
     const availableCategories = categories.length > 0 ? categories : await getActiveCategories();
     if (categories.length === 0) setCategories(availableCategories);
     const savedSubcategories = selectedSubcategories.length > 0
@@ -278,7 +279,6 @@ export default function UnifiedMerchantStoreDashboard() {
     } else {
       setSubcategories([]);
     }
-    setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
