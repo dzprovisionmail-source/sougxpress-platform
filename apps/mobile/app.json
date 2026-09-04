@@ -52,7 +52,7 @@
     },
     "android": {
       "package": "com.sougxpress.founder",
-      "versionCode": 5,
+      "versionCode": 6,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/brand/sougxpress-app-icon.png",

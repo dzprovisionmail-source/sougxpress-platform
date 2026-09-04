@@ -269,6 +269,17 @@ export default function AdminDashboardScreen() {
               tokens={tokens}
             />
             <QuickAction
+              label="تشخيص Push Token"
+              icon={<Bell color={colors.textPrimary} size={20} />}
+              onPress={() =>
+                router.push(
+                  "/admin/push-diagnostics" as Parameters<typeof router.push>[0]
+                )
+              }
+              colors={colors}
+              tokens={tokens}
+            />
+            <QuickAction
               label="إعدادات المنصة"
               icon={<Settings color={colors.textPrimary} size={20} />}
               onPress={() =>

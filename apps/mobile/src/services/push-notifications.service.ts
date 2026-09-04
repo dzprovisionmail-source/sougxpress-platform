@@ -6,10 +6,34 @@ import { Platform } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
 
+export type PushRegistrationDiagnostics = {
+  appVersion: string | null;
+  versionCode: number | null;
+  runtimeVersion: string | null;
+  updateId: string | null;
+  permission: string;
+  expoTokenStatus: "not_started" | "success" | "failed";
+  tokenMasked: string | null;
+  claimStatus: "not_started" | "success" | "failed";
+  userDevicesUpdatedAt: string | null;
+  userDevicesIsActive: boolean | null;
+  userDevicesPlatform: string | null;
+  lastError: string | null;
+};
+
+export type PushRegistrationProgress = Partial<PushRegistrationDiagnostics>;
+
 export type PushRegistration = {
   token: string;
   getCurrentToken: () => string;
   subscription: Notifications.Subscription;
+};
+
+export type CurrentPushDevice = {
+  updated_at: string | null;
+  is_active: boolean | null;
+  platform: string | null;
+  push_token: string;
 };
 
 type NotificationsModule = typeof import("expo-notifications");
@@ -145,15 +169,39 @@ function permissionLabel(status: string): string {
   return status.toLowerCase();
 }
 
-export async function registerForPushNotifications(userId: string): Promise<PushRegistration | null> {
-  console.info("Push registration started", {
-    userId,
-    platform: Platform.OS,
+export function getPushRuntimeDiagnostics(): Pick<PushRegistrationDiagnostics, "appVersion" | "versionCode" | "runtimeVersion" | "updateId"> {
+  return {
     appVersion: Constants.expoConfig?.version ?? null,
     versionCode: Constants.expoConfig?.android?.versionCode ?? null,
-    runtimeVersion: Updates.runtimeVersion ?? Constants.expoConfig?.runtimeVersion ?? null,
+    runtimeVersion: typeof Updates.runtimeVersion === "string" ? Updates.runtimeVersion : null,
     updateId: Updates.updateId ?? null,
-  });
+  };
+}
+
+export function maskExpoPushToken(token: string | null | undefined): string | null {
+  return token ? maskPushToken(token) : null;
+}
+
+export async function readCurrentPushDevice(userId: string): Promise<CurrentPushDevice | null> {
+  const { data, error } = await supabase
+    .from("user_devices")
+    .select("updated_at, is_active, platform, push_token")
+    .eq("user_id", userId)
+    .eq("platform", Platform.OS)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data as CurrentPushDevice | null;
+}
+
+export async function registerForPushNotifications(
+  userId: string,
+  onProgress?: (progress: PushRegistrationProgress) => void,
+): Promise<PushRegistration | null> {
+  const runtimeDiagnostics = getPushRuntimeDiagnostics();
+  onProgress?.({ ...runtimeDiagnostics, permission: "not_started", expoTokenStatus: "not_started", claimStatus: "not_started", lastError: null });
+  console.info("Push registration started", { userId, platform: Platform.OS, ...runtimeDiagnostics });
   if (!isRemotePushNotificationsAvailable() || !Device.isDevice) {
     console.info("Push registration skipped", { reason: !Device.isDevice ? "not_a_physical_device" : "remote_notifications_unavailable" });
     return null;
@@ -167,16 +215,20 @@ export async function registerForPushNotifications(userId: string): Promise<Push
   }
 
   const permissions = await notifications.getPermissionsAsync();
+  onProgress?.({ permission: permissionLabel(permissions.status) });
   console.info("Push permission status", { status: permissionLabel(permissions.status) });
   let finalStatus = permissions.status;
   if (finalStatus !== notifications.PermissionStatus.GRANTED) {
     const requested = await notifications.requestPermissionsAsync();
     finalStatus = requested.status;
+    onProgress?.({ permission: permissionLabel(finalStatus) });
     console.info("Push permission request result", { status: permissionLabel(finalStatus) });
   }
 
   if (finalStatus !== notifications.PermissionStatus.GRANTED) {
-    console.warn("Push registration stopped: notification permission is not granted", { status: permissionLabel(finalStatus) });
+    const errorMessage = "Notification permission denied";
+    onProgress?.({ permission: permissionLabel(finalStatus), lastError: errorMessage });
+    console.warn(errorMessage, { status: permissionLabel(finalStatus) });
     return null;
   }
 
@@ -185,12 +237,18 @@ export async function registerForPushNotifications(userId: string): Promise<Push
     throw new Error("Expo EAS project ID is not configured");
   }
 
-  const expoToken = await notifications.getExpoPushTokenAsync({ projectId });
-  let currentToken = getPushTokenValue(expoToken);
-  if (!isValidExpoPushToken(currentToken)) {
-    throw new Error("Expo returned an invalid push token");
+  let currentToken: string;
+  try {
+    const expoToken = await notifications.getExpoPushTokenAsync({ projectId });
+    currentToken = getPushTokenValue(expoToken);
+    if (!isValidExpoPushToken(currentToken)) throw new Error("Expo returned an invalid push token");
+    onProgress?.({ expoTokenStatus: "success", tokenMasked: maskPushToken(currentToken) });
+    console.info("Push token acquired", { token: maskPushToken(currentToken) });
+  } catch (error) {
+    const lastError = error instanceof Error ? error.message : String(error);
+    onProgress?.({ expoTokenStatus: "failed", lastError });
+    throw error;
   }
-  console.info("Push token acquired", { token: maskPushToken(currentToken) });
 
   const claimToken = async (nextToken: string, previousToken?: string) => {
     if (!isValidExpoPushToken(nextToken)) {
@@ -207,10 +265,17 @@ export async function registerForPushNotifications(userId: string): Promise<Push
       p_device_name: Device.deviceName ?? null,
     });
     if (error) {
+      onProgress?.({ claimStatus: "failed", lastError: error.message });
       console.warn("claim_user_device failure", { message: error.message });
       throw error;
     }
     const device = Array.isArray(data) ? data[0] : data;
+    onProgress?.({
+      claimStatus: "success",
+      userDevicesUpdatedAt: device?.updated_at ?? null,
+      userDevicesIsActive: device?.is_active ?? null,
+      userDevicesPlatform: device?.platform ?? null,
+    });
     console.info("claim_user_device success", {
       token: maskPushToken(nextToken),
       isActive: device?.is_active ?? null,
