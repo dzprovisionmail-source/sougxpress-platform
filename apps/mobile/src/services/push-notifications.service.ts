@@ -1,4 +1,5 @@
 import Constants, { AppOwnership, ExecutionEnvironment } from "expo-constants";
+import * as Updates from "expo-updates";
 import * as Device from "expo-device";
 import type * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
@@ -145,7 +146,14 @@ function permissionLabel(status: string): string {
 }
 
 export async function registerForPushNotifications(userId: string): Promise<PushRegistration | null> {
-  console.info("Push registration started", { userId, platform: Platform.OS });
+  console.info("Push registration started", {
+    userId,
+    platform: Platform.OS,
+    appVersion: Constants.expoConfig?.version ?? null,
+    versionCode: Constants.expoConfig?.android?.versionCode ?? null,
+    runtimeVersion: Updates.runtimeVersion ?? Constants.expoConfig?.runtimeVersion ?? null,
+    updateId: Updates.updateId ?? null,
+  });
   if (!isRemotePushNotificationsAvailable() || !Device.isDevice) {
     console.info("Push registration skipped", { reason: !Device.isDevice ? "not_a_physical_device" : "remote_notifications_unavailable" });
     return null;
