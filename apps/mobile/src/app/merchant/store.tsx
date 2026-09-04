@@ -38,7 +38,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
-import { getStore, getStoresByMerchantId, updateStore, createStore } from "@/services/store.service";
+import { getStore, getStoresByMerchantId, getStoreSubcategories, updateStore, createStore } from "@/services/store.service";
 import { DEFAULT_STORE_HOURS, getStoreHours, validateStoreHours } from "@/services/store-hours";
 import useStore from "@/hooks/useStore";
 import { useMerchantProducts } from "@/hooks/useProducts";
@@ -250,27 +250,31 @@ export default function UnifiedMerchantStoreDashboard() {
   }, []);
 
   const openEditModal = async () => {
-    if (!store) return;
+    const editableStore = store ?? stores.find((item) => item.id === storeId) ?? stores[0];
+    if (!editableStore) return;
     const availableCategories = categories.length > 0 ? categories : await getActiveCategories();
     if (categories.length === 0) setCategories(availableCategories);
+    const savedSubcategories = selectedSubcategories.length > 0
+      ? selectedSubcategories
+      : await getStoreSubcategories(editableStore.id);
     setEditForm({
-      name: store.name ?? "",
-      category: store.category ?? "",
-      category_id: store.category_id ?? undefined,
-      subcategory_id: store.subcategory_id ?? undefined,
-      subcategory_ids: selectedSubcategories || [],
-      description: store.description ?? "",
-      phone_number: store.phone_number ?? "",
-      address_line1: store.address_line1 ?? "",
-      city: store.city ?? "عين الصفراء",
-      zone_id: (store as any).zone_id || undefined,
-      state_province: store.state_province || "",
-      opens_at: getStoreHours(store).opens_at,
-      closes_at: getStoreHours(store).closes_at,
-      closed_day: store.closed_day ?? "",
+      name: editableStore.name ?? "",
+      category: editableStore.category ?? "",
+      category_id: editableStore.category_id ?? undefined,
+      subcategory_id: editableStore.subcategory_id ?? undefined,
+      subcategory_ids: savedSubcategories,
+      description: editableStore.description ?? "",
+      phone_number: editableStore.phone_number ?? "",
+      address_line1: editableStore.address_line1 ?? "",
+      city: editableStore.city ?? "عين الصفراء",
+      zone_id: (editableStore as any).zone_id || undefined,
+      state_province: editableStore.state_province || "",
+      opens_at: getStoreHours(editableStore).opens_at,
+      closes_at: getStoreHours(editableStore).closes_at,
+      closed_day: editableStore.closed_day ?? "",
     });
-    if (store.category_id) {
-      getActiveSubcategories(store.category_id).then(setSubcategories);
+    if (editableStore.category_id) {
+      getActiveSubcategories(editableStore.category_id).then(setSubcategories);
     } else {
       setSubcategories([]);
     }
@@ -278,6 +282,8 @@ export default function UnifiedMerchantStoreDashboard() {
   };
 
   const handleSaveEdit = async () => {
+    const editableStore = store ?? stores.find((item) => item.id === storeId) ?? stores[0];
+    if (!editableStore) return;
     if (!editForm.name.trim()) {
       Alert.alert("خطأ", "اسم المتجر مطلوب");
       return;
@@ -308,7 +314,7 @@ export default function UnifiedMerchantStoreDashboard() {
 
     const ok = await updateStoreHook(updates);
     if (ok) {
-      const refreshed = await getStore(store.id);
+      const refreshed = await getStore(editableStore.id);
       if (!refreshed) {
         setSavingEdit(false);
         Alert.alert("خطأ", "تم الحفظ لكن تعذر إعادة تحميل الإعدادات.");
