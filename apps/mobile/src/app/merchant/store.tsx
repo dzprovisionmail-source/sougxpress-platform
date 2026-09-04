@@ -184,7 +184,12 @@ export default function UnifiedMerchantStoreDashboard() {
     if (isCreate) {
       setCreateForm((prev) => ({ ...prev, category_id: categoryId, subcategory_id: undefined }));
     } else {
-      setEditForm((prev) => ({ ...prev, category_id: categoryId, subcategory_id: undefined }));
+      setEditForm((prev) => ({
+        ...prev,
+        category_id: categoryId,
+        subcategory_id: undefined,
+        subcategory_ids: [],
+      }));
     }
   };
 
@@ -284,6 +289,7 @@ export default function UnifiedMerchantStoreDashboard() {
     const updates: any = {
       name: editForm.name.trim(),
       category: editForm.category.trim(),
+      main_category: categories.find((category) => category.id === editForm.category_id)?.name_ar || editForm.category.trim() || null,
       description: editForm.description.trim() || undefined,
       phone_number: editForm.phone_number.trim() || undefined,
       address_line1: editForm.address_line1.trim() || undefined,
@@ -294,9 +300,9 @@ export default function UnifiedMerchantStoreDashboard() {
       closes_at: editForm.closes_at || undefined,
       closed_day: editForm.closed_day || null,
       subcategory_ids: editForm.subcategory_ids || [],
+      subcategory_id: editForm.subcategory_ids?.[0] || null,
     };
     if (editForm.category_id) updates.category_id = editForm.category_id;
-    if (editForm.subcategory_id !== undefined) updates.subcategory_id = editForm.subcategory_id;
 
     const ok = await updateStoreHook(updates);
     if (ok) {
@@ -761,7 +767,7 @@ export default function UnifiedMerchantStoreDashboard() {
                           onPress={() => {
                             const current = editForm.subcategory_ids || [];
                             const next = isSelected ? current.filter(id => id !== sub.id) : [...current, sub.id];
-                            setEditForm({ ...editForm, subcategory_ids: next });
+                            setEditForm({ ...editForm, subcategory_ids: next, subcategory_id: next[0] });
                           }}
                           style={{
                             paddingHorizontal: 12,
