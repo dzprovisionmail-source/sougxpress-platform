@@ -35,6 +35,7 @@ export default function RootLayout() {
     let registeredUserId: string | null = null;
     let registrationInFlight = false;
     let tokenSubscription: Notifications.Subscription | null = null;
+    let getActiveToken: (() => string) | null = null;
     let responseSubscription: Notifications.Subscription | null = null;
     const notificationsAvailable = isRemotePushNotificationsAvailable();
     const handledNotificationIds = new Set<string>();
@@ -48,6 +49,7 @@ export default function RootLayout() {
         const registration = await registerForPushNotifications(data.user.id);
         if (!disposed && registration) {
           activeToken = registration.token;
+          getActiveToken = registration.getCurrentToken;
           tokenSubscription?.remove();
           tokenSubscription = registration.subscription;
           registeredUserId = data.user.id;
@@ -94,9 +96,11 @@ export default function RootLayout() {
         setTimeout(() => void registerCurrentUser(), 0);
       }
       if (event === "SIGNED_OUT") {
-        if (activeToken) void releasePushToken(activeToken);
+        const tokenToRelease = getActiveToken?.() ?? activeToken;
+        if (tokenToRelease) void releasePushToken(tokenToRelease);
         tokenSubscription?.remove();
         activeToken = null;
+        getActiveToken = null;
         tokenSubscription = null;
         registeredUserId = null;
         registrationInFlight = false;

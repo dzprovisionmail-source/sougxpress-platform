@@ -110,6 +110,7 @@ Deno.serve(async (request) => {
     .select("id, push_token, platform")
     .eq("user_id", record.user_id)
     .eq("is_active", true)
+    .order("updated_at", { ascending: false })
     .limit(50);
 
   if (devicesError) return json({ error: devicesError.message }, 500);

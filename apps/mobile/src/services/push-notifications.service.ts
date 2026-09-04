@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 
 export type PushRegistration = {
   token: string;
+  getCurrentToken: () => string;
   subscription: Notifications.Subscription;
 };
 
@@ -130,8 +131,23 @@ function getPushTokenValue(data: Notifications.ExpoPushToken | Notifications.Dev
   return data.data;
 }
 
+function maskPushToken(token: string): string {
+  if (token.length <= 18) return `${token.slice(0, 6)}…`;
+  return `${token.slice(0, 14)}…${token.slice(-4)}`;
+}
+
+function isValidExpoPushToken(token: string): boolean {
+  return /^ExponentPushToken\[[^\]]+\]$/.test(token);
+}
+
+function permissionLabel(status: string): string {
+  return status.toLowerCase();
+}
+
 export async function registerForPushNotifications(userId: string): Promise<PushRegistration | null> {
+  console.info("Push registration started", { userId, platform: Platform.OS });
   if (!isRemotePushNotificationsAvailable() || !Device.isDevice) {
+    console.info("Push registration skipped", { reason: !Device.isDevice ? "not_a_physical_device" : "remote_notifications_unavailable" });
     return null;
   }
 
@@ -143,13 +159,16 @@ export async function registerForPushNotifications(userId: string): Promise<Push
   }
 
   const permissions = await notifications.getPermissionsAsync();
+  console.info("Push permission status", { status: permissionLabel(permissions.status) });
   let finalStatus = permissions.status;
   if (finalStatus !== notifications.PermissionStatus.GRANTED) {
     const requested = await notifications.requestPermissionsAsync();
     finalStatus = requested.status;
+    console.info("Push permission request result", { status: permissionLabel(finalStatus) });
   }
 
   if (finalStatus !== notifications.PermissionStatus.GRANTED) {
+    console.warn("Push registration stopped: notification permission is not granted", { status: permissionLabel(finalStatus) });
     return null;
   }
 
@@ -159,27 +178,52 @@ export async function registerForPushNotifications(userId: string): Promise<Push
   }
 
   const expoToken = await notifications.getExpoPushTokenAsync({ projectId });
-  const token = getPushTokenValue(expoToken);
-  const { error } = await supabase.rpc("claim_user_device", {
-    p_push_token: token,
-    p_platform: Platform.OS,
-    p_device_name: Device.deviceName ?? null,
-  });
-
-  if (error) {
-    throw error;
+  let currentToken = getPushTokenValue(expoToken);
+  if (!isValidExpoPushToken(currentToken)) {
+    throw new Error("Expo returned an invalid push token");
   }
+  console.info("Push token acquired", { token: maskPushToken(currentToken) });
 
-  const subscription = notifications.addPushTokenListener(async (nextToken) => {
-    const nextValue = getPushTokenValue(nextToken);
-    await supabase.rpc("claim_user_device", {
-      p_push_token: nextValue,
+  const claimToken = async (nextToken: string, previousToken?: string) => {
+    if (!isValidExpoPushToken(nextToken)) {
+      throw new Error("Expo returned an invalid push token");
+    }
+    console.info("claim_user_device started", { token: maskPushToken(nextToken), platform: Platform.OS });
+    if (previousToken && previousToken !== nextToken) {
+      await supabase.rpc("release_user_device", { p_push_token: previousToken });
+      console.info("Previous push token released", { token: maskPushToken(previousToken) });
+    }
+    const { data, error } = await supabase.rpc("claim_user_device", {
+      p_push_token: nextToken,
       p_platform: Platform.OS,
       p_device_name: Device.deviceName ?? null,
     });
+    if (error) {
+      console.warn("claim_user_device failure", { message: error.message });
+      throw error;
+    }
+    const device = Array.isArray(data) ? data[0] : data;
+    console.info("claim_user_device success", {
+      token: maskPushToken(nextToken),
+      isActive: device?.is_active ?? null,
+      updatedAt: device?.updated_at ?? null,
+    });
+  };
+
+  await claimToken(currentToken);
+  const subscription = notifications.addPushTokenListener(async (nextToken) => {
+    const nextValue = getPushTokenValue(nextToken);
+    if (nextValue === currentToken) return;
+    const previousToken = currentToken;
+    try {
+      await claimToken(nextValue, previousToken);
+      currentToken = nextValue;
+    } catch (error) {
+      console.warn("Push token change registration failed", error);
+    }
   });
 
-  return { token, subscription };
+  return { token: currentToken, getCurrentToken: () => currentToken, subscription };
 }
 
 export async function releasePushToken(token: string): Promise<void> {
