@@ -617,16 +617,36 @@ export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]
     return [];
   }
 
-  const { data, error } = await supabase
-    .from("stores")
-    .select("*")
-    .eq("merchant_id", merchantId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true });
+  // The canonical owner is merchant_id. Some older rows were created through
+  // founder/admin tooling and only carry created_by, so read both ownership
+  // columns. Do not make the list disappear when a staging schema is missing
+  // the later deleted_at column; filter that field in memory instead.
+  const [merchantResult, creatorResult] = await Promise.all([
+    supabase
+      .from("stores")
+      .select("*")
+      .eq("merchant_id", merchantId)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("stores")
+      .select("*")
+      .eq("created_by", merchantId)
+      .order("created_at", { ascending: true }),
+  ]);
 
-  if (error) {
-    console.error("Error fetching stores by merchant:", error);
+  const firstError = merchantResult.error ?? creatorResult.error;
+  if (firstError && !merchantResult.data?.length && !creatorResult.data?.length) {
+    console.error("Error fetching stores by merchant:", firstError);
     return [];
   }
-  return (data as Store[]) || [];
+
+  const byId = new Map<string, Store>();
+  for (const row of [...(merchantResult.data ?? []), ...(creatorResult.data ?? [])]) {
+    const store = row as Store & { deleted_at?: string | null };
+    if (!store.deleted_at) byId.set(store.id, store);
+  }
+
+  return [...byId.values()].sort((a, b) =>
+    String(a.created_at ?? "").localeCompare(String(b.created_at ?? "")),
+  );
 };
