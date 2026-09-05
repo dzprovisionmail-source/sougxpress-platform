@@ -647,24 +647,17 @@ export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]
     return [];
   }
 
-  // Some legacy merchant rows use the merchant-record UUID while newer rows
-  // use auth.uid(). Resolve both identifiers for the current session so the
-  // dashboard never loses all stores because of that historical split.
+  // The session id is not guaranteed to be the merchant-record id for legacy
+  // stores. Resolve the record server-side; querying merchants by email from
+  // the client is blocked by the merchant RLS policy when the ids differ.
   const ownerIds = new Set<string>([merchantId]);
-  const { data: authData } = await supabase.auth.getUser();
-  const email = authData.user?.email?.trim().toLowerCase();
-  if (email) {
-    const { data: merchantRows, error: merchantError } = await supabase
-      .from("merchants")
-      .select("id")
-      .ilike("email", email)
-      .limit(10);
-    if (merchantError) {
-      console.error("Error resolving merchant record:", merchantError);
-    }
-    (merchantRows ?? []).forEach((row) => {
-      if (isValidUUID(row.id)) ownerIds.add(row.id);
-    });
+  const { data: resolvedMerchantId, error: resolveError } = await supabase.rpc(
+    "resolve_current_merchant_id",
+  );
+  if (resolveError) {
+    console.error("Error resolving current merchant identity:", resolveError);
+  } else if (isValidUUID(resolvedMerchantId)) {
+    ownerIds.add(resolvedMerchantId);
   }
 
   const ownerIdList = [...ownerIds];
