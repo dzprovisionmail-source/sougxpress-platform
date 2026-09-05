@@ -5,6 +5,7 @@ import {
   Image,
   I18nManager,
   Keyboard,
+  Modal,
   Platform,
   StyleSheet,
   TouchableOpacity,
@@ -116,6 +117,7 @@ export default function ChatScreen() {
   const [profileCardLoading, setProfileCardLoading] = useState(false);
   const [profileCardVisible, setProfileCardVisible] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [imageViewerUrl, setImageViewerUrl] = useState<string | null>(null);
   const isSupportChat = support === "1";
 
   const currentUserIdRef = useRef<string | null>(null);
@@ -479,6 +481,7 @@ export default function ChatScreen() {
     });
     const failed = item.delivery_state === "failed";
     const sendingMessage = item.delivery_state === "sending";
+    const isImageAttachment = item.message_type === "attachment" && item.attachment_mime_type?.startsWith("image/");
 
     return (
       <View
@@ -510,7 +513,11 @@ export default function ChatScreen() {
         >
           {item.message_type === "attachment" ? (
             <TouchableOpacity
-              onPress={() => item.attachment_url ? void Linking.openURL(item.attachment_url) : undefined}
+              onPress={() => {
+                if (!item.attachment_url) return;
+                if (isImageAttachment) setImageViewerUrl(item.attachment_url);
+                else void Linking.openURL(item.attachment_url);
+              }}
               disabled={!item.attachment_url}
               style={styles.attachmentCard}
             >
@@ -707,6 +714,25 @@ export default function ChatScreen() {
           </TouchableOpacity>
       </View>
 
+      <Modal
+        visible={Boolean(imageViewerUrl)}
+        animationType="fade"
+        transparent
+        statusBarTranslucent
+        onRequestClose={() => setImageViewerUrl(null)}
+      >
+        <View style={styles.imageViewerOverlay}>
+          <TouchableOpacity
+            onPress={() => setImageViewerUrl(null)}
+            style={styles.imageViewerClose}
+            accessibilityLabel="رجوع من عرض الصورة"
+          >
+            <X size={28} color="#FFFFFF" />
+          </TouchableOpacity>
+          {imageViewerUrl ? <Image source={{ uri: imageViewerUrl }} style={styles.imageViewerImage} resizeMode="contain" /> : null}
+        </View>
+      </Modal>
+
       <BottomSheet
         visible={profileCardVisible}
         onClose={() => {
@@ -845,6 +871,28 @@ const styles = StyleSheet.create({
     width: 210,
     height: 150,
     borderRadius: 10,
+  },
+  imageViewerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.96)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imageViewerImage: {
+    width: "100%",
+    height: "82%",
+  },
+  imageViewerClose: {
+    position: "absolute",
+    top: 52,
+    right: 20,
+    zIndex: 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   messageMeta: {
     alignItems: "center",
