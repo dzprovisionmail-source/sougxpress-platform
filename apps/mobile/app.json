@@ -23,6 +23,12 @@
       "expo-secure-store",
       "expo-font",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "السماح لـ Soug-XPRESS باستخدام موقعك لتحديد نقطة GPS داخل المحادثة."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/brand/logo-official-soug-xpress.png",
@@ -61,7 +67,9 @@
       "permissions": [
         "NOTIFICATIONS",
         "VIBRATE",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
       ],
       "intentFilters": [
         {
