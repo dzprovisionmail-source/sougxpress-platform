@@ -452,7 +452,7 @@ export default function UnifiedMerchantStoreDashboard() {
                 <Text style={[styles.infoKey, { color: colors.textSecondary }]}>العنوان</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={[styles.infoVal, { color: colors.textPrimary }]}>{activeStore.category || "عام"}</Text>
+                <Text style={[styles.infoVal, { color: colors.textPrimary }]}>{(activeStore as Store & { category_name?: string | null }).category_name || "غير مصنف"}</Text>
                 <Text style={[styles.infoKey, { color: colors.textSecondary }]}>التصنيف</Text>
               </View>
             </SectionCard>

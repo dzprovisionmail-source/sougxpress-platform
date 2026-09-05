@@ -41,7 +41,7 @@ export const enrichStoresWithTaxonomy = async <T extends Store>(stores: T[]): Pr
   });
   return stores.map((store) => ({
     ...store,
-    category_name: store.category_id ? (categoryById.get(store.category_id) ?? null) : (store.category || null),
+    category_name: store.category_id ? (categoryById.get(store.category_id) ?? null) : null,
     subcategories: subcategoriesByStore.get(store.id) ?? [],
   }));
 };
@@ -650,7 +650,7 @@ export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]
   const { data, error } = await supabase
     .from("stores")
     .select("*")
-    .eq("merchant_id", merchantId)
+    .or(`merchant_id.eq.${merchantId},created_by.eq.${merchantId}`)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
@@ -658,5 +658,5 @@ export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]
     console.error("Error fetching stores by merchant:", error);
     return [];
   }
-  return (data as Store[]) || [];
+  return enrichStoresWithTaxonomy((data as Store[]) || []) as Promise<Store[]>;
 };
