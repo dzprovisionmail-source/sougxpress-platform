@@ -92,6 +92,19 @@ export const MAIN_CATEGORIES: MainCategoryConfig[] = [
     ],
   },
   {
+    value: "books_education",
+    label: "كتب وتعليم",
+    icon: "book-outline",
+    subcategories: [
+      { value: "library", label: "مكتبة" },
+      { value: "school_supplies", label: "لوازم مدرسية" },
+      { value: "books", label: "كتب" },
+      { value: "educational_tools", label: "أدوات تعليمية" },
+      { value: "electronic_accessories", label: "لواحق إلكترونية" },
+      { value: "cosmetics", label: "كوسميتيك" },
+    ],
+  },
+  {
     value: "cosmetics_perfumes",
     label: "تجميل وعطور",
     icon: "sparkles-outline",
