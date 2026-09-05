@@ -149,18 +149,6 @@ export default function UnifiedMerchantStoreDashboard() {
 
     let list = await getStoresByMerchantId(userId);
 
-    // Auto-repair if merchant has 0 stores
-    if (list.length === 0 && mData) {
-      const created = await createStore(userId, {
-        name: mData.business_name || "متجري الأول",
-        category: "عام",
-        address_line1: mData.address || "العنوان الرئيسي",
-        city: "عين الصفراء",
-        country: "Algeria",
-      });
-      if (created) list = [created];
-    }
-
     setStores(list);
     if (list.length > 0) {
       if (!storeId || !list.some((s) => s.id === storeId)) {
@@ -234,6 +222,10 @@ export default function UnifiedMerchantStoreDashboard() {
 
     if (created) {
       setStoreId(created.id);
+      setStores((current) => [
+        ...current.filter((item) => item.id !== created.id),
+        created,
+      ]);
       setCreateForm(EMPTY_FORM);
       setShowCreateModal(false);
       await loadData();

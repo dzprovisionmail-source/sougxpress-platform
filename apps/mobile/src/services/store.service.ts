@@ -647,40 +647,29 @@ export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]
     return [];
   }
 
-  // Keep the two ownership paths independent. Some deployed PostgREST/RLS
-  // versions reject an OR expression combining legacy ownership columns,
-  // which made the dashboard interpret a query error as "0/5 stores".
+  // Keep ownership paths independent. Optional lifecycle filters must not turn
+  // a valid merchant ownership query into an empty dashboard.
   const primary = await supabase
     .from("stores")
     .select("*")
     .eq("merchant_id", merchantId)
-    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
   const legacy = await supabase
     .from("stores")
     .select("*")
     .eq("created_by", merchantId)
-    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
-  // Older environments may not yet expose deleted_at. Retry without that
-  // optional filter rather than hiding all stores from the merchant.
-  const primaryResult = primary.error?.code === "42703"
-    ? await supabase.from("stores").select("*").eq("merchant_id", merchantId).order("created_at", { ascending: true })
-    : primary;
-  const legacyResult = legacy.error?.code === "42703"
-    ? await supabase.from("stores").select("*").eq("created_by", merchantId).order("created_at", { ascending: true })
-    : legacy;
-
-  if (primaryResult.error) {
-    console.error("Error fetching stores by merchant_id:", primaryResult.error);
+  if (primary.error) {
+    console.error("Error fetching stores by merchant_id:", primary.error);
   }
-  if (legacyResult.error) {
-    console.error("Error fetching stores by created_by:", legacyResult.error);
+  if (legacy.error) {
+    console.error("Error fetching stores by created_by:", legacy.error);
   }
 
-  const rows = [...(primaryResult.data ?? []), ...(legacyResult.data ?? [])];
+  const rows = [...(primary.data ?? []), ...(legacy.data ?? [])]
+    .filter((store) => !store.deleted_at);
   const uniqueStores = Array.from(new Map((rows as Store[]).map((store) => [store.id, store])).values());
   return enrichStoresWithTaxonomy(uniqueStores);
 };
