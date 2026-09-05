@@ -647,26 +647,42 @@ export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]
     return [];
   }
 
-  // Keep ownership paths independent. Optional lifecycle filters must not turn
-  // a valid merchant ownership query into an empty dashboard.
-  const primary = await supabase
-    .from("stores")
-    .select("*")
-    .eq("merchant_id", merchantId)
-    .order("created_at", { ascending: true });
-
-  const legacy = await supabase
-    .from("stores")
-    .select("*")
-    .eq("created_by", merchantId)
-    .order("created_at", { ascending: true });
-
-  if (primary.error) {
-    console.error("Error fetching stores by merchant_id:", primary.error);
+  // Some legacy merchant rows use the merchant-record UUID while newer rows
+  // use auth.uid(). Resolve both identifiers for the current session so the
+  // dashboard never loses all stores because of that historical split.
+  const ownerIds = new Set<string>([merchantId]);
+  const { data: authData } = await supabase.auth.getUser();
+  const email = authData.user?.email?.trim().toLowerCase();
+  if (email) {
+    const { data: merchantRows, error: merchantError } = await supabase
+      .from("merchants")
+      .select("id")
+      .ilike("email", email)
+      .limit(10);
+    if (merchantError) {
+      console.error("Error resolving merchant record:", merchantError);
+    }
+    (merchantRows ?? []).forEach((row) => {
+      if (isValidUUID(row.id)) ownerIds.add(row.id);
+    });
   }
-  if (legacy.error) {
-    console.error("Error fetching stores by created_by:", legacy.error);
-  }
+
+  const ownerIdList = [...ownerIds];
+  const [primary, legacy] = await Promise.all([
+    supabase
+      .from("stores")
+      .select("*")
+      .in("merchant_id", ownerIdList)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("stores")
+      .select("*")
+      .in("created_by", ownerIdList)
+      .order("created_at", { ascending: true }),
+  ]);
+
+  if (primary.error) console.error("Error fetching stores by merchant_id:", primary.error);
+  if (legacy.error) console.error("Error fetching stores by created_by:", legacy.error);
 
   const rows = [...(primary.data ?? []), ...(legacy.data ?? [])]
     .filter((store) => !store.deleted_at);
