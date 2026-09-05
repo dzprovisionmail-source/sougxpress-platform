@@ -9,6 +9,7 @@ import { typography } from '@/design/typography';
 import { CustomerAddress } from '@/types/schema-03-core';
 import { Card } from '@/components/ui';
 import { iconSizes } from '@/design/icons';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface AddressCardProps {
   address: CustomerAddress | null;
@@ -16,12 +17,13 @@ interface AddressCardProps {
 }
 
 const AddressCard: React.FC<AddressCardProps> = ({ address, onEdit }) => {
+  const { colors } = useAppTheme();
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>📍 عنوان التوصيل</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]} >📍 عنوان التوصيل</Text>
         <TouchableOpacity onPress={onEdit}>
-          <Text style={styles.editButton}>✏️ تعديل العنوان</Text>
+          <Text style={[styles.editButton, { color: colors.primary }]}>✏️ تعديل العنوان</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.content}>
@@ -29,11 +31,11 @@ const AddressCard: React.FC<AddressCardProps> = ({ address, onEdit }) => {
         <View style={styles.addressInfo}>
           {address ? (
             <>
-              <Text style={styles.addressLabel}>{address.label}</Text>
-              <Text style={styles.addressText}>{address.address_text}</Text>
+              <Text style={[styles.addressLabel, { color: colors.textPrimary }]}>{address.label}</Text>
+              <Text style={[styles.addressText, { color: colors.textSecondary }]}>{address.address_text}</Text>
             </>
           ) : (
-            <Text style={styles.noAddressText}>لم يتم اختيار عنوان بعد.</Text>
+            <Text style={[styles.noAddressText, { color: colors.error }]}>لم يتم اختيار عنوان بعد.</Text>
           )}
         </View>
       </View>

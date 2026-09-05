@@ -57,15 +57,15 @@ const useCheckout = () => {
     fetchUserData();
   }, []);
 
-  const handleConfirmOrder = async (preferredDriverId?: string | null): Promise<{ success: boolean; orderId?: string }> => {
+  const handleConfirmOrder = async (preferredDriverId?: string | null): Promise<{ success: boolean; orderId?: string; error?: string }> => {
     if (isPreviewMode) {
       setError("وضع معاينة السوق مخصص للتصفح فقط.");
-      return { success: false };
+      return { success: false, error: "وضع معاينة السوق مخصص للتصفح فقط." };
     }
 
     if (!currentUserId || !selectedAddress || cartItems.length === 0) {
       setError("يرجى اختيار العنوان والتأكد من أن سلتك ليست فارغة.");
-      return { success: false };
+      return { success: false, error: "يرجى اختيار العنوان والتأكد من أن سلتك ليست فارغة." };
     }
 
     setLoading(true);
@@ -77,7 +77,7 @@ const useCheckout = () => {
     if (!zoneId) {
       setError("يرجى تحديد المنطقة من عنوانك.");
       setLoading(false);
-      return { success: false };
+      return { success: false, error: "يرجى تحديد المنطقة من عنوانك." };
     }
 
     const checkoutData: CheckoutData = {
@@ -103,7 +103,7 @@ const useCheckout = () => {
     } else {
       setError(result.error || "فشل في إنشاء الطلب.");
       setLoading(false);
-      return { success: false };
+      return { success: false, error: result.error || "فشل في إنشاء الطلب." };
     }
   };
 

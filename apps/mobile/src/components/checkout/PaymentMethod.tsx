@@ -7,16 +7,18 @@ import { typography } from '@/design/typography';
 import { Card } from '@/components/ui';
 import { iconSizes } from '@/design/icons';
 import { radius } from '@/design/radius';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 const PaymentMethod = () => {
+  const { colors } = useAppTheme();
   return (
     <Card style={styles.card}>
-      <Text style={styles.title}>طريقة الدفع</Text>
-      <View style={styles.content}>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>طريقة الدفع</Text>
+      <View style={[styles.content, { backgroundColor: colors.inputBackground }]}>
         <Banknote size={iconSizes.default} color={colors.success} style={styles.icon} />
         <View style={styles.info}>
-          <Text style={styles.methodName}>💵 الدفع عند الاستلام</Text>
-          <Text style={styles.description}>يتم الدفع نقداً عند استلام الطلب.</Text>
+          <Text style={[styles.methodName, { color: colors.textPrimary }]}>💵 الدفع عند الاستلام</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>يتم الدفع نقداً عند استلام الطلب.</Text>
         </View>
       </View>
     </Card>

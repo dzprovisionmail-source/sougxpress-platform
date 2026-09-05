@@ -42,7 +42,18 @@ export default function RootLayout() {
 
     const registerCurrentUser = async (force = false) => {
       const { data } = await supabase.auth.getUser();
-      if (disposed || !data.user || (!force && registeredUserId === data.user.id) || registrationInFlight) return;
+      if (disposed || !data.user || registrationInFlight) return;
+
+      if (registeredUserId && registeredUserId !== data.user.id) {
+        const tokenToRelease = getActiveToken?.() ?? activeToken;
+        if (tokenToRelease) void releasePushToken(tokenToRelease);
+        tokenSubscription?.remove();
+        activeToken = null;
+        getActiveToken = null;
+        tokenSubscription = null;
+        registeredUserId = null;
+      }
+      if (!force && registeredUserId === data.user.id) return;
 
       registrationInFlight = true;
       try {
@@ -62,6 +73,7 @@ export default function RootLayout() {
     };
 
     const initializeNotificationListeners = async () => {
+      void registerCurrentUser();
       if (!notificationsAvailable) return;
       const notifications = await getNotificationsModule();
       if (!notifications || disposed) return;
@@ -73,7 +85,6 @@ export default function RootLayout() {
         routeFromNotificationResponse(response);
       };
 
-      void registerCurrentUser();
       responseSubscription = notifications.addNotificationResponseReceivedListener(
         routeNotificationOnce,
       );
@@ -86,13 +97,13 @@ export default function RootLayout() {
     void initializeNotificationListeners();
 
     const appStateSubscription = AppState.addEventListener("change", (state) => {
-      if (state === "active" && notificationsAvailable) {
+      if (state === "active") {
         void registerCurrentUser(true);
       }
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
-      if (notificationsAvailable && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")) {
+      if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         setTimeout(() => void registerCurrentUser(), 0);
       }
       if (event === "SIGNED_OUT") {
