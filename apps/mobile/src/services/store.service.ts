@@ -642,8 +642,21 @@ export const rateGalleryItem = async (imageId: string, userId: string, rating: n
   }
 };
 
-export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]> => {
+export type MerchantStoresTrace = {
+  ownerIds: string[];
+  primaryError: string | null;
+  primaryIds: string[];
+  legacyError: string | null;
+  legacyIds: string[];
+  finalIds: string[];
+};
+
+export const getStoresByMerchantId = async (
+  merchantId: string,
+  onTrace?: (trace: MerchantStoresTrace) => void,
+): Promise<Store[]> => {
   if (!merchantId || !isValidUUID(merchantId)) {
+    onTrace?.({ ownerIds: [], primaryError: "invalid merchant id", primaryIds: [], legacyError: null, legacyIds: [], finalIds: [] });
     return [];
   }
 
@@ -682,5 +695,13 @@ export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]
   const uniqueStores = Array.from(new Map((rows as Store[]).map((store) => [store.id, store])).values());
   // Taxonomy is presentation data for Marketplace/editing. Keep the owned
   // store list independent so taxonomy table errors cannot hide stores.
+  onTrace?.({
+    ownerIds: ownerIdList,
+    primaryError: primary.error?.message ?? null,
+    primaryIds: (primary.data ?? []).map((store) => store.id),
+    legacyError: legacy.error?.message ?? null,
+    legacyIds: (legacy.data ?? []).map((store) => store.id),
+    finalIds: uniqueStores.map((store) => store.id),
+  });
   return uniqueStores;
 };

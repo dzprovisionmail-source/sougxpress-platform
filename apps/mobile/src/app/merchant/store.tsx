@@ -38,7 +38,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
-import { getStore, getStoresByMerchantId, getStoreSubcategories, updateStore, createStore } from "@/services/store.service";
+import { getStore, getStoresByMerchantId, getStoreSubcategories, updateStore, createStore, MerchantStoresTrace } from "@/services/store.service";
 import { DEFAULT_STORE_HOURS, getStoreHours, validateStoreHours } from "@/services/store-hours";
 import useStore from "@/hooks/useStore";
 import { useMerchantProducts } from "@/hooks/useProducts";
@@ -112,6 +112,13 @@ export default function UnifiedMerchantStoreDashboard() {
   const [storeId, setStoreId] = useState<string>("");
   const [merchant, setMerchant] = useState<any>(null);
   const [loadingList, setLoadingList] = useState(true);
+  const [runtimeTrace, setRuntimeTrace] = useState<{
+    authUid: string | null;
+    email: string | null;
+    userId: string | null;
+    trace: MerchantStoresTrace | null;
+    finalCount: number;
+  } | null>(null);
 
   // Store selector modal
   const [showSelectorModal, setShowSelectorModal] = useState(false);
@@ -137,6 +144,9 @@ export default function UnifiedMerchantStoreDashboard() {
   const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const authUser = sessionData.session?.user ?? null;
+    setRuntimeTrace({ authUid: authUser?.id ?? null, email: authUser?.email ?? null, userId: userId ?? null, trace: null, finalCount: 0 });
     if (!userId) return;
     setLoadingList(true);
 
@@ -147,9 +157,12 @@ export default function UnifiedMerchantStoreDashboard() {
       .maybeSingle();
     setMerchant(mData);
 
-    let list = await getStoresByMerchantId(userId);
+    let list = await getStoresByMerchantId(userId, (trace) => {
+      setRuntimeTrace({ authUid: authUser?.id ?? null, email: authUser?.email ?? null, userId, trace, finalCount: trace.finalIds.length });
+    });
 
     setStores(list);
+    setRuntimeTrace((current) => current ? { ...current, finalCount: list.length } : current);
     if (list.length > 0) {
       if (!storeId || !list.some((s) => s.id === storeId)) {
         setStoreId(list[0].id);
@@ -377,6 +390,24 @@ export default function UnifiedMerchantStoreDashboard() {
   return (
     <AdminPageShell title="لوحة تحكم التاجر">
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+
+        {runtimeTrace && (
+          <View style={{ marginHorizontal: 16, marginTop: 12, padding: 10, borderRadius: 8, backgroundColor: "#fff3cd" }}>
+            <Text style={{ fontWeight: "700", marginBottom: 4 }}>تشخيص مؤقت</Text>
+            <Text selectable>{JSON.stringify({
+              authUid: runtimeTrace.authUid,
+              email: runtimeTrace.email,
+              userId: runtimeTrace.userId,
+              ownerIds: runtimeTrace.trace?.ownerIds ?? [],
+              primaryError: runtimeTrace.trace?.primaryError ?? null,
+              primaryIds: runtimeTrace.trace?.primaryIds ?? [],
+              legacyError: runtimeTrace.trace?.legacyError ?? null,
+              legacyIds: runtimeTrace.trace?.legacyIds ?? [],
+              finalIds: runtimeTrace.trace?.finalIds ?? [],
+              storesLength: runtimeTrace.finalCount,
+            })}</Text>
+          </View>
+        )}
 
         {/* Store Header & Selector Card */}
         <SectionCard>
