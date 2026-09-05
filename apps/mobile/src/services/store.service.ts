@@ -6,8 +6,8 @@ import { getPlatformPublicProfile } from "./platform-profile.service";
 import { normalizeStoreTime, resolveStoreHours, withStoreHourDefaults } from "./store-hours";
 
 const isValidUUID = (uuid: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9]{3}-[89ab][0-9]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid.trim());
 };
 
 export type StoreTaxonomy = {
@@ -642,28 +642,16 @@ export const rateGalleryItem = async (imageId: string, userId: string, rating: n
   }
 };
 
-export type MerchantStoresTrace = {
-  ownerIds: string[];
-  primaryError: string | null;
-  primaryIds: string[];
-  legacyError: string | null;
-  legacyIds: string[];
-  finalIds: string[];
-};
-
-export const getStoresByMerchantId = async (
-  merchantId: string,
-  onTrace?: (trace: MerchantStoresTrace) => void,
-): Promise<Store[]> => {
-  if (!merchantId || !isValidUUID(merchantId)) {
-    onTrace?.({ ownerIds: [], primaryError: "invalid merchant id", primaryIds: [], legacyError: null, legacyIds: [], finalIds: [] });
+export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]> => {
+  const normalizedMerchantId = merchantId?.trim();
+  if (!normalizedMerchantId || !isValidUUID(normalizedMerchantId)) {
     return [];
   }
 
   // The session id is not guaranteed to be the merchant-record id for legacy
   // stores. Resolve the record server-side; querying merchants by email from
   // the client is blocked by the merchant RLS policy when the ids differ.
-  const ownerIds = new Set<string>([merchantId]);
+  const ownerIds = new Set<string>([normalizedMerchantId]);
   const { data: resolvedMerchantId, error: resolveError } = await supabase.rpc(
     "resolve_current_merchant_id",
   );
@@ -695,13 +683,5 @@ export const getStoresByMerchantId = async (
   const uniqueStores = Array.from(new Map((rows as Store[]).map((store) => [store.id, store])).values());
   // Taxonomy is presentation data for Marketplace/editing. Keep the owned
   // store list independent so taxonomy table errors cannot hide stores.
-  onTrace?.({
-    ownerIds: ownerIdList,
-    primaryError: primary.error?.message ?? null,
-    primaryIds: (primary.data ?? []).map((store) => store.id),
-    legacyError: legacy.error?.message ?? null,
-    legacyIds: (legacy.data ?? []).map((store) => store.id),
-    finalIds: uniqueStores.map((store) => store.id),
-  });
   return uniqueStores;
 };
