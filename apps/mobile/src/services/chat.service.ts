@@ -32,6 +32,14 @@ export interface Conversation {
 }
 
 export type MessageDeliveryState = "sending" | "sent" | "failed";
+export const MAX_CHAT_ATTACHMENT_BYTES = 2 * 1024 * 1024;
+
+export type ChatAttachmentInput = {
+  uri: string;
+  name: string;
+  size: number;
+  mimeType: string;
+};
 
 export type ChatProfileCard = {
   profile_id: string;
@@ -47,6 +55,12 @@ export interface Message {
   conversation_id: string;
   sender_id: string;
   content: string;
+  message_type?: "text" | "attachment" | string;
+  attachment_path?: string | null;
+  attachment_name?: string | null;
+  attachment_size?: number | null;
+  attachment_mime_type?: string | null;
+  attachment_url?: string | null;
   is_read: boolean;
   created_at: string;
   /** Client-only metadata used by optimistic UI; never sent to Supabase. */
@@ -238,7 +252,13 @@ export const getMessages = async (conversationId: string): Promise<{ data: Messa
       .order("created_at", { ascending: true });
 
     if (error) throw error;
-    return { data, error: null };
+    const messages = await Promise.all((data || []).map(async (message) => ({
+      ...message,
+      attachment_url: message.attachment_path
+        ? await getSignedChatAttachmentUrl(message.attachment_path)
+        : null,
+    })));
+    return { data: messages, error: null };
   } catch (err) {
     console.error("Error fetching messages:", err);
     return { data: null, error: err };
@@ -274,6 +294,59 @@ export const sendMessage = async (conversationId: string, content: string): Prom
     return { data, error: null };
   } catch (err) {
     console.error("Error sending message:", err);
+    return { data: null, error: err };
+  }
+};
+
+export const getSignedChatAttachmentUrl = async (path: string): Promise<string | null> => {
+  const { data, error } = await supabase.storage.from("chat_attachments").createSignedUrl(path, 60 * 60);
+  if (error) {
+    console.error("Error signing chat attachment URL:", error);
+    return null;
+  }
+  return data?.signedUrl || null;
+};
+
+export const sendAttachmentMessage = async (
+  conversationId: string,
+  file: ChatAttachmentInput,
+): Promise<{ data: Message | null; error: any }> => {
+  let uploadedPath: string | null = null;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+    if (!Number.isFinite(file.size) || file.size <= 0 || file.size > MAX_CHAT_ATTACHMENT_BYTES) {
+      throw new Error("Attachment exceeds the 2 MB limit");
+    }
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    uploadedPath = `${user.id}/${conversationId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${safeName}`;
+    const response = await fetch(file.uri);
+    if (!response.ok) throw new Error("Unable to read selected attachment");
+    const body = await response.arrayBuffer();
+    const { error: uploadError } = await supabase.storage
+      .from("chat_attachments")
+      .upload(uploadedPath, body, { contentType: file.mimeType || "application/octet-stream", upsert: false });
+    if (uploadError) throw uploadError;
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content: file.name,
+        message_type: "attachment",
+        attachment_path: uploadedPath,
+        attachment_name: file.name,
+        attachment_size: file.size,
+        attachment_mime_type: file.mimeType || "application/octet-stream",
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    await supabase.from("chat_conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversationId);
+    return { data: { ...data, attachment_url: await getSignedChatAttachmentUrl(uploadedPath) }, error: null };
+  } catch (err) {
+    if (uploadedPath) await supabase.storage.from("chat_attachments").remove([uploadedPath]);
+    console.error("Error sending chat attachment:", err);
     return { data: null, error: err };
   }
 };

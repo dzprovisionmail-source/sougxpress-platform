@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   I18nManager,
   Keyboard,
   Platform,
@@ -13,6 +14,9 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -28,6 +32,7 @@ import {
   WifiOff,
   X,
   Phone,
+  Paperclip,
 } from "lucide-react-native";
 
 import { Typography, Header, Avatar, Button } from "@/components/ui";
@@ -46,6 +51,10 @@ import {
   getCommercialPhone,
   logCallPress,
   getChatProfileCard,
+  getSignedChatAttachmentUrl,
+  sendAttachmentMessage,
+  MAX_CHAT_ATTACHMENT_BYTES,
+  ChatAttachmentInput,
   Message,
   Conversation,
   ChatProfileCard,
@@ -106,6 +115,7 @@ export default function ChatScreen() {
   const [profileCard, setProfileCard] = useState<ChatProfileCard | null>(null);
   const [profileCardLoading, setProfileCardLoading] = useState(false);
   const [profileCardVisible, setProfileCardVisible] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const isSupportChat = support === "1";
 
   const currentUserIdRef = useRef<string | null>(null);
@@ -206,7 +216,12 @@ export default function ChatScreen() {
     void fetchInitialData();
 
     const unsubscribe = subscribeToMessages(conversationId, (newMessage) => {
-      mergeServerMessage(newMessage);
+      void (async () => {
+        const message = newMessage.attachment_path && !newMessage.attachment_url
+          ? { ...newMessage, attachment_url: await getSignedChatAttachmentUrl(newMessage.attachment_path) }
+          : newMessage;
+        mergeServerMessage(message);
+      })();
       if (newMessage.sender_id !== currentUserIdRef.current) {
         void markAsRead(conversationId);
       }
@@ -260,6 +275,59 @@ export default function ChatScreen() {
     } finally {
       setSending(false);
     }
+  };
+
+  const resolveFileSize = async (uri: string, size?: number | null) => {
+    if (typeof size === "number" && size > 0) return size;
+    const info = await FileSystem.getInfoAsync(uri);
+    return info.exists && typeof info.size === "number" ? info.size : 0;
+  };
+
+  const submitAttachment = async (file: ChatAttachmentInput) => {
+    if (!conversationId || !currentUserId || uploadingAttachment || sending) return;
+    if (file.size > MAX_CHAT_ATTACHMENT_BYTES) {
+      Alert.alert("المرفق كبير جدًا", "الحد الأقصى لحجم المرفق هو 2 ميغابايت.");
+      return;
+    }
+    setUploadingAttachment(true);
+    try {
+      const { data, error } = await sendAttachmentMessage(conversationId, file);
+      if (error || !data) throw error || new Error("Attachment upload failed");
+      mergeServerMessage(data);
+    } catch (error) {
+      console.error("Attachment picker/upload error:", error);
+      Alert.alert("تعذر إرسال المرفق", "تحقق من نوع الملف وحجمه ثم حاول مرة أخرى.");
+    } finally {
+      setUploadingAttachment(false);
+    }
+  };
+
+  const chooseImageAttachment = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+      allowsEditing: false,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    const size = await resolveFileSize(asset.uri, asset.fileSize);
+    await submitAttachment({ uri: asset.uri, name: asset.fileName || `image-${Date.now()}.jpg`, size, mimeType: asset.mimeType || "image/jpeg" });
+  };
+
+  const chooseFileAttachment = async () => {
+    const result = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true, multiple: false });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    const size = await resolveFileSize(asset.uri, asset.size);
+    await submitAttachment({ uri: asset.uri, name: asset.name, size, mimeType: asset.mimeType || "application/octet-stream" });
+  };
+
+  const handleAttachmentPress = () => {
+    Alert.alert("إرفاق", "اختر نوع المرفق", [
+      { text: "إلغاء", style: "cancel" },
+      { text: "ملف من الجهاز", onPress: () => void chooseFileAttachment() },
+      { text: "صورة من المعرض", onPress: () => void chooseImageAttachment() },
+    ]);
   };
 
   const handleRetry = async (message: Message) => {
@@ -440,9 +508,27 @@ export default function ChatScreen() {
             failed && { borderColor: colors.error, borderWidth: 1 },
           ]}
         >
-          <Typography variant="body" style={{ color: isMine ? "#FFFFFF" : colors.textPrimary }}>
-            {item.content}
-          </Typography>
+          {item.message_type === "attachment" ? (
+            <TouchableOpacity
+              onPress={() => item.attachment_url ? void Linking.openURL(item.attachment_url) : undefined}
+              disabled={!item.attachment_url}
+              style={styles.attachmentCard}
+            >
+              {item.attachment_mime_type?.startsWith("image/") && item.attachment_url ? (
+                <Image source={{ uri: item.attachment_url }} style={styles.attachmentPreview} resizeMode="cover" />
+              ) : null}
+              <Typography variant="body" style={{ color: isMine ? "#FFFFFF" : colors.textPrimary }} numberOfLines={1}>
+                {item.attachment_name || item.content}
+              </Typography>
+              <Typography variant="caption" style={{ color: isMine ? "rgba(255,255,255,0.75)" : colors.textSecondary }}>
+                {item.attachment_size ? `${(item.attachment_size / 1024).toFixed(1)} KB` : "مرفق"}
+              </Typography>
+            </TouchableOpacity>
+          ) : (
+            <Typography variant="body" style={{ color: isMine ? "#FFFFFF" : colors.textPrimary }}>
+              {item.content}
+            </Typography>
+          )}
           <View style={[styles.messageMeta, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <Typography
               variant="caption"
@@ -600,6 +686,14 @@ export default function ChatScreen() {
             maxLength={1000}
           />
           <TouchableOpacity
+            style={[styles.attachmentButton, { borderColor: colors.borderSubtle, opacity: uploadingAttachment || sending ? 0.5 : 1 }]}
+            onPress={handleAttachmentPress}
+            disabled={uploadingAttachment || sending}
+            accessibilityLabel="إرفاق صورة أو ملف"
+          >
+            {uploadingAttachment ? <ActivityIndicator size="small" color={colors.primary} /> : <Paperclip size={20} color={colors.primary} />}
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.sendButton, { backgroundColor: colors.primary, opacity: inputText.trim() && !sending ? 1 : 0.55 }]}
             onPress={handleSend}
             disabled={!inputText.trim() || sending}
@@ -742,6 +836,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: TOKENS.spacing.md,
     borderRadius: 16,
   },
+  attachmentCard: {
+    minWidth: 170,
+    maxWidth: 240,
+    gap: 5,
+  },
+  attachmentPreview: {
+    width: 210,
+    height: 150,
+    borderRadius: 10,
+  },
   messageMeta: {
     alignItems: "center",
     justifyContent: "flex-end",
@@ -774,6 +878,15 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: TOKENS.spacing.sm,
+  },
+  attachmentButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: TOKENS.spacing.sm,
