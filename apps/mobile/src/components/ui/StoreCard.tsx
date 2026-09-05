@@ -15,7 +15,6 @@ import { ImageFallback } from './ImageFallback';
 import { CategoryIcon } from './CategoryIcon';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { TOKENS } from '@/constants/tokens';
-import { getArabicCategoryName } from '@/config/storeCategories';
 import { getStoreMetrics } from '@/services/store-metrics.service';
 import { useStoreOpenState } from '@/services/store-open-state';
 
@@ -69,9 +68,13 @@ export const StoreCard: React.FC<StoreCardProps> = ({
 
   const actualId = id || store?.id || '';
   const actualName = name || store?.name || '';
-  const actualCategory = category !== 'متجر' ? category : (store?.category || 'متجر');
+  const actualCategory = category !== 'متجر' ? category : (store?.category_name || 'غير مصنف');
   const actualSubcategory = subcategory || store?.sub_category || '';
-  const displayCategory = getArabicCategoryName(actualCategory, actualSubcategory || undefined);
+  const displayCategory = actualCategory === 'غير مصنف'
+    ? actualCategory
+    : actualSubcategory
+      ? `${actualCategory} • ${actualSubcategory}`
+      : actualCategory;
   const actualCover = coverImage || store?.cover_url || store?.coverImage || null;
   const actualLogo = logoImage || store?.logo_url || store?.logoImage || null;
   const actualRating = rating !== 4.8 ? rating : (store?.rating || 4.8);

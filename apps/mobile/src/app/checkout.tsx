@@ -77,8 +77,8 @@ const CheckoutScreen = () => {
     if (result.success) {
       setCreatedOrderId(result.orderId || null);
       setOrderSuccess(true);
-    } else if (error) {
-      Alert.alert('خطأ', error);
+    } else {
+      Alert.alert('خطأ', result.error || error || 'فشل في إنشاء الطلب.');
     }
   };
 

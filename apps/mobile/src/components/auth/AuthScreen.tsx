@@ -6,6 +6,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
@@ -23,6 +24,8 @@ import { supabase } from "@/lib/supabase";
 import { AIN_SEFRA_ZONES } from "@/constants/ain-sefra-zones";
 import type { VehicleType } from "@/types/schema-04-couriers";
 import { getRegistrationStatus } from "@/services/trial-approval.service";
+import { getActiveCategories, getActiveSubcategories } from "@/services/category.service";
+import type { Category, Subcategory } from "@/types/schema-03-core";
 
 type Role = "customer" | "merchant" | "driver";
 
@@ -111,6 +114,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
   // Merchant-only
   const [businessName, setBusinessName] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<string[]>([]);
+  const [categoryError, setCategoryError] = useState("");
 
   // Auth fields (always shown)
   const [email, setEmail] = useState("");
@@ -118,8 +126,29 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
   useEffect(() => {
     fetchZones();
+    if (role === "merchant") fetchMerchantCategories();
     checkExistingSession();
   }, []);
+
+  const fetchMerchantCategories = async () => {
+    const loadedCategories = await getActiveCategories();
+    setCategories(loadedCategories);
+  };
+
+  const handleMainCategoryChange = async (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+    setSelectedSubcategoryIds([]);
+    setCategoryError("");
+    setSubcategories(await getActiveSubcategories(categoryId));
+  };
+
+  const toggleSubcategory = (subcategoryId: string) => {
+    setSelectedSubcategoryIds((current) =>
+      current.includes(subcategoryId)
+        ? current.filter((id) => id !== subcategoryId)
+        : [...current, subcategoryId]
+    );
+  };
 
   const fetchZones = async () => {
     try {
@@ -354,6 +383,49 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             console.error("[AuthScreen] Failed to create initial store #1:", storeInsertErr);
           }
         }
+
+        // Persist the normalized taxonomy selection on the merchant's store.
+        // Main category is 1:1; subcategories use the existing 1:N map table.
+        if (selectedCategoryId) {
+          const { data: merchantStore, error: merchantStoreError } = await supabase
+            .from("stores")
+            .select("id")
+            .eq("merchant_id", userId)
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (merchantStoreError) throw merchantStoreError;
+          if (merchantStore) {
+            const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
+            const selectedSubcategory = subcategories.find((subcategory) => selectedSubcategoryIds.includes(subcategory.id));
+            const { error: taxonomyError } = await supabase
+              .from("stores")
+              .update({
+                category_id: selectedCategoryId,
+                main_category: selectedCategory?.name_ar || null,
+                subcategory_id: selectedSubcategory?.id || null,
+                sub_category: selectedSubcategory?.name_ar || null,
+              })
+              .eq("id", merchantStore.id);
+            if (taxonomyError) throw taxonomyError;
+
+            const { error: clearSubcategoriesError } = await supabase
+              .from("store_subcategories_map")
+              .delete()
+              .eq("store_id", merchantStore.id);
+            if (clearSubcategoriesError) throw clearSubcategoriesError;
+
+            if (selectedSubcategoryIds.length > 0) {
+              const { error: subcategoryError } = await supabase
+                .from("store_subcategories_map")
+                .insert(selectedSubcategoryIds.map((subcategoryId) => ({
+                  store_id: merchantStore.id,
+                  subcategory_id: subcategoryId,
+                })));
+              if (subcategoryError) throw subcategoryError;
+            }
+          }
+        }
       } else if (role === "driver") {
         const { data: driver, error: dQueryError } = await supabase
           .from("drivers")
@@ -502,6 +574,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         }
         if (role === "merchant" && !businessName.trim()) {
           Alert.alert("خطأ", "يرجى إدخال اسم المتجر");
+          setLoading(false);
+          return;
+        }
+        if (role === "merchant" && !selectedCategoryId) {
+          setCategoryError("يرجى اختيار الفئة الرئيسية");
           setLoading(false);
           return;
         }
@@ -744,6 +821,50 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                       value={businessName}
                       onChangeText={setBusinessName}
                     />
+                    <SimpleSelect
+                      label="فئة التجارة — الفئة الرئيسية"
+                      placeholder="اختر الفئة الرئيسية"
+                      options={categories.map((category) => ({
+                        value: category.id,
+                        label: category.name_ar,
+                      }))}
+                      value={selectedCategoryId}
+                      onChange={handleMainCategoryChange}
+                      error={categoryError}
+                    />
+                    {selectedCategoryId && subcategories.length > 0 ? (
+                      <View style={styles.subcategorySection}>
+                        <Typography variant="caption" style={[styles.categoryLabel, { color: colors.textSecondary }]}>الفئات الفرعية — اختر أكثر من فئة</Typography>
+                        <View style={styles.subcategoryList}>
+                          {subcategories.map((subcategory) => {
+                            const selected = selectedSubcategoryIds.includes(subcategory.id);
+                            return (
+                              <TouchableOpacity
+                                key={subcategory.id}
+                                onPress={() => toggleSubcategory(subcategory.id)}
+                                activeOpacity={0.75}
+                                style={[
+                                  styles.subcategoryChip,
+                                  {
+                                    backgroundColor: selected ? `${colors.primary}18` : colors.bgSurface,
+                                    borderColor: selected ? colors.primary : colors.borderSubtle,
+                                  },
+                                ]}
+                              >
+                                <Typography variant="caption" style={{ color: selected ? colors.primary : colors.textPrimary, fontWeight: selected ? "700" : "500" }}>
+                                  {selected ? "✓ " : ""}{subcategory.name_ar}
+                                </Typography>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                        {selectedSubcategoryIds.length > 0 ? (
+                          <Typography variant="caption" style={[styles.selectedSummary, { color: colors.textSecondary }]}>المحدد: {subcategories.filter((item) => selectedSubcategoryIds.includes(item.id)).map((item) => item.name_ar).join("، ")}</Typography>
+                        ) : null}
+                      </View>
+                    ) : selectedCategoryId ? (
+                      <Typography variant="caption" style={{ color: colors.textSecondary, textAlign: "right" }}>لا توجد فئات فرعية نشطة لهذه الفئة.</Typography>
+                    ) : null}
                   </>
                 )}
 
@@ -807,6 +928,11 @@ const styles = StyleSheet.create({
   header: { marginBottom: TOKENS.spacing["2xl"] },
   title: { color: TOKENS.colors.brandPrimary, marginBottom: TOKENS.spacing.xs },
   form: { gap: TOKENS.spacing.sm },
+  subcategorySection: { marginTop: TOKENS.spacing.xs, gap: TOKENS.spacing.xs },
+  categoryLabel: { textAlign: "right", fontWeight: "600" },
+  subcategoryList: { flexDirection: "row-reverse", flexWrap: "wrap", gap: TOKENS.spacing.xs },
+  subcategoryChip: { borderWidth: 1, borderRadius: TOKENS.radius.sm, paddingHorizontal: TOKENS.spacing.sm, paddingVertical: TOKENS.spacing.xs },
+  selectedSummary: { textAlign: "right", lineHeight: 20 },
   submitBtn: { marginTop: TOKENS.spacing.md },
   backBtn: { marginTop: TOKENS.spacing.xl },
   statusContainer: {

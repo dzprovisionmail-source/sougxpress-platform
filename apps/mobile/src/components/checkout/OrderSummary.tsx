@@ -5,6 +5,7 @@ import { colors } from '@/design/colors';
 import { spacing } from '@/design/spacing';
 import { typography } from '@/design/typography';
 import { Card } from '@/components/ui';
+import { useAppTheme } from '@/contexts/ThemeContext';
 
 interface OrderSummaryProps {
   subtotal: number;
@@ -13,20 +14,21 @@ interface OrderSummaryProps {
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({ subtotal, deliveryFee, total }) => {
+  const { colors } = useAppTheme();
   return (
     <Card style={styles.card}>
       <View style={styles.row}>
-        <Text style={styles.label}>💰 سعر المنتجات</Text>
-        <Text style={styles.value}>{`${(subtotal / 100).toFixed(2)} د.ج`}</Text>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>💰 سعر المنتجات</Text>
+        <Text style={[styles.value, { color: colors.textPrimary }]}>{`${(subtotal / 100).toFixed(2)} د.ج`}</Text>
       </View>
       <View style={styles.row}>
-        <Text style={styles.label}>🛵 رسوم التوصيل</Text>
-        <Text style={styles.value}>{`${(deliveryFee / 100).toFixed(2)} د.ج`}</Text>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>🛵 رسوم التوصيل</Text>
+        <Text style={[styles.value, { color: colors.textPrimary }]}>{`${(deliveryFee / 100).toFixed(2)} د.ج`}</Text>
       </View>
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.borderSubtle }]} />
       <View style={styles.row}>
-        <Text style={styles.totalLabel}>💵 الإجمالي</Text>
-        <Text style={styles.totalValue}>{`${(total / 100).toFixed(2)} د.ج`}</Text>
+        <Text style={[styles.totalLabel, { color: colors.textPrimary }]}>💵 الإجمالي</Text>
+        <Text style={[styles.totalValue, { color: colors.primary }]}>{`${(total / 100).toFixed(2)} د.ج`}</Text>
       </View>
     </Card>
   );

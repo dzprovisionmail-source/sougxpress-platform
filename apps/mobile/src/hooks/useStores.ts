@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Store } from '../types/schema-03-core';
-import { getAllStores, getStoresByCategory, searchStores } from '../services/store.service';
+import { enrichStoresWithTaxonomy, getAllStores, getStoresByCategory, searchStores } from '../services/store.service';
 import { supabase, withRetry } from '../lib/supabase';
 import { PlatformPublicProfile, searchPlatformPublicProfiles } from '../services/platform-profile.service';
 
@@ -93,7 +93,7 @@ export const useNewStores = (limit: number = 10) => {
         });
         
         if (error) throw error;
-        setStores(data || []);
+        setStores(await enrichStoresWithTaxonomy(data || []));
       } catch (err) {
         console.error('Error fetching new stores:', err);
       } finally {

@@ -10,8 +10,13 @@ export const createOrder = async (order: Omit<Order, 'id' | 'created_at' | 'upda
     .single();
 
   if (error) {
-    console.error("Error creating order:", error);
-    return null;
+    console.error("Error creating order:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error(error.message || "فشل في إنشاء الطلب في قاعدة البيانات.");
   }
   return data as Order;
 };

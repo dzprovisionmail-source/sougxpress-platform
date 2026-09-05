@@ -6,8 +6,44 @@ import { getPlatformPublicProfile } from "./platform-profile.service";
 import { normalizeStoreTime, resolveStoreHours, withStoreHourDefaults } from "./store-hours";
 
 const isValidUUID = (uuid: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9]{3}-[89ab][0-9]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
+};
+
+export type StoreTaxonomy = {
+  category_name: string | null;
+  subcategories: Array<{ id: string; name_ar: string; category_id: string }>;
+};
+
+export const enrichStoresWithTaxonomy = async <T extends Store>(stores: T[]): Promise<Array<T & StoreTaxonomy>> => {
+  if (stores.length === 0) return [];
+  const storeIds = stores.map((store) => store.id);
+  const categoryIds = [...new Set(stores.map((store) => store.category_id).filter(Boolean))] as string[];
+  const [{ data: categoryRows }, { data: mapRows }] = await Promise.all([
+    categoryIds.length > 0
+      ? supabase.from("categories").select("id, name_ar").in("id", categoryIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; name_ar: string }> }),
+    supabase.from("store_subcategories_map").select("store_id, subcategory_id").in("store_id", storeIds),
+  ]);
+  const subcategoryIds = [...new Set((mapRows ?? []).map((row) => row.subcategory_id).filter(Boolean))];
+  const { data: subcategoryRows } = subcategoryIds.length > 0
+    ? await supabase.from("subcategories").select("id, name_ar, category_id").in("id", subcategoryIds)
+    : { data: [] as Array<{ id: string; name_ar: string; category_id: string }> };
+  const categoryById = new Map((categoryRows ?? []).map((row) => [row.id, row.name_ar]));
+  const subcategoryById = new Map((subcategoryRows ?? []).map((row) => [row.id, row]));
+  const subcategoriesByStore = new Map<string, StoreTaxonomy["subcategories"]>();
+  (mapRows ?? []).forEach((row) => {
+    const subcategory = subcategoryById.get(row.subcategory_id);
+    if (!subcategory) return;
+    const current = subcategoriesByStore.get(row.store_id) ?? [];
+    current.push(subcategory);
+    subcategoriesByStore.set(row.store_id, current);
+  });
+  return stores.map((store) => ({
+    ...store,
+    category_name: store.category_id ? (categoryById.get(store.category_id) ?? null) : null,
+    subcategories: subcategoriesByStore.get(store.id) ?? [],
+  }));
 };
 
 export const getStore = async (storeId: string): Promise<Store | null> => {
@@ -65,10 +101,7 @@ export const getAllStores = async (): Promise<Store[]> => {
     console.error("Error fetching all stores:", error);
     return [];
   }
-  return ((data as Store[]) || []).map(s => ({
-    ...withStoreHourDefaults(s),
-    main_category: (s as any).main_category || mapLegacyCategoryToMain(s.category)
-  }));
+  return enrichStoresWithTaxonomy(((data as Store[]) || []).map(s => withStoreHourDefaults(s) as Store));
 };
 
 export const getStoresByCategory = async (category: string): Promise<Store[]> => {
@@ -92,10 +125,7 @@ export const getStoresByCategory = async (category: string): Promise<Store[]> =>
     console.error("Error fetching stores by category:", error);
     return [];
   }
-  return ((data as Store[]) || []).map(s => ({
-    ...withStoreHourDefaults(s),
-    main_category: (s as any).main_category || mapLegacyCategoryToMain(s.category)
-  }));
+  return enrichStoresWithTaxonomy(((data as Store[]) || []).map(s => withStoreHourDefaults(s) as Store));
 };
 
 export const searchStores = async (query: string): Promise<Store[]> => {
@@ -109,7 +139,7 @@ export const searchStores = async (query: string): Promise<Store[]> => {
     console.error("Error searching stores:", error);
     return [];
   }
-  return ((data as Store[]) || []).map((store) => withStoreHourDefaults(store) as Store);
+  return enrichStoresWithTaxonomy(((data as Store[]) || []).map((store) => withStoreHourDefaults(store) as Store));
 };
 
 export const updateStore = async (storeId: string, updates: Partial<Store> & { category?: string; category_id?: string; subcategory_id?: string; zone_id?: string; neighborhood?: string }): Promise<Store | null> => {
@@ -617,36 +647,45 @@ export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]
     return [];
   }
 
-  // The canonical owner is merchant_id. Some older rows were created through
-  // founder/admin tooling and only carry created_by, so read both ownership
-  // columns. Do not make the list disappear when a staging schema is missing
-  // the later deleted_at column; filter that field in memory instead.
-  const [merchantResult, creatorResult] = await Promise.all([
+  // Some legacy merchant rows use the merchant-record UUID while newer rows
+  // use auth.uid(). Resolve both identifiers for the current session so the
+  // dashboard never loses all stores because of that historical split.
+  const ownerIds = new Set<string>([merchantId]);
+  const { data: authData } = await supabase.auth.getUser();
+  const email = authData.user?.email?.trim().toLowerCase();
+  if (email) {
+    const { data: merchantRows, error: merchantError } = await supabase
+      .from("merchants")
+      .select("id")
+      .ilike("email", email)
+      .limit(10);
+    if (merchantError) {
+      console.error("Error resolving merchant record:", merchantError);
+    }
+    (merchantRows ?? []).forEach((row) => {
+      if (isValidUUID(row.id)) ownerIds.add(row.id);
+    });
+  }
+
+  const ownerIdList = [...ownerIds];
+  const [primary, legacy] = await Promise.all([
     supabase
       .from("stores")
       .select("*")
-      .eq("merchant_id", merchantId)
+      .in("merchant_id", ownerIdList)
       .order("created_at", { ascending: true }),
     supabase
       .from("stores")
       .select("*")
-      .eq("created_by", merchantId)
+      .in("created_by", ownerIdList)
       .order("created_at", { ascending: true }),
   ]);
 
-  const firstError = merchantResult.error ?? creatorResult.error;
-  if (firstError && !merchantResult.data?.length && !creatorResult.data?.length) {
-    console.error("Error fetching stores by merchant:", firstError);
-    return [];
-  }
+  if (primary.error) console.error("Error fetching stores by merchant_id:", primary.error);
+  if (legacy.error) console.error("Error fetching stores by created_by:", legacy.error);
 
-  const byId = new Map<string, Store>();
-  for (const row of [...(merchantResult.data ?? []), ...(creatorResult.data ?? [])]) {
-    const store = row as Store & { deleted_at?: string | null };
-    if (!store.deleted_at) byId.set(store.id, store);
-  }
-
-  return [...byId.values()].sort((a, b) =>
-    String(a.created_at ?? "").localeCompare(String(b.created_at ?? "")),
-  );
+  const rows = [...(primary.data ?? []), ...(legacy.data ?? [])]
+    .filter((store) => !store.deleted_at);
+  const uniqueStores = Array.from(new Map((rows as Store[]).map((store) => [store.id, store])).values());
+  return enrichStoresWithTaxonomy(uniqueStores);
 };

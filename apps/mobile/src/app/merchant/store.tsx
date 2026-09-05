@@ -38,7 +38,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
 import { useCurrentUserId } from "@/features/workspace/useCurrentUserId";
-import { getStore, getStoresByMerchantId, updateStore, createStore } from "@/services/store.service";
+import { getStore, getStoresByMerchantId, getStoreSubcategories, updateStore, createStore } from "@/services/store.service";
 import { DEFAULT_STORE_HOURS, getStoreHours, validateStoreHours } from "@/services/store-hours";
 import useStore from "@/hooks/useStore";
 import { useMerchantProducts } from "@/hooks/useProducts";
@@ -149,18 +149,6 @@ export default function UnifiedMerchantStoreDashboard() {
 
     let list = await getStoresByMerchantId(userId);
 
-    // Auto-repair if merchant has 0 stores
-    if (list.length === 0 && mData) {
-      const created = await createStore(userId, {
-        name: mData.business_name || "متجري الأول",
-        category: "عام",
-        address_line1: mData.address || "العنوان الرئيسي",
-        city: "عين الصفراء",
-        country: "Algeria",
-      });
-      if (created) list = [created];
-    }
-
     setStores(list);
     if (list.length > 0) {
       if (!storeId || !list.some((s) => s.id === storeId)) {
@@ -184,7 +172,12 @@ export default function UnifiedMerchantStoreDashboard() {
     if (isCreate) {
       setCreateForm((prev) => ({ ...prev, category_id: categoryId, subcategory_id: undefined }));
     } else {
-      setEditForm((prev) => ({ ...prev, category_id: categoryId, subcategory_id: undefined }));
+      setEditForm((prev) => ({
+        ...prev,
+        category_id: categoryId,
+        subcategory_id: undefined,
+        subcategory_ids: [],
+      }));
     }
   };
 
@@ -229,6 +222,10 @@ export default function UnifiedMerchantStoreDashboard() {
 
     if (created) {
       setStoreId(created.id);
+      setStores((current) => [
+        ...current.filter((item) => item.id !== created.id),
+        created,
+      ]);
       setCreateForm(EMPTY_FORM);
       setShowCreateModal(false);
       await loadData();
@@ -244,33 +241,41 @@ export default function UnifiedMerchantStoreDashboard() {
     });
   }, []);
 
-  const openEditModal = () => {
-    if (!store) return;
+  const openEditModal = async () => {
+    const editableStore = store ?? stores.find((item) => item.id === storeId) ?? stores[0];
+    if (!editableStore) return;
+    setShowEditModal(true);
+    const availableCategories = categories.length > 0 ? categories : await getActiveCategories();
+    if (categories.length === 0) setCategories(availableCategories);
+    const savedSubcategories = selectedSubcategories.length > 0
+      ? selectedSubcategories
+      : await getStoreSubcategories(editableStore.id);
     setEditForm({
-      name: store.name ?? "",
-      category: store.category ?? "",
-      category_id: store.category_id ?? undefined,
-      subcategory_id: store.subcategory_id ?? undefined,
-      subcategory_ids: selectedSubcategories || [],
-      description: store.description ?? "",
-      phone_number: store.phone_number ?? "",
-      address_line1: store.address_line1 ?? "",
-      city: store.city ?? "عين الصفراء",
-      zone_id: (store as any).zone_id || undefined,
-      state_province: store.state_province || "",
-      opens_at: getStoreHours(store).opens_at,
-      closes_at: getStoreHours(store).closes_at,
-      closed_day: store.closed_day ?? "",
+      name: editableStore.name ?? "",
+      category: editableStore.category ?? "",
+      category_id: editableStore.category_id ?? undefined,
+      subcategory_id: editableStore.subcategory_id ?? undefined,
+      subcategory_ids: savedSubcategories,
+      description: editableStore.description ?? "",
+      phone_number: editableStore.phone_number ?? "",
+      address_line1: editableStore.address_line1 ?? "",
+      city: editableStore.city ?? "عين الصفراء",
+      zone_id: (editableStore as any).zone_id || undefined,
+      state_province: editableStore.state_province || "",
+      opens_at: getStoreHours(editableStore).opens_at,
+      closes_at: getStoreHours(editableStore).closes_at,
+      closed_day: editableStore.closed_day ?? "",
     });
-    if (store.category_id) {
-      getActiveSubcategories(store.category_id).then(setSubcategories);
+    if (editableStore.category_id) {
+      getActiveSubcategories(editableStore.category_id).then(setSubcategories);
     } else {
       setSubcategories([]);
     }
-    setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
+    const editableStore = store ?? stores.find((item) => item.id === storeId) ?? stores[0];
+    if (!editableStore) return;
     if (!editForm.name.trim()) {
       Alert.alert("خطأ", "اسم المتجر مطلوب");
       return;
@@ -284,6 +289,7 @@ export default function UnifiedMerchantStoreDashboard() {
     const updates: any = {
       name: editForm.name.trim(),
       category: editForm.category.trim(),
+      main_category: categories.find((category) => category.id === editForm.category_id)?.name_ar || editForm.category.trim() || null,
       description: editForm.description.trim() || undefined,
       phone_number: editForm.phone_number.trim() || undefined,
       address_line1: editForm.address_line1.trim() || undefined,
@@ -294,13 +300,13 @@ export default function UnifiedMerchantStoreDashboard() {
       closes_at: editForm.closes_at || undefined,
       closed_day: editForm.closed_day || null,
       subcategory_ids: editForm.subcategory_ids || [],
+      subcategory_id: editForm.subcategory_ids?.[0] || null,
     };
     if (editForm.category_id) updates.category_id = editForm.category_id;
-    if (editForm.subcategory_id !== undefined) updates.subcategory_id = editForm.subcategory_id;
 
     const ok = await updateStoreHook(updates);
     if (ok) {
-      const refreshed = await getStore(store.id);
+      const refreshed = await getStore(editableStore.id);
       if (!refreshed) {
         setSavingEdit(false);
         Alert.alert("خطأ", "تم الحفظ لكن تعذر إعادة تحميل الإعدادات.");
@@ -438,7 +444,7 @@ export default function UnifiedMerchantStoreDashboard() {
                 <Text style={[styles.infoKey, { color: colors.textSecondary }]}>العنوان</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={[styles.infoVal, { color: colors.textPrimary }]}>{activeStore.category || "عام"}</Text>
+                <Text style={[styles.infoVal, { color: colors.textPrimary }]}>{(activeStore as Store & { category_name?: string | null }).category_name || "غير مصنف"}</Text>
                 <Text style={[styles.infoKey, { color: colors.textSecondary }]}>التصنيف</Text>
               </View>
             </SectionCard>
@@ -761,7 +767,7 @@ export default function UnifiedMerchantStoreDashboard() {
                           onPress={() => {
                             const current = editForm.subcategory_ids || [];
                             const next = isSelected ? current.filter(id => id !== sub.id) : [...current, sub.id];
-                            setEditForm({ ...editForm, subcategory_ids: next });
+                            setEditForm({ ...editForm, subcategory_ids: next, subcategory_id: next[0] });
                           }}
                           style={{
                             paddingHorizontal: 12,
@@ -959,6 +965,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
+    height: "85%",
     maxHeight: "85%",
   },
   modalHeader: {

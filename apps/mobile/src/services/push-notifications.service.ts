@@ -269,7 +269,26 @@ export async function registerForPushNotifications(
       console.warn("claim_user_device failure", { message: error.message });
       throw error;
     }
-    const device = Array.isArray(data) ? data[0] : data;
+    const claimedDevice = Array.isArray(data) ? data[0] : data;
+    const device = await readCurrentPushDevice(userId);
+    if (!device || device.push_token !== nextToken || device.is_active !== true) {
+      const verificationError = "user_devices registration verification failed";
+      onProgress?.({
+        claimStatus: "failed",
+        lastError: verificationError,
+        userDevicesUpdatedAt: device?.updated_at ?? null,
+        userDevicesIsActive: device?.is_active ?? null,
+        userDevicesPlatform: device?.platform ?? null,
+      });
+      console.warn(verificationError, {
+        userId,
+        token: maskPushToken(nextToken),
+        returnedDeviceActive: claimedDevice?.is_active ?? null,
+        verifiedDeviceActive: device?.is_active ?? null,
+        verifiedDeviceToken: device ? maskPushToken(device.push_token) : null,
+      });
+      throw new Error(verificationError);
+    }
     onProgress?.({
       claimStatus: "success",
       userDevicesUpdatedAt: device?.updated_at ?? null,

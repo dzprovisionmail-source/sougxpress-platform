@@ -35,6 +35,7 @@ import { useAppTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import { useStoreOpenState } from "@/services/store-open-state";
 import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
+import { enrichStoresWithTaxonomy } from "@/services/store.service";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -229,12 +230,13 @@ export default function StoreDetailsScreen() {
       // Fetch store basic info
       const { data: storeData, error: storeErr } = await supabase
         .from("stores")
-        .select("id, name, category, cover_url, logo_url, created_by, merchant_id, is_featured, rating, is_open, opens_at, closes_at, closed_day")
+        .select("id, name, category, category_id, subcategory_id, main_category, sub_category, cover_url, logo_url, created_by, merchant_id, is_featured, rating, is_open, opens_at, closes_at, closed_day, created_at")
         .eq("id", id)
         .single();
 
       if (storeErr) throw storeErr;
-      setStore(storeData);
+      const [enrichedStore] = await enrichStoresWithTaxonomy([storeData as any]);
+      setStore(enrichedStore ?? storeData);
       setLoading(false);
 
       // Gallery and products are independent after the store record is available.
@@ -466,8 +468,17 @@ export default function StoreDetailsScreen() {
           </Typography>
 
           <Typography variant="caption" color="secondary" align="center" style={styles.storeCategory}>
-            {store.category || "سوبر ماركت"}
+            {store.category_name || "غير مصنف"}
           </Typography>
+          {store.subcategories?.length > 0 ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 6, marginTop: 6 }}>
+              {store.subcategories.map((subcategory: { id: string; name_ar: string }) => (
+                <View key={subcategory.id} style={{ backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle, borderWidth: 1, borderRadius: 14, paddingHorizontal: 9, paddingVertical: 4 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{subcategory.name_ar}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           {/* Stats Row - Now at the top of info */}
           <View style={[styles.statsRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
