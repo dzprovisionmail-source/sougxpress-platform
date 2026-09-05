@@ -69,9 +69,11 @@ export const StoreCard: React.FC<StoreCardProps> = ({
 
   const actualId = id || store?.id || '';
   const actualName = name || store?.name || '';
-  const actualCategory = category !== 'متجر' ? category : (store?.category || 'متجر');
+  const actualCategory = category !== 'متجر' ? category : (store?.category_name || store?.category || 'غير مصنف');
   const actualSubcategory = subcategory || store?.sub_category || '';
-  const displayCategory = getArabicCategoryName(actualCategory, actualSubcategory || undefined);
+  const displayCategory = actualCategory === 'غير مصنف'
+    ? actualCategory
+    : getArabicCategoryName(actualCategory, actualSubcategory || undefined);
   const actualCover = coverImage || store?.cover_url || store?.coverImage || null;
   const actualLogo = logoImage || store?.logo_url || store?.logoImage || null;
   const actualRating = rating !== 4.8 ? rating : (store?.rating || 4.8);

@@ -18,7 +18,6 @@ import { useStores, useSearch, useNewStores } from '@/hooks/useStores';
 import useCart from '@/hooks/useCart';
 import { toggleFavorite, getFavoriteIds } from '@/services/favorite.service';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
-import { getArabicCategoryName } from '@/config/storeCategories';
 import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
 import { getActiveHeroSlides, getHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
 import { supabase } from '@/lib/supabase';
@@ -807,7 +806,7 @@ const HomeScreen = () => {
                   key={store.id}
                   id={store.id}
                   name={store.name}
-                  category={getArabicCategoryName(store.main_category || store.category)}
+                  category={store.category_name || "غير مصنف"}
                   subcategory={store.sub_category}
                   rating={store.rating?.toString() || "0.0"}
                   coverImage={store.cover_url}
