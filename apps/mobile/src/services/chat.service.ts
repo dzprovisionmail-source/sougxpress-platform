@@ -47,9 +47,6 @@ export interface Message {
   conversation_id: string;
   sender_id: string;
   content: string;
-  message_type?: "text" | "location" | string;
-  latitude?: number | null;
-  longitude?: number | null;
   is_read: boolean;
   created_at: string;
   /** Client-only metadata used by optimistic UI; never sent to Supabase. */
@@ -251,11 +248,7 @@ export const getMessages = async (conversationId: string): Promise<{ data: Messa
 /**
  * Sends a message in a conversation.
  */
-export const sendMessage = async (
-  conversationId: string,
-  content: string,
-  location?: { latitude: number; longitude: number },
-): Promise<{ data: Message | null; error: any }> => {
+export const sendMessage = async (conversationId: string, content: string): Promise<{ data: Message | null; error: any }> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
@@ -266,9 +259,6 @@ export const sendMessage = async (
         conversation_id: conversationId,
         sender_id: user.id,
         content: content,
-        message_type: location ? "location" : "text",
-        latitude: location?.latitude ?? null,
-        longitude: location?.longitude ?? null,
       })
       .select()
       .single();

@@ -28,7 +28,6 @@ import {
   WifiOff,
   X,
   Phone,
-  MapPin,
 } from "lucide-react-native";
 
 import { Typography, Header, Avatar, Button } from "@/components/ui";
@@ -52,7 +51,6 @@ import {
   ChatProfileCard,
 } from "@/services/chat.service";
 import BottomSheet from "@/components/ui/BottomSheet";
-import LocationPickerModal from "@/components/chat/LocationPickerModal";
 
 const AVAILABILITY_LABEL: Record<string, string> = {
   online: "متاح الآن",
@@ -109,9 +107,6 @@ export default function ChatScreen() {
   const [profileCardLoading, setProfileCardLoading] = useState(false);
   const [profileCardVisible, setProfileCardVisible] = useState(false);
   const isSupportChat = support === "1";
-  const [locationPickerVisible, setLocationPickerVisible] = useState(false);
-  const [locationPickerMode, setLocationPickerMode] = useState<"send" | "view">("send");
-  const [locationPoint, setLocationPoint] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const currentUserIdRef = useRef<string | null>(null);
   const flatListRef = useRef<FlatList<Message>>(null);
@@ -220,8 +215,8 @@ export default function ChatScreen() {
     return unsubscribe;
   }, [conversationId, fetchInitialData, mergeServerMessage]);
 
-  const persistMessage = async (clientId: string, text: string, location?: { latitude: number; longitude: number }) => {
-    const { data, error } = await sendMessage(conversationId, text, location);
+  const persistMessage = async (clientId: string, text: string) => {
+    const { data, error } = await sendMessage(conversationId, text);
     if (error || !data) {
       setMessages((previous) =>
         previous.map((message) =>
@@ -238,35 +233,6 @@ export default function ChatScreen() {
     }
 
     mergeServerMessage({ ...data, client_id: clientId });
-  };
-  const handleConfirmLocation = async (point: { latitude: number; longitude: number }) => {
-    if (locationPickerMode === "view") {
-      setLocationPickerVisible(false);
-      return;
-    }
-    if (sending || !currentUserId || !conversationId) return;
-    const clientId = createClientId();
-    const optimisticMessage: Message = {
-      id: clientId,
-      client_id: clientId,
-      conversation_id: conversationId,
-      sender_id: currentUserId,
-      content: "موقع GPS",
-      message_type: "location",
-      latitude: point.latitude,
-      longitude: point.longitude,
-      is_read: true,
-      created_at: new Date().toISOString(),
-      delivery_state: "sending",
-    };
-    setMessages((previous) => [...previous, optimisticMessage]);
-    setLocationPickerVisible(false);
-    setSending(true);
-    try {
-      await persistMessage(clientId, "موقع GPS", point);
-    } finally {
-      setSending(false);
-    }
   };
 
   const handleSend = async () => {
@@ -303,13 +269,7 @@ export default function ChatScreen() {
         item.id === message.id ? { ...item, delivery_state: "sending", delivery_error: undefined } : item
       )
     );
-    await persistMessage(
-      clientId,
-      message.content,
-      message.message_type === "location" && message.latitude != null && message.longitude != null
-        ? { latitude: message.latitude, longitude: message.longitude }
-        : undefined,
-    );
+    await persistMessage(clientId, message.content);
   };
 
   const updateOrderContext = async () => {
@@ -480,26 +440,9 @@ export default function ChatScreen() {
             failed && { borderColor: colors.error, borderWidth: 1 },
           ]}
         >
-          {item.message_type === "location" && item.latitude != null && item.longitude != null ? (
-            <TouchableOpacity
-              onPress={() => {
-                setLocationPoint({ latitude: item.latitude as number, longitude: item.longitude as number });
-                setLocationPickerMode("view");
-                setLocationPickerVisible(true);
-              }}
-              style={[styles.locationCard, { backgroundColor: isMine ? "rgba(255,255,255,0.16)" : colors.bgElevated }]}
-            >
-              <MapPin size={24} color={isMine ? "#FFFFFF" : colors.primary} />
-              <Typography variant="body" style={{ color: isMine ? "#FFFFFF" : colors.textPrimary }}>موقع GPS</Typography>
-              <Typography variant="caption" style={{ color: isMine ? "rgba(255,255,255,0.8)" : colors.textSecondary }}>
-                {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}
-              </Typography>
-            </TouchableOpacity>
-          ) : (
-            <Typography variant="body" style={{ color: isMine ? "#FFFFFF" : colors.textPrimary }}>
-              {item.content}
-            </Typography>
-          )}
+          <Typography variant="body" style={{ color: isMine ? "#FFFFFF" : colors.textPrimary }}>
+            {item.content}
+          </Typography>
           <View style={[styles.messageMeta, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
             <Typography
               variant="caption"
@@ -657,18 +600,6 @@ export default function ChatScreen() {
             maxLength={1000}
           />
           <TouchableOpacity
-            style={[styles.locationButton, { borderColor: colors.borderSubtle, opacity: sending ? 0.5 : 1 }]}
-            onPress={() => {
-              setLocationPoint(null);
-              setLocationPickerMode("send");
-              setLocationPickerVisible(true);
-            }}
-            disabled={sending}
-            accessibilityLabel="إرسال موقع GPS"
-          >
-            <MapPin size={20} color={colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
             style={[styles.sendButton, { backgroundColor: colors.primary, opacity: inputText.trim() && !sending ? 1 : 0.55 }]}
             onPress={handleSend}
             disabled={!inputText.trim() || sending}
@@ -681,13 +612,6 @@ export default function ChatScreen() {
             )}
           </TouchableOpacity>
       </View>
-
-      <LocationPickerModal
-        visible={locationPickerVisible}
-        initialPoint={locationPoint}
-        onClose={() => setLocationPickerVisible(false)}
-        onConfirm={handleConfirmLocation}
-      />
 
       <BottomSheet
         visible={profileCardVisible}
@@ -818,14 +742,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: TOKENS.spacing.md,
     borderRadius: 16,
   },
-  locationCard: {
-    minWidth: 170,
-    alignItems: "center",
-    gap: 5,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
   messageMeta: {
     alignItems: "center",
     justifyContent: "flex-end",
@@ -853,15 +769,6 @@ const styles = StyleSheet.create({
     paddingTop: 9,
     paddingBottom: 9,
     fontSize: 16,
-  },
-  locationButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: TOKENS.spacing.sm,
   },
   sendButton: {
     width: 42,
