@@ -680,5 +680,7 @@ export const getStoresByMerchantId = async (merchantId: string): Promise<Store[]
   const rows = [...(primary.data ?? []), ...(legacy.data ?? [])]
     .filter((store) => !store.deleted_at);
   const uniqueStores = Array.from(new Map((rows as Store[]).map((store) => [store.id, store])).values());
-  return enrichStoresWithTaxonomy(uniqueStores);
+  // Taxonomy is presentation data for Marketplace/editing. Keep the owned
+  // store list independent so taxonomy table errors cannot hide stores.
+  return uniqueStores;
 };
