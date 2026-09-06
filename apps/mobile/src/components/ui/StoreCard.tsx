@@ -40,6 +40,7 @@ export interface StoreCardProps {
   style?: StyleProp<ViewStyle>;
   compact?: boolean;
   marketFeatured?: boolean;
+  marketDetails?: boolean;
 }
 
 export const StoreCard: React.FC<StoreCardProps> = ({
@@ -64,6 +65,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   style,
   compact = false,
   marketFeatured = false,
+  marketDetails = false,
 }) => {
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -229,7 +231,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
       </View>
 
       {/* Content Area */}
-      <View style={[styles.content, compact && styles.compactContent]}>
+      <View style={[styles.content, compact && styles.compactContent, marketDetails && styles.marketDetailsContent]}>
         <View style={styles.titleRow}>
           <Text
             style={[
@@ -247,7 +249,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         </View>
 
         {/* Category & Address */}
-        {!compact && <View style={styles.metaRow}>
+        {(!compact || marketDetails) && <View style={styles.metaRow}>
           <CategoryIcon category={actualCategory} size="xs" variant="plain" />
           <Text
             style={[
@@ -279,7 +281,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         </View>}
 
         {/* Delivery Details Footer */}
-        {!compact && <View style={styles.footerRow}>
+        {(!compact || marketDetails) && <View style={styles.footerRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={styles.infoPill}>
               <Clock size={13} color={colors.textSecondary} />
@@ -329,10 +331,10 @@ const styles = StyleSheet.create({
   },
   compactCard: {
     marginVertical: 3,
-    height: 220,
+    height: 326,
   },
   featuredCard: {
-    height: 220,
+    height: 326,
   },
   coverWrapper: {
     width: '100%',
@@ -343,7 +345,7 @@ const styles = StyleSheet.create({
     height: 136,
   },
   featuredCoverWrapper: {
-    height: 176,
+    height: 156,
   },
   badgesRow: {
     position: 'absolute',
@@ -383,6 +385,10 @@ const styles = StyleSheet.create({
     paddingTop: TOKENS.spacing.md,
     paddingHorizontal: TOKENS.spacing.sm,
     paddingBottom: TOKENS.spacing.md,
+  },
+  marketDetailsContent: {
+    paddingTop: TOKENS.spacing.lg,
+    paddingBottom: TOKENS.spacing.sm,
   },
   titleRow: {
     flexDirection: 'row',

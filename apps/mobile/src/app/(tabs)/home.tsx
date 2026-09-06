@@ -825,6 +825,7 @@ const HomeScreen = () => {
                     store={store}
                     compact
                     marketFeatured={featured}
+                    marketDetails
                     isFeatured={store.is_featured}
                     isFavorite={favoriteStoreIds.includes(store.id)}
                     onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
@@ -834,7 +835,7 @@ const HomeScreen = () => {
                 </View>
               );
               const renderProduct = (product: any, index: number) => (
-                <View key={product.id || product.key || index} style={styles.productGridItem}>
+                <View key={product.id || product.key || index} style={styles.productHorizontalItem}>
                   <ProductCard
                     id={product.id}
                     name={product.name}
@@ -866,8 +867,12 @@ const HomeScreen = () => {
                   <View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>كل المتاجر</Text><TouchableOpacity onPress={() => openMarketSection('all')}><Text style={[styles.showAllText, { color: colors.primary }]}>إظهار الكل</Text></TouchableOpacity></View>
                   <ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{displayedStores.slice(0, 4).map((store) => renderStore(store))}</ScrollView>
                 </View>
-                {products.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المنتجات</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأحدث</Text></View><View style={styles.productGrid}>{products.slice(0, 9).map(renderProduct)}</View></View>}
-                {mostLikedProducts.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>الأكثر إعجابًا</Text></View><View style={styles.productGrid}>{mostLikedProducts.slice(0, 9).map(renderProduct)}</View></View>}
+                {products.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المنتجات</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأحدث</Text></View><ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.productHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{products.slice(0, 9).map(renderProduct)}</ScrollView></View>}
+                {mostLikedProducts.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>الأكثر إعجابًا</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأكثر تفضيلًا</Text></View><ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.productHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{mostLikedProducts.slice(0, 9).map(renderProduct)}</ScrollView></View>}
+                <View style={[styles.marketFooter, { borderTopColor: colors.borderSubtle }]}>
+                  <Text style={[styles.marketFooterBrand, { color: colors.primary }]}>Soug XPRESS</Text>
+                  <Text style={[styles.marketFooterText, { color: colors.textSecondary }]}>منصة تجارة محلية لمدينة عين الصفراء</Text>
+                </View>
               </>;
             })()}
           </>
@@ -1007,6 +1012,30 @@ const styles = StyleSheet.create({
   },
   productGridItem: {
     width: '31.5%',
+  },
+  productHorizontalContent: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+  },
+  productHorizontalItem: {
+    width: 214,
+  },
+  marketFooter: {
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  marketFooterBrand: {
+    ...typography.subtitle,
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
+  marketFooterText: {
+    ...typography.caption,
+    marginTop: spacing.xs,
   },
   marketProductCard: {
     borderWidth: 1,

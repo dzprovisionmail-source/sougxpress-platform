@@ -100,6 +100,7 @@ const MarketSectionScreen = () => {
                 logoImage={item.logo_url}
                 store={item}
                 compact
+                marketDetails
                 isFeatured={item.is_featured}
                 address={item.address_line1 ?? item.city ?? ''}
                 onPress={() => router.push({ pathname: '/store-details', params: { id: item.id } })}
