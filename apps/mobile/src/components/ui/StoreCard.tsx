@@ -39,6 +39,7 @@ export interface StoreCardProps {
   onChatPress?: () => void;
   style?: StyleProp<ViewStyle>;
   compact?: boolean;
+  marketFeatured?: boolean;
 }
 
 export const StoreCard: React.FC<StoreCardProps> = ({
@@ -62,6 +63,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   onChatPress,
   style,
   compact = false,
+  marketFeatured = false,
 }) => {
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -123,18 +125,18 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   return (
     <Card 
       onPress={handlePress} 
-      style={[styles.card, compact && styles.compactCard, style]}
+      style={[styles.card, compact && styles.compactCard, marketFeatured && styles.featuredCard, { borderColor: colors.borderSubtle }, style]}
       variant={actualIsFeatured ? 'neon' : 'elevated'}
     >
       {/* Cover Image with Fallback */}
-      <View style={styles.coverWrapper}>
+      <View style={[styles.coverWrapper, marketFeatured && styles.featuredCoverWrapper, compact && !marketFeatured && styles.compactCoverWrapper]}>
         <ImageFallback
           uri={actualCover}
           type="cover"
           title={actualName}
           category={actualCategory}
           width="100%"
-            height={compact ? 112 : 140}
+            height={marketFeatured ? 136 : compact ? 116 : 140}
           borderRadius={0}
         />
 
@@ -321,14 +323,27 @@ const styles = StyleSheet.create({
     padding: 0,
     marginVertical: TOKENS.spacing.sm,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderRadius: TOKENS.radius.md,
+    ...TOKENS.shadows.small,
   },
   compactCard: {
     marginVertical: 3,
+    height: 220,
+  },
+  featuredCard: {
+    height: 220,
   },
   coverWrapper: {
     width: '100%',
-    height: 148,
+    height: 152,
     position: 'relative',
+  },
+  compactCoverWrapper: {
+    height: 136,
+  },
+  featuredCoverWrapper: {
+    height: 176,
   },
   badgesRow: {
     position: 'absolute',
