@@ -333,10 +333,10 @@ const styles = StyleSheet.create({
   },
   compactCard: {
     marginVertical: 3,
-    height: 326,
+    height: 314,
   },
   featuredCard: {
-    height: 326,
+    height: 314,
   },
   coverWrapper: {
     width: '100%',
@@ -392,6 +392,8 @@ const styles = StyleSheet.create({
     paddingBottom: TOKENS.spacing.md,
   },
   marketDetailsContent: {
+    flex: 1,
+    justifyContent: 'space-between',
     paddingTop: TOKENS.spacing.lg,
     paddingBottom: TOKENS.spacing.sm,
   },
