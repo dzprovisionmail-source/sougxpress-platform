@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
-import { LOGO_ICON, ICON_MASCOT_SCOOTER, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
+import { LOGO_ICON, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button, BrandWordmark } from '@/components/ui';
 import { useAppTheme } from '@/contexts/ThemeContext';
@@ -113,6 +113,8 @@ const HomeScreen = () => {
   const [customerLocation, setCustomerLocation] = useState<{ zoneId: string | null; latitude: number | null; longitude: number | null }>({ zoneId: null, latitude: null, longitude: null });
   const [zoneNames, setZoneNames] = useState<Record<string, string>>({});
   const [mostLikedProducts, setMostLikedProducts] = useState<any[]>([]);
+  const [showAllStores, setShowAllStores] = useState(false);
+  const [availableCourierCount, setAvailableCourierCount] = useState(0);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const activeSlideRef = useRef(0);
@@ -136,6 +138,7 @@ const HomeScreen = () => {
     fetchFavorites();
     fetchCustomerLocation();
     fetchMostLikedProducts();
+    getAvailableCouriers().then(({ data }) => setAvailableCourierCount(data?.length || 0)).catch(() => setAvailableCourierCount(0));
     getMarketSectionSettings().then((res) => {
       setMarketSections(res);
     });
@@ -704,14 +707,14 @@ const HomeScreen = () => {
           </TouchableOpacity>
         )}
 
-        {/* Couriers Banner */}
+        {/* Compact courier availability strip */}
         <TouchableOpacity
           style={[
             styles.couriersBanner,
             {
               backgroundColor: colors.bgElevated,
               borderRightColor: colors.primary,
-              borderRightWidth: 4,
+              borderRightWidth: 3,
               overflow: 'hidden',
               ...tokens.shadows.small,
             },
@@ -719,12 +722,12 @@ const HomeScreen = () => {
           onPress={() => router.push({ pathname: '/couriers', params: marketContextParams })}
           activeOpacity={0.8}
         >
-          <View style={styles.couriersBannerContent}>
-            <View style={[styles.couriersBannerText, { flex: 1 }]}>
-              <Text style={[styles.couriersBannerTitle, { color: colors.textPrimary, fontWeight: '700', textAlign: 'right' }]}>الموصلون المتاحون</Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'right' }}>اطلب توصيل مباشر من الموصل المفضل لديك</Text>
+          <View style={styles.couriersStripContent}>
+            <Bike size={20} color={colors.primary} />
+            <Text style={[styles.couriersStripText, { color: colors.textPrimary }]}>الموصلون المتاحون الآن</Text>
+            <View style={[styles.couriersCountPill, { backgroundColor: colors.primary + '16' }]}>
+              <Text style={[styles.couriersCountText, { color: colors.primary }]}>{availableCourierCount} موصلين</Text>
             </View>
-            <Image source={ICON_MASCOT_SCOOTER} style={{ width: 80, height: 80, marginRight: -10 }} resizeMode="contain" />
           </View>
         </TouchableOpacity>
 
@@ -802,25 +805,27 @@ const HomeScreen = () => {
 
             {(() => {
               const renderStore = (store: any) => (
-                <StoreCard
-                  key={store.id}
-                  id={store.id}
-                  name={store.name}
-                  category={store.category_name || "غير مصنف"}
-                  subcategory={store.sub_category}
-                  rating={store.rating?.toString() || "0.0"}
-                  coverImage={store.cover_url}
-                  logoImage={store.logo_url}
-                  store={store}
-                  isFeatured={store.is_featured}
-                  isFavorite={favoriteStoreIds.includes(store.id)}
-                  onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
-                  address={store.address_line1 ?? store.city ?? ""}
-                  onPress={() => handleStorePress(store.id)}
-                />
+                <View key={store.id} style={styles.storeGridItem}>
+                  <StoreCard
+                    id={store.id}
+                    name={store.name}
+                    category={store.category_name || "غير مصنف"}
+                    subcategory={store.sub_category}
+                    rating={store.rating?.toString() || "0.0"}
+                    coverImage={store.cover_url}
+                    logoImage={store.logo_url}
+                    store={store}
+                    compact
+                    isFeatured={store.is_featured}
+                    isFavorite={favoriteStoreIds.includes(store.id)}
+                    onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
+                    address={store.address_line1 ?? store.city ?? ""}
+                    onPress={() => handleStorePress(store.id)}
+                  />
+                </View>
               );
               const renderProduct = (product: any, index: number) => (
-                <View key={product.id || product.key || index} style={styles.productCol}>
+                <View key={product.id || product.key || index} style={styles.productGridItem}>
                   <ProductCard
                     id={product.id}
                     name={product.name}
@@ -836,59 +841,23 @@ const HomeScreen = () => {
               );
               return <>
                 <View style={styles.section}>
-                  <View style={styles.sectionTitleRow}>
-                  <Award color={colors.primary} size={iconSizes.default} strokeWidth={2} />
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>المتاجر المميزة</Text>
+                  <View style={styles.sectionTitleRow}><Award color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المميزون</Text></View>
+                  <View style={styles.storeGrid}>{(searchQuery.length > 0 ? displayedStores : featuredStores).slice(0, 6).map(renderStore)}</View>
                 </View>
-                  <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                    {(searchQuery.length > 0 ? displayedStores : featuredStores).slice(0, 6).map(renderStore)}
-                  </ScrollView>
-                </View>
-
                 <View style={styles.section}>
-                  <View style={styles.sectionTitleRow}>
-                  <BadgePlus color={colors.primary} size={iconSizes.default} strokeWidth={2} />
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>المتاجر الجديدة</Text>
+                  <View style={styles.sectionTitleRow}><BadgePlus color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>متاجر جديدة</Text></View>
+                  <View style={styles.storeGrid}>{newStores.slice(0, 6).map(renderStore)}</View>
                 </View>
-                  <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                    {newStores.slice(0, 6).map(renderStore)}
-                  </ScrollView>
-                </View>
-
                 <View style={styles.section}>
-                  <View style={styles.sectionTitleRow}>
-                  <MapPin color={colors.primary} size={iconSizes.default} strokeWidth={2} />
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>المتاجر القريبة منك</Text>
+                  <View style={styles.sectionTitleRow}><MapPin color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المتاجر القريبة منك</Text></View>
+                  <View style={styles.storeGrid}>{nearbyStores.slice(0, 4).map(renderStore)}</View>
                 </View>
-                  <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                    {nearbyStores.slice(0, 6).map(renderStore)}
-                  </ScrollView>
+                <View style={[styles.section, styles.lastStoreSection]}>
+                  <View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>كل المتاجر</Text><TouchableOpacity onPress={() => setShowAllStores((value) => !value)}><Text style={[styles.showAllText, { color: colors.primary }]}>{showAllStores ? "عرض أقل" : "إظهار الكل"}</Text></TouchableOpacity></View>
+                  <View style={styles.storeGrid}>{displayedStores.slice(0, showAllStores ? displayedStores.length : 4).map(renderStore)}</View>
                 </View>
-
-                <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>كل المتاجر</Text>
-                  <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                    {displayedStores.map(renderStore)}
-                  </ScrollView>
-                </View>
-
-                {products.length > 0 && (
-                  <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>🛍️ منتجات جديدة</Text>
-                    <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                      {products.map(renderProduct)}
-                    </ScrollView>
-                  </View>
-                )}
-
-                {mostLikedProducts.length > 0 && (
-                  <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>الأكثر إعجابًا</Text>
-                    <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storesScroll}>
-                      {mostLikedProducts.map(renderProduct)}
-                    </ScrollView>
-                  </View>
-                )}
+                {products.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المنتجات</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأحدث</Text></View><View style={styles.productGrid}>{products.slice(0, 9).map(renderProduct)}</View></View>}
+                {mostLikedProducts.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>الأكثر إعجابًا</Text></View><View style={styles.productGrid}>{mostLikedProducts.slice(0, 9).map(renderProduct)}</View></View>}
               </>;
             })()}
           </>
@@ -936,7 +905,7 @@ const styles = StyleSheet.create({
     ...shadows.small,
   },
   section: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.lg,
     width: '100%',
     alignItems: 'stretch',
       },
@@ -986,6 +955,36 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     flexDirection: 'row',
       },
+  storeGrid: {
+    width: '100%',
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  storeGridItem: {
+    width: '48.5%',
+  },
+  productGrid: {
+    width: '100%',
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  productGridItem: {
+    width: '31.5%',
+  },
+  lastStoreSection: {
+    marginBottom: spacing.sm,
+  },
+  showAllText: {
+    ...typography.caption,
+    fontWeight: '800',
+  },
+  sectionHint: {
+    ...typography.caption,
+  },
   productCol: {
     width: 160,
     marginEnd: spacing.md,
@@ -1079,10 +1078,31 @@ const styles = StyleSheet.create({
   couriersBanner: {
     marginHorizontal: spacing.lg,
     marginVertical: spacing.sm,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    paddingVertical: spacing.xs,
     paddingHorizontal: spacing.lg,
     ...shadows.small,
+  },
+  couriersStripContent: {
+    minHeight: 50,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  couriersStripText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  couriersCountPill: {
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+  },
+  couriersCountText: {
+    fontSize: 12,
+    fontWeight: '800',
   },
   couriersBannerContent: {
     flexDirection: 'row',

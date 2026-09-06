@@ -38,6 +38,7 @@ export interface StoreCardProps {
   onPress?: (id?: string) => void;
   onChatPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  compact?: boolean;
 }
 
 export const StoreCard: React.FC<StoreCardProps> = ({
@@ -60,6 +61,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   onPress,
   onChatPress,
   style,
+  compact = false,
 }) => {
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -121,7 +123,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   return (
     <Card 
       onPress={handlePress} 
-      style={[styles.card, style]}
+      style={[styles.card, compact && styles.compactCard, style]}
       variant={actualIsFeatured ? 'neon' : 'elevated'}
     >
       {/* Cover Image with Fallback */}
@@ -132,7 +134,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
           title={actualName}
           category={actualCategory}
           width="100%"
-          height={140}
+            height={compact ? 112 : 140}
           borderRadius={0}
         />
 
@@ -225,7 +227,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
       </View>
 
       {/* Content Area */}
-      <View style={styles.content}>
+      <View style={[styles.content, compact && styles.compactContent]}>
         <View style={styles.titleRow}>
           <Text
             numberOfLines={1}
@@ -244,7 +246,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
         </View>
 
         {/* Category & Address */}
-        <View style={styles.metaRow}>
+        {!compact && <View style={styles.metaRow}>
           <CategoryIcon category={actualCategory} size="xs" variant="plain" />
           <Text
             style={[
@@ -273,10 +275,10 @@ export const StoreCard: React.FC<StoreCardProps> = ({
               • {actualAddress}
             </Text>
           ) : null}
-        </View>
+        </View>}
 
         {/* Delivery Details Footer */}
-        <View style={styles.footerRow}>
+        {!compact && <View style={styles.footerRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={styles.infoPill}>
               <Clock size={13} color={colors.textSecondary} />
@@ -309,7 +311,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
               التوصيل: {typeof deliveryFee === 'number' ? `${deliveryFee} د.ج` : deliveryFee}
             </Text>
           </View>
-        </View>
+        </View>}
       </View>
     </Card>
   );
@@ -320,6 +322,9 @@ const styles = StyleSheet.create({
     padding: 0,
     marginVertical: TOKENS.spacing.sm,
     overflow: 'hidden',
+  },
+  compactCard: {
+    marginVertical: 4,
   },
   coverWrapper: {
     width: '100%',
@@ -359,6 +364,11 @@ const styles = StyleSheet.create({
     paddingTop: TOKENS.spacing.xl,
     paddingHorizontal: TOKENS.spacing.lg,
     paddingBottom: TOKENS.spacing.lg,
+  },
+  compactContent: {
+    paddingTop: TOKENS.spacing.lg,
+    paddingHorizontal: TOKENS.spacing.sm,
+    paddingBottom: TOKENS.spacing.sm,
   },
   titleRow: {
     flexDirection: 'row',
