@@ -230,7 +230,6 @@ export const StoreCard: React.FC<StoreCardProps> = ({
       <View style={[styles.content, compact && styles.compactContent]}>
         <View style={styles.titleRow}>
           <Text
-            numberOfLines={1}
             style={[
               styles.storeName,
               {
@@ -324,7 +323,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   compactCard: {
-    marginVertical: 4,
+    marginVertical: 3,
   },
   coverWrapper: {
     width: '100%',
@@ -366,21 +365,23 @@ const styles = StyleSheet.create({
     paddingBottom: TOKENS.spacing.lg,
   },
   compactContent: {
-    paddingTop: TOKENS.spacing.lg,
+    paddingTop: TOKENS.spacing.md,
     paddingHorizontal: TOKENS.spacing.sm,
-    paddingBottom: TOKENS.spacing.sm,
+    paddingBottom: TOKENS.spacing.md,
   },
   titleRow: {
     flexDirection: 'row',
-        justifyContent: 'space-between',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: TOKENS.spacing.xs,
   },
   storeName: {
-    fontSize: TOKENS.typography.sizes.lg,
+    fontSize: TOKENS.typography.sizes.md,
+    lineHeight: 19,
     fontWeight: '800',
     flex: 1,
-    marginEnd: 8,
+    flexShrink: 1,
+    marginEnd: 6,
     textAlign: 'right',
       },
   metaRow: {

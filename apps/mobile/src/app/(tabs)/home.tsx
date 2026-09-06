@@ -113,7 +113,6 @@ const HomeScreen = () => {
   const [customerLocation, setCustomerLocation] = useState<{ zoneId: string | null; latitude: number | null; longitude: number | null }>({ zoneId: null, latitude: null, longitude: null });
   const [zoneNames, setZoneNames] = useState<Record<string, string>>({});
   const [mostLikedProducts, setMostLikedProducts] = useState<any[]>([]);
-  const [showAllStores, setShowAllStores] = useState(false);
   const [availableCourierCount, setAvailableCourierCount] = useState(0);
 
   const [activeSlide, setActiveSlide] = useState(0);
@@ -596,6 +595,9 @@ const HomeScreen = () => {
   }, [displayedStores, customerLocation, zoneNames]);
   const loading = storesLoading || searchLoading || newStoresLoading;
   const error = storesError;
+  const openMarketSection = (section: 'featured' | 'new' | 'nearby' | 'all') => {
+    router.push({ pathname: '/market-section', params: { section, ...marketContextParams } });
+  };
 
   if (userRole === 'courier') {
     return <DriverDashboardScreen />;
@@ -751,14 +753,14 @@ const HomeScreen = () => {
               <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>
 الفئات</Text>
               <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
-                <TouchableOpacity key="all" onPress={() => { setActiveCategory("all"); setActiveSubcategory("all"); setSubcategories([]); }} style={[styles.categoryItem, { backgroundColor: activeCategory === "all" ? colors.primary + "18" : colors.bgSurface }]}>
+                  <TouchableOpacity key="all" onPress={() => { setActiveCategory("all"); setActiveSubcategory("all"); setSubcategories([]); }} style={[styles.categoryItem, { backgroundColor: activeCategory === "all" ? colors.primary + "18" : colors.bgSurface, borderColor: activeCategory === "all" ? colors.primary : colors.borderSubtle }]}>
                   <StoreIcon color={activeCategory === "all" ? colors.primary : colors.textSecondary} size={iconSizes.default} />
-                  <Text style={[styles.categoryText, { color: activeCategory === "all" ? colors.primary : colors.textPrimary }]}>الكل</Text>
+                    <Text numberOfLines={1} style={[styles.categoryText, { color: activeCategory === "all" ? colors.primary : colors.textPrimary }]}>الكل</Text>
                 </TouchableOpacity>
                 {categories.map((category) => (
-                  <TouchableOpacity key={category.id} onPress={() => handleCategoryPress(category.id)} style={[styles.categoryItem, { backgroundColor: activeCategory === category.id ? colors.primary + "18" : colors.bgSurface }]}>
+                  <TouchableOpacity key={category.id} onPress={() => handleCategoryPress(category.id)} style={[styles.categoryItem, { backgroundColor: activeCategory === category.id ? colors.primary + "18" : colors.bgSurface, borderColor: activeCategory === category.id ? colors.primary : colors.borderSubtle }]}>
                     <CategoryIcon category={category.name_ar} size="sm" variant={activeCategory === category.id ? "filled" : "subtle"} />
-                    <Text style={[styles.categoryText, { color: activeCategory === category.id ? colors.primary : colors.textPrimary }]}>{category.name_ar}</Text>
+                    <Text numberOfLines={1} style={[styles.categoryText, { color: activeCategory === category.id ? colors.primary : colors.textPrimary }]}>{category.name_ar}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -768,14 +770,14 @@ const HomeScreen = () => {
             {subcategories.length > 0 && (
               <View style={styles.section}>
                 <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
-                  <TouchableOpacity key="all-sub" onPress={() => setActiveSubcategory("all")} style={[styles.categoryItem, { backgroundColor: activeSubcategory === "all" ? colors.primary + "18" : colors.bgSurface }]}>
+                  <TouchableOpacity key="all-sub" onPress={() => setActiveSubcategory("all")} style={[styles.categoryItem, { backgroundColor: activeSubcategory === "all" ? colors.primary + "18" : colors.bgSurface, borderColor: activeSubcategory === "all" ? colors.primary : colors.borderSubtle }]}>
                     <StoreIcon color={activeSubcategory === "all" ? colors.primary : colors.textSecondary} size={iconSizes.default} />
-                    <Text style={[styles.categoryText, { color: activeSubcategory === "all" ? colors.primary : colors.textPrimary }]}>الكل</Text>
+                    <Text numberOfLines={1} style={[styles.categoryText, { color: activeSubcategory === "all" ? colors.primary : colors.textPrimary }]}>الكل</Text>
                   </TouchableOpacity>
                   {subcategories.map((sub) => (
-                    <TouchableOpacity key={sub.id} onPress={() => setActiveSubcategory(sub.id)} style={[styles.categoryItem, { backgroundColor: activeSubcategory === sub.id ? colors.primary + "18" : colors.bgSurface }]}>
+                    <TouchableOpacity key={sub.id} onPress={() => setActiveSubcategory(sub.id)} style={[styles.categoryItem, { backgroundColor: activeSubcategory === sub.id ? colors.primary + "18" : colors.bgSurface, borderColor: activeSubcategory === sub.id ? colors.primary : colors.borderSubtle }]}>
                       <CategoryIcon category={sub.name_ar} size="sm" variant={activeSubcategory === sub.id ? "filled" : "subtle"} />
-                      <Text style={[styles.categoryText, { color: activeSubcategory === sub.id ? colors.primary : colors.textPrimary }]}>{sub.name_ar}</Text>
+                      <Text numberOfLines={1} style={[styles.categoryText, { color: activeSubcategory === sub.id ? colors.primary : colors.textPrimary }]}>{sub.name_ar}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -841,20 +843,20 @@ const HomeScreen = () => {
               );
               return <>
                 <View style={styles.section}>
-                  <View style={styles.sectionTitleRow}><Award color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المميزون</Text></View>
+                  <View style={styles.sectionTitleRow}><Award color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المميزون</Text><TouchableOpacity onPress={() => openMarketSection('featured')}><Text style={[styles.showAllText, { color: colors.primary }]}>إظهار الكل</Text></TouchableOpacity></View>
                   <View style={styles.storeGrid}>{(searchQuery.length > 0 ? displayedStores : featuredStores).slice(0, 6).map(renderStore)}</View>
                 </View>
                 <View style={styles.section}>
-                  <View style={styles.sectionTitleRow}><BadgePlus color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>متاجر جديدة</Text></View>
+                  <View style={styles.sectionTitleRow}><BadgePlus color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>متاجر جديدة</Text><TouchableOpacity onPress={() => openMarketSection('new')}><Text style={[styles.showAllText, { color: colors.primary }]}>إظهار الكل</Text></TouchableOpacity></View>
                   <View style={styles.storeGrid}>{newStores.slice(0, 6).map(renderStore)}</View>
                 </View>
                 <View style={styles.section}>
-                  <View style={styles.sectionTitleRow}><MapPin color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المتاجر القريبة منك</Text></View>
+                  <View style={styles.sectionTitleRow}><MapPin color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المتاجر القريبة منك</Text><TouchableOpacity onPress={() => openMarketSection('nearby')}><Text style={[styles.showAllText, { color: colors.primary }]}>إظهار الكل</Text></TouchableOpacity></View>
                   <View style={styles.storeGrid}>{nearbyStores.slice(0, 4).map(renderStore)}</View>
                 </View>
                 <View style={[styles.section, styles.lastStoreSection]}>
-                  <View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>كل المتاجر</Text><TouchableOpacity onPress={() => setShowAllStores((value) => !value)}><Text style={[styles.showAllText, { color: colors.primary }]}>{showAllStores ? "عرض أقل" : "إظهار الكل"}</Text></TouchableOpacity></View>
-                  <View style={styles.storeGrid}>{displayedStores.slice(0, showAllStores ? displayedStores.length : 4).map(renderStore)}</View>
+                  <View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>كل المتاجر</Text><TouchableOpacity onPress={() => openMarketSection('all')}><Text style={[styles.showAllText, { color: colors.primary }]}>إظهار الكل</Text></TouchableOpacity></View>
+                  <View style={styles.storeGrid}>{displayedStores.slice(0, 4).map(renderStore)}</View>
                 </View>
                 {products.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المنتجات</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأحدث</Text></View><View style={styles.productGrid}>{products.slice(0, 9).map(renderProduct)}</View></View>}
                 {mostLikedProducts.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>الأكثر إعجابًا</Text></View><View style={styles.productGrid}>{mostLikedProducts.slice(0, 9).map(renderProduct)}</View></View>}
@@ -905,7 +907,7 @@ const styles = StyleSheet.create({
     ...shadows.small,
   },
   section: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     width: '100%',
     alignItems: 'stretch',
       },
@@ -918,12 +920,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
     gap: spacing.xs,
   },
   sectionTitle: {
     ...typography.title,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '800',
     flex: 1,
     flexShrink: 1,
     textAlign: 'right',
@@ -931,22 +936,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   categoriesContainer: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     flexDirection: 'row',
         justifyContent: 'flex-start',
   },
   categoryItem: {
     alignItems: 'center',
-    marginHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+    minWidth: 66,
+    marginHorizontal: 3,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
     borderRadius: radius.md,
+    borderWidth: 1,
     ...shadows.small,
   },
   categoryText: {
     ...typography.caption,
-    marginTop: spacing.xs,
-    textAlign: 'right',
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '700',
+    marginTop: 3,
+    maxWidth: 92,
+    textAlign: 'center',
       },
   horizontalRtl: {
       },
@@ -976,7 +988,7 @@ const styles = StyleSheet.create({
     width: '31.5%',
   },
   lastStoreSection: {
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   showAllText: {
     ...typography.caption,
