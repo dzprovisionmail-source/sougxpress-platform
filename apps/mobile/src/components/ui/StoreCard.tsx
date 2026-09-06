@@ -41,6 +41,7 @@ export interface StoreCardProps {
   compact?: boolean;
   marketFeatured?: boolean;
   marketDetails?: boolean;
+  marketPrimary?: boolean;
 }
 
 export const StoreCard: React.FC<StoreCardProps> = ({
@@ -66,6 +67,7 @@ export const StoreCard: React.FC<StoreCardProps> = ({
   compact = false,
   marketFeatured = false,
   marketDetails = false,
+  marketPrimary = false,
 }) => {
   const { colors } = useAppTheme();
   const isRTL = I18nManager.isRTL;
@@ -131,14 +133,14 @@ export const StoreCard: React.FC<StoreCardProps> = ({
       variant={actualIsFeatured ? 'neon' : 'elevated'}
     >
       {/* Cover Image with Fallback */}
-      <View style={[styles.coverWrapper, marketFeatured && styles.featuredCoverWrapper, compact && !marketFeatured && styles.compactCoverWrapper]}>
+      <View style={[styles.coverWrapper, marketFeatured && styles.featuredCoverWrapper, compact && !marketFeatured && styles.compactCoverWrapper, marketPrimary && styles.primaryCoverWrapper]}>
         <ImageFallback
           uri={actualCover}
           type="cover"
           title={actualName}
           category={actualCategory}
           width="100%"
-            height={marketFeatured ? 136 : compact ? 116 : 140}
+            height={marketPrimary ? 148 : marketFeatured ? 136 : compact ? 116 : 140}
           borderRadius={0}
         />
 
@@ -346,6 +348,9 @@ const styles = StyleSheet.create({
   },
   featuredCoverWrapper: {
     height: 156,
+  },
+  primaryCoverWrapper: {
+    height: 168,
   },
   badgesRow: {
     position: 'absolute',

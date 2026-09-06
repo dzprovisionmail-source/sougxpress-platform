@@ -826,6 +826,7 @@ const HomeScreen = () => {
                     compact
                     marketFeatured={featured}
                     marketDetails
+                    marketPrimary
                     isFeatured={store.is_featured}
                     isFavorite={favoriteStoreIds.includes(store.id)}
                     onToggleFavorite={isGuest ? undefined : () => handleToggleStoreFavorite(store.id)}
@@ -998,10 +999,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
   },
   storeScrollItem: {
-    width: 184,
+    width: SCREEN_WIDTH * 0.78,
   },
   featuredStoreScrollItem: {
-    width: 184,
+    width: SCREEN_WIDTH * 0.78,
   },
   productGrid: {
     width: '100%',
