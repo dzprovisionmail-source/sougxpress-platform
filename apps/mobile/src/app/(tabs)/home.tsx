@@ -33,6 +33,7 @@ const HERO_CARD_WIDTH = SCREEN_WIDTH - spacing.lg * 2 - spacing.md;
 const HERO_ITEM_MARGIN = spacing.xs;
 const HERO_SLIDE_INTERVAL = HERO_CARD_WIDTH + HERO_ITEM_MARGIN * 2;
 const HERO_LIST_PADDING = spacing.lg + HERO_ITEM_MARGIN;
+const HERO_VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 60 };
 const assetUri = (asset: number): string => {
   const resolver = (Image as typeof Image & { resolveAssetSource?: (value: number) => { uri?: string } }).resolveAssetSource;
   return typeof resolver === "function" ? resolver(asset).uri ?? "" : String(asset);
@@ -330,7 +331,6 @@ const HomeScreen = () => {
   const animateHeroTo = useCallback((index: number, durationOverride?: number) => {
     if (heroSlides.length === 0) return;
     const safeIndex = Math.max(0, Math.min(heroSlides.length - 1, index));
-    const offset = safeIndex * HERO_SLIDE_INTERVAL;
     const transitionMs = Math.max(150, Math.min(1000, durationOverride ?? heroSettings.transitionMs));
     activeSlideRef.current = safeIndex;
     setActiveSlide(safeIndex);
@@ -339,11 +339,9 @@ const HomeScreen = () => {
         Animated.timing(heroFadeOpacity, { toValue: 0, duration: Math.max(75, Math.floor(transitionMs / 2)), useNativeDriver: true }),
         Animated.timing(heroFadeOpacity, { toValue: 1, duration: Math.max(75, Math.floor(transitionMs / 2)), useNativeDriver: true }),
       ]).start();
-      heroScrollRef.current?.scrollToOffset({ offset, animated: false });
-      activeSlideRef.current = safeIndex;
-      setActiveSlide(safeIndex);
+      heroScrollRef.current?.scrollToIndex({ index: safeIndex, animated: false, viewPosition: 0 });
     } else {
-      heroScrollRef.current?.scrollToOffset({ offset, animated: true });
+      heroScrollRef.current?.scrollToIndex({ index: safeIndex, animated: true, viewPosition: 0 });
     }
   }, [heroFadeOpacity, heroSettings.transitionMs, heroSettings.transitionType, heroSlides.length]);
 
@@ -358,7 +356,7 @@ const HomeScreen = () => {
     activeSlideRef.current = 0;
     setActiveSlide(0);
     heroOffsetRef.current = 0;
-    requestAnimationFrame(() => heroScrollRef.current?.scrollToOffset({ offset: 0, animated: false }));
+    requestAnimationFrame(() => heroScrollRef.current?.scrollToIndex({ index: 0, animated: false, viewPosition: 0 }));
   }, [heroSlideKey, heroSlides.length]);
 
   // Automatic hero slider rotation based on settings. A recursive timeout keeps
@@ -397,14 +395,13 @@ const HomeScreen = () => {
     heroOffsetRef.current = contentOffsetX;
   };
 
-  const handleHeroMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const contentOffsetX = event.nativeEvent.contentOffset.x;
-    heroOffsetRef.current = contentOffsetX;
-    const slideIndex = Math.max(0, Math.min(heroSlides.length - 1, Math.round(contentOffsetX / HERO_SLIDE_INTERVAL)));
-    if (slideIndex === activeSlideRef.current) return;
-    activeSlideRef.current = slideIndex;
-    setActiveSlide(slideIndex);
-  };
+  const handleHeroViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
+    const visibleIndex = viewableItems.find((item) => item.index !== null)?.index;
+    if (visibleIndex === undefined || visibleIndex === null || visibleIndex < 0 || visibleIndex >= heroSlides.length) return;
+    if (visibleIndex === activeSlideRef.current) return;
+    activeSlideRef.current = visibleIndex;
+    setActiveSlide(visibleIndex);
+  }, [heroSlides.length]);
 
   const renderHeroSlide = ({ item, index }: { item: HeroSlide; index: number }) => {
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -667,7 +664,8 @@ const HomeScreen = () => {
             decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
             onScroll={handleHeroScroll}
-            onMomentumScrollEnd={handleHeroMomentumEnd}
+            viewabilityConfig={HERO_VIEWABILITY_CONFIG}
+            onViewableItemsChanged={handleHeroViewableItemsChanged}
             onTouchStart={pauseHeroOnTouch}
             onMomentumScrollBegin={pauseHeroOnTouch}
             onScrollBeginDrag={pauseHeroOnTouch}
