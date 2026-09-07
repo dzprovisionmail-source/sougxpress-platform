@@ -63,6 +63,9 @@ export interface Message {
   attachment_url?: string | null;
   is_read: boolean;
   created_at: string;
+  sender_name?: string;
+  sender_role?: string;
+  sender_store_name?: string;
   /** Client-only metadata used by optimistic UI; never sent to Supabase. */
   client_id?: string;
   delivery_state?: MessageDeliveryState;
