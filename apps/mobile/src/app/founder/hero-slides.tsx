@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
-import { Image as ImageIcon, Plus, Trash2, Edit3, ArrowRight, Check, X, Eye } from "lucide-react-native";
+import { Image as ImageIcon, Plus, Trash2, Edit3, ArrowRight, Check, X, Eye, ChevronUp, ChevronDown } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
 import { useAppTheme } from "@/contexts/ThemeContext";
@@ -24,6 +24,7 @@ import {
   createHeroSlide,
   updateHeroSlide,
   deleteHeroSlide,
+  reorderHeroSlides,
   uploadHeroSlideImage,
   getHeroSliderSettings,
   updateHeroSliderSettings,
@@ -131,10 +132,25 @@ export default function FounderHeroSlidesScreen() {
     handleSaveSmartSettings({ mode, smartMode: mode === "smart" });
 
   const handlePreview = async () => {
-    const smart = smartSettings.mode === "manual" ? [] : await getSmartHeroSlides(smartSettings, 6);
+    const smart = smartSettings.mode === "manual" ? [] : await getSmartHeroSlides(smartSettings, 12);
     const manual = mapManualSlidesToSmart(slides);
-    setPreviewSlides(smartSettings.mode === "manual" ? manual : smartSettings.mode === "hybrid" ? [...manual.slice(0, 3), ...smart].slice(0, 6) : smart);
+    setPreviewSlides(smartSettings.mode === "manual" ? manual : smartSettings.mode === "hybrid" ? [...manual, ...smart].slice(0, 12) : smart);
     setPreviewVisible(true);
+  };
+
+  const moveSlide = async (id: string, direction: -1 | 1) => {
+    const index = slides.findIndex((slide) => slide.id === id);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= slides.length) return;
+    const nextSlides = [...slides];
+    [nextSlides[index], nextSlides[nextIndex]] = [nextSlides[nextIndex], nextSlides[index]];
+    const normalized = nextSlides.map((slide, order) => ({ ...slide, display_order: order + 1 }));
+    setSlides(normalized);
+    const result = await reorderHeroSlides(normalized.map((slide) => slide.id));
+    if (!result.success) {
+      Alert.alert("خطأ", result.error || "تعذّر حفظ الترتيب");
+      loadSlides();
+    }
   };
 
   useEffect(() => {
@@ -494,6 +510,12 @@ export default function FounderHeroSlidesScreen() {
                       <Text style={[styles.metaText, { color: colors.textSecondary }]}>الأولوية: {slide.priority}</Text>
                     </View>
                     <View style={styles.slideActions}>
+                      <TouchableOpacity style={styles.actionBtn} onPress={() => moveSlide(slide.id, -1)} disabled={slides[0]?.id === slide.id}>
+                        <ChevronUp size={18} color={slides[0]?.id === slide.id ? colors.textDisabled : colors.primary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.actionBtn} onPress={() => moveSlide(slide.id, 1)} disabled={slides[slides.length - 1]?.id === slide.id}>
+                        <ChevronDown size={18} color={slides[slides.length - 1]?.id === slide.id ? colors.textDisabled : colors.primary} />
+                      </TouchableOpacity>
                       <TouchableOpacity style={styles.actionBtn} onPress={() => openEditModal(slide)}>
                         <Edit3 size={18} color={colors.primary} />
                       </TouchableOpacity>

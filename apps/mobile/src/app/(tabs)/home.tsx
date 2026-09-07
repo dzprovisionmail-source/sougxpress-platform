@@ -296,7 +296,7 @@ const HomeScreen = () => {
       setHeroSettings({ mode, pauseOnTouch: smartSettings.pauseOnTouch, resumeDelaySeconds: smartSettings.resumeDelaySeconds, transitionMs: smartSettings.transitionMs, transitionType: smartSettings.transitionType });
 
       if (mode === "smart") {
-        const smartSlides = await getSmartHeroSlides(smartSettings, 6);
+        const smartSlides = await getSmartHeroSlides(smartSettings, 12);
         setHeroSlides((smartSlides.length > 0 ? smartSlides : HERO_SLIDES_TEMPLATES) as HeroSlide[]);
         setHeroLoading(false);
         return;
@@ -324,9 +324,9 @@ const HomeScreen = () => {
       }
 
       if (mode === "hybrid") {
-        const smartSlides = await getSmartHeroSlides(smartSettings, 6);
+        const smartSlides = await getSmartHeroSlides(smartSettings, 12);
         const manualSlides = mapManualSlidesToSmart(dbSlides || []);
-        const hybridSlides = [...manualSlides.slice(0, 3), ...smartSlides].slice(0, 6);
+        const hybridSlides = [...manualSlides, ...smartSlides].slice(0, 12);
         setHeroSlides((hybridSlides.length > 0 ? hybridSlides : HERO_SLIDES_TEMPLATES) as HeroSlide[]);
         setHeroLoading(false);
         return;
@@ -431,14 +431,14 @@ const HomeScreen = () => {
     const safeIndex = Math.max(0, Math.min(heroSlides.length - 1, index));
     const offset = safeIndex * HERO_SLIDE_INTERVAL;
     const transitionMs = Math.max(150, Math.min(1000, durationOverride ?? heroSettings.transitionMs));
-    activeSlideRef.current = safeIndex;
-    setActiveSlide(safeIndex);
     if (heroSettings.transitionType === "fade") {
       Animated.sequence([
         Animated.timing(heroFadeOpacity, { toValue: 0, duration: Math.max(75, Math.floor(transitionMs / 2)), useNativeDriver: true }),
         Animated.timing(heroFadeOpacity, { toValue: 1, duration: Math.max(75, Math.floor(transitionMs / 2)), useNativeDriver: true }),
       ]).start();
       heroScrollRef.current?.scrollToOffset({ offset, animated: false });
+      activeSlideRef.current = safeIndex;
+      setActiveSlide(safeIndex);
     } else {
       heroScrollRef.current?.scrollToOffset({ offset, animated: true });
     }
@@ -448,27 +448,32 @@ const HomeScreen = () => {
     if (heroResumeTimerRef.current) clearTimeout(heroResumeTimerRef.current);
   }, []);
 
+  useEffect(() => {
+    if (heroSlides.length === 0) return;
+    const safeIndex = Math.min(activeSlideRef.current, heroSlides.length - 1);
+    activeSlideRef.current = safeIndex;
+    setActiveSlide(safeIndex);
+    requestAnimationFrame(() => heroScrollRef.current?.scrollToOffset({ offset: safeIndex * HERO_SLIDE_INTERVAL, animated: false }));
+  }, [heroSlides.length]);
+
   // Automatic hero slider rotation based on settings
   useEffect(() => {
     if (!autoRotate || !heroSlides || heroSlides.length <= 1) return;
     const intervalMs = Math.max(heroSlides[activeSlideRef.current]?.display_duration_seconds ?? rotationInterval, 1) * 1000;
     const interval = setInterval(() => {
       if (heroPausedRef.current) return;
-      setActiveSlide((prev) => {
-        const next = (prev + 1) % heroSlides.length;
-        activeSlideRef.current = next;
-        try {
-          animateHeroTo(next, heroSlides[next]?.transition_duration_ms);
-        } catch (e) {
-          // Ignore scroll index out of bounds during fast updates
-        }
-        return next;
-      });
+      const next = (activeSlideRef.current + 1) % heroSlides.length;
+      animateHeroTo(next, heroSlides[next]?.transition_duration_ms);
     }, intervalMs);
     return () => clearInterval(interval);
-  }, [heroSlides, autoRotate, rotationInterval, animateHeroTo]);
+  }, [heroSlides, activeSlide, autoRotate, rotationInterval, animateHeroTo]);
 
   const handleHeroScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    heroOffsetRef.current = contentOffsetX;
+  };
+
+  const handleHeroMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     heroOffsetRef.current = contentOffsetX;
     const slideIndex = Math.max(0, Math.min(heroSlides.length - 1, Math.round(contentOffsetX / HERO_SLIDE_INTERVAL)));
@@ -725,13 +730,17 @@ const HomeScreen = () => {
             data={heroSlides}
             renderItem={renderHeroSlide}
             keyExtractor={(item) => item.id}
+            getItemLayout={(_, index) => ({ length: HERO_SLIDE_INTERVAL, offset: HERO_SLIDE_INTERVAL * index, index })}
+            initialNumToRender={3}
+            maxToRenderPerBatch={3}
+            windowSize={5}
             horizontal
-            pagingEnabled
             snapToInterval={HERO_SLIDE_INTERVAL}
+            snapToAlignment="start"
             decelerationRate="fast"
-            disableIntervalMomentum
             showsHorizontalScrollIndicator={false}
             onScroll={handleHeroScroll}
+            onMomentumScrollEnd={handleHeroMomentumEnd}
             onTouchStart={pauseHeroOnTouch}
             onMomentumScrollBegin={pauseHeroOnTouch}
             onScrollBeginDrag={pauseHeroOnTouch}

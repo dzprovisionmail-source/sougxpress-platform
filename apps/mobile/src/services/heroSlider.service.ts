@@ -34,8 +34,8 @@ export async function getActiveHeroSlides(): Promise<HeroSlide[]> {
       .eq("is_active", true)
       .or(`start_at.is.null,start_at.lte.${now}`)
       .or(`end_at.is.null,end_at.gte.${now}`)
-      .order("priority", { ascending: false })
-      .order("display_order", { ascending: true });
+      .order("display_order", { ascending: true })
+      .order("priority", { ascending: false });
 
     if (error) {
       console.error("getActiveHeroSlides error:", error.message);
@@ -56,8 +56,8 @@ export async function getFounderHeroSlides(): Promise<HeroSlide[]> {
     const { data, error } = await supabase
       .from("market_hero_slides")
       .select("*")
-      .order("priority", { ascending: false })
-      .order("display_order", { ascending: true });
+      .order("display_order", { ascending: true })
+      .order("priority", { ascending: false });
 
     if (error) {
       console.error("getFounderHeroSlides error:", error.message);
@@ -104,6 +104,22 @@ export async function updateHeroSlide(id: string, updates: Partial<HeroSlide>): 
   } catch (err: any) {
     console.error("updateHeroSlide error:", err);
     return { success: false, error: err.message || "تعذّر تحديث شريحة العرض" };
+  }
+}
+
+export async function reorderHeroSlides(orderedIds: string[]): Promise<{ success: boolean; error?: string }> {
+  try {
+    for (const [index, id] of orderedIds.entries()) {
+      const { error } = await supabase
+        .from("market_hero_slides")
+        .update({ display_order: index + 1, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error("reorderHeroSlides error:", err);
+    return { success: false, error: err.message || "تعذّر حفظ ترتيب الشرائح" };
   }
 }
 
