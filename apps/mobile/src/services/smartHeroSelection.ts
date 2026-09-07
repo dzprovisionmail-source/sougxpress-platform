@@ -39,13 +39,13 @@ const remember = (ids: string[]) => {
   while (recentSmartIds.length > MAX_RECENT_IDS) recentSmartIds.shift();
 };
 
-export const scoreSmartCandidate = (candidate: SmartCandidate, sourceWeight: number, newestAt: number, now: number) => {
+export const scoreSmartCandidate = (candidate: SmartCandidate, sourceWeight: number, newestAt: number, now: number, repeatPenaltyWeight = 35) => {
   const ageDays = Math.max(0, (now - candidate.createdAt) / 86_400_000);
   const freshness = clamp(30 - ageDays * 1.4, 0, 30);
   const featured = candidate.featured ? 22 : 0;
   const imageQuality = validImage(candidate.image) ? 10 : 0;
   const manualPriority = clamp(candidate.manualPriority ?? 0, 0, 100) * 0.25;
-  const recencyPenalty = recentSmartIds.includes(candidate.sourceId) ? 35 : 0;
+  const recencyPenalty = recentSmartIds.includes(candidate.sourceId) ? repeatPenaltyWeight : 0;
   const repeatPenalty = recentSmartIds[recentSmartIds.length - 1] === candidate.sourceId ? 50 : 0;
   const sourceBalance = (sourceWeight / 100) * 18;
   const normalizedFreshness = newestAt > 0 ? (candidate.createdAt / newestAt) * 10 : 0;
@@ -54,11 +54,12 @@ export const scoreSmartCandidate = (candidate: SmartCandidate, sourceWeight: num
 
 export function selectSmartHeroSlides(candidates: SmartCandidate[], settings: SmartHeroSliderSettings, limit = 6): SmartSelectionSlide[] {
   const enabled = new Set(Object.entries(settings.enabledSources).filter(([, value]) => value).map(([key]) => key));
-  const available = candidates.filter((candidate) => enabled.has(candidate.source) && validImage(candidate.image));
+  const available = candidates.filter((candidate) => enabled.has(candidate.source) && validImage(candidate.image) && (settings.maxRepeatCount > 0 || !recentSmartIds.includes(candidate.sourceId)));
   const unique = [...new Map(available.map((candidate) => [candidate.sourceId, candidate])).values()];
   const now = Date.now();
   const newestAt = Math.max(...unique.map((candidate) => candidate.createdAt), 1);
-  const ranked = unique.map((candidate) => ({ candidate, score: scoreSmartCandidate(candidate, settings.sourceWeights[candidate.source] ?? 0, newestAt, now) }))
+  const repeatPenaltyWeight = settings.maxRepeatCount > 0 ? 35 / settings.maxRepeatCount : 0;
+  const ranked = unique.map((candidate) => ({ candidate, score: scoreSmartCandidate(candidate, settings.sourceWeights[candidate.source] ?? 0, newestAt, now, repeatPenaltyWeight) }))
     .sort((a, b) => b.score - a.score || b.candidate.createdAt - a.candidate.createdAt || a.candidate.sourceId.localeCompare(b.candidate.sourceId));
   const result: SmartCandidate[] = [];
   const sourceCounts = new Map<SmartHeroSource, number>();

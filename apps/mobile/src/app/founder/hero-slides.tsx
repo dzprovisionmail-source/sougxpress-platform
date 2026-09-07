@@ -34,7 +34,8 @@ import {
   type SmartHeroSliderSettings,
   type HeroSlide,
 } from "@/services/heroSlider.service";
-import { getSmartHeroSlides, mapManualSlidesToSmart, type SmartHeroSlide } from "@/services/smartHeroSlider.service";
+import { getSmartHeroSlides, type SmartHeroSlide } from "@/services/smartHeroSlider.service";
+import { buildFinalHeroSlides, MAX_HERO_SLIDES } from "@/services/heroSlider.runtime";
 
 export default function FounderHeroSlidesScreen() {
   const { colors, tokens } = useAppTheme();
@@ -132,9 +133,8 @@ export default function FounderHeroSlidesScreen() {
     handleSaveSmartSettings({ mode, smartMode: mode === "smart" });
 
   const handlePreview = async () => {
-    const smart = smartSettings.mode === "manual" ? [] : await getSmartHeroSlides(smartSettings, 12);
-    const manual = mapManualSlidesToSmart(slides);
-    setPreviewSlides(smartSettings.mode === "manual" ? manual : smartSettings.mode === "hybrid" ? [...manual, ...smart].slice(0, 12) : smart);
+    const smart = smartSettings.mode === "manual" ? [] : await getSmartHeroSlides(smartSettings, MAX_HERO_SLIDES);
+    setPreviewSlides(buildFinalHeroSlides(smartSettings.mode, slides, smart) as SmartHeroSlide[]);
     setPreviewVisible(true);
   };
 
@@ -383,6 +383,7 @@ export default function FounderHeroSlidesScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 10 }]}>الحد الأقصى الفعلي: {MAX_HERO_SLIDES} شريحة</Text>
           <View style={styles.smartActionRow}>
             <TouchableOpacity style={[styles.secondaryActionBtn, { borderColor: colors.primary }]} onPress={handlePreview}>
               <Eye size={16} color={colors.primary} />

@@ -18,9 +18,10 @@ import { useStores, useSearch, useNewStores } from '@/hooks/useStores';
 import useCart from '@/hooks/useCart';
 import { toggleFavorite, getFavoriteIds } from '@/services/favorite.service';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
-import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
+import { getAvailableCouriers } from '@/services/courierService';
 import { getActiveHeroSlides, getHeroSliderSettings, getSmartHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
-import { getSmartHeroSlides, mapManualSlidesToSmart } from '@/services/smartHeroSlider.service';
+import { getSmartHeroSlides } from '@/services/smartHeroSlider.service';
+import { buildFinalHeroSlides, normalizeRuntimeSlides, MAX_HERO_SLIDES, type RuntimeHeroSlide as HeroSlide } from '@/services/heroSlider.runtime';
 import { supabase } from '@/lib/supabase';
 import DriverDashboardScreen from '../driver/dashboard';
 import { AIN_SEFRA_ZONES } from '@/constants/ain-sefra-zones';
@@ -58,21 +59,6 @@ const zoneOrder = (zoneName?: string | null): number => {
   return index === -1 ? AIN_SEFRA_ZONES.length + 1 : index;
 };
 
-interface HeroSlide {
-  id: string;
-  image: string;
-  title: string;
-  description: string;
-  buttonLabel: string;
-  storeId?: string;
-  storeName?: string;
-  target_id?: string;
-  display_duration_seconds?: number;
-  transition_duration_ms?: number;
-  transition_type?: "slide" | "fade";
-  kind?: "alert" | "promotion" | "flash" | "store" | "product" | "courier";
-}
-
 const HERO_SLIDES_TEMPLATES: Omit<HeroSlide, "storeId" | "storeName">[] = [
   {
     id: "1",
@@ -80,6 +66,7 @@ const HERO_SLIDES_TEMPLATES: Omit<HeroSlide, "storeId" | "storeName">[] = [
     title: "عروض الأسبوع",
     description: "خصومات حصرية على الخضروات والفواكه الطازجة",
     buttonLabel: "تسوق الآن",
+    kind: "promotion",
   },
   {
     id: "2",
@@ -87,6 +74,7 @@ const HERO_SLIDES_TEMPLATES: Omit<HeroSlide, "storeId" | "storeName">[] = [
     title: "متجر جديد في السوق",
     description: "مخبزة السعادة تفتح أبوابها — خبز طازج يومياً",
     buttonLabel: "اكتشف المتجر",
+    kind: "store",
   },
   {
     id: "3",
@@ -94,6 +82,7 @@ const HERO_SLIDES_TEMPLATES: Omit<HeroSlide, "storeId" | "storeName">[] = [
     title: "توصيل مجاني",
     description: "لأول طلب لك — يوصلك لبابك بدون رسوم",
     buttonLabel: "اطلب الآن",
+    kind: "promotion",
   },
 ];
 
@@ -128,8 +117,8 @@ const HomeScreen = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const activeSlideRef = useRef(0);
   const heroScrollRef = useRef<FlatList<HeroSlide>>(null);
-  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(HERO_SLIDES_TEMPLATES);
-  const [heroLoading, setHeroLoading] = useState(false);
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
+  const [heroLoading, setHeroLoading] = useState(true);
   const [autoRotate, setAutoRotate] = useState(true);
   const [rotationInterval, setRotationInterval] = useState(3);
   const [heroSettings, setHeroSettings] = useState({ mode: "manual" as "manual" | "smart" | "hybrid", pauseOnTouch: true, resumeDelaySeconds: 4, transitionMs: 350, transitionType: "slide" as "slide" | "fade" });
@@ -299,117 +288,22 @@ const HomeScreen = () => {
       setRotationInterval(settings.intervalSeconds);
       const mode = smartSettings.mode || (smartSettings.smartMode ? "smart" : "manual");
       setHeroSettings({ mode, pauseOnTouch: smartSettings.pauseOnTouch, resumeDelaySeconds: smartSettings.resumeDelaySeconds, transitionMs: smartSettings.transitionMs, transitionType: smartSettings.transitionType });
-
-      if (mode === "smart") {
-        const smartSlides = await getSmartHeroSlides(smartSettings, 12);
-        setHeroSlides((smartSlides.length > 0 ? smartSlides : HERO_SLIDES_TEMPLATES) as HeroSlide[]);
-        setHeroLoading(false);
-        return;
-      }
-
-      // 1. Try fetching Founder-managed hero slides from database first
-      const dbSlides = await getActiveHeroSlides();
-      if (mode === "manual" && dbSlides && dbSlides.length > 0) {
-        const mappedSlides: HeroSlide[] = dbSlides.map((s) => ({
-          id: s.id,
-          image: s.image_url,
-          title: s.title,
-          description: s.subtitle || "",
-          buttonLabel: s.cta_label || "تسوق الآن",
-          storeId: s.content_type === "store" ? s.target_id || undefined : undefined,
-          target_id: s.target_id || undefined,
-          display_duration_seconds: s.display_duration_seconds,
-          transition_duration_ms: s.transition_duration_ms,
-          transition_type: s.transition_type,
-          kind: s.content_type as any,
-        }));
-        setHeroSlides(mappedSlides);
-        setHeroLoading(false);
-        return;
-      }
-
-      if (mode === "hybrid") {
-        const smartSlides = await getSmartHeroSlides(smartSettings, 12);
-        const manualSlides = mapManualSlidesToSmart(dbSlides || []);
-        const hybridSlides = [...manualSlides, ...smartSlides].slice(0, 12);
-        setHeroSlides((hybridSlides.length > 0 ? hybridSlides : HERO_SLIDES_TEMPLATES) as HeroSlide[]);
-        setHeroLoading(false);
-        return;
-      }
-
-      const now = new Date().toISOString();
-
-      const [alertsRes, promotionsRes, newStoresRes, newProductsRes] = await Promise.all([
-        supabase.from("founder_alerts").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(3),
-        supabase.from("store_promotions").select("*").eq("is_active", true).gte("starts_at", now).lte("ends_at", now).order("created_at", { ascending: false }).limit(10),
-        supabase.from("stores").select("id, name, description, cover_url").eq("status", "active").eq("is_new", true).order("created_at", { ascending: false }).limit(3),
-        supabase.from("products").select("id, name, description, image_url, store_id, stores(name)").eq("status", "active").order("created_at", { ascending: false }).limit(3),
+      const [dbSlides, smartSlides] = await Promise.all([
+        getActiveHeroSlides(),
+        mode === "manual" ? Promise.resolve([]) : getSmartHeroSlides(smartSettings, MAX_HERO_SLIDES),
       ]);
-
-      const couriersRes = await getAvailableCouriers();
-
-      let slides: HeroSlide[] = [];
-
-      if (!alertsRes.error && alertsRes.data && alertsRes.data.length > 0) {
-        slides = alertsRes.data.map((alert: any) => ({
-          id: `alert-${alert.id}`,
-          image: "",
-          title: alert.message,
-          description: alert.category,
-          buttonLabel: "عرض التفاصيل",
-          kind: "alert",
-        }));
-      } else {
-        const allPromotions = promotionsRes.data || [];
-        const flashOffers = allPromotions.filter((p: any) => p.discount_type === "percentage" && p.discount_value >= 20);
-        const otherPromotions = allPromotions.filter((p: any) => !(p.discount_type === "percentage" && p.discount_value >= 20));
-        const candidatePromotions = flashOffers.length > 0 ? flashOffers : otherPromotions;
-
-        if (candidatePromotions.length > 0 && !promotionsRes.error) {
-          slides = candidatePromotions.map((p: any) => ({
-            id: `promo-${p.id}`,
-            image: p.image_url || "",
-            title: flashOffers.length > 0 ? `🔥 ${p.title}` : p.title,
-            description: p.description || `خصم ${p.discount_value}${p.discount_type === "percentage" ? "%" : p.discount_type === "free_delivery" ? " توصيل مجاني" : " د.ج"}`,
-            buttonLabel: flashOffers.length > 0 ? "استفد الآن" : "تسوق الآن",
-            storeId: p.store_id,
-            kind: flashOffers.length > 0 ? "flash" : "promotion",
-          }));
-        } else if (!newStoresRes.error && newStoresRes.data && newStoresRes.data.length > 0) {
-          slides = newStoresRes.data.map((s: any) => ({
-            id: `store-${s.id}`,
-            image: s.cover_url || "",
-            title: `متجر جديد: ${s.name}`,
-            description: s.description || "اكتشف منتجاتنا الجديدة",
-            buttonLabel: "زرّار المتجر",
-            storeId: s.id,
-            storeName: s.name,
-            kind: "store",
-          }));
-        } else if (!newProductsRes.error && newProductsRes.data && newProductsRes.data.length > 0) {
-          slides = newProductsRes.data.map((p: any) => ({
-            id: `product-${p.id}`,
-            image: p.image_url || "",
-            title: p.name,
-            description: p.description || "منتج جديد",
-            buttonLabel: "عرض المنتج",
-            storeId: p.store_id,
-            storeName: p.stores?.[0]?.name,
-            kind: "product",
-          }));
-        } else if (!couriersRes.error && couriersRes.data && couriersRes.data.length > 0) {
-          slides = couriersRes.data.slice(0, 3).map((c: any) => ({
-            id: `courier-${c.id}`,
-            image: c.avatar_url || "",
-            title: c.full_name,
-            description: `⭐ ${c.rating} • ${vehicleLabel(c.vehicle_type)}`,
-            buttonLabel: "عرض الملف",
-            kind: "courier",
-          }));
-        }
+      const finalSlides = normalizeRuntimeSlides(buildFinalHeroSlides(mode, dbSlides, smartSlides));
+      if (finalSlides.length > 0) {
+        setHeroSlides(finalSlides);
+        return;
       }
 
-      setHeroSlides(slides.length > 0 ? slides : HERO_SLIDES_TEMPLATES);
+      if (mode !== "manual") {
+        setHeroSlides(HERO_SLIDES_TEMPLATES);
+        return;
+      }
+
+      setHeroSlides([]);
     } catch (e) {
       console.error("Error fetching hero content:", e);
       setHeroSlides(HERO_SLIDES_TEMPLATES);
@@ -737,9 +631,10 @@ const HomeScreen = () => {
             data={heroSlides}
             renderItem={renderHeroSlide}
             keyExtractor={(item) => item.id}
+            ListEmptyComponent={heroLoading ? <ActivityIndicator size="small" color={colors.primary} /> : null}
             getItemLayout={(_, index) => ({ length: HERO_SLIDE_INTERVAL, offset: HERO_SLIDE_INTERVAL * index, index })}
-            initialNumToRender={3}
-            maxToRenderPerBatch={3}
+            initialNumToRender={Math.min(MAX_HERO_SLIDES, 6)}
+            maxToRenderPerBatch={Math.min(MAX_HERO_SLIDES, 6)}
             windowSize={5}
             horizontal
             snapToInterval={HERO_SLIDE_INTERVAL}
