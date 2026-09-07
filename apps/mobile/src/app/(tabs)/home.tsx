@@ -26,6 +26,7 @@ import DriverDashboardScreen from '../driver/dashboard';
 import { AIN_SEFRA_ZONES } from '@/constants/ain-sefra-zones';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const HERO_SLIDE_INTERVAL = SCREEN_WIDTH - spacing.lg * 2 + spacing.xs * 2;
 const assetUri = (asset: number): string => {
   const resolver = (Image as typeof Image & { resolveAssetSource?: (value: number) => { uri?: string } }).resolveAssetSource;
   return typeof resolver === "function" ? resolver(asset).uri ?? "" : String(asset);
@@ -427,8 +428,11 @@ const HomeScreen = () => {
   }, [heroSettings.pauseOnTouch, heroSettings.resumeDelaySeconds]);
 
   const animateHeroTo = useCallback((index: number, durationOverride?: number) => {
-    const offset = index * SCREEN_WIDTH;
+    const safeIndex = Math.max(0, Math.min(heroSlides.length - 1, index));
+    const offset = safeIndex * HERO_SLIDE_INTERVAL;
     const transitionMs = Math.max(150, Math.min(1000, durationOverride ?? heroSettings.transitionMs));
+    activeSlideRef.current = safeIndex;
+    setActiveSlide(safeIndex);
     if (heroSettings.transitionType === "fade") {
       Animated.sequence([
         Animated.timing(heroFadeOpacity, { toValue: 0, duration: Math.max(75, Math.floor(transitionMs / 2)), useNativeDriver: true }),
@@ -436,19 +440,9 @@ const HomeScreen = () => {
       ]).start();
       heroScrollRef.current?.scrollToOffset({ offset, animated: false });
     } else {
-      const start = heroOffsetRef.current;
-      const distance = offset - start;
-      const duration = transitionMs;
-      const startedAt = Date.now();
-      const step = () => {
-        const progress = Math.min(1, (Date.now() - startedAt) / duration);
-        const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-        heroScrollRef.current?.scrollToOffset({ offset: start + distance * eased, animated: false });
-        if (progress < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
+      heroScrollRef.current?.scrollToOffset({ offset, animated: true });
     }
-  }, [heroFadeOpacity, heroSettings.transitionMs, heroSettings.transitionType]);
+  }, [heroFadeOpacity, heroSettings.transitionMs, heroSettings.transitionType, heroSlides.length]);
 
   useEffect(() => () => {
     if (heroResumeTimerRef.current) clearTimeout(heroResumeTimerRef.current);
@@ -477,7 +471,7 @@ const HomeScreen = () => {
   const handleHeroScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     heroOffsetRef.current = contentOffsetX;
-    const slideIndex = Math.max(0, Math.min(heroSlides.length - 1, Math.round(contentOffsetX / SCREEN_WIDTH)));
+    const slideIndex = Math.max(0, Math.min(heroSlides.length - 1, Math.round(contentOffsetX / HERO_SLIDE_INTERVAL)));
     if (slideIndex === activeSlideRef.current) return;
     activeSlideRef.current = slideIndex;
     setActiveSlide(slideIndex);
@@ -733,7 +727,7 @@ const HomeScreen = () => {
             keyExtractor={(item) => item.id}
             horizontal
             pagingEnabled
-            snapToInterval={SCREEN_WIDTH}
+            snapToInterval={HERO_SLIDE_INTERVAL}
             decelerationRate="fast"
             disableIntervalMomentum
             showsHorizontalScrollIndicator={false}
