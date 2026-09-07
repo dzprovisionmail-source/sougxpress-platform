@@ -13,6 +13,9 @@ export interface HeroSlide {
   is_active: boolean;
   display_order: number;
   priority: number;
+  display_duration_seconds?: number;
+  transition_duration_ms?: number;
+  transition_type?: "slide" | "fade";
   start_at?: string | null;
   end_at?: string | null;
   created_at?: string;
@@ -204,18 +207,30 @@ export async function updateHeroSliderSettings(autoRotate: boolean, intervalSeco
   }
 }
 
+export type SmartHeroSource = "products" | "new_stores" | "featured_stores" | "promotions";
+
 export interface SmartHeroSliderSettings {
+  mode: "manual" | "smart" | "hybrid";
   smartMode: boolean;
   enabledSources: { products: boolean; new_stores: boolean; featured_stores: boolean; promotions: boolean };
   sourceWeights: { products: number; new_stores: number; featured_stores: number; promotions: number };
   transitionMs: number;
+  transitionType: "slide" | "fade";
+  pauseOnTouch: boolean;
+  resumeDelaySeconds: number;
+  maxRepeatCount: number;
 }
 
 export const DEFAULT_SMART_HERO_SETTINGS: SmartHeroSliderSettings = {
+  mode: "manual",
   smartMode: false,
   enabledSources: { products: true, new_stores: true, featured_stores: true, promotions: true },
   sourceWeights: { products: 40, new_stores: 25, featured_stores: 20, promotions: 15 },
   transitionMs: 350,
+  transitionType: "slide",
+  pauseOnTouch: true,
+  resumeDelaySeconds: 4,
+  maxRepeatCount: 1,
 };
 
 const parseSettingBoolean = (value: unknown, fallback: boolean) => value === true || value === "true" ? true : value === false || value === "false" ? false : fallback;
@@ -226,11 +241,12 @@ const parseSettingNumber = (value: unknown, fallback: number, min: number, max: 
 
 export async function getSmartHeroSliderSettings(): Promise<SmartHeroSliderSettings> {
   try {
-    const keys = ["hero_smart_mode", "hero_source_products", "hero_source_new_stores", "hero_source_featured_stores", "hero_source_promotions", "hero_weight_products", "hero_weight_new_stores", "hero_weight_featured_stores", "hero_weight_promotions", "hero_transition_ms"];
+    const keys = ["hero_smart_mode", "hero_mode", "hero_source_products", "hero_source_new_stores", "hero_source_featured_stores", "hero_source_promotions", "hero_weight_products", "hero_weight_new_stores", "hero_weight_featured_stores", "hero_weight_promotions", "hero_transition_ms", "hero_transition_type", "hero_pause_on_touch", "hero_resume_delay_seconds", "hero_max_repeat_count"];
     const { data, error } = await supabase.from("platform_financial_settings").select("key, value").in("key", keys);
     if (error || !data) return DEFAULT_SMART_HERO_SETTINGS;
     const values = Object.fromEntries(data.map((row: any) => [row.key, row.value]));
     return {
+      mode: values.hero_mode === "hybrid" ? "hybrid" : (values.hero_mode === "smart" || parseSettingBoolean(values.hero_smart_mode, false)) ? "smart" : "manual",
       smartMode: parseSettingBoolean(values.hero_smart_mode, DEFAULT_SMART_HERO_SETTINGS.smartMode),
       enabledSources: {
         products: parseSettingBoolean(values.hero_source_products, true),
@@ -245,6 +261,10 @@ export async function getSmartHeroSliderSettings(): Promise<SmartHeroSliderSetti
         promotions: parseSettingNumber(values.hero_weight_promotions, 15, 0, 100),
       },
       transitionMs: parseSettingNumber(values.hero_transition_ms, 350, 150, 1000),
+      transitionType: values.hero_transition_type === "fade" ? "fade" : "slide",
+      pauseOnTouch: parseSettingBoolean(values.hero_pause_on_touch, true),
+      resumeDelaySeconds: parseSettingNumber(values.hero_resume_delay_seconds, 4, 1, 30),
+      maxRepeatCount: parseSettingNumber(values.hero_max_repeat_count, 1, 0, 3),
     };
   } catch (err) {
     console.error("getSmartHeroSliderSettings error:", err);
@@ -255,6 +275,7 @@ export async function getSmartHeroSliderSettings(): Promise<SmartHeroSliderSetti
 export async function updateSmartHeroSliderSettings(settings: SmartHeroSliderSettings): Promise<{ success: boolean; error?: string }> {
   try {
     const values: Record<string, string> = {
+      hero_mode: settings.mode,
       hero_smart_mode: String(settings.smartMode),
       hero_source_products: String(settings.enabledSources.products),
       hero_source_new_stores: String(settings.enabledSources.new_stores),
@@ -265,6 +286,10 @@ export async function updateSmartHeroSliderSettings(settings: SmartHeroSliderSet
       hero_weight_featured_stores: String(settings.sourceWeights.featured_stores),
       hero_weight_promotions: String(settings.sourceWeights.promotions),
       hero_transition_ms: String(settings.transitionMs),
+      hero_transition_type: settings.transitionType,
+      hero_pause_on_touch: String(settings.pauseOnTouch),
+      hero_resume_delay_seconds: String(settings.resumeDelaySeconds),
+      hero_max_repeat_count: String(settings.maxRepeatCount),
     };
     const results = await Promise.all(Object.entries(values).map(([key, value]) => supabase.from("platform_financial_settings").update({ value }).eq("key", key)));
     const failed = results.find(({ error }) => error);

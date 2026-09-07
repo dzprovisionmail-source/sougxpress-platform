@@ -33,6 +33,7 @@ import {
   type SmartHeroSliderSettings,
   type HeroSlide,
 } from "@/services/heroSlider.service";
+import { getSmartHeroSlides, mapManualSlidesToSmart, type SmartHeroSlide } from "@/services/smartHeroSlider.service";
 
 export default function FounderHeroSlidesScreen() {
   const { colors, tokens } = useAppTheme();
@@ -51,6 +52,9 @@ export default function FounderHeroSlidesScreen() {
   const [formTargetId, setFormTargetId] = useState("");
   const [formDisplayOrder, setFormDisplayOrder] = useState("0");
   const [formPriority, setFormPriority] = useState("0");
+  const [formDisplayDuration, setFormDisplayDuration] = useState("3");
+  const [formTransitionDuration, setFormTransitionDuration] = useState("350");
+  const [formTransitionType, setFormTransitionType] = useState<"slide" | "fade">("slide");
   const [formIsActive, setFormIsActive] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -59,6 +63,8 @@ export default function FounderHeroSlidesScreen() {
   const [autoRotate, setAutoRotate] = useState(true);
   const [rotationInterval, setRotationInterval] = useState(3);
   const [smartSettings, setSmartSettings] = useState<SmartHeroSliderSettings>(DEFAULT_SMART_HERO_SETTINGS);
+  const [previewSlides, setPreviewSlides] = useState<SmartHeroSlide[]>([]);
+  const [previewVisible, setPreviewVisible] = useState(false);
 
   // Store and product selectors for structured hero destinations
   const [allStoresList, setAllStoresList] = useState<any[]>([]);
@@ -121,6 +127,16 @@ export default function FounderHeroSlidesScreen() {
   const updateSmartWeight = (source: keyof SmartHeroSliderSettings["sourceWeights"], weight: number) =>
     handleSaveSmartSettings({ sourceWeights: { ...smartSettings.sourceWeights, [source]: weight } });
 
+  const handleModeChange = (mode: SmartHeroSliderSettings["mode"]) =>
+    handleSaveSmartSettings({ mode, smartMode: mode === "smart" });
+
+  const handlePreview = async () => {
+    const smart = smartSettings.mode === "manual" ? [] : await getSmartHeroSlides(smartSettings, 6);
+    const manual = mapManualSlidesToSmart(slides);
+    setPreviewSlides(smartSettings.mode === "manual" ? manual : smartSettings.mode === "hybrid" ? [...manual.slice(0, 3), ...smart].slice(0, 6) : smart);
+    setPreviewVisible(true);
+  };
+
   useEffect(() => {
     loadSlides();
   }, []);
@@ -135,6 +151,9 @@ export default function FounderHeroSlidesScreen() {
     setFormTargetId("");
     setFormDisplayOrder(String(slides.length + 1));
     setFormPriority("0");
+    setFormDisplayDuration("3");
+    setFormTransitionDuration("350");
+    setFormTransitionType("slide");
     setFormIsActive(true);
     setModalVisible(true);
   };
@@ -149,6 +168,9 @@ export default function FounderHeroSlidesScreen() {
     setFormTargetId(slide.target_id || slide.target_store_id || slide.target_product_id || "");
     setFormDisplayOrder(String(slide.display_order));
     setFormPriority(String(slide.priority));
+    setFormDisplayDuration(String(slide.display_duration_seconds ?? 3));
+    setFormTransitionDuration(String(slide.transition_duration_ms ?? 350));
+    setFormTransitionType(slide.transition_type === "fade" ? "fade" : "slide");
     setFormIsActive(slide.is_active);
     setModalVisible(true);
   };
@@ -217,6 +239,9 @@ export default function FounderHeroSlidesScreen() {
       target_product_id: targetProductId,
       display_order: parseInt(formDisplayOrder, 10) || 0,
       priority: parseInt(formPriority, 10) || 0,
+      display_duration_seconds: Math.max(1, Math.min(60, parseInt(formDisplayDuration, 10) || 3)),
+      transition_duration_ms: Math.max(150, Math.min(1000, parseInt(formTransitionDuration, 10) || 350)),
+      transition_type: formTransitionType,
       is_active: formIsActive,
     };
 
@@ -332,9 +357,26 @@ export default function FounderHeroSlidesScreen() {
               <Text style={{ color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, fontWeight: "700", textAlign: "right" }}>Smart Slider</Text>
               <Text style={{ color: colors.textSecondary, fontFamily: tokens.typography.families.arabic, fontSize: 12, textAlign: "right", marginTop: 3 }}>محتوى حقيقي يتجدد تلقائيًا من المنتجات والمتاجر وAssets الرسمية</Text>
             </View>
-            <Switch value={smartSettings.smartMode} onValueChange={(value) => handleSaveSmartSettings({ smartMode: value })} trackColor={{ false: "#767577", true: colors.primary + "88" }} thumbColor={smartSettings.smartMode ? colors.primary : "#f4f3f4"} />
+            <Switch value={smartSettings.mode !== "manual"} onValueChange={(value) => handleModeChange(value ? "smart" : "manual")} trackColor={{ false: "#767577", true: colors.primary + "88" }} thumbColor={smartSettings.mode !== "manual" ? colors.primary : "#f4f3f4"} />
           </View>
-          {smartSettings.smartMode && (
+          <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 14 }]}>الوضع</Text>
+          <View style={styles.modeRow}>
+            {([["manual", "MANUAL"], ["smart", "SMART"], ["hybrid", "HYBRID"]] as const).map(([mode, label]) => (
+              <TouchableOpacity key={mode} style={[styles.modeChip, { backgroundColor: smartSettings.mode === mode ? colors.primary : colors.bgSurface, borderColor: smartSettings.mode === mode ? colors.primary : colors.borderSubtle }]} onPress={() => handleModeChange(mode)}>
+                <Text style={{ color: smartSettings.mode === mode ? "#FFF" : colors.textPrimary, fontWeight: "700", fontSize: 12 }}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.smartActionRow}>
+            <TouchableOpacity style={[styles.secondaryActionBtn, { borderColor: colors.primary }]} onPress={handlePreview}>
+              <Eye size={16} color={colors.primary} />
+              <Text style={{ color: colors.primary, fontFamily: tokens.typography.families.arabic }}>معاينة Smart Slider</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.secondaryActionBtn, { borderColor: colors.borderSubtle }]} onPress={() => Alert.alert("إعادة ضبط Smart Slider", "سيتم استعادة الإعدادات الافتراضية. هل تريد المتابعة؟", [{ text: "إلغاء", style: "cancel" }, { text: "إعادة ضبط", style: "destructive", onPress: () => handleSaveSmartSettings(DEFAULT_SMART_HERO_SETTINGS) }])}>
+              <Text style={{ color: colors.textSecondary, fontFamily: tokens.typography.families.arabic }}>إعادة ضبط</Text>
+            </TouchableOpacity>
+          </View>
+          {smartSettings.mode !== "manual" && (
             <>
               <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 12 }]}>المصادر ونسبة الظهور</Text>
               {([["products", "المنتجات الجديدة"], ["new_stores", "المتاجر الجديدة"], ["featured_stores", "المتاجر المميزة"], ["promotions", "إعلانات Soug-XPRESS الرسمية"]] as const).map(([source, label]) => (
@@ -345,12 +387,54 @@ export default function FounderHeroSlidesScreen() {
                   <Text style={{ color: colors.textSecondary }}>%</Text>
                 </View>
               ))}
-              <TouchableOpacity style={[styles.refreshSmartBtn, { borderColor: colors.primary }]} onPress={() => loadSlides(true)}>
-                <Text style={{ color: colors.primary, fontFamily: tokens.typography.families.arabic, fontWeight: "700" }}>تحديث الاختيارات الآن</Text>
-              </TouchableOpacity>
+              <View style={styles.smartActionRow}>
+                <TouchableOpacity style={[styles.refreshSmartBtn, { borderColor: colors.primary, flex: 1 }]} onPress={() => loadSlides(true)}>
+                  <Text style={{ color: colors.primary, fontFamily: tokens.typography.families.arabic, fontWeight: "700" }}>تحديث الاختيارات</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.refreshSmartBtn, { borderColor: colors.success, flex: 1 }]} onPress={() => handleSaveSmartSettings(smartSettings)}>
+                  <Text style={{ color: colors.success, fontFamily: tokens.typography.families.arabic, fontWeight: "700" }}>تطبيق الإعدادات</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 14 }]}>الحركة والتكرار</Text>
+              <View style={styles.smartSourceRow}>
+                <Switch value={smartSettings.pauseOnTouch} onValueChange={(value) => handleSaveSmartSettings({ pauseOnTouch: value })} />
+                <Text style={{ flex: 1, color: colors.textPrimary, textAlign: "right", fontFamily: tokens.typography.families.arabic }}>إيقاف عند اللمس</Text>
+                <TextInput value={String(smartSettings.resumeDelaySeconds)} onChangeText={(value) => handleSaveSmartSettings({ resumeDelaySeconds: Number(value) || 1 })} keyboardType="numeric" style={[styles.weightInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]} />
+                <Text style={{ color: colors.textSecondary }}>ث</Text>
+              </View>
+              <View style={styles.typeRow}>
+                {([["slide", "انزلاق"], ["fade", "تلاشي"]] as const).map(([type, label]) => (
+                  <TouchableOpacity key={type} style={[styles.typeChip, { backgroundColor: smartSettings.transitionType === type ? colors.primary : colors.bgSurface, borderColor: colors.borderSubtle }]} onPress={() => handleSaveSmartSettings({ transitionType: type })}>
+                    <Text style={{ color: smartSettings.transitionType === type ? "#FFF" : colors.textPrimary }}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </>
           )}
         </View>
+
+        <Modal visible={previewVisible} animationType="slide" transparent onRequestClose={() => setPreviewVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.previewModal, { backgroundColor: colors.bgSurface }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.textPrimary, fontFamily: tokens.typography.families.arabic }]}>معاينة ترتيب Smart Slider</Text>
+                <TouchableOpacity onPress={() => setPreviewVisible(false)}><X size={24} color={colors.textSecondary} /></TouchableOpacity>
+              </View>
+              <ScrollView contentContainerStyle={{ gap: 10 }}>
+                {previewSlides.map((slide, index) => (
+                  <View key={`${slide.id}-${index}`} style={[styles.previewRow, { borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }]}>
+                    <Text style={{ color: colors.primary, fontWeight: "800" }}>{String(index + 1).padStart(2, "0")}</Text>
+                    <Image source={{ uri: slide.image }} style={styles.previewImage} />
+                    <View style={{ flex: 1, alignItems: "flex-end" }}>
+                      <Text style={{ color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, fontWeight: "700" }} numberOfLines={1}>{slide.title}</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{slide.smartReason || "اختيار يدوي"} {slide.smartScore !== undefined ? `• ${slide.smartScore}` : ""}</Text>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
 
         {loading ? (
           <View style={styles.centered}>
@@ -610,6 +694,25 @@ export default function FounderHeroSlidesScreen() {
                   </View>
                 </View>
 
+                <View style={{ flexDirection: "row", gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>مدة العرض (ث)</Text>
+                    <TextInput style={[styles.input, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} value={formDisplayDuration} onChangeText={setFormDisplayDuration} keyboardType="numeric" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>مدة الانتقال (ملث)</Text>
+                    <TextInput style={[styles.input, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle, color: colors.textPrimary }]} value={formTransitionDuration} onChangeText={setFormTransitionDuration} keyboardType="numeric" />
+                  </View>
+                </View>
+                <Text style={styles.inputLabel}>نوع الانتقال</Text>
+                <View style={styles.typeRow}>
+                  {([["slide", "انزلاق"], ["fade", "تلاشي"]] as const).map(([type, label]) => (
+                    <TouchableOpacity key={type} style={[styles.typeChip, { backgroundColor: formTransitionType === type ? colors.primary : colors.bgElevated, borderColor: colors.borderSubtle }]} onPress={() => setFormTransitionType(type)}>
+                      <Text style={{ color: formTransitionType === type ? "#FFF" : colors.textPrimary }}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
                 <View style={styles.switchRow}>
                   <Text style={{ color: colors.textPrimary, fontFamily: tokens.typography.families.arabic }}>الشريحة نشطة للظهور</Text>
                   <Switch
@@ -710,6 +813,53 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 9,
     marginTop: 14,
+  },
+  modeRow: {
+    flexDirection: "row-reverse",
+    gap: 8,
+    marginTop: 8,
+  },
+  modeChip: {
+    flex: 1,
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 9,
+  },
+  smartActionRow: {
+    flexDirection: "row-reverse",
+    gap: 8,
+    marginTop: 10,
+  },
+  secondaryActionBtn: {
+    flex: 1,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 9,
+  },
+  previewModal: {
+    width: "92%",
+    maxHeight: "80%",
+    borderRadius: 16,
+    padding: 16,
+  },
+  previewRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 9,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 8,
+  },
+  previewImage: {
+    width: 54,
+    height: 42,
+    borderRadius: 6,
+    backgroundColor: "#E5E7EB",
   },
   listContent: {
     gap: 16,

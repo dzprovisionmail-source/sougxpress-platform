@@ -1,6 +1,6 @@
 import { useMarketPresence } from "@/hooks/useMarketPresence";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
@@ -20,7 +20,7 @@ import { toggleFavorite, getFavoriteIds } from '@/services/favorite.service';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
 import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
 import { getActiveHeroSlides, getHeroSliderSettings, getSmartHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
-import { getSmartHeroSlides } from '@/services/smartHeroSlider.service';
+import { getSmartHeroSlides, mapManualSlidesToSmart } from '@/services/smartHeroSlider.service';
 import { supabase } from '@/lib/supabase';
 import DriverDashboardScreen from '../driver/dashboard';
 import { AIN_SEFRA_ZONES } from '@/constants/ain-sefra-zones';
@@ -61,6 +61,9 @@ interface HeroSlide {
   storeId?: string;
   storeName?: string;
   target_id?: string;
+  display_duration_seconds?: number;
+  transition_duration_ms?: number;
+  transition_type?: "slide" | "fade";
   kind?: "alert" | "promotion" | "flash" | "store" | "product" | "courier";
 }
 
@@ -123,6 +126,11 @@ const HomeScreen = () => {
   const [heroLoading, setHeroLoading] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [rotationInterval, setRotationInterval] = useState(3);
+  const [heroSettings, setHeroSettings] = useState({ mode: "manual" as "manual" | "smart" | "hybrid", pauseOnTouch: true, resumeDelaySeconds: 4, transitionMs: 350, transitionType: "slide" as "slide" | "fade" });
+  const heroResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heroPausedRef = useRef(false);
+  const heroFadeOpacity = useRef(new Animated.Value(1)).current;
+  const heroOffsetRef = useRef(0);
   const [marketSections, setMarketSections] = useState<MarketSectionSettings>({
     showSpecialOffers: true,
     showNewStores: true,
@@ -283,17 +291,19 @@ const HomeScreen = () => {
       const [settings, smartSettings] = await Promise.all([getHeroSliderSettings(), getSmartHeroSliderSettings()]);
       setAutoRotate(settings.autoRotate);
       setRotationInterval(settings.intervalSeconds);
+      const mode = smartSettings.mode || (smartSettings.smartMode ? "smart" : "manual");
+      setHeroSettings({ mode, pauseOnTouch: smartSettings.pauseOnTouch, resumeDelaySeconds: smartSettings.resumeDelaySeconds, transitionMs: smartSettings.transitionMs, transitionType: smartSettings.transitionType });
 
-      if (smartSettings.smartMode) {
+      if (mode === "smart") {
         const smartSlides = await getSmartHeroSlides(smartSettings, 6);
-        setHeroSlides(smartSlides as HeroSlide[]);
+        setHeroSlides((smartSlides.length > 0 ? smartSlides : HERO_SLIDES_TEMPLATES) as HeroSlide[]);
         setHeroLoading(false);
         return;
       }
 
       // 1. Try fetching Founder-managed hero slides from database first
       const dbSlides = await getActiveHeroSlides();
-      if (dbSlides && dbSlides.length > 0) {
+      if (mode === "manual" && dbSlides && dbSlides.length > 0) {
         const mappedSlides: HeroSlide[] = dbSlides.map((s) => ({
           id: s.id,
           image: s.image_url,
@@ -302,9 +312,21 @@ const HomeScreen = () => {
           buttonLabel: s.cta_label || "تسوق الآن",
           storeId: s.content_type === "store" ? s.target_id || undefined : undefined,
           target_id: s.target_id || undefined,
+          display_duration_seconds: s.display_duration_seconds,
+          transition_duration_ms: s.transition_duration_ms,
+          transition_type: s.transition_type,
           kind: s.content_type as any,
         }));
         setHeroSlides(mappedSlides);
+        setHeroLoading(false);
+        return;
+      }
+
+      if (mode === "hybrid") {
+        const smartSlides = await getSmartHeroSlides(smartSettings, 6);
+        const manualSlides = mapManualSlidesToSmart(dbSlides || []);
+        const hybridSlides = [...manualSlides.slice(0, 3), ...smartSlides].slice(0, 6);
+        setHeroSlides((hybridSlides.length > 0 ? hybridSlides : HERO_SLIDES_TEMPLATES) as HeroSlide[]);
         setHeroLoading(false);
         return;
       }
@@ -394,16 +416,55 @@ const HomeScreen = () => {
     fetchHeroContent();
   }, [fetchHeroContent]);
 
+  const pauseHeroOnTouch = useCallback(() => {
+    if (!heroSettings.pauseOnTouch) return;
+    heroPausedRef.current = true;
+    if (heroResumeTimerRef.current) clearTimeout(heroResumeTimerRef.current);
+    heroResumeTimerRef.current = setTimeout(() => {
+      heroPausedRef.current = false;
+      heroResumeTimerRef.current = null;
+    }, Math.max(1, heroSettings.resumeDelaySeconds) * 1000);
+  }, [heroSettings.pauseOnTouch, heroSettings.resumeDelaySeconds]);
+
+  const animateHeroTo = useCallback((index: number, durationOverride?: number) => {
+    const offset = index * SCREEN_WIDTH;
+    const transitionMs = Math.max(150, Math.min(1000, durationOverride ?? heroSettings.transitionMs));
+    if (heroSettings.transitionType === "fade") {
+      Animated.sequence([
+        Animated.timing(heroFadeOpacity, { toValue: 0, duration: Math.max(75, Math.floor(transitionMs / 2)), useNativeDriver: true }),
+        Animated.timing(heroFadeOpacity, { toValue: 1, duration: Math.max(75, Math.floor(transitionMs / 2)), useNativeDriver: true }),
+      ]).start();
+      heroScrollRef.current?.scrollToOffset({ offset, animated: false });
+    } else {
+      const start = heroOffsetRef.current;
+      const distance = offset - start;
+      const duration = transitionMs;
+      const startedAt = Date.now();
+      const step = () => {
+        const progress = Math.min(1, (Date.now() - startedAt) / duration);
+        const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        heroScrollRef.current?.scrollToOffset({ offset: start + distance * eased, animated: false });
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+  }, [heroFadeOpacity, heroSettings.transitionMs, heroSettings.transitionType]);
+
+  useEffect(() => () => {
+    if (heroResumeTimerRef.current) clearTimeout(heroResumeTimerRef.current);
+  }, []);
+
   // Automatic hero slider rotation based on settings
   useEffect(() => {
     if (!autoRotate || !heroSlides || heroSlides.length <= 1) return;
-    const intervalMs = Math.max(rotationInterval, 1) * 1000;
+    const intervalMs = Math.max(heroSlides[activeSlideRef.current]?.display_duration_seconds ?? rotationInterval, 1) * 1000;
     const interval = setInterval(() => {
+      if (heroPausedRef.current) return;
       setActiveSlide((prev) => {
         const next = (prev + 1) % heroSlides.length;
         activeSlideRef.current = next;
         try {
-          heroScrollRef.current?.scrollToIndex({ index: next, animated: true });
+          animateHeroTo(next, heroSlides[next]?.transition_duration_ms);
         } catch (e) {
           // Ignore scroll index out of bounds during fast updates
         }
@@ -411,10 +472,11 @@ const HomeScreen = () => {
       });
     }, intervalMs);
     return () => clearInterval(interval);
-  }, [heroSlides, autoRotate, rotationInterval]);
+  }, [heroSlides, autoRotate, rotationInterval, animateHeroTo]);
 
   const handleHeroScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
+    heroOffsetRef.current = contentOffsetX;
     const slideIndex = Math.max(0, Math.min(heroSlides.length - 1, Math.round(contentOffsetX / SCREEN_WIDTH)));
     if (slideIndex === activeSlideRef.current) return;
     activeSlideRef.current = slideIndex;
@@ -663,6 +725,7 @@ const HomeScreen = () => {
 
         {/* Hero Slider */}
         <View style={styles.section}>
+          <Animated.View style={{ opacity: heroFadeOpacity }}>
           <FlatList
             ref={heroScrollRef}
             data={heroSlides}
@@ -670,12 +733,19 @@ const HomeScreen = () => {
             keyExtractor={(item) => item.id}
             horizontal
             pagingEnabled
+            snapToInterval={SCREEN_WIDTH}
+            decelerationRate="fast"
+            disableIntervalMomentum
             showsHorizontalScrollIndicator={false}
             onScroll={handleHeroScroll}
+            onTouchStart={pauseHeroOnTouch}
+            onMomentumScrollBegin={pauseHeroOnTouch}
+            onScrollBeginDrag={pauseHeroOnTouch}
             scrollEventThrottle={16}
             contentContainerStyle={styles.heroListContent}
             bounces={false}
           />
+          </Animated.View>
           <View style={styles.dotsContainer}>
             {heroSlides.map((_, index) => (
               <TouchableOpacity
@@ -687,7 +757,7 @@ const HomeScreen = () => {
                   },
                 ]}
                 onPress={() => {
-                  heroScrollRef.current?.scrollToIndex({ index, animated: true });
+                  animateHeroTo(index);
                 }}
               />
             ))}
