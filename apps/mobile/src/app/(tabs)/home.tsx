@@ -26,7 +26,12 @@ import DriverDashboardScreen from '../driver/dashboard';
 import { AIN_SEFRA_ZONES } from '@/constants/ain-sefra-zones';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const HERO_SLIDE_INTERVAL = SCREEN_WIDTH - spacing.lg * 2 + spacing.xs * 2;
+// The card width and item interval are shared by layout, snapping, offsets, and dots.
+// The 12px trailing peek follows the standard commerce carousel pattern.
+const HERO_CARD_WIDTH = SCREEN_WIDTH - spacing.lg * 2 - spacing.md;
+const HERO_ITEM_MARGIN = spacing.xs;
+const HERO_SLIDE_INTERVAL = HERO_CARD_WIDTH + HERO_ITEM_MARGIN * 2;
+const HERO_LIST_PADDING = spacing.lg + HERO_ITEM_MARGIN;
 const assetUri = (asset: number): string => {
   const resolver = (Image as typeof Image & { resolveAssetSource?: (value: number) => { uri?: string } }).resolveAssetSource;
   return typeof resolver === "function" ? resolver(asset).uri ?? "" : String(asset);
@@ -431,6 +436,8 @@ const HomeScreen = () => {
     const safeIndex = Math.max(0, Math.min(heroSlides.length - 1, index));
     const offset = safeIndex * HERO_SLIDE_INTERVAL;
     const transitionMs = Math.max(150, Math.min(1000, durationOverride ?? heroSettings.transitionMs));
+    activeSlideRef.current = safeIndex;
+    setActiveSlide(safeIndex);
     if (heroSettings.transitionType === "fade") {
       Animated.sequence([
         Animated.timing(heroFadeOpacity, { toValue: 0, duration: Math.max(75, Math.floor(transitionMs / 2)), useNativeDriver: true }),
@@ -1154,13 +1161,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   heroListContent: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: HERO_LIST_PADDING,
   },
   heroSlide: {
-    width: SCREEN_WIDTH - spacing.lg * 2,
+    width: HERO_CARD_WIDTH,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    marginHorizontal: spacing.xs,
+    marginHorizontal: HERO_ITEM_MARGIN,
   },
   heroImageContainer: {
     width: "100%",

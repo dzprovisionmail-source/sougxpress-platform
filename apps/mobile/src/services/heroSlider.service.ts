@@ -35,7 +35,7 @@ export async function getActiveHeroSlides(): Promise<HeroSlide[]> {
       .or(`start_at.is.null,start_at.lte.${now}`)
       .or(`end_at.is.null,end_at.gte.${now}`)
       .order("display_order", { ascending: true })
-      .order("priority", { ascending: false });
+      .order("id", { ascending: false });
 
     if (error) {
       console.error("getActiveHeroSlides error:", error.message);
@@ -57,7 +57,7 @@ export async function getFounderHeroSlides(): Promise<HeroSlide[]> {
       .from("market_hero_slides")
       .select("*")
       .order("display_order", { ascending: true })
-      .order("priority", { ascending: false });
+      .order("id", { ascending: false });
 
     if (error) {
       console.error("getFounderHeroSlides error:", error.message);
