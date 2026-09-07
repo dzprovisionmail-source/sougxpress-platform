@@ -204,6 +204,78 @@ export async function updateHeroSliderSettings(autoRotate: boolean, intervalSeco
   }
 }
 
+export interface SmartHeroSliderSettings {
+  smartMode: boolean;
+  enabledSources: { products: boolean; new_stores: boolean; featured_stores: boolean; promotions: boolean };
+  sourceWeights: { products: number; new_stores: number; featured_stores: number; promotions: number };
+  transitionMs: number;
+}
+
+export const DEFAULT_SMART_HERO_SETTINGS: SmartHeroSliderSettings = {
+  smartMode: false,
+  enabledSources: { products: true, new_stores: true, featured_stores: true, promotions: true },
+  sourceWeights: { products: 40, new_stores: 25, featured_stores: 20, promotions: 15 },
+  transitionMs: 350,
+};
+
+const parseSettingBoolean = (value: unknown, fallback: boolean) => value === true || value === "true" ? true : value === false || value === "false" ? false : fallback;
+const parseSettingNumber = (value: unknown, fallback: number, min: number, max: number) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+};
+
+export async function getSmartHeroSliderSettings(): Promise<SmartHeroSliderSettings> {
+  try {
+    const keys = ["hero_smart_mode", "hero_source_products", "hero_source_new_stores", "hero_source_featured_stores", "hero_source_promotions", "hero_weight_products", "hero_weight_new_stores", "hero_weight_featured_stores", "hero_weight_promotions", "hero_transition_ms"];
+    const { data, error } = await supabase.from("platform_financial_settings").select("key, value").in("key", keys);
+    if (error || !data) return DEFAULT_SMART_HERO_SETTINGS;
+    const values = Object.fromEntries(data.map((row: any) => [row.key, row.value]));
+    return {
+      smartMode: parseSettingBoolean(values.hero_smart_mode, DEFAULT_SMART_HERO_SETTINGS.smartMode),
+      enabledSources: {
+        products: parseSettingBoolean(values.hero_source_products, true),
+        new_stores: parseSettingBoolean(values.hero_source_new_stores, true),
+        featured_stores: parseSettingBoolean(values.hero_source_featured_stores, true),
+        promotions: parseSettingBoolean(values.hero_source_promotions, true),
+      },
+      sourceWeights: {
+        products: parseSettingNumber(values.hero_weight_products, 40, 0, 100),
+        new_stores: parseSettingNumber(values.hero_weight_new_stores, 25, 0, 100),
+        featured_stores: parseSettingNumber(values.hero_weight_featured_stores, 20, 0, 100),
+        promotions: parseSettingNumber(values.hero_weight_promotions, 15, 0, 100),
+      },
+      transitionMs: parseSettingNumber(values.hero_transition_ms, 350, 150, 1000),
+    };
+  } catch (err) {
+    console.error("getSmartHeroSliderSettings error:", err);
+    return DEFAULT_SMART_HERO_SETTINGS;
+  }
+}
+
+export async function updateSmartHeroSliderSettings(settings: SmartHeroSliderSettings): Promise<{ success: boolean; error?: string }> {
+  try {
+    const values: Record<string, string> = {
+      hero_smart_mode: String(settings.smartMode),
+      hero_source_products: String(settings.enabledSources.products),
+      hero_source_new_stores: String(settings.enabledSources.new_stores),
+      hero_source_featured_stores: String(settings.enabledSources.featured_stores),
+      hero_source_promotions: String(settings.enabledSources.promotions),
+      hero_weight_products: String(settings.sourceWeights.products),
+      hero_weight_new_stores: String(settings.sourceWeights.new_stores),
+      hero_weight_featured_stores: String(settings.sourceWeights.featured_stores),
+      hero_weight_promotions: String(settings.sourceWeights.promotions),
+      hero_transition_ms: String(settings.transitionMs),
+    };
+    const results = await Promise.all(Object.entries(values).map(([key, value]) => supabase.from("platform_financial_settings").upsert({ key, value, description: "Smart Hero Slider setting" }, { onConflict: "key" })));
+    const failed = results.find(({ error }) => error);
+    if (failed?.error) throw failed.error;
+    return { success: true };
+  } catch (err: any) {
+    console.error("updateSmartHeroSliderSettings error:", err);
+    return { success: false, error: err.message || "تعذّر حفظ إعدادات Smart Slider" };
+  }
+}
+
 export interface MarketSectionSettings {
   showSpecialOffers: boolean;
   showNewStores: boolean;

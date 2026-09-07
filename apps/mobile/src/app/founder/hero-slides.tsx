@@ -27,6 +27,10 @@ import {
   uploadHeroSlideImage,
   getHeroSliderSettings,
   updateHeroSliderSettings,
+  getSmartHeroSliderSettings,
+  updateSmartHeroSliderSettings,
+  DEFAULT_SMART_HERO_SETTINGS,
+  type SmartHeroSliderSettings,
   type HeroSlide,
 } from "@/services/heroSlider.service";
 
@@ -54,6 +58,7 @@ export default function FounderHeroSlidesScreen() {
   // Rotation settings state
   const [autoRotate, setAutoRotate] = useState(true);
   const [rotationInterval, setRotationInterval] = useState(3);
+  const [smartSettings, setSmartSettings] = useState<SmartHeroSliderSettings>(DEFAULT_SMART_HERO_SETTINGS);
 
   // Store and product selectors for structured hero destinations
   const [allStoresList, setAllStoresList] = useState<any[]>([]);
@@ -81,13 +86,15 @@ export default function FounderHeroSlidesScreen() {
   const loadSlides = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
-    const [data, settings] = await Promise.all([
+    const [data, settings, loadedSmartSettings] = await Promise.all([
       getFounderHeroSlides(),
       getHeroSliderSettings(),
+      getSmartHeroSliderSettings(),
     ]);
     setSlides(data);
     setAutoRotate(settings.autoRotate);
     setRotationInterval(settings.intervalSeconds);
+    setSmartSettings(loadedSmartSettings);
     setLoading(false);
     setRefreshing(false);
   };
@@ -100,6 +107,19 @@ export default function FounderHeroSlidesScreen() {
       Alert.alert("خطأ", res.error || "تعذّر حفظ إعدادات التدوير");
     }
   };
+
+  const handleSaveSmartSettings = async (patch: Partial<SmartHeroSliderSettings>) => {
+    const next = { ...smartSettings, ...patch };
+    setSmartSettings(next);
+    const res = await updateSmartHeroSliderSettings(next);
+    if (!res.success) Alert.alert("خطأ", res.error || "تعذّر حفظ إعدادات Smart Slider");
+  };
+
+  const updateSmartSource = (source: keyof SmartHeroSliderSettings["enabledSources"], enabled: boolean) =>
+    handleSaveSmartSettings({ enabledSources: { ...smartSettings.enabledSources, [source]: enabled } });
+
+  const updateSmartWeight = (source: keyof SmartHeroSliderSettings["sourceWeights"], weight: number) =>
+    handleSaveSmartSettings({ sourceWeights: { ...smartSettings.sourceWeights, [source]: weight } });
 
   useEffect(() => {
     loadSlides();
@@ -302,6 +322,32 @@ export default function FounderHeroSlidesScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
+            </>
+          )}
+        </View>
+
+        <View style={[styles.settingsCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
+          <View style={styles.smartHeaderRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, fontWeight: "700", textAlign: "right" }}>Smart Slider</Text>
+              <Text style={{ color: colors.textSecondary, fontFamily: tokens.typography.families.arabic, fontSize: 12, textAlign: "right", marginTop: 3 }}>محتوى حقيقي يتجدد تلقائيًا من المنتجات والمتاجر وAssets الرسمية</Text>
+            </View>
+            <Switch value={smartSettings.smartMode} onValueChange={(value) => handleSaveSmartSettings({ smartMode: value })} trackColor={{ false: "#767577", true: colors.primary + "88" }} thumbColor={smartSettings.smartMode ? colors.primary : "#f4f3f4"} />
+          </View>
+          {smartSettings.smartMode && (
+            <>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 12 }]}>المصادر ونسبة الظهور</Text>
+              {([["products", "المنتجات الجديدة"], ["new_stores", "المتاجر الجديدة"], ["featured_stores", "المتاجر المميزة"], ["promotions", "إعلانات Soug-XPRESS الرسمية"]] as const).map(([source, label]) => (
+                <View key={source} style={styles.smartSourceRow}>
+                  <Switch value={smartSettings.enabledSources[source]} onValueChange={(value) => updateSmartSource(source, value)} trackColor={{ false: "#767577", true: colors.primary + "88" }} thumbColor={smartSettings.enabledSources[source] ? colors.primary : "#f4f3f4"} />
+                  <Text style={{ flex: 1, color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, textAlign: "right" }}>{label}</Text>
+                  <TextInput value={String(smartSettings.sourceWeights[source])} onChangeText={(value) => updateSmartWeight(source, Number(value.replace(/[^0-9]/g, "")) || 0)} keyboardType="numeric" style={[styles.weightInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]} />
+                  <Text style={{ color: colors.textSecondary }}>%</Text>
+                </View>
+              ))}
+              <TouchableOpacity style={[styles.refreshSmartBtn, { borderColor: colors.primary }]} onPress={() => loadSlides(true)}>
+                <Text style={{ color: colors.primary, fontFamily: tokens.typography.families.arabic, fontWeight: "700" }}>تحديث الاختيارات الآن</Text>
+              </TouchableOpacity>
             </>
           )}
         </View>
@@ -638,6 +684,32 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 16,
+  },
+  smartHeaderRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 10,
+  },
+  smartSourceRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+  },
+  weightInput: {
+    width: 54,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 5,
+    textAlign: "center",
+  },
+  refreshSmartBtn: {
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 9,
+    marginTop: 14,
   },
   listContent: {
     gap: 16,

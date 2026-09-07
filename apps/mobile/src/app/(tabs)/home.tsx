@@ -19,7 +19,8 @@ import useCart from '@/hooks/useCart';
 import { toggleFavorite, getFavoriteIds } from '@/services/favorite.service';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
 import { getAvailableCouriers, vehicleLabel } from '@/services/courierService';
-import { getActiveHeroSlides, getHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
+import { getActiveHeroSlides, getHeroSliderSettings, getSmartHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
+import { getSmartHeroSlides } from '@/services/smartHeroSlider.service';
 import { supabase } from '@/lib/supabase';
 import DriverDashboardScreen from '../driver/dashboard';
 import { AIN_SEFRA_ZONES } from '@/constants/ain-sefra-zones';
@@ -279,9 +280,16 @@ const HomeScreen = () => {
   const fetchHeroContent = useCallback(async () => {
     setHeroLoading(true);
     try {
-      const settings = await getHeroSliderSettings();
+      const [settings, smartSettings] = await Promise.all([getHeroSliderSettings(), getSmartHeroSliderSettings()]);
       setAutoRotate(settings.autoRotate);
       setRotationInterval(settings.intervalSeconds);
+
+      if (smartSettings.smartMode) {
+        const smartSlides = await getSmartHeroSlides(smartSettings, 6);
+        setHeroSlides(smartSlides as HeroSlide[]);
+        setHeroLoading(false);
+        return;
+      }
 
       // 1. Try fetching Founder-managed hero slides from database first
       const dbSlides = await getActiveHeroSlides();
