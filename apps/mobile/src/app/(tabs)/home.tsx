@@ -123,6 +123,7 @@ const HomeScreen = () => {
   const [rotationInterval, setRotationInterval] = useState(3);
   const [heroSettings, setHeroSettings] = useState({ mode: "manual" as "manual" | "smart" | "hybrid", pauseOnTouch: true, resumeDelaySeconds: 4, transitionMs: 350, transitionType: "slide" as "slide" | "fade" });
   const heroResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heroAutoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heroPausedRef = useRef(false);
   const heroFadeOpacity = useRef(new Animated.Value(1)).current;
   const heroOffsetRef = useRef(0);
@@ -327,6 +328,7 @@ const HomeScreen = () => {
   }, [heroSettings.pauseOnTouch, heroSettings.resumeDelaySeconds]);
 
   const animateHeroTo = useCallback((index: number, durationOverride?: number) => {
+    if (heroSlides.length === 0) return;
     const safeIndex = Math.max(0, Math.min(heroSlides.length - 1, index));
     const offset = safeIndex * HERO_SLIDE_INTERVAL;
     const transitionMs = Math.max(150, Math.min(1000, durationOverride ?? heroSettings.transitionMs));
@@ -347,27 +349,48 @@ const HomeScreen = () => {
 
   useEffect(() => () => {
     if (heroResumeTimerRef.current) clearTimeout(heroResumeTimerRef.current);
+    if (heroAutoTimerRef.current) clearTimeout(heroAutoTimerRef.current);
   }, []);
 
+  const heroSlideKey = heroSlides.map((slide) => slide.id).join("|");
   useEffect(() => {
     if (heroSlides.length === 0) return;
-    const safeIndex = Math.min(activeSlideRef.current, heroSlides.length - 1);
-    activeSlideRef.current = safeIndex;
-    setActiveSlide(safeIndex);
-    requestAnimationFrame(() => heroScrollRef.current?.scrollToOffset({ offset: safeIndex * HERO_SLIDE_INTERVAL, animated: false }));
-  }, [heroSlides.length]);
+    activeSlideRef.current = 0;
+    setActiveSlide(0);
+    heroOffsetRef.current = 0;
+    requestAnimationFrame(() => heroScrollRef.current?.scrollToOffset({ offset: 0, animated: false }));
+  }, [heroSlideKey, heroSlides.length]);
 
-  // Automatic hero slider rotation based on settings
+  // Automatic hero slider rotation based on settings. A recursive timeout keeps
+  // the schedule stable across transitions and retries promptly after a pause.
   useEffect(() => {
-    if (!autoRotate || !heroSlides || heroSlides.length <= 1) return;
-    const intervalMs = Math.max(heroSlides[activeSlideRef.current]?.display_duration_seconds ?? rotationInterval, 1) * 1000;
-    const interval = setInterval(() => {
-      if (heroPausedRef.current) return;
-      const next = (activeSlideRef.current + 1) % heroSlides.length;
-      animateHeroTo(next, heroSlides[next]?.transition_duration_ms);
-    }, intervalMs);
-    return () => clearInterval(interval);
-  }, [heroSlides, activeSlide, autoRotate, rotationInterval, animateHeroTo]);
+    if (heroAutoTimerRef.current) clearTimeout(heroAutoTimerRef.current);
+    if (!autoRotate || heroSlides.length <= 1) return;
+
+    let cancelled = false;
+    const scheduleNext = () => {
+      if (cancelled) return;
+      const current = heroSlides[activeSlideRef.current];
+      const delayMs = heroPausedRef.current
+        ? 250
+        : Math.max(current?.display_duration_seconds ?? rotationInterval, 1) * 1000;
+      heroAutoTimerRef.current = setTimeout(() => {
+        if (cancelled) return;
+        if (!heroPausedRef.current) {
+          const next = (activeSlideRef.current + 1) % heroSlides.length;
+          animateHeroTo(next, heroSlides[next]?.transition_duration_ms);
+        }
+        scheduleNext();
+      }, delayMs);
+    };
+
+    scheduleNext();
+    return () => {
+      cancelled = true;
+      if (heroAutoTimerRef.current) clearTimeout(heroAutoTimerRef.current);
+      heroAutoTimerRef.current = null;
+    };
+  }, [heroSlides, autoRotate, rotationInterval, animateHeroTo]);
 
   const handleHeroScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -633,9 +656,11 @@ const HomeScreen = () => {
             keyExtractor={(item) => item.id}
             ListEmptyComponent={heroLoading ? <ActivityIndicator size="small" color={colors.primary} /> : null}
             getItemLayout={(_, index) => ({ length: HERO_SLIDE_INTERVAL, offset: HERO_SLIDE_INTERVAL * index, index })}
-            initialNumToRender={Math.min(MAX_HERO_SLIDES, 6)}
-            maxToRenderPerBatch={Math.min(MAX_HERO_SLIDES, 6)}
-            windowSize={5}
+            initialNumToRender={MAX_HERO_SLIDES}
+            maxToRenderPerBatch={MAX_HERO_SLIDES}
+            windowSize={MAX_HERO_SLIDES}
+            updateCellsBatchingPeriod={0}
+            removeClippedSubviews={false}
             horizontal
             snapToInterval={HERO_SLIDE_INTERVAL}
             snapToAlignment="start"
@@ -646,6 +671,9 @@ const HomeScreen = () => {
             onTouchStart={pauseHeroOnTouch}
             onMomentumScrollBegin={pauseHeroOnTouch}
             onScrollBeginDrag={pauseHeroOnTouch}
+            onScrollToIndexFailed={({ index }) => {
+              requestAnimationFrame(() => heroScrollRef.current?.scrollToOffset({ offset: index * HERO_SLIDE_INTERVAL, animated: false }));
+            }}
             scrollEventThrottle={16}
             contentContainerStyle={styles.heroListContent}
             bounces={false}
