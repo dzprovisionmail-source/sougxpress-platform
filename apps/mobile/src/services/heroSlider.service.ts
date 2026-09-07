@@ -266,7 +266,7 @@ export async function updateSmartHeroSliderSettings(settings: SmartHeroSliderSet
       hero_weight_promotions: String(settings.sourceWeights.promotions),
       hero_transition_ms: String(settings.transitionMs),
     };
-    const results = await Promise.all(Object.entries(values).map(([key, value]) => supabase.from("platform_financial_settings").upsert({ key, value, description: "Smart Hero Slider setting" }, { onConflict: "key" })));
+    const results = await Promise.all(Object.entries(values).map(([key, value]) => supabase.from("platform_financial_settings").update({ value }).eq("key", key)));
     const failed = results.find(({ error }) => error);
     if (failed?.error) throw failed.error;
     return { success: true };
