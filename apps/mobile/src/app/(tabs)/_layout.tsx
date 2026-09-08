@@ -1,6 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Tabs, router, useGlobalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -26,7 +25,6 @@ interface TabConfig {
 }
 
 export default function TabLayout() {
-  const insets = useSafeAreaInsets();
   const { colors, tokens } = useAppTheme();
   const { unreadCount } = useNotifications();
   const [role, setRole] = useState<Role>('guest');
@@ -139,7 +137,7 @@ export default function TabLayout() {
   return (
     <View style={{ flex: 1 }}>
       {isPreviewMode && (
-        <View style={[styles.previewBanner, { backgroundColor: colors.primary, paddingTop: Math.max(insets.top, 8) + 4, paddingBottom: 10, paddingHorizontal: 16 }]}>
+        <View style={[styles.previewBanner, { backgroundColor: colors.primary, paddingTop: 8, paddingBottom: 10, paddingHorizontal: 16 }]}>
           <Text style={[styles.previewText, { fontFamily: tokens.typography.families.arabic }]}>{isSougAdminPreview ? "soug-admin — الحساب الرسمي لمنصة Soug-XPRESS" : "وضع معاينة السوق"}</Text>
           <TouchableOpacity 
             onPress={() => router.replace('/founder')}
@@ -163,9 +161,9 @@ export default function TabLayout() {
             backgroundColor: colors.bgSurface,
             borderTopColor: colors.borderSubtle,
             borderTopWidth: 1,
-            paddingBottom: Math.max(insets.bottom, 8),
+            paddingBottom: 8,
             paddingTop: 7,
-            height: 62 + Math.max(insets.bottom, 8),
+            height: 70,
           },
         }}
       >

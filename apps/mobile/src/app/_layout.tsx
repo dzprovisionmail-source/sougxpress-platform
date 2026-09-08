@@ -6,7 +6,7 @@ LogBox.ignoreLogs([
   "Method getInfoAsync imported from \"expo-file-system\" is deprecated",
 ]);
 import { Stack, useRouter } from "expo-router";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import type * as Notifications from "expo-notifications";
@@ -131,24 +131,26 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="login" />
-          <Stack.Screen name="admin" />
-          <Stack.Screen name="admin/push-diagnostics" />
-          <Stack.Screen name="founder" />
-          <Stack.Screen name="customer-auth" />
-          <Stack.Screen name="merchant-auth" />
-          <Stack.Screen name="driver-auth" />
-          <Stack.Screen name="store-details" />
-          <Stack.Screen name="product-details" />
-          <Stack.Screen name="checkout" />
-          <Stack.Screen name="merchant-orders" />
-          {/* Legacy role trees - kept as hidden to prevent route errors but not used for navigation */}
-          <Stack.Screen name="merchant" />
-          <Stack.Screen name="driver" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
+        <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="admin" />
+            <Stack.Screen name="admin/push-diagnostics" />
+            <Stack.Screen name="founder" />
+            <Stack.Screen name="customer-auth" />
+            <Stack.Screen name="merchant-auth" />
+            <Stack.Screen name="driver-auth" />
+            <Stack.Screen name="store-details" />
+            <Stack.Screen name="product-details" />
+            <Stack.Screen name="checkout" />
+            <Stack.Screen name="merchant-orders" />
+            {/* Legacy role trees - kept as hidden to prevent route errors but not used for navigation */}
+            <Stack.Screen name="merchant" />
+            <Stack.Screen name="driver" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+        </SafeAreaView>
       </ThemeProvider>
     </SafeAreaProvider>
   );
