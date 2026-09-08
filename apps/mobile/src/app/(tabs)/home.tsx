@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Search as SearchIcon, ShoppingCart, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
+import { Search as SearchIcon, ShoppingCart, LayoutGrid, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
 import { LOGO_ICON, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button, BrandWordmark } from '@/components/ui';
@@ -768,13 +768,17 @@ const HomeScreen = () => {
               <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>
 الفئات</Text>
               <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
-                  <TouchableOpacity key="all" onPress={() => { setActiveCategory("all"); setActiveSubcategory("all"); setSubcategories([]); }} style={[styles.categoryItem, { backgroundColor: activeCategory === "all" ? colors.primary + "18" : colors.bgSurface, borderColor: activeCategory === "all" ? colors.primary : colors.borderSubtle }]}>
-                  <StoreIcon color={activeCategory === "all" ? colors.primary : colors.textSecondary} size={iconSizes.default} />
+                  <TouchableOpacity key="all" onPress={() => { setActiveCategory("all"); setActiveSubcategory("all"); setSubcategories([]); }} style={[styles.categoryItem, activeCategory === "all" && styles.categoryItemSelected, { backgroundColor: activeCategory === "all" ? colors.primary + "18" : colors.bgSurface, borderColor: activeCategory === "all" ? colors.primary : colors.borderSubtle }]}>
+                  <View style={[styles.categoryIconFrame, { backgroundColor: activeCategory === "all" ? colors.primary : colors.bgElevated }]}>
+                    <LayoutGrid color={activeCategory === "all" ? colors.textOnBrand : colors.primary} size={20} strokeWidth={2.2} />
+                  </View>
                     <Text numberOfLines={1} style={[styles.categoryText, { color: activeCategory === "all" ? colors.primary : colors.textPrimary }]}>الكل</Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
                 {categories.map((category) => (
-                  <TouchableOpacity key={category.id} onPress={() => handleCategoryPress(category.id)} style={[styles.categoryItem, { backgroundColor: activeCategory === category.id ? colors.primary + "18" : colors.bgSurface, borderColor: activeCategory === category.id ? colors.primary : colors.borderSubtle }]}>
-                    <CategoryIcon category={category.name_ar} size="sm" variant={activeCategory === category.id ? "filled" : "subtle"} />
+                  <TouchableOpacity key={category.id} onPress={() => handleCategoryPress(category.id)} style={[styles.categoryItem, activeCategory === category.id && styles.categoryItemSelected, { backgroundColor: activeCategory === category.id ? colors.primary + "18" : colors.bgSurface, borderColor: activeCategory === category.id ? colors.primary : colors.borderSubtle }]}>
+                    <View style={[styles.categoryIconFrame, { backgroundColor: activeCategory === category.id ? colors.primary : colors.bgElevated }]}>
+                      <CategoryIcon category={category.name_ar} size="sm" variant={activeCategory === category.id ? "plain" : "plain"} color={activeCategory === category.id ? colors.textOnBrand : colors.primary} />
+                    </View>
                     <Text numberOfLines={1} style={[styles.categoryText, { color: activeCategory === category.id ? colors.primary : colors.textPrimary }]}>{category.name_ar}</Text>
                   </TouchableOpacity>
                 ))}
@@ -785,13 +789,17 @@ const HomeScreen = () => {
             {subcategories.length > 0 && (
               <View style={styles.section}>
                 <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
-                  <TouchableOpacity key="all-sub" onPress={() => setActiveSubcategory("all")} style={[styles.categoryItem, { backgroundColor: activeSubcategory === "all" ? colors.primary + "18" : colors.bgSurface, borderColor: activeSubcategory === "all" ? colors.primary : colors.borderSubtle }]}>
-                    <StoreIcon color={activeSubcategory === "all" ? colors.primary : colors.textSecondary} size={iconSizes.default} />
+                  <TouchableOpacity key="all-sub" onPress={() => setActiveSubcategory("all")} style={[styles.categoryItem, activeSubcategory === "all" && styles.categoryItemSelected, { backgroundColor: activeSubcategory === "all" ? colors.primary + "18" : colors.bgSurface, borderColor: activeSubcategory === "all" ? colors.primary : colors.borderSubtle }]}>
+                    <View style={[styles.categoryIconFrame, { backgroundColor: activeSubcategory === "all" ? colors.primary : colors.bgElevated }]}>
+                      <LayoutGrid color={activeSubcategory === "all" ? colors.textOnBrand : colors.primary} size={20} strokeWidth={2.2} />
+                    </View>
                     <Text numberOfLines={1} style={[styles.categoryText, { color: activeSubcategory === "all" ? colors.primary : colors.textPrimary }]}>الكل</Text>
                   </TouchableOpacity>
                   {subcategories.map((sub) => (
-                    <TouchableOpacity key={sub.id} onPress={() => setActiveSubcategory(sub.id)} style={[styles.categoryItem, { backgroundColor: activeSubcategory === sub.id ? colors.primary + "18" : colors.bgSurface, borderColor: activeSubcategory === sub.id ? colors.primary : colors.borderSubtle }]}>
-                      <CategoryIcon category={sub.name_ar} size="sm" variant={activeSubcategory === sub.id ? "filled" : "subtle"} />
+                    <TouchableOpacity key={sub.id} onPress={() => setActiveSubcategory(sub.id)} style={[styles.categoryItem, activeSubcategory === sub.id && styles.categoryItemSelected, { backgroundColor: activeSubcategory === sub.id ? colors.primary + "18" : colors.bgSurface, borderColor: activeSubcategory === sub.id ? colors.primary : colors.borderSubtle }]}>
+                      <View style={[styles.categoryIconFrame, { backgroundColor: activeSubcategory === sub.id ? colors.primary : colors.bgElevated }]}>
+                        <CategoryIcon category={sub.name_ar} size="sm" variant="plain" color={activeSubcategory === sub.id ? colors.textOnBrand : colors.primary} />
+                      </View>
                       <Text numberOfLines={1} style={[styles.categoryText, { color: activeSubcategory === sub.id ? colors.primary : colors.textPrimary }]}>{sub.name_ar}</Text>
                     </TouchableOpacity>
                   ))}
@@ -959,31 +967,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   categoriesContainer: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
     flexDirection: 'row',
-        justifyContent: 'flex-start',
+    alignItems: 'stretch',
+    gap: spacing.sm,
   },
   categoryItem: {
+    width: 76,
+    minHeight: 78,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 66,
-    marginHorizontal: 3,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.medium,
     borderWidth: 1,
-    ...shadows.small,
+  },
+  categoryItemSelected: {
+    borderWidth: 1.5,
+    transform: [{ translateY: -1 }],
+  },
+  categoryIconFrame: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
   },
   categoryText: {
     ...typography.caption,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 10.5,
+    lineHeight: 14,
     fontWeight: '700',
-    marginTop: 3,
-    maxWidth: 92,
+    maxWidth: 70,
     textAlign: 'center',
       },
   horizontalRtl: {
+    direction: 'rtl',
       },
   storesScroll: {
     paddingHorizontal: spacing.lg,

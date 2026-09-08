@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import {
   Utensils,
-  ShoppingBag,
   Carrot,
   Wheat,
   Pill,
@@ -12,7 +11,6 @@ import {
   Sparkles,
   Tag,
   Bike,
-  Store,
   Heart,
   Wallet,
   Bell,
@@ -24,10 +22,22 @@ import {
   AlertTriangle,
   XCircle,
   HelpCircle,
-  LucideIcon
+  CarFront,
+  House,
+  Armchair,
+  BookOpen,
+  BriefcaseBusiness,
+  Baby,
+  PawPrint,
+  Apple,
+  Dumbbell,
+  Leaf,
+  HeartPulse,
+  Gem,
+  Ellipsis,
+  LucideIcon,
 } from 'lucide-react-native';
 import { useAppTheme } from '@/contexts/ThemeContext';
-import { TOKENS } from '@/constants/tokens';
 
 export type CategoryKey =
   | 'restaurant'
@@ -57,16 +67,22 @@ export interface CategoryIconProps {
   style?: StyleProp<ViewStyle>;
 }
 
+/**
+ * A local, stable semantic registry. Matching uses the category label rather
+ * than array position so database reordering or newly inserted categories do
+ * not change the meaning of an icon.
+ */
 const CATEGORY_MAP: Record<string, LucideIcon> = {
-  // Arabic labels
+  // Food and everyday shopping
   'مطاعم': Utensils,
   'مطعم': Utensils,
   'وجبات سريعة': Utensils,
-  'بقالة': ShoppingBag,
-  'سوبرماركت': ShoppingBag,
-  'مواد غذائية': ShoppingBag,
+  'بقالة': Apple,
+  'سوبرماركت': Apple,
+  'مواد غذائية': Apple,
   'خضار وفواكه': Carrot,
   'خضروات': Carrot,
+  'فواكه': Apple,
   'مخبزة': Wheat,
   'حلويات': Wheat,
   'مخبوزات': Wheat,
@@ -75,39 +91,141 @@ const CATEGORY_MAP: Record<string, LucideIcon> = {
   'مقهى': Coffee,
   'كافيه': Coffee,
   'مشروبات': Coffee,
+  restaurant: Utensils,
+  supermarket: Apple,
+  grocery: Apple,
+  vegetables: Carrot,
+  fruit: Apple,
+  bakery: Wheat,
+  pharmacy: Pill,
+  coffee: Coffee,
+
+  // Marketplace categories
+  'سيارات': CarFront,
+  'سيارة': CarFront,
+  'مركبات': CarFront,
+  cars: CarFront,
+  vehicles: CarFront,
+  'عقارات': House,
+  'عقار': House,
+  'منازل': House,
+  'مباني': House,
+  realestate: House,
+  property: House,
   'إلكترونيات': Smartphone,
+  'الكترونيات': Smartphone,
   'هواتف': Smartphone,
   'أجهزة': Smartphone,
+  electronics: Smartphone,
   'ملابس': Shirt,
   'أزياء': Shirt,
   'موضة': Shirt,
+  clothing: Shirt,
+  fashion: Shirt,
+  'منزل': House,
+  'المنزل': House,
+  'أثاث': Armchair,
+  'ديكور': Armchair,
+  home: House,
+  furniture: Armchair,
+  'كتب': BookOpen,
+  'تعليم': BookOpen,
+  'قرطاسية': BookOpen,
+  books: BookOpen,
+  education: BookOpen,
+  'خدمات': BriefcaseBusiness,
+  'خدمة': BriefcaseBusiness,
+  services: BriefcaseBusiness,
+  'أطفال': Baby,
+  'طفل': Baby,
+  'ألعاب': Baby,
+  children: Baby,
+  toys: Baby,
+  'حيوانات أليفة': PawPrint,
+  'حيوانات': PawPrint,
+  'مستلزمات حيوانات': PawPrint,
+  pets: PawPrint,
+  'رياضة': Dumbbell,
+  'رياضة وترفيه': Dumbbell,
+  'ترفيه': Dumbbell,
+  sports: Dumbbell,
+  'جمال': Sparkles,
   'تجميل': Sparkles,
   'عناية شخصية': Sparkles,
+  beauty: Sparkles,
+  'زراعة': Leaf,
+  'حدائق': Leaf,
+  'زراعة وحدائق': Leaf,
+  agriculture: Leaf,
+  gardening: Leaf,
+  'صحة': HeartPulse,
+  'صحة ولياقة': HeartPulse,
+  'لياقة': HeartPulse,
+  health: HeartPulse,
+  fitness: HeartPulse,
+  'مجوهرات': Gem,
+  'مجوهرات وساعات': Gem,
+  'ساعات': Clock,
+  jewelry: Gem,
+  watches: Clock,
   'عروض': Tag,
   'خصومات': Tag,
-  'توصيل': Bike,
-  'طلباتي': Utensils,
-  'المفضلة': Heart,
-  'محفظة': Wallet,
-  'إشعارات': Bell,
+  deals: Tag,
 
-  // English keys
-  'restaurant': Utensils,
-  'supermarket': ShoppingBag,
-  'grocery': ShoppingBag,
-  'vegetables': Carrot,
-  'fruit': Carrot,
-  'bakery': Wheat,
-  'pharmacy': Pill,
-  'coffee': Coffee,
-  'electronics': Smartphone,
-  'clothing': Shirt,
-  'beauty': Sparkles,
-  'deals': Tag,
-  'delivery': Bike,
-  'favorites': Heart,
-  'wallet': Wallet,
-  'notifications': Bell,
+  // App/system labels used by shared cards
+  'توصيل': Bike,
+  delivery: Bike,
+  طلباتي: Utensils,
+  orders: Utensils,
+  المفضلة: Heart,
+  favorites: Heart,
+  محفظة: Wallet,
+  wallet: Wallet,
+  إشعارات: Bell,
+  notifications: Bell,
+  search: Search,
+  filters: SlidersHorizontal,
+  clock: Clock,
+  location: MapPin,
+  success: CheckCircle2,
+  warning: AlertTriangle,
+  error: XCircle,
+  help: HelpCircle,
+  default: Ellipsis,
+};
+
+const CATEGORY_PATTERNS: Array<[string[], LucideIcon]> = [
+  [['سيار', 'مركب', 'car', 'vehicle'], CarFront],
+  [['عقار', 'منزل', 'مبنى', 'property', 'real'], House],
+  [['إلكترون', 'الكترون', 'هاتف', 'جهاز', 'electronic'], Smartphone],
+  [['ملابس', 'أزياء', 'موضة', 'clothing', 'fashion'], Shirt],
+  [['أثاث', 'ديكور', 'furniture'], Armchair],
+  [['كتب', 'تعليم', 'قرطاسي', 'book', 'educat'], BookOpen],
+  [['خدم', 'service'], BriefcaseBusiness],
+  [['طفل', 'أطفال', 'ألعاب', 'child', 'toy'], Baby],
+  [['حيوان', 'حيوانات', 'pet'], PawPrint],
+  [['غذاء', 'غذائي', 'بقال', 'سوبر', 'food', 'grocery'], Apple],
+  [['خضار', 'نبات', 'vegetable'], Carrot],
+  [['فاكه', 'fruit'], Apple],
+  [['رياض', 'ترفيه', 'sport'], Dumbbell],
+  [['جمال', 'تجميل', 'عناية', 'beaut'], Sparkles],
+  [['زراع', 'حدائق', 'garden', 'agric'], Leaf],
+  [['صح', 'لياق', 'health', 'fitness'], HeartPulse],
+  [['مجوهر', 'جوهرة', 'jewel'], Gem],
+  [['ساع', 'watch'], Clock],
+  [['مطع', 'وجبات', 'restaurant'], Utensils],
+  [['مخب', 'حلوي', 'bak'], Wheat],
+  [['صيدل', 'دواء', 'pharm'], Pill],
+  [['مقه', 'كافي', 'مشروب', 'coffee'], Coffee],
+];
+
+const resolveCategoryIcon = (category: string, categoryKey?: CategoryKey): LucideIcon => {
+  const raw = (categoryKey || category).trim();
+  const normalized = raw.toLowerCase();
+  if (CATEGORY_MAP[normalized]) return CATEGORY_MAP[normalized];
+  if (CATEGORY_MAP[raw]) return CATEGORY_MAP[raw];
+  const matched = CATEGORY_PATTERNS.find(([patterns]) => patterns.some((pattern) => normalized.includes(pattern)));
+  return matched?.[1] || CATEGORY_MAP.default;
 };
 
 export const CategoryIcon: React.FC<CategoryIconProps> = ({
@@ -120,8 +238,6 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
   style,
 }) => {
   const { colors } = useAppTheme();
-
-  // Determine icon size
   const getIconSize = (): number => {
     if (typeof size === 'number') return size;
     switch (size) {
@@ -136,27 +252,16 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
 
   const numericSize = getIconSize();
   const containerSize = numericSize * 1.85;
-
-  // Resolve Lucide Icon component
-  const lookupKey = categoryKey || category.trim().toLowerCase();
-  const IconComponent = CATEGORY_MAP[lookupKey] || CATEGORY_MAP[category.trim()] || Store;
-
-  // Icon Color
+  const IconComponent = resolveCategoryIcon(category, categoryKey);
   const iconColor = color || (variant === 'filled' ? colors.textOnBrand : colors.primary);
-
-  // Background Color
   const getBgColor = (): string => {
     if (backgroundColor) return backgroundColor;
     switch (variant) {
-      case 'filled':
-        return colors.primary;
-      case 'subtle':
-        return `${colors.primary}18`; // 10% opacity tint
+      case 'filled': return colors.primary;
+      case 'subtle': return `${colors.primary}18`;
       case 'outlined':
-        return 'transparent';
       case 'plain':
-      default:
-        return 'transparent';
+      default: return 'transparent';
     }
   };
 
@@ -170,10 +275,7 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
           borderRadius: containerSize / 2,
           backgroundColor: getBgColor(),
         },
-        variant === 'outlined' && {
-          borderWidth: 1.5,
-          borderColor: colors.primary,
-        },
+        variant === 'outlined' && { borderWidth: 1.5, borderColor: colors.primary },
         style,
       ]}
     >
