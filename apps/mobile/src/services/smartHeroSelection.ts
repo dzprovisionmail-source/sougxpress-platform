@@ -12,10 +12,12 @@ export interface SmartSelectionSlide {
   display_duration_seconds?: number;
   transition_duration_ms?: number;
   transition_type?: "slide" | "fade";
-  kind: "promotion" | "store" | "product";
+  kind: "promotion" | "store" | "product" | "courier";
   source?: SmartHeroSource;
   smartScore?: number;
   smartReason?: string;
+  rotation_cycle_id?: string;
+  rotation_cycle_started_at?: string;
 }
 
 export type SmartCandidate = SmartSelectionSlide & {
@@ -52,7 +54,16 @@ export const scoreSmartCandidate = (candidate: SmartCandidate, sourceWeight: num
   return freshness + featured + imageQuality + manualPriority + sourceBalance + normalizedFreshness - recencyPenalty - repeatPenalty;
 };
 
-export function selectSmartHeroSlides(candidates: SmartCandidate[], settings: SmartHeroSliderSettings, limit = 6): SmartSelectionSlide[] {
+const cycleTieBreak = (seed: string, value: string): number => {
+  let hash = 2166136261;
+  for (const char of `${seed}:${value}`) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+};
+
+export function selectSmartHeroSlides(candidates: SmartCandidate[], settings: SmartHeroSliderSettings, limit = 12, rotationSeed = "default"): SmartSelectionSlide[] {
   const enabled = new Set(Object.entries(settings.enabledSources).filter(([, value]) => value).map(([key]) => key));
   const available = candidates.filter((candidate) => enabled.has(candidate.source) && validImage(candidate.image) && (settings.maxRepeatCount > 0 || !recentSmartIds.includes(candidate.sourceId)));
   const unique = [...new Map(available.map((candidate) => [candidate.sourceId, candidate])).values()];
@@ -60,7 +71,7 @@ export function selectSmartHeroSlides(candidates: SmartCandidate[], settings: Sm
   const newestAt = Math.max(...unique.map((candidate) => candidate.createdAt), 1);
   const repeatPenaltyWeight = settings.maxRepeatCount > 0 ? 35 / settings.maxRepeatCount : 0;
   const ranked = unique.map((candidate) => ({ candidate, score: scoreSmartCandidate(candidate, settings.sourceWeights[candidate.source] ?? 0, newestAt, now, repeatPenaltyWeight) }))
-    .sort((a, b) => b.score - a.score || b.candidate.createdAt - a.candidate.createdAt || a.candidate.sourceId.localeCompare(b.candidate.sourceId));
+    .sort((a, b) => b.score - a.score || cycleTieBreak(rotationSeed, a.candidate.sourceId) - cycleTieBreak(rotationSeed, b.candidate.sourceId) || b.candidate.createdAt - a.candidate.createdAt);
   const result: SmartCandidate[] = [];
   const sourceCounts = new Map<SmartHeroSource, number>();
   const maxPerSource = Math.max(1, Math.ceil(limit / Math.max(1, new Set(ranked.map(({ candidate }) => candidate.source)).size)) + 1);

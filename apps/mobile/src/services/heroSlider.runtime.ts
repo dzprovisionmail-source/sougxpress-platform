@@ -18,9 +18,11 @@ export interface RuntimeHeroSlide {
   transition_duration_ms?: number;
   transition_type?: "slide" | "fade";
   kind: "alert" | "promotion" | "flash" | "store" | "product" | "courier";
-  source?: "manual" | "products" | "new_stores" | "featured_stores" | "promotions";
+  source?: "manual" | "products" | "new_stores" | "featured_stores" | "promotions" | "couriers";
   smartScore?: number;
   smartReason?: string;
+  rotation_cycle_id?: string;
+  rotation_cycle_started_at?: string;
 }
 
 const hasRenderableImage = (slide: { image?: unknown }) => typeof slide.image === "string" && slide.image.trim().length > 0;
@@ -38,7 +40,7 @@ export const toRuntimeManualSlide = (slide: HeroSlide): RuntimeHeroSlide => ({
   target_id: slide.target_id || undefined,
   target_store_id: slide.target_store_id || undefined,
   target_product_id: slide.target_product_id || undefined,
-  kind: slide.content_type === "store" ? "store" : slide.content_type === "product" ? "product" : "promotion",
+  kind: slide.content_type === "store" ? "store" : slide.content_type === "product" ? "product" : slide.content_type === "courier" ? "courier" : "promotion",
   source: "manual",
   smartScore: slide.priority,
   smartReason: "اختيار يدوي من المؤسس",

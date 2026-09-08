@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   Modal,
 } from "react-native";
 import { router } from "expo-router";
+import { Dimensions } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { Image as ImageIcon, Plus, Trash2, Edit3, ArrowRight, Check, X, Eye, ChevronUp, ChevronDown } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -36,6 +37,10 @@ import {
 } from "@/services/heroSlider.service";
 import { getSmartHeroSlides, type SmartHeroSlide } from "@/services/smartHeroSlider.service";
 import { buildFinalHeroSlides, MAX_HERO_SLIDES } from "@/services/heroSlider.runtime";
+import { getStoredHeroRotationCycle, withCycleMetadata, type HeroRotationCycle } from "@/services/heroRotationCycle";
+
+const FounderCarousel: any = require("react-native-reanimated-carousel").Carousel;
+const FOUNDER_PREVIEW_WIDTH = Dimensions.get("window").width - 64;
 
 export default function FounderHeroSlidesScreen() {
   const { colors, tokens } = useAppTheme();
@@ -67,15 +72,22 @@ export default function FounderHeroSlidesScreen() {
   const [smartSettings, setSmartSettings] = useState<SmartHeroSliderSettings>(DEFAULT_SMART_HERO_SETTINGS);
   const [previewSlides, setPreviewSlides] = useState<SmartHeroSlide[]>([]);
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [previewCycle, setPreviewCycle] = useState<HeroRotationCycle | null>(null);
+  const previewCarouselRef = useRef<{ scrollTo: (options: { index: number; animated?: boolean }) => void }>(null);
 
   // Store and product selectors for structured hero destinations
   const [allStoresList, setAllStoresList] = useState<any[]>([]);
+  const [allCouriersList, setAllCouriersList] = useState<any[]>([]);
   const [storeProductsList, setStoreProductsList] = useState<any[]>([]);
   const [selectedProductStoreId, setSelectedProductStoreId] = useState("");
 
   useEffect(() => {
     supabase.from("stores").select("id, name").eq("status", "active").then(({ data }) => {
       if (data) setAllStoresList(data);
+    });
+    supabase.from("couriers").select("id, full_name, avatar_url").eq("is_available", true).eq("show_on_home", true).eq("is_mock", false).order("display_order", { ascending: true }).then(({ data }) => {
+      if (data) setAllCouriersList(data);
     });
   }, []);
 
@@ -133,8 +145,11 @@ export default function FounderHeroSlidesScreen() {
     handleSaveSmartSettings({ mode, smartMode: mode === "smart" });
 
   const handlePreview = async () => {
-    const smart = smartSettings.mode === "manual" ? [] : await getSmartHeroSlides(smartSettings, MAX_HERO_SLIDES);
-    setPreviewSlides(buildFinalHeroSlides(smartSettings.mode, slides, smart) as SmartHeroSlide[]);
+    const cycle = await getStoredHeroRotationCycle();
+    const smart = smartSettings.mode === "manual" ? [] : await getSmartHeroSlides(smartSettings, MAX_HERO_SLIDES, cycle.seed);
+    setPreviewCycle(cycle);
+    setPreviewIndex(0);
+    setPreviewSlides(withCycleMetadata(buildFinalHeroSlides(smartSettings.mode, slides, smart), cycle) as SmartHeroSlide[]);
     setPreviewVisible(true);
   };
 
@@ -242,6 +257,12 @@ export default function FounderHeroSlidesScreen() {
         return;
       }
       targetProductId = validatedTargetId;
+    } else if (formContentType === 'courier') {
+      if (validatedTargetId && !UUID_REGEX.test(validatedTargetId)) {
+        Alert.alert("خطأ", "معرف الموصل غير صالح (يجب أن يكون UUID)");
+        setSaving(false);
+        return;
+      }
     }
 
     const payload = {
@@ -327,7 +348,7 @@ export default function FounderHeroSlidesScreen() {
             onPress={openCreateModal}
           >
             <Plus size={20} color="#FFF" />
-            <Text style={styles.createBtnText}>شريحة جديدة</Text>
+            <Text style={styles.createBtnText}>CREATE MARKET AD</Text>
           </TouchableOpacity>
         </View>
 
@@ -383,7 +404,15 @@ export default function FounderHeroSlidesScreen() {
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 10 }]}>الحد الأقصى الفعلي: {MAX_HERO_SLIDES} شريحة</Text>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 10 }]}>الحد الأقصى: {smartSettings.maxSlides} / {MAX_HERO_SLIDES} شريحة</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((count) => (
+              <TouchableOpacity key={count} style={[styles.typeChip, { backgroundColor: smartSettings.maxSlides === count ? colors.primary : colors.bgSurface, borderColor: colors.borderSubtle, marginRight: 6 }]} onPress={() => handleSaveSmartSettings({ maxSlides: count })}>
+                <Text style={{ color: smartSettings.maxSlides === count ? "#FFF" : colors.textPrimary }}>{count}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 10 }]}>الدورة الحالية: {previewCycle?.rotation_cycle_id || "00:00–11:59 أو 12:00–23:59"}</Text>
           <View style={styles.smartActionRow}>
             <TouchableOpacity style={[styles.secondaryActionBtn, { borderColor: colors.primary }]} onPress={handlePreview}>
               <Eye size={16} color={colors.primary} />
@@ -396,7 +425,7 @@ export default function FounderHeroSlidesScreen() {
           {smartSettings.mode !== "manual" && (
             <>
               <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 12 }]}>المصادر ونسبة الظهور</Text>
-              {([["products", "المنتجات الجديدة"], ["new_stores", "المتاجر الجديدة"], ["featured_stores", "المتاجر المميزة"], ["promotions", "إعلانات Soug-XPRESS الرسمية"]] as const).map(([source, label]) => (
+              {([["products", "المنتجات الجديدة"], ["new_stores", "المتاجر الجديدة"], ["featured_stores", "المتاجر المميزة"], ["promotions", "إعلانات Soug-XPRESS الرسمية"], ["couriers", "موصل اليوم"]] as const).map(([source, label]) => (
                 <View key={source} style={styles.smartSourceRow}>
                   <Switch value={smartSettings.enabledSources[source]} onValueChange={(value) => updateSmartSource(source, value)} trackColor={{ false: "#767577", true: colors.primary + "88" }} thumbColor={smartSettings.enabledSources[source] ? colors.primary : "#f4f3f4"} />
                   <Text style={{ flex: 1, color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, textAlign: "right" }}>{label}</Text>
@@ -437,18 +466,40 @@ export default function FounderHeroSlidesScreen() {
                 <Text style={[styles.modalTitle, { color: colors.textPrimary, fontFamily: tokens.typography.families.arabic }]}>معاينة ترتيب Smart Slider</Text>
                 <TouchableOpacity onPress={() => setPreviewVisible(false)}><X size={24} color={colors.textSecondary} /></TouchableOpacity>
               </View>
-              <ScrollView contentContainerStyle={{ gap: 10 }}>
-                {previewSlides.map((slide, index) => (
-                  <View key={`${slide.id}-${index}`} style={[styles.previewRow, { borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }]}>
-                    <Text style={{ color: colors.primary, fontWeight: "800" }}>{String(index + 1).padStart(2, "0")}</Text>
-                    <Image source={{ uri: slide.image }} style={styles.previewImage} />
-                    <View style={{ flex: 1, alignItems: "flex-end" }}>
-                      <Text style={{ color: colors.textPrimary, fontFamily: tokens.typography.families.arabic, fontWeight: "700" }} numberOfLines={1}>{slide.title}</Text>
-                      <Text style={{ color: colors.textSecondary, fontSize: 11, textAlign: "right" }}>{slide.smartReason || "اختيار يدوي"} {slide.smartScore !== undefined ? `• ${slide.smartScore}` : ""}</Text>
-                    </View>
+              {previewSlides.length > 0 ? (
+                <>
+                  <FounderCarousel
+                    data={previewSlides}
+                    ref={previewCarouselRef}
+                    width={FOUNDER_PREVIEW_WIDTH}
+                    height={190}
+                    loop={false}
+                    autoplay={false}
+                    renderItem={({ item }: { item: SmartHeroSlide }) => (
+                      <View style={[styles.previewCarouselCard, { backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
+                        <Image source={{ uri: item.image }} style={styles.previewCarouselImage} />
+                        <View style={styles.previewCarouselOverlay}>
+                          <Text style={styles.previewCarouselTitle} numberOfLines={1}>{item.title}</Text>
+                          <Text style={styles.previewCarouselDescription} numberOfLines={1}>{item.description}</Text>
+                        </View>
+                      </View>
+                    )}
+                    onSnapToItem={setPreviewIndex}
+                    testID="founder-smart-slider-preview"
+                  />
+                  <View style={styles.dotsContainer}>
+                    {previewSlides.map((slide, index) => (
+                      <TouchableOpacity key={`${slide.id}-dot`} testID={`founder-preview-dot-${index + 1}`} onPress={() => previewCarouselRef.current?.scrollTo({ index, animated: true })} style={[styles.dot, { backgroundColor: previewIndex === index ? colors.primary : colors.borderSubtle }]} />
+                    ))}
                   </View>
-                ))}
-              </ScrollView>
+                  <View style={[styles.previewDiagnostics, { borderColor: colors.borderSubtle }]}>
+                    <Text style={{ color: colors.textPrimary }}>الشريحة {previewIndex + 1} / {previewSlides.length}</Text>
+                    <Text style={{ color: colors.textSecondary }}>المصدر: {previewSlides[previewIndex]?.source || "manual"} · Smart Score: {previewSlides[previewIndex]?.smartScore ?? "—"}</Text>
+                    <Text style={{ color: colors.textSecondary }}>الأولوية: {previewSlides[previewIndex]?.smartScore ?? 0} · السبب: {previewSlides[previewIndex]?.smartReason || "اختيار يدوي"}</Text>
+                    <Text style={{ color: colors.textSecondary }}>الدورة: {previewCycle?.rotation_cycle_id || "—"} · المدة: {previewSlides[previewIndex]?.display_duration_seconds ?? rotationInterval} ث</Text>
+                  </View>
+                </>
+              ) : <Text style={{ color: colors.textSecondary, textAlign: "center" }}>لا توجد شرائح للمعاينة</Text>}
             </View>
           </View>
         </Modal>
@@ -592,7 +643,7 @@ export default function FounderHeroSlidesScreen() {
 
                 <Text style={styles.inputLabel}>نوع المحتوى (Content Type)</Text>
                 <View style={styles.typeRow}>
-                  {(["custom", "promotion", "store", "product"] as const).map((t) => (
+                  {(["custom", "promotion", "store", "product", "courier"] as const).map((t) => (
                     <TouchableOpacity
                       key={t}
                       style={[
@@ -683,7 +734,20 @@ export default function FounderHeroSlidesScreen() {
                   </>
                 )}
 
-                {formContentType !== "store" && formContentType !== "product" && (
+                {formContentType === "courier" && (
+                  <>
+                    <Text style={styles.inputLabel}>اختر الموصل</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                      {allCouriersList.map((courier) => (
+                        <TouchableOpacity key={courier.id} style={[styles.typeChip, { backgroundColor: formTargetId === courier.id ? colors.primary : colors.bgElevated, borderColor: formTargetId === courier.id ? colors.primary : colors.borderSubtle, marginRight: 8 }]} onPress={() => setFormTargetId(courier.id)}>
+                          <Text style={{ color: formTargetId === courier.id ? "#FFF" : colors.textPrimary, fontSize: 12 }}>{courier.full_name}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
+
+                {formContentType !== "store" && formContentType !== "product" && formContentType !== "courier" && (
                   <>
                     <Text style={styles.inputLabel}>معرف الهدف (اختياري)</Text>
                     <TextInput
@@ -883,6 +947,55 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 6,
     backgroundColor: "#E5E7EB",
+  },
+  previewCarouselCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  previewCarouselImage: {
+    width: "100%",
+    height: "100%",
+  },
+  previewCarouselOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: 12,
+    backgroundColor: "rgba(0,0,0,0.58)",
+  },
+  previewCarouselTitle: {
+    color: "#FFF",
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  previewCarouselDescription: {
+    color: "#F3F4F6",
+    fontSize: 12,
+    textAlign: "right",
+    marginTop: 3,
+  },
+  dotsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 5,
+    marginVertical: 10,
+    flexWrap: "wrap",
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  previewDiagnostics: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    gap: 5,
+    alignItems: "flex-end",
   },
   listContent: {
     gap: 16,
