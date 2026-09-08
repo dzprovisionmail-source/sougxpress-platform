@@ -22,6 +22,7 @@ import { getAvailableCouriers } from '@/services/courierService';
 import { getActiveHeroSlides, getHeroSliderSettings, getSmartHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
 import { getSmartHeroSlides } from '@/services/smartHeroSlider.service';
 import { buildFinalHeroSlides, normalizeRuntimeSlides, MAX_HERO_SLIDES, type RuntimeHeroSlide as HeroSlide } from '@/services/heroSlider.runtime';
+import { getStoreRotationSessionSeed, rotateNearbyStores, rotateStores, rotateWithinZoneGroups } from '@/services/storeRotation';
 import { supabase } from '@/lib/supabase';
 import DriverDashboardScreen from '../driver/dashboard';
 import { AIN_SEFRA_ZONES } from '@/constants/ain-sefra-zones';
@@ -107,6 +108,7 @@ const HomeScreen = () => {
   const { itemCount } = useCart();
   const [isGuest, setIsGuest] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [storeRotationSeed, setStoreRotationSeed] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [favoriteStoreIds, setFavoriteStoreIds] = useState<string[]>([]);
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
@@ -136,6 +138,11 @@ const HomeScreen = () => {
 
   useEffect(() => {
     checkAuth();
+    const { data: authSubscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user;
+      setIsGuest(!user);
+      setStoreRotationSeed(getStoreRotationSessionSeed(user?.id));
+    });
     getActiveCategories().then((cats) => {
       setCategories(cats);
     });
@@ -147,6 +154,7 @@ const HomeScreen = () => {
     getMarketSectionSettings().then((res) => {
       setMarketSections(res);
     });
+    return () => authSubscription.subscription.unsubscribe();
   }, []);
 
   const fetchFavorites = async () => {
@@ -182,6 +190,7 @@ const HomeScreen = () => {
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setIsGuest(!user);
+    setStoreRotationSeed(getStoreRotationSessionSeed(user?.id));
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
@@ -552,18 +561,26 @@ const HomeScreen = () => {
   const displayedStores = searchQuery.length > 0 ? searchResults.stores : filteredStores;
   const platformProfiles = searchQuery.length > 0 ? searchResults.platformProfiles : [];
   const featuredStores = useMemo(
-    () => displayedStores.filter((store: any) => store.is_featured === true && store.status === "active"),
-    [displayedStores],
+    () => rotateStores(
+      displayedStores.filter((store: any) => store.is_featured === true && store.status === "active"),
+      storeRotationSeed,
+      "featured",
+    ),
+    [displayedStores, storeRotationSeed],
   );
   const newStores = useMemo(
-    () => [...displayedStores].sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()),
-    [displayedStores],
+    () => rotateStores(
+      [...displayedStores].sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()),
+      storeRotationSeed,
+      "new",
+    ),
+    [displayedStores, storeRotationSeed],
   );
   const nearbyStores = useMemo(() => {
     const stores = [...displayedStores];
     const { zoneId, latitude, longitude } = customerLocation;
     if (latitude !== null && longitude !== null) {
-      return stores.sort((a: any, b: any) => {
+      const distanceSorted = stores.sort((a: any, b: any) => {
         const aLat = toFiniteCoordinate(a.latitude);
         const aLon = toFiniteCoordinate(a.longitude);
         const bLat = toFiniteCoordinate(b.latitude);
@@ -572,17 +589,23 @@ const HomeScreen = () => {
         const bDistance = bLat !== null && bLon !== null ? distanceInKm(latitude, longitude, bLat, bLon) : Number.POSITIVE_INFINITY;
         return aDistance - bDistance;
       });
+      return rotateNearbyStores(distanceSorted, storeRotationSeed, { zoneId, latitude, longitude });
     }
     if (zoneId) {
-      return stores.sort((a: any, b: any) => {
+      const zoneSorted = stores.sort((a: any, b: any) => {
         const aSameZone = a.zone_id === zoneId ? 0 : 1;
         const bSameZone = b.zone_id === zoneId ? 0 : 1;
         if (aSameZone !== bSameZone) return aSameZone - bSameZone;
         return zoneOrder(zoneNames[a.zone_id]) - zoneOrder(zoneNames[b.zone_id]);
       });
+      return rotateWithinZoneGroups(zoneSorted, storeRotationSeed);
     }
-    return stores;
-  }, [displayedStores, customerLocation, zoneNames]);
+    return rotateStores(stores, storeRotationSeed, "nearby-no-location");
+  }, [displayedStores, customerLocation, zoneNames, storeRotationSeed]);
+  const allStoresForMarket = useMemo(
+    () => rotateStores(displayedStores, storeRotationSeed, "all"),
+    [displayedStores, storeRotationSeed],
+  );
   const loading = storesLoading || searchLoading || newStoresLoading;
   const error = storesError;
   const openMarketSection = (section: 'featured' | 'new' | 'nearby' | 'all') => {
@@ -883,7 +906,7 @@ const HomeScreen = () => {
                 </View>
                 <View style={[styles.section, styles.lastStoreSection]}>
                   <View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>كل المتاجر</Text><TouchableOpacity onPress={() => openMarketSection('all')}><Text style={[styles.showAllText, { color: colors.primary }]}>إظهار الكل</Text></TouchableOpacity></View>
-                  <ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{displayedStores.slice(0, 4).map((store) => renderStore(store))}</ScrollView>
+                  <ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{allStoresForMarket.slice(0, 4).map((store) => renderStore(store))}</ScrollView>
                 </View>
                 {products.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المنتجات</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأحدث</Text></View><ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.productHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{products.slice(0, 9).map(renderProduct)}</ScrollView></View>}
                 {mostLikedProducts.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>الأكثر إعجابًا</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأكثر تفضيلًا</Text></View><ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.productHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{mostLikedProducts.slice(0, 9).map(renderProduct)}</ScrollView></View>}
