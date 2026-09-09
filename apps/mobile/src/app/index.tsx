@@ -158,11 +158,18 @@ export default function EntryScreen() {
       >
               {/* Official Logo */}
         <View style={styles.logoArea}>
-          <Image
-            source={LOGO_OFFICIAL_WORDMARK}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
+          <TouchableOpacity
+            activeOpacity={1}
+            delayLongPress={6000}
+            onLongPress={openFounderDialog}
+            accessible={false}
+          >
+            <Image
+              source={LOGO_OFFICIAL_WORDMARK}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Slogan */}
@@ -196,11 +203,9 @@ export default function EntryScreen() {
         {/* Footer */}
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.footerTextContainer}>
-            <TouchableOpacity onPress={openFounderDialog} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={[styles.footerText, { color: colors.textPrimary }]}>
-                Soug-XPRESS
-              </Text>
-            </TouchableOpacity>
+            <Text style={[styles.footerText, { color: colors.textPrimary }]}>
+              Soug-XPRESS
+            </Text>
             <Text style={[styles.footerText, { color: colors.textDisabled }]}>
               {" "}— منصة التجارة المحلية الأولى في عين صفراء
             </Text>
