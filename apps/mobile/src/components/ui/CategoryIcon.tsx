@@ -220,7 +220,7 @@ const CATEGORY_PATTERNS: Array<[string[], LucideIcon]> = [
 ];
 
 const resolveCategoryIcon = (category: string, categoryKey?: CategoryKey): LucideIcon => {
-  const raw = (categoryKey || category).trim();
+  const raw = String(categoryKey || category || '').trim();
   const normalized = raw.toLowerCase();
   if (CATEGORY_MAP[normalized]) return CATEGORY_MAP[normalized];
   if (CATEGORY_MAP[raw]) return CATEGORY_MAP[raw];
