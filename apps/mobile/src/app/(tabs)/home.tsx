@@ -2,7 +2,7 @@ import { useMarketPresence } from "@/hooks/useMarketPresence";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 type CarouselRef = { scrollTo: (options: { index: number; animated?: boolean }) => void };
 const ReanimatedCarousel = require('react-native-reanimated-carousel').Carousel as React.ComponentType<any>;
 import { Search as SearchIcon, ShoppingCart, LayoutGrid, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
@@ -142,6 +142,11 @@ const HomeScreen = () => {
     showAllStores: true,
   });
 
+  useFocusEffect(useCallback(() => {
+    marketDebug('HomeScreen focus');
+    return () => marketDebug('HomeScreen blur');
+  }, []));
+
   useEffect(() => {
     marketDebug('HomeScreen mount');
     checkAuth();
@@ -225,15 +230,18 @@ const HomeScreen = () => {
   };
 
   const fetchProducts = async () => {
+    marketDebug('fetchProducts:start');
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("products")
         .select("id, name, description, image_url, price_minor, store_id, created_at, stores(name)")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(10);
+      marketDebug('fetchProducts:result', { length: data?.length ?? 0, error: error?.message ?? null });
       setProducts(data || []);
     } catch (e) {
+      marketDebug('fetchProducts:error', e instanceof Error ? e.message : String(e));
       console.error("Error fetching products:", e);
     }
   };
@@ -584,6 +592,32 @@ const HomeScreen = () => {
       displayedStores: displayedStores.length,
     });
   }, [filteredStores.length, displayedStores.length]);
+
+  useEffect(() => {
+    marketDebug('products.length', products.length);
+  }, [products.length]);
+
+  useEffect(() => {
+    marketDebug('userRole/isGuest', { userRole, isGuest });
+  }, [userRole, isGuest]);
+
+  useEffect(() => {
+    marketDebug('marketSections', marketSections);
+  }, [marketSections]);
+
+  marketDebug('HomeScreen render snapshot', {
+    categories: categories.length,
+    allStores: allStores.length,
+    products: products.length,
+    mostLikedProducts: mostLikedProducts.length,
+    filteredStores: filteredStores.length,
+    displayedStores: displayedStores.length,
+    storesLoading,
+    storesError,
+    activeCategory,
+    searchQuery,
+  });
+
   const featuredStores = useMemo(
     () => rotateStores(
       displayedStores.filter((store: any) => store.is_featured === true && store.status === "active"),
@@ -641,7 +675,10 @@ const HomeScreen = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.fullContainer, { backgroundColor: colors.bgBase,  }]}>
+    <SafeAreaView
+      style={[styles.fullContainer, { backgroundColor: colors.bgBase,  }]}
+      onLayout={(event) => marketDebug('HomeScreen SafeAreaView layout', event.nativeEvent.layout)}
+    >
       <StatusBar barStyle="dark-content" />
       <Stack.Screen
         options={{
@@ -668,6 +705,8 @@ const HomeScreen = () => {
       <ScrollView
         style={[styles.container, { backgroundColor: colors.bgBase }]}
         contentContainerStyle={styles.pageContent}
+        onLayout={(event) => marketDebug('Market ScrollView layout', event.nativeEvent.layout)}
+        onContentSizeChange={(width, height) => marketDebug('Market ScrollView content size', { width, height })}
         nestedScrollEnabled
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -798,7 +837,10 @@ const HomeScreen = () => {
 
         <>
             {/* Categories */}
-            <View style={styles.section}>
+            <View
+              style={styles.section}
+              onLayout={(event) => marketDebug('Categories section layout', event.nativeEvent.layout)}
+            >
               <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>
 الفئات</Text>
               <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
