@@ -771,8 +771,7 @@ const HomeScreen = () => {
           </View>
         )}
 
-        {!loading && !error && (
-          <>
+        <>
             {/* Categories */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>
@@ -903,8 +902,7 @@ const HomeScreen = () => {
                 </View>
               </>;
             })()}
-          </>
-        )}
+        </>
       </ScrollView>
     </SafeAreaView>
   );
