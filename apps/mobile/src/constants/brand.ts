@@ -135,12 +135,6 @@ export const ICON_SUPPORT_3D = require("../../assets/brand/support_3d.png");
 export const ICON_MASCOT_HEAD = require("../../assets/brand/mascot_head.png");
 export const ICON_MASCOT_SCOOTER = require("../../assets/brand/mascot_scooter.png");
 
-// ─── Advertising Banners ──────────────────────────────────────────────────────────
-
-export const BANNER_FRESH = require("../../assets/brand/banner_fresh.png");
-export const BANNER_BAKERY = require("../../assets/brand/banner_bakery.png");
-export const BANNER_DELIVERY = require("../../assets/brand/banner_delivery.png");
-
 // ─── Brand Usage Rules ────────────────────────────────────────────────────────────
 
 /**

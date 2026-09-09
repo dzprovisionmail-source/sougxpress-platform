@@ -550,7 +550,7 @@ export default function FounderControlCenterScreen() {
             <QuickAction label="نشاط المنصة" icon={<Activity size={18} color={blue} />} accentColor={blue} onPress={() => router.push("/founder/activity-control" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="من في السوق الآن" icon={<Activity size={18} color={success} />} accentColor={success} onPress={() => router.push("/founder/market-presence" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="إدارة المشاهدات" icon={<Eye size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/views-management" as never)} colors={colors} tokens={tokens} />
-            <QuickAction label="إدارة Slider السوق" icon={<Megaphone size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/hero-slides" as never)} colors={colors} tokens={tokens} />
+            <QuickAction label="إدارة Hero السوق" icon={<Megaphone size={18} color={primary} />} accentColor={primary} onPress={() => router.push("/founder/hero-slides" as never)} colors={colors} tokens={tokens} />
             <QuickAction label="الدخول إلى السوق باسم soug-admin" icon={<Store size={18} color={blue} />} accentColor={blue} onPress={() => router.push({ pathname: "/(tabs)/home", params: { preview: "1", identity: "soug-admin" } } as never)} colors={colors} tokens={tokens} />
           </View>
         </SectionBlock>
@@ -565,12 +565,12 @@ export default function FounderControlCenterScreen() {
             <NavTile label="المحادثات" icon={<MessageSquare size={20} color={primary} />} onPress={() => router.push("/founder/chat-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="النشاط" icon={<Activity size={20} color={primary} />} onPress={() => router.push("/founder/activity-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="إدارة المشاهدات" icon={<Eye size={20} color={primary} />} onPress={() => router.push("/founder/views-management" as never)} colors={colors} tokens={tokens} />
+            <NavTile label="إدارة Hero السوق" icon={<Megaphone size={20} color={primary} />} onPress={() => router.push("/founder/hero-slides" as never)} colors={colors} tokens={tokens} />
             <NavTile label="الزبائن" icon={<Users size={20} color={primary} />} onPress={() => router.push("/founder/customers-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="التجار" icon={<Store size={20} color={primary} />} onPress={() => router.push("/founder/merchants-control" as never)} colors={colors} tokens={tokens} />
             <NavTile label="إدارة موصلين السوق" icon={<Truck size={20} color={primary} />} onPress={() => router.push("/founder/couriers" as never)} colors={colors} tokens={tokens} />
             <NavTile label="حسابات الموصلين" icon={<Users size={20} color={primary} />} onPress={() => router.push("/founder/users/drivers" as never)} colors={colors} tokens={tokens} />
             <NavTile label="المالية" icon={<DollarSign size={20} color={primary} />} onPress={() => router.push("/founder/finance" as never)} colors={colors} tokens={tokens} />
-            <NavTile label="إدارة Slider السوق" icon={<Megaphone size={20} color={primary} />} onPress={() => router.push("/founder/hero-slides" as never)} colors={colors} tokens={tokens} />
             <NavTile label="المحتوى" icon={<FileText size={20} color={primary} />} onPress={() => router.push("/founder/content" as never)} colors={colors} tokens={tokens} />
             <NavTile label="الإعدادات" icon={<Settings size={20} color={primary} />} onPress={() => router.push("/founder/settings" as never)} colors={colors} tokens={tokens} />
           </View>

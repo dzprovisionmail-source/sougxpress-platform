@@ -7,7 +7,7 @@ const tests = [
   "tests/facebook-url.test.ts",
   "tests/store-hours.test.ts",
   "tests/store-rotation.test.ts",
-  "tests/hero-carousel-rebuild.test.ts",
+  "tests/market-hero.test.ts",
 ];
 
 for (const test of tests) {

@@ -18,7 +18,7 @@ import {
   getMarketSectionSettings,
   updateMarketSectionSettings,
   type MarketSectionSettings,
-} from "@/services/heroSlider.service";
+} from "@/services/market-section.service";
 
 export default function FounderMarketSettingsScreen() {
   const { colors, tokens } = useAppTheme();

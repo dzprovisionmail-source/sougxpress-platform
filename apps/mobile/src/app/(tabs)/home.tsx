@@ -1,12 +1,10 @@
 import { useMarketPresence } from "@/hooks/useMarketPresence";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-type CarouselRef = { scrollTo: (options: { index: number; animated?: boolean }) => void };
-const ReanimatedCarousel = require('react-native-reanimated-carousel').Carousel as React.ComponentType<any>;
 import { Search as SearchIcon, ShoppingCart, LayoutGrid, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
-import { LOGO_ICON, ICON_MASCOT_HEAD, BANNER_FRESH, BANNER_BAKERY, BANNER_DELIVERY } from '@/constants/brand';
+import { LOGO_ICON, ICON_MASCOT_HEAD } from '@/constants/brand';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button, BrandWordmark } from '@/components/ui';
 import { useAppTheme } from '@/contexts/ThemeContext';
@@ -21,30 +19,18 @@ import useCart from '@/hooks/useCart';
 import { toggleFavorite, getFavoriteIds } from '@/services/favorite.service';
 import { getActiveCategories, getActiveSubcategories } from '@/services/category.service';
 import { getAvailableCouriers } from '@/services/courierService';
-import { getActiveHeroSlides, getHeroSliderSettings, getSmartHeroSliderSettings, getMarketSectionSettings, MarketSectionSettings } from '@/services/heroSlider.service';
-import { getSmartHeroSlides } from '@/services/smartHeroSlider.service';
-import { buildFinalHeroSlides, normalizeRuntimeSlides, MAX_HERO_SLIDES, type RuntimeHeroSlide as HeroSlide } from '@/services/heroSlider.runtime';
+import { getMarketSectionSettings, type MarketSectionSettings } from '@/services/market-section.service';
 import { getStoreRotationSessionSeed, rotateNearbyStores, rotateStores, rotateWithinZoneGroups } from '@/services/storeRotation';
-import { getStoredHeroRotationCycle, withCycleMetadata, type HeroRotationCycle } from '@/services/heroRotationCycle';
 import { supabase } from '@/lib/supabase';
 import DriverDashboardScreen from '../driver/dashboard';
 import { AIN_SEFRA_ZONES } from '@/constants/ain-sefra-zones';
+import { MarketHeroSlider } from '@/components/market/hero/MarketHeroSlider';
+import type { HeroSlide } from '@/components/market/hero/hero.types';
+import { isSafeExternalUrl, isSafeScreenPath } from '@/components/market/hero/hero.utils';
+import { useMarketHeroSlides } from '@/hooks/useMarketHeroSlides';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const Carousel = ReanimatedCarousel as any;
-// The card width and item interval are shared by layout, snapping, offsets, and dots.
-// The 12px trailing peek follows the standard commerce carousel pattern.
-const HERO_CARD_WIDTH = SCREEN_WIDTH - spacing.lg * 2 - spacing.md;
-const HERO_ITEM_MARGIN = spacing.xs;
-const HERO_SLIDE_INTERVAL = HERO_CARD_WIDTH + HERO_ITEM_MARGIN * 2;
-const HERO_LIST_PADDING = spacing.lg + HERO_ITEM_MARGIN;
-const HERO_VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 60 };
 const marketDebug = (...args: unknown[]) => console.log('[MARKET-DEBUG]', new Date().toISOString(), ...args);
-const assetUri = (asset: number): string => {
-  const resolver = (Image as typeof Image & { resolveAssetSource?: (value: number) => { uri?: string } }).resolveAssetSource;
-  return typeof resolver === "function" ? resolver(asset).uri ?? "" : String(asset);
-};
-
 const toFiniteCoordinate = (value: unknown): number | null => {
   const numberValue = typeof value === "number" ? value : Number(value);
   return Number.isFinite(numberValue) ? numberValue : null;
@@ -65,35 +51,6 @@ const zoneOrder = (zoneName?: string | null): number => {
   const index = AIN_SEFRA_ZONES.findIndex((name) => name === zoneName);
   return index === -1 ? AIN_SEFRA_ZONES.length + 1 : index;
 };
-
-const HERO_SLIDES_TEMPLATES: Omit<HeroSlide, "storeId" | "storeName">[] = [
-  {
-    id: "1",
-    image: assetUri(BANNER_FRESH),
-    title: "عروض الأسبوع",
-    description: "خصومات حصرية على الخضروات والفواكه الطازجة",
-    buttonLabel: "تسوق الآن",
-    kind: "promotion",
-  },
-  {
-    id: "2",
-    image: assetUri(BANNER_BAKERY),
-    title: "متجر جديد في السوق",
-    description: "مخبزة السعادة تفتح أبوابها — خبز طازج يومياً",
-    buttonLabel: "اكتشف المتجر",
-    kind: "store",
-  },
-  {
-    id: "3",
-    image: assetUri(BANNER_DELIVERY),
-    title: "توصيل مجاني",
-    description: "لأول طلب لك — يوصلك لبابك بدون رسوم",
-    buttonLabel: "اطلب الآن",
-    kind: "promotion",
-  },
-];
-
-const HERO_STORE_TITLES = ["سوبر ماركت الوفاء", "مخبزة السعادة", "واحة عين صفراء"];
 
 const HomeScreen = () => {
   const router = useRouter();
@@ -122,25 +79,12 @@ const HomeScreen = () => {
   const [mostLikedProducts, setMostLikedProducts] = useState<any[]>([]);
   const [availableCourierCount, setAvailableCourierCount] = useState(0);
 
-  const [activeSlide, setActiveSlide] = useState(0);
-  const activeSlideRef = useRef(0);
-  const heroScrollRef = useRef<CarouselRef>(null);
-  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
-  const [heroLoading, setHeroLoading] = useState(true);
-  const [heroCycle, setHeroCycle] = useState<HeroRotationCycle | null>(null);
-  const [autoRotate, setAutoRotate] = useState(true);
-  const [rotationInterval, setRotationInterval] = useState(3);
-  const [heroSettings, setHeroSettings] = useState({ mode: "manual" as "manual" | "smart" | "hybrid", pauseOnTouch: true, resumeDelaySeconds: 4, transitionMs: 350, transitionType: "slide" as "slide" | "fade" });
-  const heroResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const heroAutoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const heroPausedRef = useRef(false);
-  const heroFadeOpacity = useRef(new Animated.Value(1)).current;
-  const heroOffsetRef = useRef(0);
   const [marketSections, setMarketSections] = useState<MarketSectionSettings>({
     showSpecialOffers: true,
     showNewStores: true,
     showAllStores: true,
   });
+  const { slides: heroSlides } = useMarketHeroSlides();
 
   useFocusEffect(useCallback(() => {
     marketDebug('HomeScreen focus');
@@ -316,230 +260,33 @@ const HomeScreen = () => {
     });
   };
 
+  const handleHeroPress = (slide: HeroSlide) => {
+    if (slide.targetType === "STORE" && slide.targetId) {
+      router.push({ pathname: "/store-details", params: { id: slide.targetId, ...marketContextParams } });
+      return;
+    }
+    if (slide.targetType === "PRODUCT" && slide.targetId) {
+      router.push({ pathname: "/product-details", params: { id: slide.targetId, ...marketContextParams } });
+      return;
+    }
+    if (slide.targetType === "CATEGORY" && slide.targetId) {
+      router.push({ pathname: "/market-section", params: { category: slide.targetId, ...marketContextParams } });
+      return;
+    }
+    if (slide.targetType === "SCREEN" && isSafeScreenPath(slide.targetId)) {
+      router.push(slide.targetId as never);
+      return;
+    }
+    if (slide.targetType === "URL" && isSafeExternalUrl(slide.targetUrl)) {
+      void Linking.openURL(slide.targetUrl).catch(() => undefined);
+    }
+  };
+
   const storesMap = useMemo(() => {
     const map = new Map<string, any>();
     allStores.forEach((s) => map.set(s.id, s));
     return map;
   }, [allStores]);
-
-  const fetchHeroContent = useCallback(async () => {
-    setHeroLoading(true);
-    try {
-      const [settings, smartSettings, cycle] = await Promise.all([getHeroSliderSettings(), getSmartHeroSliderSettings(), getStoredHeroRotationCycle()]);
-      setHeroCycle(cycle);
-      setAutoRotate(settings.autoRotate);
-      setRotationInterval(settings.intervalSeconds);
-      const mode = smartSettings.mode || (smartSettings.smartMode ? "smart" : "manual");
-      setHeroSettings({ mode, pauseOnTouch: smartSettings.pauseOnTouch, resumeDelaySeconds: smartSettings.resumeDelaySeconds, transitionMs: smartSettings.transitionMs, transitionType: smartSettings.transitionType });
-      const [dbSlides, smartSlides] = await Promise.all([
-        getActiveHeroSlides(),
-        mode === "manual" ? Promise.resolve([]) : getSmartHeroSlides(smartSettings, MAX_HERO_SLIDES, cycle.seed),
-      ]);
-      const finalSlides = withCycleMetadata(normalizeRuntimeSlides(buildFinalHeroSlides(mode, dbSlides, smartSlides)), cycle);
-      if (finalSlides.length > 0) {
-        setHeroSlides(finalSlides);
-        return;
-      }
-
-      if (mode !== "manual") {
-        setHeroSlides(HERO_SLIDES_TEMPLATES);
-        return;
-      }
-
-      setHeroSlides([]);
-    } catch (e) {
-      console.error("Error fetching hero content:", e);
-      setHeroSlides(HERO_SLIDES_TEMPLATES);
-    } finally {
-      setHeroLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchHeroContent();
-  }, [fetchHeroContent]);
-
-  const pauseHeroOnTouch = useCallback(() => {
-    if (!heroSettings.pauseOnTouch) return;
-    heroPausedRef.current = true;
-    if (heroResumeTimerRef.current) clearTimeout(heroResumeTimerRef.current);
-    heroResumeTimerRef.current = setTimeout(() => {
-      heroPausedRef.current = false;
-      heroResumeTimerRef.current = null;
-    }, Math.max(1, heroSettings.resumeDelaySeconds) * 1000);
-  }, [heroSettings.pauseOnTouch, heroSettings.resumeDelaySeconds]);
-
-  const animateHeroTo = useCallback((index: number, durationOverride?: number) => {
-    if (heroSlides.length === 0) return;
-    const safeIndex = Math.max(0, Math.min(heroSlides.length - 1, index));
-    const transitionMs = Math.max(150, Math.min(1000, durationOverride ?? heroSettings.transitionMs));
-    activeSlideRef.current = safeIndex;
-    setActiveSlide(safeIndex);
-    if (heroSettings.transitionType === "fade") {
-      Animated.sequence([
-        Animated.timing(heroFadeOpacity, { toValue: 0, duration: Math.max(75, Math.floor(transitionMs / 2)), useNativeDriver: true }),
-        Animated.timing(heroFadeOpacity, { toValue: 1, duration: Math.max(75, Math.floor(transitionMs / 2)), useNativeDriver: true }),
-      ]).start();
-      heroScrollRef.current?.scrollTo({ index: safeIndex, animated: false });
-    } else {
-      heroScrollRef.current?.scrollTo({ index: safeIndex, animated: true });
-    }
-  }, [heroFadeOpacity, heroSettings.transitionMs, heroSettings.transitionType, heroSlides.length]);
-
-  useEffect(() => () => {
-    if (heroResumeTimerRef.current) clearTimeout(heroResumeTimerRef.current);
-    if (heroAutoTimerRef.current) clearTimeout(heroAutoTimerRef.current);
-  }, []);
-
-  const heroSlideKey = heroSlides.map((slide) => slide.id).join("|");
-  useEffect(() => {
-    if (heroSlides.length === 0) return;
-    activeSlideRef.current = 0;
-    setActiveSlide(0);
-    heroOffsetRef.current = 0;
-    requestAnimationFrame(() => heroScrollRef.current?.scrollTo({ index: 0, animated: false }));
-  }, [heroSlideKey, heroSlides.length]);
-
-  // Automatic hero slider rotation based on settings. A recursive timeout keeps
-  // the schedule stable across transitions and retries promptly after a pause.
-  useEffect(() => {
-    if (heroAutoTimerRef.current) clearTimeout(heroAutoTimerRef.current);
-    if (!autoRotate || heroSlides.length <= 1) return;
-
-    let cancelled = false;
-    const scheduleNext = () => {
-      if (cancelled) return;
-      const current = heroSlides[activeSlideRef.current];
-      const delayMs = heroPausedRef.current
-        ? 250
-        : Math.max(current?.display_duration_seconds ?? rotationInterval, 1) * 1000;
-      heroAutoTimerRef.current = setTimeout(() => {
-        if (cancelled) return;
-        if (!heroPausedRef.current) {
-          const next = (activeSlideRef.current + 1) % heroSlides.length;
-          animateHeroTo(next, heroSlides[next]?.transition_duration_ms);
-        }
-        scheduleNext();
-      }, delayMs);
-    };
-
-    scheduleNext();
-    return () => {
-      cancelled = true;
-      if (heroAutoTimerRef.current) clearTimeout(heroAutoTimerRef.current);
-      heroAutoTimerRef.current = null;
-    };
-  }, [heroSlides, autoRotate, rotationInterval, animateHeroTo]);
-
-  const handleHeroSnap = useCallback((visibleIndex: number) => {
-    if (visibleIndex < 0 || visibleIndex >= heroSlides.length) return;
-    activeSlideRef.current = visibleIndex;
-    setActiveSlide(visibleIndex);
-  }, [heroSlides.length]);
-
-  const renderHeroSlide = ({ item, index }: { item: HeroSlide; index: number }) => {
-    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    const heroStore = item.storeId ? storesMap.get(item.storeId) : allStores[index];
-
-    const handlePress = () => {
-      const targetProd = (item as any).target_product_id || ((item.kind === "product" && UUID_REGEX.test((item as any).target_id)) ? (item as any).target_id : null);
-      const targetStore = (item as any).target_store_id || item.storeId || ((item.kind === "store" && UUID_REGEX.test((item as any).target_id)) ? (item as any).target_id : null);
-
-      if (item.kind === "courier") {
-        const courierId = item.id.replace("courier-", "");
-        router.push({ pathname: "/courier/[id]", params: { id: courierId, ...marketContextParams } });
-      } else if (targetProd && UUID_REGEX.test(targetProd)) {
-        router.push({ pathname: "/product-details", params: { id: targetProd, ...marketContextParams } });
-      } else if (targetStore && UUID_REGEX.test(targetStore)) {
-        handleStorePress(targetStore);
-      } else if (heroStore && UUID_REGEX.test(heroStore.id)) {
-        handleStorePress(heroStore.id);
-      }
-    };
-
-    return (
-      <TouchableOpacity
-        style={[styles.heroSlide, { backgroundColor: colors.bgElevated, ...tokens.shadows.premium }]}
-        activeOpacity={!!(item.storeId || heroStore) ? 0.8 : 1}
-        onPress={handlePress}
-      >
-        <View style={styles.heroImageContainer}>
-          {item.image ? (
-            <Image
-              source={{ uri: item.image }}
-              style={[styles.heroImage, { backgroundColor: colors.bgSurface }]}
-              resizeMode="cover"
-            />
-          ) : (
-            <View
-              style={[
-                styles.heroImage,
-                {
-                  backgroundColor: colors.bgElevated,
-                  justifyContent: "center",
-                  alignItems: "center",
-                },
-              ]}
-            >
-              <Typography variant="caption" color="disabled">
-                Soug-XPRESS
-              </Typography>
-            </View>
-          )}
-          {/* Professional Overlay with Gradient effect using semi-transparent colors */}
-          <View style={[styles.heroOverlay, { backgroundColor: "rgba(0,0,0,0.25)" }]} />
-          
-          <View style={[styles.heroTextContentOverlay, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
-            <Typography
-              variant="h2"
-              color="white"
-              align="right"
-              style={[styles.heroTitle, { textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: {width: -1, height: 1}, textShadowRadius: 10 }]}
-            >
-              {item.title}
-            </Typography>
-            <Typography 
-              variant="body" 
-              color="white" 
-              align="right"
-              style={{ textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: {width: -1, height: 1}, textShadowRadius: 5 }}
-            >
-              {item.description}
-            </Typography>
-
-            <View style={styles.heroActionRow}>
-              <View
-                style={[
-                  styles.heroActionBtn,
-                  { backgroundColor: colors.primary, ...tokens.shadows.small },
-                ]}
-              >
-                <Typography
-                  variant="button"
-                  color="white"
-                  style={styles.heroActionText}
-                >
-                  {item.buttonLabel}
-                </Typography>
-              </View>
-              
-              <View
-                style={[
-                  styles.heroStoreLabelOverlay,
-                  { flexDirection: "row", alignItems: "center", backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, borderRadius: 4 }
-                ]}
-              >
-                <Typography variant="caption" color="white" align="right">
-                  {heroStore ? heroStore.name : item.storeName || HERO_STORE_TITLES[index] || "سوق عين صفراء"}
-                </Typography>
-                <StoreIcon color="white" size={12} style={{ marginLeft: 4 }} />
-              </View>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
 
   const handleCategoryPress = async (catId: string) => {
     if (catId === "couriers") {
@@ -729,45 +476,7 @@ const HomeScreen = () => {
           </View>
         </View>
 
-        {/* Hero Slider — temporarily disabled in Market; implementation and settings remain intact. */}
-        {false && <View style={styles.section}>
-          {heroSlides.length > 0 ? (
-            <Animated.View style={{ opacity: heroFadeOpacity }} testID="smart-slider-carousel">
-              <Carousel
-                ref={heroScrollRef}
-                data={heroSlides}
-                renderItem={renderHeroSlide}
-                keyExtractor={(item) => item.id}
-                width={HERO_CARD_WIDTH}
-                height={196}
-                loop={false}
-                autoplay={autoRotate}
-                autoplayInterval={Math.max(1, rotationInterval) * 1000}
-                animation={{ type: "timing", duration: Math.max(150, heroSettings.transitionMs) }}
-                onScrollStart={pauseHeroOnTouch}
-                onSnapToItem={handleHeroSnap}
-                testID="smart-slider-carousel-data"
-                style={styles.heroCarousel}
-                contentContainerStyle={styles.heroListContent}
-              />
-            </Animated.View>
-          ) : heroLoading ? <ActivityIndicator size="small" color={colors.primary} /> : null}
-          <View style={styles.dotsContainer}>
-            {heroSlides.map((_, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.dot,
-                  {
-                    backgroundColor: activeSlide === index ? colors.primary : colors.borderSubtle,
-                  },
-                ]}
-                accessibilityLabel={`فتح الشريحة ${index + 1} من ${heroSlides.length}`}
-                onPress={() => animateHeroTo(index)}
-              />
-            ))}
-          </View>
-        </View>}
+        <MarketHeroSlider slides={heroSlides} colors={colors} isRTL={isRTL} onPressSlide={handleHeroPress} />
 
         {/* Login Banner - Only for guests */}
         {isGuest && (
@@ -1176,82 +885,6 @@ const styles = StyleSheet.create({
   cartBadgeText: {
     fontSize: 12,
     fontWeight: 'bold',
-  },
-  heroListContent: {
-    paddingHorizontal: HERO_LIST_PADDING,
-  },
-  heroCarousel: {
-    width: HERO_CARD_WIDTH,
-    alignSelf: 'center',
-  },
-  heroSlide: {
-    width: HERO_CARD_WIDTH,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    marginHorizontal: HERO_ITEM_MARGIN,
-  },
-  heroImageContainer: {
-    width: "100%",
-    height: 196,
-    position: "relative",
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: radius.lg,
-  },
-  heroOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: radius.lg,
-  },
-  heroTextContentOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.lg,
-    gap: spacing.xs,
-  },
-  heroTitle: {
-    fontWeight: "800",
-    fontSize: 24,
-  },
-  heroActionRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  heroActionBtn: {
-    borderRadius: radius.medium,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  heroStoreLabelOverlay: {
-    marginTop: 0,
-  },
-  heroActionText: {
-    fontWeight: "600",
-  },
-  heroStoreLabel: {
-    marginTop: spacing.xs,
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-        justifyContent: "center",
-    alignItems: "center",
-    marginTop: spacing.sm,
-    gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   couriersBanner: {
     marginHorizontal: spacing.lg,
