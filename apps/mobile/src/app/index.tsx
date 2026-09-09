@@ -1,10 +1,10 @@
-import { KeyboardAwareView } from "@/components/ui/KeyboardAwareView";
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { router, useLocalSearchParams } from "expo-router";
+import React, { useState, useRef, useCallback } from "react";
+import { Link, router } from "expo-router";
 import {
   Image,
   Modal,
   ActivityIndicator,
+  KeyboardAvoidingView,
   Platform,
   TextInput,
   Pressable,
@@ -14,23 +14,20 @@ import {
   View,
   ScrollView,
   StyleSheet,
+  SafeAreaView,
   I18nManager,
   TouchableOpacity,
-  Text,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Typography } from "@/components/ui";
+import { Typography } from "../components/ui";
 import {
   BRAND_NAME_AR,
   BRAND_SLOGAN,
   BRAND_CITY_LABEL,
   LOGO_DARK,
-  LOGO_OFFICIAL_WORDMARK,
-} from "@/constants/brand";
-import { TOKENS } from "@/constants/tokens";
-import { useAppTheme } from "@/contexts/ThemeContext";
-import { supabase } from "@/lib/supabase";
-import { getAuthenticatedEntryRoute } from "@/services/auth-entry.service";
+} from "../constants/brand";
+import { TOKENS } from "../constants/tokens";
+import { getThemeColors, DEFAULT_THEME } from "../constants/theme";
+import { supabase } from "../lib/supabase";
 
 /**
  * Soug-XPRESS Entry Screen — Brand Logo Integration
@@ -42,16 +39,18 @@ import { getAuthenticatedEntryRoute } from "@/services/auth-entry.service";
  * - Primary action button: "الدخول إلى السوق"
  * - Button opens the existing role-selection flow (intent gateway)
  *
- * The admin entry is opened from the brand-name link on the role-selection screen.
+ * Hidden Founder access:
+ *   Tap the logo 5 times within 3 seconds → Founder login dialog.
+ *   Completely invisible during normal use.
+ *   Works on both web and native (no long-press required).
  */
 
 type DialogState = "idle" | "loading" | "denied";
 
 export default function EntryScreen() {
-  const { colors } = useAppTheme();
-  const insets = useSafeAreaInsets();
+  const colors = getThemeColors(DEFAULT_THEME);
 
-  /* ── Founder dialog state ─ */
+  /* ── Founder dialog state ── */
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogState, setDialogState] = useState<DialogState>("idle");
   const [email, setEmail] = useState("");
@@ -60,7 +59,11 @@ export default function EntryScreen() {
 
   const passwordRef = useRef<TextInput>(null);
 
-  /* ── Open / close helpers ─ */
+  /* ── 5-tap trigger (web + native safe) ── */
+  const tapCountRef = useRef(0);
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* ── Open / close helpers ── */
   const openFounderDialog = useCallback(() => {
     setEmail("");
     setPassword("");
@@ -76,13 +79,27 @@ export default function EntryScreen() {
     setErrorMsg("");
   }, []);
 
-  const params = useLocalSearchParams<{ admin?: string }>();
 
-  useEffect(() => {
-    if (params.admin === "1") {
+  /* ── Logo tap handler: 5 taps within 3 s ── */
+  const handleLogoTap = useCallback(() => {
+    tapCountRef.current += 1;
+
+    if (tapCountRef.current === 1) {
+      // Start the 3-second window; auto-reset if not completed
+      tapTimerRef.current = setTimeout(() => {
+        tapCountRef.current = 0;
+      }, 3000);
+    }
+
+    if (tapCountRef.current >= 5) {
+      if (tapTimerRef.current) {
+        clearTimeout(tapTimerRef.current);
+        tapTimerRef.current = null;
+      }
+      tapCountRef.current = 0;
       openFounderDialog();
     }
-  }, [params.admin, openFounderDialog]);
+  }, [openFounderDialog]);
 
   /* ── Authentication ── */
   const handleFounderLogin = async () => {
@@ -95,8 +112,9 @@ export default function EntryScreen() {
     setErrorMsg("");
 
     try {
-      // signInWithPassword replaces the current Supabase session; avoid emitting
-      // SIGNED_OUT first, which can race the navigation to the Founder workspace.
+      // Sign out any existing session first so it doesn't bleed into founder space
+      await supabase.auth.signOut();
+
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
           email: email.trim().toLowerCase(),
@@ -109,14 +127,14 @@ export default function EntryScreen() {
         return;
       }
 
-      // Verify an authorized Founder workspace role in public.profiles
+      // Verify role = 'founder' in public.profiles
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", authData.user.id)
         .single();
 
-      if (profileError || !profile || !["founder", "admin"].includes(profile.role)) {
+      if (profileError || !profile || profile.role !== "founder") {
         // Sign the non-founder user back out immediately
         await supabase.auth.signOut();
         setErrorMsg("ليس لديك صلاحية دخول منطقة المؤسس.");
@@ -127,22 +145,9 @@ export default function EntryScreen() {
       // Success — close dialog then navigate
       setDialogVisible(false);
       router.replace("/founder");
-    } catch (e: unknown) {
+    } catch {
       setErrorMsg("حدث خطأ غير متوقع. حاول مجدداً.");
       setDialogState("denied");
-    }
-  };
-
-  const handleMarketEntry = async () => {
-    try {
-      const route = await getAuthenticatedEntryRoute();
-      if (route) {
-        router.push(route);
-      } else {
-        router.replace("/login");
-      }
-    } catch {
-      router.replace("/login");
     }
   };
 
@@ -156,13 +161,22 @@ export default function EntryScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-              {/* Official Logo */}
+        {/* Official Logo — tap 5× within 3 s to reveal Founder entry */}
         <View style={styles.logoArea}>
-          <Image
-            source={LOGO_OFFICIAL_WORDMARK}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={handleLogoTap}
+            accessible={false}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <View style={styles.logoImageWrapper} pointerEvents="none">
+              <Image
+                source={LOGO_DARK}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Slogan */}
@@ -182,29 +196,23 @@ export default function EntryScreen() {
 
         {/* Role Selection Gateway */}
         <View style={styles.gatewayContainer}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.enterButton}
-            onPress={handleMarketEntry}
-          >
-            <Typography variant="h2" style={styles.enterButtonText}>
-              الدخول إلى السوق
-            </Typography>
-          </TouchableOpacity>
+          <Link href="/login" asChild>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.enterButton}
+            >
+              <Typography variant="h2" style={styles.enterButtonText}>
+                الدخول إلى السوق
+              </Typography>
+            </TouchableOpacity>
+          </Link>
         </View>
 
         {/* Footer */}
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <View style={styles.footerTextContainer}>
-            <TouchableOpacity onPress={openFounderDialog} activeOpacity={0.7} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={[styles.footerText, { color: colors.textPrimary }]}>
-                Soug-XPRESS
-              </Text>
-            </TouchableOpacity>
-            <Text style={[styles.footerText, { color: colors.textDisabled }]}>
-              {" "}— منصة التجارة المحلية الأولى في عين صفراء
-            </Text>
-          </View>
+        <View style={styles.footer}>
+          <Typography variant="caption" color="disabled" align="center">
+            {BRAND_NAME_AR} — منصة التجارة المحلية الأولى في عين صفراء
+          </Typography>
         </View>
       </ScrollView>
 
@@ -221,8 +229,13 @@ export default function EntryScreen() {
           onPress={isLoading ? undefined : closeFounderDialog}
         >
           {/* Prevent taps inside the card from closing the modal */}
-          <Pressable style={[styles.dialogCard, { backgroundColor: colors.bgElevated }]}>
-            <KeyboardAwareView
+          <Pressable
+            style={[
+              styles.dialogCard,
+              { backgroundColor: TOKENS.colors.dark.bgElevated },
+            ]}
+          >
+            <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
               {/* Header */}
@@ -241,13 +254,13 @@ export default function EntryScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: colors.bgSurface,
-                    color: colors.textPrimary,
-                    borderColor: colors.borderSubtle,
+                    backgroundColor: TOKENS.colors.dark.bgSurface,
+                    color: TOKENS.colors.dark.textPrimary,
+                    borderColor: TOKENS.colors.dark.borderSubtle,
                   },
                 ]}
                 placeholder="البريد الإلكتروني"
-                placeholderTextColor={colors.textDisabled}
+                placeholderTextColor={TOKENS.colors.dark.textDisabled}
                 value={email}
                 onChangeText={(v) => {
                   setEmail(v);
@@ -261,7 +274,7 @@ export default function EntryScreen() {
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
                 editable={!isLoading}
-                textAlign="left"
+                textAlign="right"
               />
 
               {/* Password */}
@@ -270,13 +283,13 @@ export default function EntryScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: colors.bgSurface,
-                    color: colors.textPrimary,
-                    borderColor: colors.borderSubtle,
+                    backgroundColor: TOKENS.colors.dark.bgSurface,
+                    color: TOKENS.colors.dark.textPrimary,
+                    borderColor: TOKENS.colors.dark.borderSubtle,
                   },
                 ]}
                 placeholder="كلمة المرور"
-                placeholderTextColor={colors.textDisabled}
+                placeholderTextColor={TOKENS.colors.dark.textDisabled}
                 value={password}
                 onChangeText={(v) => {
                   setPassword(v);
@@ -288,7 +301,7 @@ export default function EntryScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleFounderLogin}
                 editable={!isLoading}
-                textAlign="left"
+                textAlign="right"
               />
 
               {/* Error / denied message */}
@@ -304,14 +317,14 @@ export default function EntryScreen() {
                 </View>
               ) : null}
 
-              {/* Actions */}
+              {/* Login button */}
               <TouchableOpacity
                 style={[
                   styles.loginButton,
                   {
                     backgroundColor: isLoading
-                      ? colors.bgSurface
-                      : colors.primary,
+                      ? TOKENS.colors.dark.bgSurface
+                      : TOKENS.colors.brandPrimary,
                   },
                 ]}
                 onPress={handleFounderLogin}
@@ -324,7 +337,7 @@ export default function EntryScreen() {
                   <Typography
                     variant="body"
                     style={{
-                      color: "#FFFFFF",
+                      color: TOKENS.colors.dark.textOnBrand,
                       fontWeight: "700",
                     }}
                   >
@@ -341,12 +354,12 @@ export default function EntryScreen() {
               >
                 <Typography
                   variant="caption"
-                  style={{ color: colors.textSecondary }}
+                  style={{ color: TOKENS.colors.dark.textSecondary }}
                 >
                   إلغاء
                 </Typography>
               </TouchableOpacity>
-            </KeyboardAwareView>
+            </KeyboardAvoidingView>
           </Pressable>
         </Pressable>
       </Modal>
@@ -369,16 +382,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoArea: {
-    width: "100%",
     alignItems: "center",
-    justifyContent: "center",
     marginBottom: TOKENS.spacing["2xl"],
-    paddingHorizontal: TOKENS.spacing.md,
+  },
+  logoImageWrapper: {
+    // pointerEvents="none" on this View lets the TouchableOpacity
+    // parent receive all tap events on web without the <img> swallowing them
   },
   logoImage: {
-    width: "100%",
-    maxWidth: 380,
-    height: 112,
+    width: 280,
+    height: 220,
   },
   slogan: {
     color: TOKENS.colors.brandAccent,
@@ -394,15 +407,14 @@ const styles = StyleSheet.create({
   },
   enterButton: {
     width: "100%",
-    backgroundColor: "#0D47A1",
+    backgroundColor: TOKENS.colors.brandPrimary,
     borderRadius: TOKENS.radius.full,
     paddingVertical: TOKENS.spacing.lg,
     alignItems: "center",
     justifyContent: "center",
-    ...TOKENS.shadows.neonBlue,
   },
   enterButtonText: {
-    color: "#FFFFFF",
+    color: TOKENS.colors.dark.textOnBrand,
     fontWeight: "700",
   },
   footer: {
@@ -411,19 +423,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
     width: "100%",
-  },
-  footerTextContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-  footerText: {
-    fontFamily: TOKENS.typography.families.arabic,
-    fontSize: TOKENS.typography.sizes.xs,
-    fontWeight: "400",
-    textAlign: "center",
-    lineHeight: TOKENS.typography.lineHeights.arabic * TOKENS.typography.sizes.xs,
   },
 
   /* ── Founder dialog ── */
@@ -450,12 +449,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: TOKENS.radius.md,
     paddingHorizontal: TOKENS.spacing.md,
-    paddingVertical: 0,
+    paddingVertical: TOKENS.spacing.sm + 4,
     fontSize: 15,
-    lineHeight: 20,
-    height: 52,
     marginBottom: TOKENS.spacing.md,
-    writingDirection: "ltr",
+    writingDirection: "rtl",
   },
   errorRow: {
     marginBottom: TOKENS.spacing.sm,
