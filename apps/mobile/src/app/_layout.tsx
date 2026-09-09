@@ -1,11 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AppState, LogBox, I18nManager, Platform } from "react-native";
 LogBox.ignoreLogs([
   "SafeAreaView has been deprecated",
   "MediaTypeOptions` have been deprecated",
   "Method getInfoAsync imported from \"expo-file-system\" is deprecated",
 ]);
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRootNavigationState, useRouter } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
@@ -29,6 +29,26 @@ if (Platform.OS !== "web") {
 
 export default function RootLayout() {
   const router = useRouter();
+  const rootNavigationState = useRootNavigationState();
+  const navigationReady = Boolean(rootNavigationState?.key);
+  const navigationReadyRef = useRef(false);
+  const pendingNotificationResponseRef = useRef<Notifications.NotificationResponse | null>(null);
+  const pendingSignOutNavigationRef = useRef(false);
+
+  useEffect(() => {
+    navigationReadyRef.current = navigationReady;
+    if (!navigationReady) return;
+
+    if (pendingSignOutNavigationRef.current) {
+      pendingSignOutNavigationRef.current = false;
+      router.replace("/");
+    }
+    if (pendingNotificationResponseRef.current) {
+      const response = pendingNotificationResponseRef.current;
+      pendingNotificationResponseRef.current = null;
+      routeFromNotificationResponse(response);
+    }
+  }, [navigationReady, router]);
 
   useEffect(() => {
     let disposed = false;
@@ -83,6 +103,10 @@ export default function RootLayout() {
         const notificationId = response.notification.request.identifier;
         if (handledNotificationIds.has(notificationId)) return;
         handledNotificationIds.add(notificationId);
+        if (!navigationReadyRef.current) {
+          pendingNotificationResponseRef.current = response;
+          return;
+        }
         routeFromNotificationResponse(response);
       };
 
@@ -116,7 +140,11 @@ export default function RootLayout() {
         tokenSubscription = null;
         registeredUserId = null;
         registrationInFlight = false;
-        router.replace("/");
+        if (navigationReadyRef.current) {
+          router.replace("/");
+        } else {
+          pendingSignOutNavigationRef.current = true;
+        }
       }
     });
 
