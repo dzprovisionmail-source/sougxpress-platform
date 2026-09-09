@@ -1116,6 +1116,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: HERO_LIST_PADDING,
   },
   heroCarousel: {
+    width: HERO_CARD_WIDTH,
     alignSelf: 'center',
   },
   heroSlide: {
