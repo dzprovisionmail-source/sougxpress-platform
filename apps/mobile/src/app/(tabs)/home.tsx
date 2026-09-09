@@ -39,6 +39,7 @@ const HERO_ITEM_MARGIN = spacing.xs;
 const HERO_SLIDE_INTERVAL = HERO_CARD_WIDTH + HERO_ITEM_MARGIN * 2;
 const HERO_LIST_PADDING = spacing.lg + HERO_ITEM_MARGIN;
 const HERO_VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 60 };
+const marketDebug = (...args: unknown[]) => console.log('[MARKET-DEBUG]', new Date().toISOString(), ...args);
 const assetUri = (asset: number): string => {
   const resolver = (Image as typeof Image & { resolveAssetSource?: (value: number) => { uri?: string } }).resolveAssetSource;
   return typeof resolver === "function" ? resolver(asset).uri ?? "" : String(asset);
@@ -142,6 +143,7 @@ const HomeScreen = () => {
   });
 
   useEffect(() => {
+    marketDebug('HomeScreen mount');
     checkAuth();
     const { data: authSubscription } = supabase.auth.onAuthStateChange((_event, session) => {
       const user = session?.user;
@@ -149,6 +151,7 @@ const HomeScreen = () => {
       setStoreRotationSeed(getStoreRotationSessionSeed(user?.id));
     });
     getActiveCategories().then((cats) => {
+      marketDebug('setCategories', { length: cats.length });
       setCategories(cats);
     });
     fetchProducts();
@@ -159,8 +162,23 @@ const HomeScreen = () => {
     getMarketSectionSettings().then((res) => {
       setMarketSections(res);
     });
-    return () => authSubscription.subscription.unsubscribe();
+    return () => {
+      marketDebug('HomeScreen unmount');
+      authSubscription.subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    marketDebug('categories.length', categories.length);
+  }, [categories.length]);
+
+  useEffect(() => {
+    marketDebug('allStores.length', allStores.length, { storesLoading, storesError });
+  }, [allStores.length, storesLoading, storesError]);
+
+  useEffect(() => {
+    marketDebug('activeCategory/searchQuery', { activeCategory, searchQuery });
+  }, [activeCategory, searchQuery]);
 
   const fetchFavorites = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -559,6 +577,13 @@ const HomeScreen = () => {
 
   const displayedStores = searchQuery.length > 0 ? searchResults.stores : filteredStores;
   const platformProfiles = searchQuery.length > 0 ? searchResults.platformProfiles : [];
+
+  useEffect(() => {
+    marketDebug('filteredStores.length/displayedStores.length', {
+      filteredStores: filteredStores.length,
+      displayedStores: displayedStores.length,
+    });
+  }, [filteredStores.length, displayedStores.length]);
   const featuredStores = useMemo(
     () => rotateStores(
       displayedStores.filter((store: any) => store.is_featured === true && store.status === "active"),

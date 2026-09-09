@@ -5,6 +5,8 @@ import { mapLegacyCategoryToMain } from "../config/storeCategories";
 import { getPlatformPublicProfile } from "./platform-profile.service";
 import { normalizeStoreTime, resolveStoreHours, withStoreHourDefaults } from "./store-hours";
 
+const marketDebug = (...args: unknown[]) => console.log('[MARKET-DEBUG]', new Date().toISOString(), ...args);
+
 const isValidUUID = (uuid: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid.trim());
@@ -83,12 +85,14 @@ export const getStoreByMerchantId = async (merchantId: string): Promise<Store | 
 };
 
 export const getAllStores = async (): Promise<Store[]> => {
+  marketDebug('getAllStores:start');
   let { data, error } = await supabase
     .from("stores")
     .select("*")
     .eq("status", "active");
 
   if (error && (error.code === '42703' || error.message?.includes('main_category'))) {
+    marketDebug('getAllStores:fallback', { code: error.code, message: error.message });
     const fallback = await supabase
       .from("stores")
       .select("id, name, category, merchant_id, zone_id, address_line1, city, country, status, is_open, opens_at, closes_at, rating, cover_url, logo_url, description")
@@ -98,10 +102,15 @@ export const getAllStores = async (): Promise<Store[]> => {
   }
 
   if (error) {
+    marketDebug('getAllStores:error', error.message);
     console.error("Error fetching all stores:", error);
     return [];
   }
-  return enrichStoresWithTaxonomy(((data as Store[]) || []).map(s => withStoreHourDefaults(s) as Store));
+  const stores = ((data as Store[]) || []).map(s => withStoreHourDefaults(s) as Store);
+  marketDebug('getAllStores:before-enrichment', { length: stores.length });
+  const enrichedStores = await enrichStoresWithTaxonomy(stores);
+  marketDebug('getAllStores:after-enrichment', { length: enrichedStores.length });
+  return enrichedStores;
 };
 
 export const getStoresByCategory = async (category: string): Promise<Store[]> => {

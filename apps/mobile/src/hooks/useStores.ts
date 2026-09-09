@@ -5,6 +5,8 @@ import { enrichStoresWithTaxonomy, getAllStores, getStoresByCategory, searchStor
 import { supabase, withRetry } from '../lib/supabase';
 import { PlatformPublicProfile, searchPlatformPublicProfiles } from '../services/platform-profile.service';
 
+const marketDebug = (...args: unknown[]) => console.log('[MARKET-DEBUG]', new Date().toISOString(), ...args);
+
 export const useStores = (category?: string) => {
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
@@ -12,6 +14,7 @@ export const useStores = (category?: string) => {
 
   useEffect(() => {
     const fetchStores = async () => {
+      marketDebug('useStores:fetch:start', { category: category ?? null });
       setLoading(true);
       try {
         let data;
@@ -20,10 +23,13 @@ export const useStores = (category?: string) => {
         } else {
           data = await getAllStores();
         }
+        marketDebug('useStores:setStores', { length: data.length });
         setStores(data);
       } catch (err: any) {
+        marketDebug('useStores:error', err?.message ?? String(err));
         setError(err.message);
       } finally {
+        marketDebug('useStores:loading:false');
         setLoading(false);
       }
     };

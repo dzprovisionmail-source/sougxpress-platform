@@ -1,7 +1,10 @@
 import { supabase } from "../lib/supabase";
 import { Category, Subcategory } from "../types/schema-03-core";
 
+const marketDebug = (...args: unknown[]) => console.log('[MARKET-DEBUG]', new Date().toISOString(), ...args);
+
 export const getActiveCategories = async (): Promise<Category[]> => {
+  marketDebug('getActiveCategories:start');
   const { data, error } = await supabase
     .from("categories")
     .select("*")
@@ -9,9 +12,11 @@ export const getActiveCategories = async (): Promise<Category[]> => {
     .order("display_order", { ascending: true });
 
   if (error) {
+    marketDebug('getActiveCategories:error', error.message);
     console.error("Error fetching categories:", error);
     return [];
   }
+  marketDebug('getActiveCategories:success', { length: data?.length ?? 0 });
   return (data as Category[]) || [];
 };
 
