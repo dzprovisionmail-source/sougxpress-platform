@@ -6,6 +6,7 @@ LogBox.ignoreLogs([
   "Method getInfoAsync imported from \"expo-file-system\" is deprecated",
 ]);
 import { Stack, useRouter } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -129,14 +130,14 @@ export default function RootLayout() {
   }, [router]);
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-          <Stack screenOptions={{ headerShown: false }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+            <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="login" />
             <Stack.Screen name="admin" />
-            <Stack.Screen name="admin/push-diagnostics" />
             <Stack.Screen name="founder" />
             <Stack.Screen name="customer-auth" />
             <Stack.Screen name="merchant-auth" />
@@ -149,9 +150,10 @@ export default function RootLayout() {
             <Stack.Screen name="merchant" />
             <Stack.Screen name="driver" />
             <Stack.Screen name="(tabs)" />
-          </Stack>
-        </SafeAreaView>
-      </ThemeProvider>
-    </SafeAreaProvider>
+            </Stack>
+          </SafeAreaView>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
