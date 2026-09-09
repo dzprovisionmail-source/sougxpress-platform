@@ -1,6 +1,8 @@
 import { encodeHeroTarget, isSafeExternalUrl, isSafeScreenPath, normalizeHeroSlide } from "../src/components/market/hero/hero.utils";
 import { demoHeroSlides } from "../src/components/market/hero/hero.demo";
 import { productToHero, promotionToHero, rankAndDeduplicateHeroSlides, safeHeroSource, storeToHero } from "../src/components/market/hero/hero.smart";
+import { HERO_AUTOPLAY_INTERVAL, clampHeroIndex, nextHeroIndex, shouldRunHeroAutoplay } from "../src/components/market/hero/hero.autoplay";
+import { HERO_REFRESH_MIN_INTERVAL, shouldRefreshHero } from "../src/components/market/hero/hero.refresh";
 
 let passed = 0;
 let failed = 0;
@@ -79,6 +81,29 @@ equal(ranked.filter((item) => item.entityId === "store-1").length, 1, "duplicate
 equal(ranked[0]?.source, "FEATURED_STORE", "featured source outranks new source");
 const empty = rankAndDeduplicateHeroSlides({ founder: [], newStores: [], featuredStores: [], newProducts: [], featuredProducts: [], promotions: [] });
 equal(empty.length, 0, "all empty sources return empty without crashing");
+
+equal(shouldRunHeroAutoplay({ active: true, appStateActive: true, slideCount: 3 }), true, "autoplay starts for active multi-slide Hero");
+equal(shouldRunHeroAutoplay({ active: false, appStateActive: true, slideCount: 3 }), false, "inactive screen stops autoplay");
+equal(shouldRunHeroAutoplay({ active: true, appStateActive: false, slideCount: 3 }), false, "background AppState stops autoplay");
+equal(shouldRunHeroAutoplay({ active: true, appStateActive: true, slideCount: 1 }), false, "single slide does not loop");
+equal(shouldRunHeroAutoplay({ active: true, appStateActive: true, slideCount: 0 }), false, "empty slides do not start timer");
+equal(nextHeroIndex(2, 3), 0, "autoplay wraps to first slide");
+equal(clampHeroIndex(9, 3), 2, "index is clamped after refresh");
+equal(HERO_AUTOPLAY_INTERVAL >= 5_000, true, "autoplay interval is user-paced");
+equal(shouldRefreshHero(0, 100), true, "first Market activation refreshes Hero");
+equal(shouldRefreshHero(100, 100 + HERO_REFRESH_MIN_INTERVAL - 1), false, "refresh throttle avoids duplicate focus request");
+equal(shouldRefreshHero(100, 100 + HERO_REFRESH_MIN_INTERVAL), true, "refresh resumes after minimum interval");
+
+const diversitySlides = rankAndDeduplicateHeroSlides({
+  founder: [{ ...slide, id: "founder-1", source: "FOUNDER", entityId: "founder-1", priority: 1, createdAt: "2026-09-09T00:00:00Z" }],
+  featuredStores: [featuredStore!],
+  newProducts: [product!],
+  newStores: [store!],
+  featuredProducts: [],
+  promotions: [promotion!],
+}, Date.parse("2026-09-09T12:00:00Z"));
+equal(new Set(diversitySlides.slice(0, 5).map((item) => item.source)).size >= 4, true, "nearby priorities preserve source diversity");
+equal(normalizeHeroSlide({ id: "founder-updated", content_type: "promotion", title: "عنوان محدث", target_id: "store-1", priority: 99, is_active: true }).title, "عنوان محدث", "Founder update is reflected by shared normalization");
 
 void Promise.all([
   safeHeroSource(async () => { throw new Error("stores unavailable"); }, [] as string[]),

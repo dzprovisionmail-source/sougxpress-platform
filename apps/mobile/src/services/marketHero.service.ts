@@ -66,6 +66,12 @@ export async function getFounderHeroSlides(): Promise<HeroSlide[]> {
   return getFounderCandidates(false);
 }
 
+export async function getFounderHeroDashboardSlides(): Promise<HeroSlide[]> {
+  const [manualSlides, marketSlides] = await Promise.all([getFounderCandidates(false), getMarketHeroSlides()]);
+  const automaticSlides = marketSlides.filter((slide) => slide.source !== "FOUNDER");
+  return [...manualSlides, ...automaticSlides].sort((a, b) => b.priority - a.priority || (b.createdAt || "").localeCompare(a.createdAt || ""));
+}
+
 export async function saveFounderHeroSlide(draft: HeroSlideDraft, id?: string) {
   const payload = {
     title: draft.title.trim() || "عرض السوق",

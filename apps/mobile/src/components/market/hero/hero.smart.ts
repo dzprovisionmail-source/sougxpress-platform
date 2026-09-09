@@ -20,6 +20,7 @@ export const HERO_SOURCE_LIMITS: Record<HeroSlideSource, number> = {
 };
 
 export const HERO_FINAL_LIMIT = 12;
+export const HERO_DIVERSITY_SCORE_WINDOW = 120;
 
 export type StoreRow = {
   id: string; name: string; description?: string | null; cover_url?: string | null; logo_url?: string | null;
@@ -71,7 +72,18 @@ export const rankAndDeduplicateHeroSlides = (candidates: SmartHeroCandidates, no
     const previous = byEntity.get(identity);
     if (!previous || score > previous.score) byEntity.set(identity, { slide, score });
   }
-  return [...byEntity.values()].sort((a, b) => b.score - a.score || (b.slide.createdAt || "").localeCompare(a.slide.createdAt || "")).slice(0, HERO_FINAL_LIMIT).map(({ slide }) => slide);
+  const remaining = [...byEntity.values()].sort((a, b) => b.score - a.score || (b.slide.createdAt || "").localeCompare(a.slide.createdAt || ""));
+  const selected: Array<{ slide: HeroSlide; score: number }> = [];
+  const usedSources = new Set<HeroSlideSource>();
+  while (remaining.length > 0 && selected.length < HERO_FINAL_LIMIT) {
+    const bestScore = remaining[0].score;
+    const diverseIndex = remaining.findIndex((candidate) => !usedSources.has(candidate.slide.source) && bestScore - candidate.score <= HERO_DIVERSITY_SCORE_WINDOW);
+    const index = diverseIndex >= 0 ? diverseIndex : 0;
+    const [candidate] = remaining.splice(index, 1);
+    selected.push(candidate);
+    usedSources.add(candidate.slide.source);
+  }
+  return selected.map(({ slide }) => slide);
 };
 
 export const safeHeroSource = async <T>(loader: () => Promise<T>, fallback: T): Promise<T> => {

@@ -7,7 +7,7 @@ import { AdminPageShell } from "@/components/admin";
 import { MarketHeroSlider } from "@/components/market/hero/MarketHeroSlider";
 import type { HeroSlide, HeroSlideDraft, HeroSlideType, HeroTargetType } from "@/components/market/hero/hero.types";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { deleteFounderHeroSlide, duplicateFounderHeroSlide, getFounderHeroSlides, saveFounderHeroSlide, uploadMarketHeroImage } from "@/services/marketHero.service";
+import { deleteFounderHeroSlide, duplicateFounderHeroSlide, getFounderHeroDashboardSlides, saveFounderHeroSlide, uploadMarketHeroImage } from "@/services/marketHero.service";
 
 const emptyDraft: HeroSlideDraft = { type: "PROMOTION", imageUrl: "", title: "", description: "", ctaText: "", targetType: "", targetId: "", priority: 1, isActive: true, startsAt: "", endsAt: "" };
 const slideTypes: Array<{ value: HeroSlideType; label: string }> = [
@@ -29,7 +29,7 @@ export default function FounderHeroSlidesScreen() {
   const loadSlides = useCallback(async () => {
     setLoading(true);
     try {
-      setSlides(await getFounderHeroSlides());
+      setSlides(await getFounderHeroDashboardSlides());
     } catch (error: any) {
       Alert.alert("تعذّر تحميل السلايدر", error?.message || "حاول مرة أخرى");
     } finally {
@@ -41,6 +41,7 @@ export default function FounderHeroSlidesScreen() {
 
   const updateDraft = <K extends keyof HeroSlideDraft>(key: K, value: HeroSlideDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
   const editSlide = (slide: HeroSlide) => {
+    if (slide.source !== "FOUNDER") return;
     setEditingId(slide.id);
     setDraft({ type: slide.type, imageUrl: slide.imageUrl, title: slide.title || "", description: slide.description || "", ctaText: slide.ctaText || "", targetType: slide.targetType || "", targetId: slide.targetId || slide.targetUrl || "", priority: slide.priority, isActive: slide.isActive, startsAt: slide.startsAt || "", endsAt: slide.endsAt || "" });
     setPreview(false);
@@ -64,8 +65,14 @@ export default function FounderHeroSlidesScreen() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = (slide: HeroSlide) => Alert.alert("حذف الشريحة؟", slide.title || "هذه الشريحة", [{ text: "إلغاء", style: "cancel" }, { text: "حذف", style: "destructive", onPress: async () => { try { await deleteFounderHeroSlide(slide.id); await loadSlides(); if (editingId === slide.id) resetDraft(); } catch (error: any) { Alert.alert("تعذّر الحذف", error?.message || "حاول مرة أخرى"); } } }]);
-  const handleDuplicate = async (slide: HeroSlide) => { try { await duplicateFounderHeroSlide(slide); await loadSlides(); } catch (error: any) { Alert.alert("تعذّر التكرار", error?.message || "حاول مرة أخرى"); } };
+  const handleDelete = (slide: HeroSlide) => {
+    if (slide.source !== "FOUNDER") return;
+    Alert.alert("حذف الشريحة؟", slide.title || "هذه الشريحة", [{ text: "إلغاء", style: "cancel" }, { text: "حذف", style: "destructive", onPress: async () => { try { await deleteFounderHeroSlide(slide.id); await loadSlides(); if (editingId === slide.id) resetDraft(); } catch (error: any) { Alert.alert("تعذّر الحذف", error?.message || "حاول مرة أخرى"); } } }]);
+  };
+  const handleDuplicate = async (slide: HeroSlide) => {
+    if (slide.source !== "FOUNDER") return;
+    try { await duplicateFounderHeroSlide(slide); await loadSlides(); } catch (error: any) { Alert.alert("تعذّر التكرار", error?.message || "حاول مرة أخرى"); }
+  };
 
   const previewSlide = useMemo<HeroSlide>(() => ({ id: editingId || "preview", type: draft.type, source: "FOUNDER", imageUrl: draft.imageUrl, title: draft.title || "عنوان العرض", description: draft.description || "وصف مختصر للعرض", ctaText: draft.ctaText || "اكتشف الآن", priority: draft.priority, isActive: true, targetType: draft.targetType || undefined, targetId: draft.targetId || undefined }), [draft, editingId]);
 
@@ -95,7 +102,7 @@ export default function FounderHeroSlidesScreen() {
           {preview && <View style={{ marginTop: 14 }}><MarketHeroSlider slides={[previewSlide]} colors={colors} isRTL={isRTL} /></View>}
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}><View style={styles.cardTitleRow}><Eye size={18} color={colors.primary} /><Text style={[styles.cardTitle, { color: colors.textPrimary }]}>الشرائح الحالية ({slides.length})</Text></View>{loading ? <ActivityIndicator color={colors.primary} /> : slides.length === 0 ? <Text style={[styles.muted, { color: colors.textSecondary }]}>لا توجد شرائح بعد.</Text> : slides.map((slide) => <View key={slide.id} style={[styles.slideRow, { borderColor: colors.borderSubtle }]}><View style={{ flex: 1 }}><Text style={[styles.slideTitle, { color: colors.textPrimary }]}>{slide.title || "بدون عنوان"}</Text><Text style={[styles.muted, { color: colors.textSecondary }]}>{slide.type} · أولوية {slide.priority} · {slide.isActive ? "نشطة" : "متوقفة"}</Text></View><TouchableOpacity onPress={() => handleDuplicate(slide)} style={styles.iconBtn}><Copy color={colors.textSecondary} size={17} /></TouchableOpacity><TouchableOpacity onPress={() => editSlide(slide)} style={styles.iconBtn}><Pencil color={colors.primary} size={17} /></TouchableOpacity><TouchableOpacity onPress={() => handleDelete(slide)} style={styles.iconBtn}><Trash2 color={colors.error} size={17} /></TouchableOpacity></View>)}</View>
+        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}><View style={styles.cardTitleRow}><Eye size={18} color={colors.primary} /><Text style={[styles.cardTitle, { color: colors.textPrimary }]}>الشرائح الحالية ({slides.length})</Text></View>{loading ? <ActivityIndicator color={colors.primary} /> : slides.length === 0 ? <Text style={[styles.muted, { color: colors.textSecondary }]}>لا توجد شرائح بعد.</Text> : slides.map((slide) => <View key={`${slide.source}-${slide.id}`} style={[styles.slideRow, { borderColor: colors.borderSubtle }]}><View style={{ flex: 1 }}><Text style={[styles.slideTitle, { color: colors.textPrimary }]}>{slide.title || "بدون عنوان"}</Text><Text style={[styles.muted, { color: colors.textSecondary }]}>{slide.type} · {slide.source} · أولوية {slide.priority} · {slide.isActive ? "نشطة" : "متوقفة"}</Text></View>{slide.source === "FOUNDER" ? <><TouchableOpacity onPress={() => handleDuplicate(slide)} style={styles.iconBtn}><Copy color={colors.textSecondary} size={17} /></TouchableOpacity><TouchableOpacity onPress={() => editSlide(slide)} style={styles.iconBtn}><Pencil color={colors.primary} size={17} /></TouchableOpacity><TouchableOpacity onPress={() => handleDelete(slide)} style={styles.iconBtn}><Trash2 color={colors.error} size={17} /></TouchableOpacity></> : <Text style={[styles.muted, { color: colors.primary }]}>AUTO</Text>}</View>)}</View>
       </ScrollView>
     </AdminPageShell>
   );

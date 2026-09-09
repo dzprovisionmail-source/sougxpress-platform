@@ -1,13 +1,15 @@
-import React, { memo, useCallback, useMemo, useRef, useState } from "react";
-import { FlatList, Image, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AppState, FlatList, Image, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { ArrowLeft, ShoppingBag, Store, Tag } from "lucide-react-native";
 import type { HeroSlide } from "./hero.types";
+import { HERO_AUTOPLAY_INTERVAL, clampHeroIndex, nextHeroIndex, shouldRunHeroAutoplay } from "./hero.autoplay";
 
 interface MarketHeroSliderProps {
   slides: HeroSlide[];
   colors: any;
   isRTL: boolean;
   onPressSlide?: (slide: HeroSlide) => void;
+  isActive?: boolean;
 }
 
 const PEEK = 28;
@@ -24,40 +26,59 @@ const MarketHeroSlide = memo(function MarketHeroSlide({ slide, width, colors, on
   const Icon = typeIcon(slide.type);
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress} disabled={!onPress} style={[styles.slide, { width, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]}>
-      {slide.imageUrl ? (
-        <Image source={{ uri: slide.imageUrl }} style={styles.image} resizeMode="cover" />
-      ) : (
-        <View style={[styles.placeholder, { backgroundColor: colors.primary }]}> 
-          <Icon color="#fff" size={44} strokeWidth={1.6} />
-          <View style={styles.placeholderOrb} />
-        </View>
-      )}
+      {slide.imageUrl ? <Image source={{ uri: slide.imageUrl }} style={styles.image} resizeMode="cover" /> : <View style={[styles.placeholder, { backgroundColor: colors.primary }]}><Icon color="#fff" size={44} strokeWidth={1.6} /><View style={styles.placeholderOrb} /></View>}
       <View style={styles.scrim} />
       <View style={styles.content}>
-        <View style={[styles.typePill, { backgroundColor: "rgba(255,255,255,0.18)" }]}>
-          <Icon color="#fff" size={13} />
-          <Text style={styles.typeText}>{slide.type === "STORE" ? "متجر محلي" : slide.type === "PRODUCT" ? "منتجات السوق" : "اختيار السوق"}</Text>
-        </View>
+        <View style={[styles.typePill, { backgroundColor: "rgba(255,255,255,0.18)" }]}><Icon color="#fff" size={13} /><Text style={styles.typeText}>{slide.type === "STORE" ? "متجر محلي" : slide.type === "PRODUCT" ? "منتجات السوق" : "اختيار السوق"}</Text></View>
         {!!slide.title && <Text numberOfLines={2} style={styles.title}>{slide.title}</Text>}
         {!!slide.description && <Text numberOfLines={2} style={styles.description}>{slide.description}</Text>}
-        {!!slide.ctaText && (
-          <View style={[styles.cta, { backgroundColor: colors.primary }]}> 
-            <Text style={styles.ctaText}>{slide.ctaText}</Text>
-            <ArrowLeft color="#fff" size={16} />
-          </View>
-        )}
+        {!!slide.ctaText && <View style={[styles.cta, { backgroundColor: colors.primary }]}><Text style={styles.ctaText}>{slide.ctaText}</Text><ArrowLeft color="#fff" size={16} /></View>}
       </View>
     </TouchableOpacity>
   );
 });
 
-export const MarketHeroSlider = memo(function MarketHeroSlider({ slides, colors, isRTL, onPressSlide }: MarketHeroSliderProps) {
+export const MarketHeroSlider = memo(function MarketHeroSlider({ slides, colors, isRTL, onPressSlide, isActive = true }: MarketHeroSliderProps) {
   const { width: screenWidth } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [appStateActive, setAppStateActive] = useState(AppState.currentState === "active");
   const listRef = useRef<FlatList<HeroSlide>>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slideWidth = Math.max(260, screenWidth - HORIZONTAL_MARGIN * 2 - PEEK);
   const itemLength = slideWidth + SLIDE_GAP;
   const data = useMemo(() => slides.filter((slide) => slide.isActive && slide.imageUrl !== undefined), [slides]);
+
+  const clearAutoplayTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const scheduleAutoplay = useCallback(() => {
+    clearAutoplayTimer();
+    if (!shouldRunHeroAutoplay({ active: isActive, appStateActive, slideCount: data.length })) return;
+    timerRef.current = setTimeout(() => {
+      const nextIndex = nextHeroIndex(activeIndex, data.length);
+      listRef.current?.scrollToOffset({ offset: nextIndex * itemLength, animated: true });
+      setActiveIndex(nextIndex);
+      timerRef.current = null;
+    }, HERO_AUTOPLAY_INTERVAL);
+  }, [activeIndex, appStateActive, clearAutoplayTimer, data.length, isActive, itemLength]);
+
+  useEffect(() => {
+    setActiveIndex((current) => clampHeroIndex(current, data.length));
+  }, [data.length]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => setAppStateActive(nextState === "active"));
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    scheduleAutoplay();
+    return clearAutoplayTimer;
+  }, [clearAutoplayTimer, scheduleAutoplay]);
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offset = event.nativeEvent.contentOffset.x;
@@ -65,36 +86,22 @@ export const MarketHeroSlider = memo(function MarketHeroSlider({ slides, colors,
     setActiveIndex(index);
   }, [data.length, itemLength]);
 
-  const renderItem = useCallback(({ item }: ListRenderItemInfo<HeroSlide>) => (
-    <MarketHeroSlide slide={item} width={slideWidth} colors={colors} onPress={onPressSlide ? () => onPressSlide(item) : undefined} />
-  ), [colors, onPressSlide, slideWidth]);
+  const handleScrollBeginDrag = useCallback(() => {
+    clearAutoplayTimer();
+  }, [clearAutoplayTimer]);
+
+  const handleMomentumScrollEnd = useCallback(() => {
+    scheduleAutoplay();
+  }, [scheduleAutoplay]);
+
+  const renderItem = useCallback(({ item }: ListRenderItemInfo<HeroSlide>) => <MarketHeroSlide slide={item} width={slideWidth} colors={colors} onPress={onPressSlide ? () => onPressSlide(item) : undefined} />, [colors, onPressSlide, slideWidth]);
 
   if (data.length === 0) return null;
 
   return (
     <View style={styles.container} accessibilityLabel="شرائح السوق الترويجية">
-      <FlatList
-        ref={listRef}
-        horizontal
-        inverted={isRTL}
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        showsHorizontalScrollIndicator={false}
-        snapToInterval={itemLength}
-        decelerationRate="fast"
-        disableIntervalMomentum
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        getItemLayout={(_, index) => ({ length: itemLength, offset: itemLength * index, index })}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={{ width: SLIDE_GAP }} />}
-      />
-      {data.length > 1 && (
-        <View style={styles.pagination} accessibilityLabel={`الشريحة ${activeIndex + 1} من ${data.length}`}>
-          {data.map((slide, index) => <View key={slide.id} style={[styles.dot, { backgroundColor: index === activeIndex ? colors.primary : colors.borderSubtle }]} />)}
-        </View>
-      )}
+      <FlatList ref={listRef} horizontal inverted={isRTL} data={data} keyExtractor={(item) => item.id} renderItem={renderItem} showsHorizontalScrollIndicator={false} snapToInterval={itemLength} decelerationRate="fast" disableIntervalMomentum onScroll={handleScroll} onScrollBeginDrag={handleScrollBeginDrag} onMomentumScrollEnd={handleMomentumScrollEnd} scrollEventThrottle={16} getItemLayout={(_, index) => ({ length: itemLength, offset: itemLength * index, index })} contentContainerStyle={styles.listContent} ItemSeparatorComponent={() => <View style={{ width: SLIDE_GAP }} />} />
+      {data.length > 1 && <View style={styles.pagination} accessibilityLabel={`الشريحة ${activeIndex + 1} من ${data.length}`}>{data.map((slide, index) => <View key={slide.id} style={[styles.dot, { backgroundColor: index === activeIndex ? colors.primary : colors.borderSubtle }]} />)}</View>}
     </View>
   );
 });
