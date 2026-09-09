@@ -729,8 +729,8 @@ const HomeScreen = () => {
           </View>
         </View>
 
-        {/* Hero Slider */}
-        <View style={styles.section}>
+        {/* Hero Slider — temporarily disabled in Market; implementation and settings remain intact. */}
+        {false && <View style={styles.section}>
           {heroSlides.length > 0 ? (
             <Animated.View style={{ opacity: heroFadeOpacity }} testID="smart-slider-carousel">
               <Carousel
@@ -767,7 +767,7 @@ const HomeScreen = () => {
               />
             ))}
           </View>
-        </View>
+        </View>}
 
         {/* Login Banner - Only for guests */}
         {isGuest && (
