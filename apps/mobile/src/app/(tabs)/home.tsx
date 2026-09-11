@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Search as SearchIcon, ShoppingCart, LayoutGrid, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
+import { Search as SearchIcon, ShoppingCart, LayoutGrid, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { LOGO_ICON, ICON_MASCOT_HEAD } from '@/constants/brand';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button, BrandWordmark } from '@/components/ui';
@@ -31,6 +31,42 @@ import { useMarketHeroSlides } from '@/hooks/useMarketHeroSlides';
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const marketDebug = (...args: unknown[]) => console.log('[MARKET-DEBUG]', new Date().toISOString(), ...args);
+const MARKET_SCROLL_STEP = SCREEN_WIDTH * 0.78 + spacing.sm;
+
+type MarketArrowScrollViewProps = React.ComponentProps<typeof ScrollView> & {
+  isRTL: boolean;
+  arrowColor: string;
+};
+
+const MarketArrowScrollView = ({ isRTL, arrowColor, children, contentContainerStyle, ...scrollProps }: MarketArrowScrollViewProps) => {
+  const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
+  const [offset, setOffset] = useState(0);
+
+  const move = (side: 'left' | 'right') => {
+    const coordinateDelta = side === 'left' ? (isRTL ? MARKET_SCROLL_STEP : -MARKET_SCROLL_STEP) : (isRTL ? -MARKET_SCROLL_STEP : MARKET_SCROLL_STEP);
+    scrollRef.current?.scrollTo({ x: Math.max(0, offset + coordinateDelta), animated: true });
+  };
+
+  return (
+    <View style={styles.marketArrowViewport}>
+      <ScrollView
+        {...scrollProps}
+        ref={scrollRef}
+        onScroll={(event) => setOffset(event.nativeEvent.contentOffset.x)}
+        scrollEventThrottle={16}
+        contentContainerStyle={contentContainerStyle}
+      >
+        {children}
+      </ScrollView>
+      <TouchableOpacity style={[styles.marketArrow, styles.marketArrowLeft]} onPress={() => move('left')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليسار">
+        <ChevronLeft size={20} color={arrowColor} strokeWidth={2.8} />
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.marketArrow, styles.marketArrowRight]} onPress={() => move('right')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليمين">
+        <ChevronRight size={20} color={arrowColor} strokeWidth={2.8} />
+      </TouchableOpacity>
+    </View>
+  );
+};
 const toFiniteCoordinate = (value: unknown): number | null => {
   const numberValue = typeof value === "number" ? value : Number(value);
   return Number.isFinite(numberValue) ? numberValue : null;
@@ -656,22 +692,22 @@ const HomeScreen = () => {
               return <>
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}><Award color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المميزون</Text><TouchableOpacity onPress={() => openMarketSection('featured')}><Text style={[styles.showAllText, { color: colors.primary }]}>إظهار الكل</Text></TouchableOpacity></View>
-                  <ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{(searchQuery.length > 0 ? displayedStores : featuredStores).slice(0, 6).map((store) => renderStore(store, true))}</ScrollView>
+                  <MarketArrowScrollView isRTL={isRTL} arrowColor={colors.primary} horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{(searchQuery.length > 0 ? displayedStores : featuredStores).slice(0, 6).map((store) => renderStore(store, true))}</MarketArrowScrollView>
                 </View>
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}><BadgePlus color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>متاجر جديدة</Text><TouchableOpacity onPress={() => openMarketSection('new')}><Text style={[styles.showAllText, { color: colors.primary }]}>إظهار الكل</Text></TouchableOpacity></View>
-                  <ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{newStores.slice(0, 6).map((store) => renderStore(store))}</ScrollView>
+                  <MarketArrowScrollView isRTL={isRTL} arrowColor={colors.primary} horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{newStores.slice(0, 6).map((store) => renderStore(store))}</MarketArrowScrollView>
                 </View>
                 <View style={styles.section}>
                   <View style={styles.sectionTitleRow}><MapPin color={colors.primary} size={iconSizes.default} strokeWidth={2} /><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المتاجر القريبة منك</Text><TouchableOpacity onPress={() => openMarketSection('nearby')}><Text style={[styles.showAllText, { color: colors.primary }]}>إظهار الكل</Text></TouchableOpacity></View>
-                  <ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{nearbyStores.slice(0, 4).map((store) => renderStore(store))}</ScrollView>
+                  <MarketArrowScrollView isRTL={isRTL} arrowColor={colors.primary} horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{nearbyStores.slice(0, 4).map((store) => renderStore(store))}</MarketArrowScrollView>
                 </View>
                 <View style={[styles.section, styles.lastStoreSection]}>
                   <View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>كل المتاجر</Text><TouchableOpacity onPress={() => openMarketSection('all')}><Text style={[styles.showAllText, { color: colors.primary }]}>إظهار الكل</Text></TouchableOpacity></View>
-                  <ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{allStoresForMarket.slice(0, 4).map((store) => renderStore(store))}</ScrollView>
+                  <MarketArrowScrollView isRTL={isRTL} arrowColor={colors.primary} horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.storeHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{allStoresForMarket.slice(0, 4).map((store) => renderStore(store))}</MarketArrowScrollView>
                 </View>
-                {products.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المنتجات</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأحدث</Text></View><ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.productHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{products.slice(0, 9).map(renderProduct)}</ScrollView></View>}
-                {mostLikedProducts.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>الأكثر إعجابًا</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأكثر تفضيلًا</Text></View><ScrollView horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.productHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{mostLikedProducts.slice(0, 9).map(renderProduct)}</ScrollView></View>}
+                {products.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>المنتجات</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأحدث</Text></View><MarketArrowScrollView isRTL={isRTL} arrowColor={colors.primary} horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.productHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{products.slice(0, 9).map(renderProduct)}</MarketArrowScrollView></View>}
+                {mostLikedProducts.length > 0 && <View style={styles.section}><View style={styles.sectionTitleRow}><Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign }]}>الأكثر إعجابًا</Text><Text style={[styles.sectionHint, { color: colors.textSecondary }]}>الأكثر تفضيلًا</Text></View><MarketArrowScrollView isRTL={isRTL} arrowColor={colors.primary} horizontal nestedScrollEnabled directionalLockEnabled showsHorizontalScrollIndicator={false} decelerationRate="fast" contentContainerStyle={[styles.productHorizontalContent, isRTL && styles.storeHorizontalRtl]}>{mostLikedProducts.slice(0, 9).map(renderProduct)}</MarketArrowScrollView></View>}
                 <View style={[styles.marketFooter, { borderTopColor: colors.borderSubtle }]}>
                   <Text style={[styles.marketFooterBrand, { color: colors.primary }]}>Soug XPRESS</Text>
                   <Text style={[styles.marketFooterText, { color: colors.textSecondary }]}>منصة تجارة محلية لمدينة عين الصفراء</Text>
@@ -811,6 +847,30 @@ const styles = StyleSheet.create({
   },
   storeHorizontalRtl: {
     flexDirection: 'row-reverse',
+  },
+  marketArrowViewport: {
+    position: 'relative',
+    paddingHorizontal: spacing.lg,
+  },
+  marketArrow: {
+    position: 'absolute',
+    top: '42%',
+    zIndex: 2,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#F97316',
+    ...shadows.small,
+  },
+  marketArrowLeft: {
+    left: spacing.xs,
+  },
+  marketArrowRight: {
+    right: spacing.xs,
   },
   storeScrollItem: {
     width: SCREEN_WIDTH * 0.78,
