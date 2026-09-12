@@ -37,6 +37,7 @@ type MarketArrowScrollViewProps = React.ComponentProps<typeof ScrollView> & {
   isRTL: boolean;
   arrowColor: string;
 };
+
 const MarketArrowScrollView = ({ isRTL, arrowColor, children, contentContainerStyle, ...scrollProps }: MarketArrowScrollViewProps) => {
   const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const [offset, setOffset] = useState(0);
@@ -870,10 +871,10 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    shadowOpacity: 0,
-    elevation: 0,
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#F97316',
+    ...shadows.small,
   },
   marketArrowGlyph: {
     fontSize: 25,
