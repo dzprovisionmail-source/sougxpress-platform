@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Search as SearchIcon, ShoppingCart, LayoutGrid, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
 import { LOGO_ICON, ICON_MASCOT_HEAD } from '@/constants/brand';
 
@@ -68,11 +69,11 @@ const MarketArrowScrollView = ({ isRTL, arrowColor, children, contentContainerSt
       >
         {children}
       </ScrollView>
-      {canMoveForward && <TouchableOpacity style={[styles.marketArrow, { borderColor: arrowColor }, styles.marketArrowLeft]} onPress={() => move('left')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليسار">
-        <Text style={[styles.marketArrowGlyph, { color: arrowColor }]}>←</Text>
+      {canMoveForward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowLeft]} onPress={() => move('left')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليسار">
+        <Ionicons name="chevron-back" size={26} color={arrowColor} />
       </TouchableOpacity>}
-      {canMoveBackward && <TouchableOpacity style={[styles.marketArrow, { borderColor: arrowColor }, styles.marketArrowRight]} onPress={() => move('right')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليمين">
-        <Text style={[styles.marketArrowGlyph, { color: arrowColor }]}>→</Text>
+      {canMoveBackward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowRight]} onPress={() => move('right')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليمين">
+        <Ionicons name="chevron-forward" size={26} color={arrowColor} />
       </TouchableOpacity>}
     </View>
   );
@@ -868,18 +869,9 @@ const styles = StyleSheet.create({
     zIndex: 2,
     width: 36,
     height: 36,
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
-    borderWidth: 1,
-  },
-  marketArrowGlyph: {
-    fontSize: 23,
-    lineHeight: 26,
-    fontWeight: '600',
-    textAlign: 'center',
-    writingDirection: 'ltr',
   },
   marketArrowLeft: {
     left: spacing.xs,
