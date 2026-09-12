@@ -70,10 +70,10 @@ const MarketArrowScrollView = ({ isRTL, arrowColor, children, contentContainerSt
         {children}
       </ScrollView>
       {canMoveForward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowLeft]} onPress={() => move('left')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليسار">
-        <Ionicons name="chevron-back" size={26} color={arrowColor} />
+        <Ionicons name="chevron-forward" size={26} color={arrowColor} />
       </TouchableOpacity>}
       {canMoveBackward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowRight]} onPress={() => move('right')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليمين">
-        <Ionicons name="chevron-forward" size={26} color={arrowColor} />
+        <Ionicons name="chevron-back" size={26} color={arrowColor} />
       </TouchableOpacity>}
     </View>
   );
