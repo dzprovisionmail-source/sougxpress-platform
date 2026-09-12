@@ -68,10 +68,10 @@ const MarketArrowScrollView = ({ isRTL, arrowColor, children, contentContainerSt
       >
         {children}
       </ScrollView>
-      {canMoveForward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowLeft]} onPress={() => move('left')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليسار">
+      {canMoveForward && <TouchableOpacity style={[styles.marketArrow, { borderColor: arrowColor }, styles.marketArrowLeft]} onPress={() => move('left')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليسار">
         <Text style={[styles.marketArrowGlyph, { color: arrowColor }]}>←</Text>
       </TouchableOpacity>}
-      {canMoveBackward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowRight]} onPress={() => move('right')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليمين">
+      {canMoveBackward && <TouchableOpacity style={[styles.marketArrow, { borderColor: arrowColor }, styles.marketArrowRight]} onPress={() => move('right')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليمين">
         <Text style={[styles.marketArrowGlyph, { color: arrowColor }]}>→</Text>
       </TouchableOpacity>}
     </View>
@@ -866,20 +866,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '42%',
     zIndex: 2,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF7ED',
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#F97316',
-    ...shadows.small,
   },
   marketArrowGlyph: {
-    fontSize: 25,
-    lineHeight: 28,
-    fontWeight: '700',
+    fontSize: 23,
+    lineHeight: 26,
+    fontWeight: '600',
     textAlign: 'center',
     writingDirection: 'ltr',
   },
