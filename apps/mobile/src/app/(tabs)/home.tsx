@@ -41,10 +41,18 @@ type MarketArrowScrollViewProps = React.ComponentProps<typeof ScrollView> & {
 const MarketArrowScrollView = ({ isRTL, arrowColor, children, contentContainerStyle, ...scrollProps }: MarketArrowScrollViewProps) => {
   const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const [offset, setOffset] = useState(0);
+  const [contentWidth, setContentWidth] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const maxOffset = Math.max(0, contentWidth - viewportWidth);
+  const epsilon = 2;
+  const canMoveForward = isRTL ? offset < maxOffset - epsilon : offset > epsilon;
+  const canMoveBackward = isRTL ? offset > epsilon : offset < maxOffset - epsilon;
 
   const move = (side: 'left' | 'right') => {
-    const coordinateDelta = side === 'left' ? (isRTL ? MARKET_SCROLL_STEP : -MARKET_SCROLL_STEP) : (isRTL ? -MARKET_SCROLL_STEP : MARKET_SCROLL_STEP);
-    scrollRef.current?.scrollTo({ x: Math.max(0, offset + coordinateDelta), animated: true });
+    const isForward = side === 'left';
+    const coordinateDelta = isForward === isRTL ? MARKET_SCROLL_STEP : -MARKET_SCROLL_STEP;
+    const nextOffset = Math.min(maxOffset, Math.max(0, offset + coordinateDelta));
+    scrollRef.current?.scrollTo({ x: nextOffset, animated: true });
   };
 
   return (
@@ -52,18 +60,20 @@ const MarketArrowScrollView = ({ isRTL, arrowColor, children, contentContainerSt
       <ScrollView
         {...scrollProps}
         ref={scrollRef}
+        onLayout={(event) => setViewportWidth(event.nativeEvent.layout.width)}
+        onContentSizeChange={(width) => setContentWidth(width)}
         onScroll={(event) => setOffset(event.nativeEvent.contentOffset.x)}
         scrollEventThrottle={16}
         contentContainerStyle={contentContainerStyle}
       >
         {children}
       </ScrollView>
-      <TouchableOpacity style={[styles.marketArrow, styles.marketArrowLeft]} onPress={() => move('left')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليسار">
+      {canMoveForward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowLeft]} onPress={() => move('left')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليسار">
         <ChevronLeft size={20} color={arrowColor} strokeWidth={2.8} />
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.marketArrow, styles.marketArrowRight]} onPress={() => move('right')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليمين">
+      </TouchableOpacity>}
+      {canMoveBackward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowRight]} onPress={() => move('right')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليمين">
         <ChevronRight size={20} color={arrowColor} strokeWidth={2.8} />
-      </TouchableOpacity>
+      </TouchableOpacity>}
     </View>
   );
 };
@@ -588,7 +598,7 @@ const HomeScreen = () => {
             >
               <Text style={[styles.sectionTitle, { color: colors.textPrimary, textAlign,  }]}>
 الفئات</Text>
-              <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
+              <MarketArrowScrollView isRTL={isRTL} arrowColor={colors.primary} horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
                   <TouchableOpacity key="all" onPress={() => { setActiveCategory("all"); setActiveSubcategory("all"); setSubcategories([]); }} style={[styles.categoryItem, activeCategory === "all" && styles.categoryItemSelected, { backgroundColor: activeCategory === "all" ? colors.primary + "18" : colors.bgSurface, borderColor: activeCategory === "all" ? colors.primary : colors.borderSubtle }]}>
                   <View style={[styles.categoryIconFrame, { backgroundColor: activeCategory === "all" ? colors.primary : colors.bgElevated }]}>
                     <LayoutGrid color={activeCategory === "all" ? colors.textOnBrand : colors.primary} size={20} strokeWidth={2.2} />
@@ -603,13 +613,13 @@ const HomeScreen = () => {
                     <Text numberOfLines={1} style={[styles.categoryText, { color: activeCategory === category.id ? colors.primary : colors.textPrimary }]}>{category.name_ar}</Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </MarketArrowScrollView>
             </View>
 
             {/* Subcategories */}
             {subcategories.length > 0 && (
               <View style={styles.section}>
-                <ScrollView horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
+                <MarketArrowScrollView isRTL={isRTL} arrowColor={colors.primary} horizontal style={styles.horizontalRtl} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
                   <TouchableOpacity key="all-sub" onPress={() => setActiveSubcategory("all")} style={[styles.categoryItem, activeSubcategory === "all" && styles.categoryItemSelected, { backgroundColor: activeSubcategory === "all" ? colors.primary + "18" : colors.bgSurface, borderColor: activeSubcategory === "all" ? colors.primary : colors.borderSubtle }]}>
                     <View style={[styles.categoryIconFrame, { backgroundColor: activeSubcategory === "all" ? colors.primary : colors.bgElevated }]}>
                       <LayoutGrid color={activeSubcategory === "all" ? colors.textOnBrand : colors.primary} size={20} strokeWidth={2.2} />
@@ -624,7 +634,7 @@ const HomeScreen = () => {
                       <Text numberOfLines={1} style={[styles.categoryText, { color: activeSubcategory === sub.id ? colors.primary : colors.textPrimary }]}>{sub.name_ar}</Text>
                     </TouchableOpacity>
                   ))}
-                </ScrollView>
+                </MarketArrowScrollView>
               </View>
             )}
 
