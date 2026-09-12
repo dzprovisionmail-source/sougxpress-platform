@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Search as SearchIcon, ShoppingCart, LayoutGrid, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { Search as SearchIcon, ShoppingCart, LayoutGrid, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
 import { LOGO_ICON, ICON_MASCOT_HEAD } from '@/constants/brand';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button, BrandWordmark } from '@/components/ui';
@@ -69,10 +69,10 @@ const MarketArrowScrollView = ({ isRTL, arrowColor, children, contentContainerSt
         {children}
       </ScrollView>
       {canMoveForward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowLeft]} onPress={() => move('left')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليسار">
-        {isRTL ? <ChevronRight size={20} color={arrowColor} strokeWidth={2.8} /> : <ChevronLeft size={20} color={arrowColor} strokeWidth={2.8} />}
+        <Text style={[styles.marketArrowGlyph, { color: arrowColor }]}>←</Text>
       </TouchableOpacity>}
       {canMoveBackward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowRight]} onPress={() => move('right')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليمين">
-        {isRTL ? <ChevronLeft size={20} color={arrowColor} strokeWidth={2.8} /> : <ChevronRight size={20} color={arrowColor} strokeWidth={2.8} />}
+        <Text style={[styles.marketArrowGlyph, { color: arrowColor }]}>→</Text>
       </TouchableOpacity>}
     </View>
   );
@@ -875,6 +875,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F97316',
     ...shadows.small,
+  },
+  marketArrowGlyph: {
+    fontSize: 25,
+    lineHeight: 28,
+    fontWeight: '700',
+    textAlign: 'center',
+    writingDirection: 'ltr',
   },
   marketArrowLeft: {
     left: spacing.xs,
