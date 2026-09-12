@@ -69,10 +69,10 @@ const MarketArrowScrollView = ({ isRTL, arrowColor, children, contentContainerSt
         {children}
       </ScrollView>
       {canMoveForward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowLeft]} onPress={() => move('left')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليسار">
-        <ChevronLeft size={20} color={arrowColor} strokeWidth={2.8} />
+        {isRTL ? <ChevronRight size={20} color={arrowColor} strokeWidth={2.8} /> : <ChevronLeft size={20} color={arrowColor} strokeWidth={2.8} />}
       </TouchableOpacity>}
       {canMoveBackward && <TouchableOpacity style={[styles.marketArrow, styles.marketArrowRight]} onPress={() => move('right')} activeOpacity={0.78} accessibilityRole="button" accessibilityLabel="التمرير إلى اليمين">
-        <ChevronRight size={20} color={arrowColor} strokeWidth={2.8} />
+        {isRTL ? <ChevronLeft size={20} color={arrowColor} strokeWidth={2.8} /> : <ChevronRight size={20} color={arrowColor} strokeWidth={2.8} />}
       </TouchableOpacity>}
     </View>
   );
