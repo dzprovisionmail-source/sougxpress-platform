@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "166986070661",
+    "project_id": "soug-xpress-6751f",
+    "storage_bucket": "soug-xpress-6751f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:166986070661:android:20fd7d276aa32c398947ec",
+        "android_client_info": {
+          "package_name": "com.sougxpress.founder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSyMCJCU64R0CMYKgcyHu35UYWfYlrEj4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

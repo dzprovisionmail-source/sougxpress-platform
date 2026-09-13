@@ -52,6 +52,7 @@
     },
     "android": {
       "package": "com.sougxpress.founder",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 7,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
