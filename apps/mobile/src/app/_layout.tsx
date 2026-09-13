@@ -17,7 +17,10 @@ import {
   releasePushToken,
   routeFromNotificationResponse,
   isRemotePushNotificationsAvailable,
+  syncAppBadgeCount,
+  clearAppBadgeCount,
 } from "@/services/push-notifications.service";
+import { subscribeToNotifications } from "@/services/notification.service";
 
 // SougXpress is Arabic-only — force RTL layout direction app-wide.
 if (Platform.OS !== "web") {
@@ -58,8 +61,30 @@ export default function RootLayout() {
     let tokenSubscription: Notifications.Subscription | null = null;
     let getActiveToken: (() => string) | null = null;
     let responseSubscription: Notifications.Subscription | null = null;
+    let badgeSubscriptionCleanup: (() => void) | null = null;
+    let badgeUserId: string | null = null;
+    let badgeSyncTimer: ReturnType<typeof setTimeout> | null = null;
+    let badgeSyncInFlight = false;
+    let pendingBadgeUserId: string | null = null;
     const notificationsAvailable = isRemotePushNotificationsAvailable();
     const handledNotificationIds = new Set<string>();
+
+    const scheduleBadgeSync = (userId: string, immediate = false) => {
+      pendingBadgeUserId = userId;
+      if (badgeSyncTimer) clearTimeout(badgeSyncTimer);
+      badgeSyncTimer = setTimeout(() => {
+        badgeSyncTimer = null;
+        if (badgeSyncInFlight) return;
+        const pendingUserId = pendingBadgeUserId;
+        pendingBadgeUserId = null;
+        if (!pendingUserId) return;
+        badgeSyncInFlight = true;
+        void syncAppBadgeCount(pendingUserId).finally(() => {
+          badgeSyncInFlight = false;
+          if (pendingBadgeUserId) scheduleBadgeSync(pendingBadgeUserId);
+        });
+      }, immediate ? 0 : 150);
+    };
 
     const registerCurrentUser = async (force = false) => {
       const { data } = await supabase.auth.getUser();
@@ -75,6 +100,15 @@ export default function RootLayout() {
         registeredUserId = null;
       }
       if (!force && registeredUserId === data.user.id) return;
+
+      if (badgeUserId !== data.user.id) {
+        badgeSubscriptionCleanup?.();
+        badgeSubscriptionCleanup = subscribeToNotifications(data.user.id, () => {
+          scheduleBadgeSync(data.user.id);
+        });
+        badgeUserId = data.user.id;
+      }
+      scheduleBadgeSync(data.user.id, true);
 
       registrationInFlight = true;
       try {
@@ -140,6 +174,13 @@ export default function RootLayout() {
         tokenSubscription = null;
         registeredUserId = null;
         registrationInFlight = false;
+        badgeSubscriptionCleanup?.();
+        badgeSubscriptionCleanup = null;
+        badgeUserId = null;
+        if (badgeSyncTimer) clearTimeout(badgeSyncTimer);
+        badgeSyncTimer = null;
+        pendingBadgeUserId = null;
+        void clearAppBadgeCount();
         if (navigationReadyRef.current) {
           router.replace("/");
         } else {
@@ -152,6 +193,8 @@ export default function RootLayout() {
       disposed = true;
       responseSubscription?.remove();
       tokenSubscription?.remove();
+      badgeSubscriptionCleanup?.();
+      if (badgeSyncTimer) clearTimeout(badgeSyncTimer);
       appStateSubscription.remove();
       authListener.subscription.unsubscribe();
     };

@@ -51,6 +51,22 @@ export async function getNotifications(
   };
 }
 
+export async function getUnreadNotificationCount(
+  userId: string,
+): Promise<{ count: number; error: Error | null }> {
+  const { count, error } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .is("read_at", null)
+    .or("is_read.eq.false,is_read.is.null");
+
+  return {
+    count: count ?? 0,
+    error: error ? new Error(error.message) : null,
+  };
+}
+
 export async function markNotificationRead(
   userId: string,
   notificationId: string,

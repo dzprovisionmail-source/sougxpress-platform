@@ -5,6 +5,7 @@ import type * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
+import { getUnreadNotificationCount } from "@/services/notification.service";
 
 export type PushRegistrationDiagnostics = {
   appVersion: string | null;
@@ -129,6 +130,36 @@ export async function getNotificationsModule(): Promise<NotificationsModule | nu
   if (!isRemotePushNotificationsAvailable()) return null;
   notificationsModule ??= await import("expo-notifications");
   return notificationsModule;
+}
+
+export async function syncAppBadgeCount(userId: string): Promise<void> {
+  try {
+    const notifications = await getNotificationsModule();
+    if (!notifications) return;
+    const { count, error } = await getUnreadNotificationCount(userId);
+    if (error) {
+      console.warn("Notification badge sync failed", error.message);
+      return;
+    }
+    await notifications.setBadgeCountAsync(count);
+  } catch (error) {
+    console.warn(
+      "Notification badge sync failed safely",
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+}
+
+export async function clearAppBadgeCount(): Promise<void> {
+  try {
+    const notifications = await getNotificationsModule();
+    if (notifications) await notifications.setBadgeCountAsync(0);
+  } catch (error) {
+    console.warn(
+      "Notification badge clear failed safely",
+      error instanceof Error ? error.message : String(error),
+    );
+  }
 }
 
 async function configureNotificationHandler(): Promise<NotificationsModule | null> {

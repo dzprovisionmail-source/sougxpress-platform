@@ -105,6 +105,17 @@ Deno.serve(async (request) => {
   }
   if (record.delivery_status === "sent") return json({ skipped: true, reason: "already_sent" });
 
+  const { count: unreadCount, error: unreadCountError } = await supabaseAdmin
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", record.user_id)
+    .is("read_at", null)
+    .or("is_read.eq.false,is_read.is.null");
+  if (unreadCountError) {
+    console.warn("Push badge count unavailable; sending without badge", unreadCountError.message);
+  }
+  const badgeCount = unreadCountError ? undefined : Math.max(0, unreadCount ?? 0);
+
   const { data: devices, error: devicesError } = await supabaseAdmin
     .from("user_devices")
     .select("id, push_token, platform")
@@ -128,7 +139,7 @@ Deno.serve(async (request) => {
     body: record.body,
     data: safeData(record),
     channelId: presentation.channelId,
-    badge: 1,
+    ...(badgeCount === undefined ? {} : { badge: badgeCount }),
     priority: "high",
   }));
 
