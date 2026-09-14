@@ -3,10 +3,11 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, View, ScrollView, StyleSheet, I18nManager, Image, Pressable, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Typography, Card } from "../components/ui";
-import { BRAND_NAME_AR, LOGO_OFFICIAL_WORDMARK, ICON_SHOPPING, ICON_STORE, ICON_DELIVERY } from "../constants/brand";
+import { BRAND_NAME_AR, LOGO_OFFICIAL_WORDMARK } from "../constants/brand";
 import { TOKENS } from "../constants/tokens";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { getAuthenticatedEntryRoute } from "../services/auth-entry.service";
+import { Compass, ShoppingBag, Store, Truck } from "lucide-react-native";
 
 /**
  * Role Selection Gateway — Brand Icon Integration
@@ -24,7 +25,7 @@ import { getAuthenticatedEntryRoute } from "../services/auth-entry.service";
 
 interface IntentOption {
   id: string;
-  icon?: any;
+  icon: typeof ShoppingBag;
   titleAr: string;
   descriptionAr: string;
   route: string;
@@ -33,28 +34,28 @@ interface IntentOption {
 const INTENT_OPTIONS: IntentOption[] = [
   {
     id: "customer",
-    icon: ICON_SHOPPING,
+    icon: ShoppingBag,
     titleAr: "أريد التسوق",
     descriptionAr: "اكتشف المتاجر المحلية واطلب ما تحتاجه.",
     route: "/customer-auth",
   },
   {
     id: "merchant",
-    icon: ICON_STORE,
+    icon: Store,
     titleAr: "أريد بيع منتجاتي",
     descriptionAr: "أنشئ متجرك وابدأ البيع بعد اعتماد حسابك.",
     route: "/merchant-auth",
   },
   {
     id: "driver",
-    icon: ICON_DELIVERY,
+    icon: Truck,
     titleAr: "أريد العمل كموصل",
     descriptionAr: "انضم إلى فريق التوصيل بعد الموافقة.",
     route: "/driver-auth",
   },
   {
     id: "guest",
-    icon: ICON_SHOPPING,
+    icon: Compass,
     titleAr: "استكشف السوق أولًا",
     descriptionAr: "تصفح المتاجر والمنتجات دون إنشاء حساب.",
     route: "/guest-marketplace",
@@ -124,15 +125,9 @@ export default function RoleSelectionScreen() {
             <Link key={option.id} href={option.route} asChild>
               <Card variant="elevated" style={StyleSheet.flatten([styles.intentCard, { backgroundColor: colors.bgElevated }])}>
                 <View style={[styles.cardContent, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
-                  {option.icon && (
-                    <View style={[styles.iconWrapper, { backgroundColor: colors.bgSurface }]}>
-                      <Image
-                        source={option.icon}
-                        style={styles.roleIcon}
-                        resizeMode="contain"
-                      />
-                    </View>
-                  )}
+                  <View style={[styles.iconWrapper, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+                    <option.icon size={32} color={colors.primary} strokeWidth={2.25} />
+                  </View>
                   <View style={[styles.textWrapper, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
                     <Typography variant="h3" align="right" style={styles.intentTitle}>
                       {option.titleAr}
@@ -221,10 +216,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-  },
-  roleIcon: {
-    width: "100%",
-    height: "100%",
+    borderWidth: 1,
   },
   textWrapper: {
     flex: 1,
