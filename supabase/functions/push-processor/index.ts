@@ -40,18 +40,18 @@ type NotificationPresentation = {
 function getNotificationPresentation(notificationType: string): NotificationPresentation {
   const type = notificationType.toLowerCase();
   if (["message", "chat", "chat_message"].includes(type)) {
-    return { sound: "market_message.wav", channelId: "chat_messages" };
+    return { sound: "market_message.wav", channelId: "chat_messages_v2" };
   }
   if (["new_order", "order_created", "transaction", "payment", "settlement"].includes(type)) {
-    return { sound: "market_order.wav", channelId: "transactions" };
+    return { sound: "market_order.wav", channelId: "transactions_v2" };
   }
   if (["delivery", "courier", "order_status", "delivery_status", "status_change"].includes(type)) {
-    return { sound: "market_success.wav", channelId: "delivery_updates" };
+    return { sound: "market_success.wav", channelId: "delivery_updates_v2" };
   }
   if (["founder", "admin", "system_alert"].includes(type)) {
-    return { sound: "market_alert.wav", channelId: "founder_alerts" };
+    return { sound: "market_alert.wav", channelId: "founder_alerts_v2" };
   }
-  return { sound: "default", channelId: "default" };
+  return { sound: "default", channelId: "default_v2" };
 }
 
 function safeData(record: NotificationRecord): Record<string, unknown> {

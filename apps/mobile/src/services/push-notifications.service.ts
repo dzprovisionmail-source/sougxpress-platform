@@ -50,10 +50,11 @@ export const NOTIFICATION_SOUNDS = {
 } as const;
 
 export const NOTIFICATION_CHANNELS = {
-  chat: "chat_messages",
-  transaction: "transactions",
-  delivery: "delivery_updates",
-  founder: "founder_alerts",
+  chat: "chat_messages_v2",
+  transaction: "transactions_v2",
+  delivery: "delivery_updates_v2",
+  founder: "founder_alerts_v2",
+  default: "default_v2",
 } as const;
 
 function createAndroidNotificationChannels(notifications: NotificationsModule): Promise<unknown[]> {
@@ -95,7 +96,7 @@ function createAndroidNotificationChannels(notifications: NotificationsModule): 
       lockscreenVisibility: notifications.AndroidNotificationVisibility.PUBLIC,
     }),
     // Keep the pre-existing default channel for unclassified notifications.
-    notifications.setNotificationChannelAsync("default", {
+    notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.default, {
       name: "Soug-XPRESS",
       importance: notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
