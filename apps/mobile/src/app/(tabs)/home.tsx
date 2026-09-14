@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Search as SearchIcon, ShoppingCart, LayoutGrid, Store as StoreIcon, Tag, MapPin, Star, Bike, LogIn, Heart, Award, BadgePlus } from 'lucide-react-native';
-import { LOGO_ICON, ICON_MASCOT_HEAD } from '@/constants/brand';
+import { LOGO_ICON } from '@/constants/brand';
 
 import { Input, StoreCard, CategoryIcon, Typography, ProductCard, Button, BrandWordmark } from '@/components/ui';
 import { useAppTheme } from '@/contexts/ThemeContext';
@@ -533,7 +533,20 @@ const HomeScreen = () => {
             activeOpacity={0.8}
           >
             <View style={styles.loginBannerContent}>
-              <Image source={ICON_MASCOT_HEAD} style={{ width: 60, height: 60 }} resizeMode="contain" />
+              <View
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: colors.primary + '14',
+                  borderWidth: 1,
+                  borderColor: colors.primary + '35',
+                }}
+              >
+                <StoreIcon color={colors.primary} size={36} strokeWidth={2.2} />
+              </View>
               <View style={[styles.loginBannerText, { flex: 1, marginHorizontal: 12 }]}>
                 <Typography variant="h3" align="right" color="brand">
                   مرحباً بك في سوق عين صفراء!
