@@ -22,6 +22,7 @@ export interface HeroSlide {
   createdAt?: string;
   updatedAt?: string;
   pinToTop?: boolean;
+  displayDurationSeconds?: number;
 }
 
 export interface HeroSlideDraft {
@@ -37,4 +38,5 @@ export interface HeroSlideDraft {
   startsAt: string;
   endsAt: string;
   pinToTop?: boolean;
+  displayDurationSeconds?: number;
 }

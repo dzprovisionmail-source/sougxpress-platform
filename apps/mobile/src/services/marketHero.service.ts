@@ -4,8 +4,16 @@ import type { HeroSlide, HeroSlideDraft } from "@/components/market/hero/hero.ty
 import { HERO_SOURCE_LIMITS, resolveSmartHeroSlides, productToHero, promotionToHero, storeToHero } from "@/components/market/hero/hero.smart";
 import type { StoreRow, ProductRow, PromotionRow, SmartHeroCandidates } from "@/components/market/hero/hero.smart";
 export { HERO_SOURCE_PRIORITY, HERO_SOURCE_LIMITS, HERO_FINAL_LIMIT, resolveSmartHeroSlides, productToHero, promotionToHero, storeToHero } from "@/components/market/hero/hero.smart";
-const heroSelect = "id, title, subtitle, image_url, content_type, target_id, cta_label, is_active, display_order, priority, start_at, end_at, created_at, updated_at, pin_to_top";
+const heroSelect = "id, title, subtitle, image_url, content_type, target_id, cta_label, is_active, display_order, priority, start_at, end_at, created_at, updated_at, pin_to_top, display_duration_seconds";
 const nowIso = () => new Date().toISOString();
+export const DEFAULT_HERO_SLIDE_DURATION_SECONDS = 3;
+export const DEFAULT_HERO_ROTATION_INTERVAL_HOURS = 6;
+export const DEFAULT_HERO_SLIDE_COUNT = 5;
+export type HeroRuntimeSettings = { autoMode: boolean; slideDurationSeconds: number; rotationIntervalHours: number; slideCount: number };
+const boundedNumber = (value: unknown, fallback: number, minimum: number, maximum: number) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.min(maximum, Math.max(minimum, parsed)) : fallback;
+};
 const isCurrent = (slide: HeroSlide, nowMs = Date.now()) => slide.isActive && (!slide.startsAt || Date.parse(slide.startsAt) <= nowMs) && (!slide.endsAt || Date.parse(slide.endsAt) >= nowMs) && isUsableHeroImage(slide.imageUrl);
 export const safeSource = async <T>(name: string, loader: () => Promise<T>, fallback: T): Promise<T> => { try { return await loader(); } catch (error) { console.warn(`[hero] ${name} source unavailable`, error); return fallback; } };
 
@@ -34,13 +42,15 @@ async function getAutomaticCandidates(): Promise<SmartHeroCandidates> {
   return { manual: [], promotions, featuredStores, newStores, products };
 }
 export async function getMarketHeroSlides(): Promise<HeroSlide[]> {
-  const [manual, automatic, autoMode] = await Promise.all([safeSource("manual", () => getManualCandidates(true), []), getAutomaticCandidates(), safeSource("auto mode", getHeroAutoMode, true)]);
-  return resolveSmartHeroSlides({ ...(autoMode ? automatic : { promotions: [], featuredStores: [], newStores: [], products: [] }), manual });
+  const [manual, automatic, settings] = await Promise.all([safeSource("manual", () => getManualCandidates(true), []), getAutomaticCandidates(), getHeroRuntimeSettings()]);
+  const resolved = resolveSmartHeroSlides({ ...(settings.autoMode ? automatic : { promotions: [], featuredStores: [], newStores: [], products: [] }), manual });
+  return resolved.slice(0, settings.slideCount).map((slide) => ({ ...slide, displayDurationSeconds: slide.source === "manual" ? (slide.displayDurationSeconds || settings.slideDurationSeconds) : settings.slideDurationSeconds }));
 }
 export async function getFounderHeroSlides(): Promise<HeroSlide[]> { return getManualCandidates(false); }
 export async function getFounderHeroDashboardSlides(): Promise<HeroSlide[]> {
-  const [manual, automatic, autoMode] = await Promise.all([getManualCandidates(false), getAutomaticCandidates(), safeSource("auto mode", getHeroAutoMode, true)]);
-  return resolveSmartHeroSlides({ ...(autoMode ? automatic : { promotions: [], featuredStores: [], newStores: [], products: [] }), manual: manual.filter((slide: HeroSlide) => isCurrent(slide)) });
+  const [manual, automatic, settings] = await Promise.all([getManualCandidates(false), getAutomaticCandidates(), getHeroRuntimeSettings()]);
+  const resolved = resolveSmartHeroSlides({ ...(settings.autoMode ? automatic : { promotions: [], featuredStores: [], newStores: [], products: [] }), manual: manual.filter((slide: HeroSlide) => isCurrent(slide)) });
+  return resolved.slice(0, settings.slideCount).map((slide) => ({ ...slide, displayDurationSeconds: slide.source === "manual" ? (slide.displayDurationSeconds || settings.slideDurationSeconds) : settings.slideDurationSeconds }));
 }
 export async function getHeroAutoMode(): Promise<boolean> {
   const { data, error } = await supabase.from("platform_financial_settings").select("value").eq("key", "hero_auto_mode").maybeSingle();
@@ -50,12 +60,25 @@ export async function setHeroAutoMode(enabled: boolean): Promise<void> {
   const { error } = await supabase.from("platform_financial_settings").update({ value: enabled ? "true" : "false", updated_at: new Date().toISOString() }).eq("key", "hero_auto_mode");
   if (error) throw error;
 }
+export async function getHeroRuntimeSettings(): Promise<HeroRuntimeSettings> {
+  const { data, error } = await supabase.from("platform_financial_settings").select("key,value").in("key", ["hero_auto_mode", "hero_slide_duration_seconds", "hero_rotation_interval_hours", "hero_slide_count"]).limit(10);
+  if (error) throw error;
+  const values = Object.fromEntries((data || []).map((row) => [row.key, row.value]));
+  return { autoMode: values.hero_auto_mode !== "false", slideDurationSeconds: boundedNumber(values.hero_slide_duration_seconds, DEFAULT_HERO_SLIDE_DURATION_SECONDS, 1, 60), rotationIntervalHours: boundedNumber(values.hero_rotation_interval_hours, DEFAULT_HERO_ROTATION_INTERVAL_HOURS, 1, 168), slideCount: Math.round(boundedNumber(values.hero_slide_count, DEFAULT_HERO_SLIDE_COUNT, 1, 12)) };
+}
+export async function setHeroRuntimeSettings(settings: Partial<HeroRuntimeSettings>): Promise<void> {
+  const updates = Object.entries({ hero_auto_mode: settings.autoMode, hero_slide_duration_seconds: settings.slideDurationSeconds, hero_rotation_interval_hours: settings.rotationIntervalHours, hero_slide_count: settings.slideCount }).filter(([, value]) => value !== undefined);
+  for (const [key, value] of updates) {
+    const { error } = await supabase.from("platform_financial_settings").update({ value: String(value), updated_at: new Date().toISOString() }).eq("key", key);
+    if (error) throw error;
+  }
+}
 export async function saveFounderHeroSlide(draft: HeroSlideDraft, id?: string) {
-  const payload = { title: draft.title.trim() || "عرض السوق", subtitle: draft.description.trim() || null, image_url: draft.imageUrl.trim(), content_type: draft.type.toLowerCase(), target_id: encodeHeroTarget(draft.targetType, draft.targetId), cta_label: draft.ctaText.trim() || null, priority: Number.isFinite(draft.priority) ? draft.priority : 0, display_order: Number.isFinite(draft.priority) ? draft.priority : 0, is_active: draft.isActive, start_at: draft.startsAt.trim() || null, end_at: draft.endsAt.trim() || null, pin_to_top: Boolean(draft.pinToTop), updated_at: new Date().toISOString() };
+  const payload = { title: draft.title.trim() || "عرض السوق", subtitle: draft.description.trim() || null, image_url: draft.imageUrl.trim(), content_type: draft.type.toLowerCase(), target_id: encodeHeroTarget(draft.targetType, draft.targetId), cta_label: draft.ctaText.trim() || null, priority: Number.isFinite(draft.priority) ? draft.priority : 0, display_order: Number.isFinite(draft.priority) ? draft.priority : 0, is_active: draft.isActive, start_at: draft.startsAt.trim() || null, end_at: draft.endsAt.trim() || null, pin_to_top: Boolean(draft.pinToTop), display_duration_seconds: Math.round(boundedNumber(draft.displayDurationSeconds, DEFAULT_HERO_SLIDE_DURATION_SECONDS, 1, 60)), updated_at: new Date().toISOString() };
   if (!isUsableHeroImage(payload.image_url)) throw new Error("Manual slide requires a valid image URL");
   const query = id ? supabase.from("market_hero_slides").update(payload).eq("id", id).select(heroSelect).single() : supabase.from("market_hero_slides").insert(payload).select(heroSelect).single();
   const { data, error } = await query; if (error) throw error; return normalizeHeroSlide(data);
 }
 export async function deleteFounderHeroSlide(id: string) { const { error } = await supabase.from("market_hero_slides").delete().eq("id", id); if (error) throw error; }
-export async function duplicateFounderHeroSlide(slide: HeroSlide) { return saveFounderHeroSlide({ type: slide.type, imageUrl: slide.imageUrl, title: `${slide.title || "عرض السوق"} (نسخة)`, description: slide.description || "", ctaText: slide.ctaText || "اكتشف الآن", targetType: slide.targetType || "", targetId: slide.targetId || slide.targetUrl || "", priority: slide.priority, isActive: false, startsAt: slide.startsAt || "", endsAt: slide.endsAt || "", pinToTop: false }); }
+export async function duplicateFounderHeroSlide(slide: HeroSlide) { return saveFounderHeroSlide({ type: slide.type, imageUrl: slide.imageUrl, title: `${slide.title || "عرض السوق"} (نسخة)`, description: slide.description || "", ctaText: slide.ctaText || "اكتشف الآن", targetType: slide.targetType || "", targetId: slide.targetId || slide.targetUrl || "", priority: slide.priority, isActive: false, startsAt: slide.startsAt || "", endsAt: slide.endsAt || "", pinToTop: false, displayDurationSeconds: slide.displayDurationSeconds || DEFAULT_HERO_SLIDE_DURATION_SECONDS }); }
 export async function uploadMarketHeroImage(uri: string): Promise<string> { const response = await fetch(uri); const body = await response.arrayBuffer(); const extension = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg"; const path = `hero-slides/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`; const { error } = await supabase.storage.from("store_images").upload(path, body, { contentType: extension === "jpg" ? "image/jpeg" : `image/${extension}`, upsert: true }); if (error) throw error; return supabase.storage.from("store_images").getPublicUrl(path).data.publicUrl; }

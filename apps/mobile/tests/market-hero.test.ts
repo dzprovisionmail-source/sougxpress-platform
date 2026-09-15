@@ -1,5 +1,6 @@
 import { normalizeHeroSlide } from "../src/components/market/hero/hero.utils";
 import { productToHero, promotionToHero, resolveSmartHeroSlides, storeToHero } from "../src/components/market/hero/hero.smart";
+import { getHeroAutoplayInterval, nextHeroIndex } from "../src/components/market/hero/hero.autoplay";
 
 let passed = 0; let failed = 0;
 const assert = (value: unknown, label: string) => { if (value) { passed++; console.log(`✅ ${label}`); } else { failed++; console.log(`❌ ${label}`); } };
@@ -12,6 +13,9 @@ const manual = { ...store, id: "manual-1", entityId: "store-2", source: "manual"
 const resolved = resolveSmartHeroSlides({ manual: [manual], promotions: [promotion], featuredStores: [featured, store], newStores: [store], products: [product] });
 assert(resolved[0].source === "manual", "manual override has highest priority");
 assert(resolved[1].source === "promotion", "promotion precedes featured stores");
+assert(getHeroAutoplayInterval() === 3000, "default slide duration is 3 seconds");
+assert(getHeroAutoplayInterval(8) === 8000, "founder slide duration controls autoplay");
+assert(nextHeroIndex(4, 5) === 0 && nextHeroIndex(0, 5) === 1, "autoplay follows resolver order and wraps");
 assert(resolved.filter((slide) => slide.entityId === "store-1").length === 1, "duplicate entities are removed");
 assert(resolved.some((slide) => slide.source === "product"), "available products are a source");
 assert(promotionToHero({ ...promotion as any, ends_at: "2026-09-01T00:00:00Z" }) === null, "expired promotions are excluded");

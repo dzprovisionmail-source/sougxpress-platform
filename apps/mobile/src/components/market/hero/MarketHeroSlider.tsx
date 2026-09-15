@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "
 import { AppState, FlatList, Image, ListRenderItemInfo, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { ArrowLeft, ShoppingBag, Store, Tag } from "lucide-react-native";
 import type { HeroSlide } from "./hero.types";
-import { HERO_AUTOPLAY_INTERVAL, clampHeroIndex, nextHeroIndex, shouldRunHeroAutoplay } from "./hero.autoplay";
+import { getHeroAutoplayInterval, clampHeroIndex, nextHeroIndex, shouldRunHeroAutoplay } from "./hero.autoplay";
 
 interface MarketHeroSliderProps {
   slides: HeroSlide[];
@@ -63,7 +63,7 @@ export const MarketHeroSlider = memo(function MarketHeroSlider({ slides, colors,
       listRef.current?.scrollToOffset({ offset: nextIndex * itemLength, animated: true });
       setActiveIndex(nextIndex);
       timerRef.current = null;
-    }, HERO_AUTOPLAY_INTERVAL);
+    }, getHeroAutoplayInterval(data[activeIndex]?.displayDurationSeconds));
   }, [activeIndex, appStateActive, clearAutoplayTimer, data.length, isActive, itemLength]);
 
   useEffect(() => {

@@ -36,7 +36,7 @@ export const promotionToHero = (promotion: PromotionRow, nowMs = Date.now()): He
 export interface SmartHeroCandidates { manual: HeroSlide[]; promotions: HeroSlide[]; featuredStores: HeroSlide[]; newStores: HeroSlide[]; products: HeroSlide[]; }
 /** Single shared resolver for Market and Founder Preview. Priority is strict and stable. */
 export const resolveSmartHeroSlides = (candidates: SmartHeroCandidates): HeroSlide[] => {
-  const ordered: HeroSlide[] = [...candidates.manual, ...candidates.promotions, ...candidates.featuredStores, ...candidates.newStores, ...candidates.products];
+  const ordered: HeroSlide[] = [...candidates.manual, ...candidates.promotions, ...candidates.newStores, ...candidates.featuredStores, ...candidates.products];
   const seen = new Set<string>(); const result: HeroSlide[] = [];
   for (const slide of ordered) {
     if (!slide.isActive || !isUsableHeroImage(slide.imageUrl)) continue;

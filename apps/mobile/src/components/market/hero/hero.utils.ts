@@ -50,6 +50,7 @@ export const normalizeHeroSlide = (row: any): HeroSlide => {
     createdAt: row.created_at || undefined,
     updatedAt: row.updated_at || undefined,
     pinToTop: Boolean(row.pin_to_top),
+    displayDurationSeconds: Number(row.display_duration_seconds) || undefined,
   };
 };
 

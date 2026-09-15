@@ -7,9 +7,9 @@ import { AdminPageShell } from "@/components/admin";
 import { MarketHeroSlider } from "@/components/market/hero/MarketHeroSlider";
 import type { HeroSlide, HeroSlideDraft, HeroSlideType, HeroTargetType } from "@/components/market/hero/hero.types";
 import { useAppTheme } from "@/contexts/ThemeContext";
-import { deleteFounderHeroSlide, duplicateFounderHeroSlide, getFounderHeroDashboardSlides, getHeroAutoMode, saveFounderHeroSlide, setHeroAutoMode, uploadMarketHeroImage } from "@/services/marketHero.service";
+import { deleteFounderHeroSlide, duplicateFounderHeroSlide, getFounderHeroDashboardSlides, getHeroRuntimeSettings, saveFounderHeroSlide, setHeroRuntimeSettings, uploadMarketHeroImage } from "@/services/marketHero.service";
 
-const emptyDraft: HeroSlideDraft = { type: "PROMOTION", imageUrl: "", title: "", description: "", ctaText: "", targetType: "", targetId: "", priority: 1, isActive: true, startsAt: "", endsAt: "", pinToTop: false };
+const emptyDraft: HeroSlideDraft = { type: "PROMOTION", imageUrl: "", title: "", description: "", ctaText: "", targetType: "", targetId: "", priority: 1, isActive: true, startsAt: "", endsAt: "", pinToTop: false, displayDurationSeconds: 3 };
 const slideTypes: Array<{ value: HeroSlideType; label: string }> = [
   { value: "PROMOTION", label: "عرض" }, { value: "STORE", label: "متجر" }, { value: "PRODUCT", label: "منتج" }, { value: "APP", label: "تطبيق" }, { value: "CUSTOM", label: "مخصص" },
 ];
@@ -26,13 +26,19 @@ export default function FounderHeroSlidesScreen() {
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
   const [autoMode, setAutoMode] = useState(true);
+  const [slideDurationSeconds, setSlideDurationSeconds] = useState(3);
+  const [rotationIntervalHours, setRotationIntervalHours] = useState(6);
+  const [slideCount, setSlideCount] = useState(5);
 
   const loadSlides = useCallback(async () => {
     setLoading(true);
     try {
-      const [nextSlides, nextAutoMode] = await Promise.all([getFounderHeroDashboardSlides(), getHeroAutoMode()]);
+      const [nextSlides, settings] = await Promise.all([getFounderHeroDashboardSlides(), getHeroRuntimeSettings()]);
       setSlides(nextSlides);
-      setAutoMode(nextAutoMode);
+      setAutoMode(settings.autoMode);
+      setSlideDurationSeconds(settings.slideDurationSeconds);
+      setRotationIntervalHours(settings.rotationIntervalHours);
+      setSlideCount(settings.slideCount);
     } catch (error: any) {
       Alert.alert("تعذّر تحميل السلايدر", error?.message || "حاول مرة أخرى");
     } finally {
@@ -46,7 +52,7 @@ export default function FounderHeroSlidesScreen() {
   const editSlide = (slide: HeroSlide) => {
     if (slide.source !== "manual") return;
     setEditingId(slide.id);
-    setDraft({ type: slide.type, imageUrl: slide.imageUrl, title: slide.title || "", description: slide.description || "", ctaText: slide.ctaText || "", targetType: slide.targetType || "", targetId: slide.targetId || slide.targetUrl || "", priority: slide.priority, isActive: slide.isActive, startsAt: slide.startsAt || "", endsAt: slide.endsAt || "", pinToTop: Boolean(slide.pinToTop) });
+    setDraft({ type: slide.type, imageUrl: slide.imageUrl, title: slide.title || "", description: slide.description || "", ctaText: slide.ctaText || "", targetType: slide.targetType || "", targetId: slide.targetId || slide.targetUrl || "", priority: slide.priority, isActive: slide.isActive, startsAt: slide.startsAt || "", endsAt: slide.endsAt || "", pinToTop: Boolean(slide.pinToTop), displayDurationSeconds: slide.displayDurationSeconds || 3 });
     setPreview(false);
   };
   const resetDraft = () => { setEditingId(undefined); setDraft(emptyDraft); setPreview(false); };
@@ -77,7 +83,7 @@ export default function FounderHeroSlidesScreen() {
     try { await duplicateFounderHeroSlide(slide); await loadSlides(); } catch (error: any) { Alert.alert("تعذّر التكرار", error?.message || "حاول مرة أخرى"); }
   };
 
-  const previewSlide = useMemo<HeroSlide>(() => ({ id: editingId || "preview", type: draft.type, source: "manual", imageUrl: draft.imageUrl, title: draft.title || "عنوان العرض", description: draft.description || "وصف مختصر للعرض", ctaText: draft.ctaText || "اكتشف الآن", priority: draft.priority, isActive: true, targetType: draft.targetType || undefined, targetId: draft.targetId || undefined }), [draft, editingId]);
+  const previewSlide = useMemo<HeroSlide>(() => ({ id: editingId || "preview", type: draft.type, source: "manual", imageUrl: draft.imageUrl, title: draft.title || "عنوان العرض", description: draft.description || "وصف مختصر للعرض", ctaText: draft.ctaText || "اكتشف الآن", priority: draft.priority, isActive: true, targetType: draft.targetType || undefined, targetId: draft.targetId || undefined, displayDurationSeconds: draft.displayDurationSeconds || slideDurationSeconds }), [draft, editingId, slideDurationSeconds]);
 
   return (
     <AdminPageShell title="إدارة Hero السوق">
@@ -85,7 +91,7 @@ export default function FounderHeroSlidesScreen() {
         <TouchableOpacity style={[styles.back, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]} onPress={() => router.back()}><ArrowRight size={18} color={colors.textPrimary} /><Text style={{ color: colors.textPrimary }}>العودة للوحة التحكم</Text></TouchableOpacity>
         <View style={[styles.headerCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
           <View style={styles.headerRow}><View style={[styles.iconCircle, { backgroundColor: colors.primary }]}><Eye color="#fff" size={20} /></View><View style={{ flex: 1 }}><Text style={[styles.heading, { color: colors.textPrimary }]}>Hero السوق</Text><Text style={[styles.muted, { color: colors.textSecondary }]}>أنشئ عروضاً قصيرة وواضحة تظهر في بداية Market.</Text></View></View>
-          <View style={styles.actions}><TouchableOpacity onPress={async () => { try { await setHeroAutoMode(!autoMode); setAutoMode(!autoMode); await loadSlides(); } catch (error: any) { Alert.alert("تعذّر تغيير الوضع", error?.message || "حاول مرة أخرى"); } }} style={[styles.secondaryBtn, { borderColor: colors.borderSubtle }]}><Text style={{ color: colors.textPrimary, fontWeight: "700" }}>Auto Mode: {autoMode ? "ON" : "OFF"}</Text></TouchableOpacity><TouchableOpacity onPress={resetDraft} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}><Plus color="#fff" size={17} /><Text style={styles.primaryText}>شريحة يدوية</Text></TouchableOpacity></View>
+          <View style={styles.actions}><TouchableOpacity onPress={async () => { try { await setHeroRuntimeSettings({ autoMode: !autoMode }); setAutoMode(!autoMode); await loadSlides(); } catch (error: any) { Alert.alert("تعذّر تغيير الوضع", error?.message || "حاول مرة أخرى"); } }} style={[styles.secondaryBtn, { borderColor: colors.borderSubtle }]}><Text style={{ color: colors.textPrimary, fontWeight: "700" }}>Auto Mode: {autoMode ? "ON" : "OFF"}</Text></TouchableOpacity><TouchableOpacity onPress={resetDraft} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}><Plus color="#fff" size={17} /><Text style={styles.primaryText}>شريحة يدوية</Text></TouchableOpacity></View>
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
@@ -93,6 +99,7 @@ export default function FounderHeroSlidesScreen() {
           <Text style={[styles.label, { color: colors.textSecondary }]}>نوع المحتوى</Text>
           <View style={styles.chips}>{slideTypes.map((item) => <TouchableOpacity key={item.value} onPress={() => updateDraft("type", item.value)} style={[styles.chip, { borderColor: draft.type === item.value ? colors.primary : colors.borderSubtle, backgroundColor: draft.type === item.value ? `${colors.primary}18` : colors.bgElevated }]}><Text style={{ color: draft.type === item.value ? colors.primary : colors.textSecondary, fontWeight: "700", fontSize: 12 }}>{item.label}</Text></TouchableOpacity>)}</View>
           <Text style={[styles.label, { color: colors.textSecondary }]}>العنوان *</Text><TextInput value={draft.title} onChangeText={(value) => updateDraft("title", value)} placeholder="عنوان قصير وواضح" placeholderTextColor={colors.textSecondary} textAlign="right" style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]} />
+          <View style={styles.row}><View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textSecondary }]}>مدة السلايد (ثانية)</Text><TextInput value={String(draft.displayDurationSeconds || slideDurationSeconds)} onChangeText={(value) => updateDraft("displayDurationSeconds", Number(value.replace(/\D/g, "")) || 3)} keyboardType="number-pad" textAlign="right" style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]} /></View><View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textSecondary }]}>Rotation (ساعات)</Text><TextInput value={String(rotationIntervalHours)} onChangeText={(value) => { const next = Number(value.replace(/\D/g, "")) || 6; setRotationIntervalHours(next); void setHeroRuntimeSettings({ rotationIntervalHours: next }); }} keyboardType="number-pad" textAlign="right" style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]} /></View><View style={{ flex: 1 }}><Text style={[styles.label, { color: colors.textSecondary }]}>عدد السلايدات</Text><TextInput value={String(slideCount)} onChangeText={(value) => { const next = Number(value.replace(/\D/g, "")) || 5; setSlideCount(next); void setHeroRuntimeSettings({ slideCount: next }); }} keyboardType="number-pad" textAlign="right" style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]} /></View></View>
           <Text style={[styles.label, { color: colors.textSecondary }]}>الوصف</Text><TextInput value={draft.description} onChangeText={(value) => updateDraft("description", value)} placeholder="وصف اختياري قصير جداً" placeholderTextColor={colors.textSecondary} textAlign="right" style={[styles.input, styles.multiline, { color: colors.textPrimary, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]} multiline />
           <Text style={[styles.label, { color: colors.textSecondary }]}>نص CTA</Text><TextInput value={draft.ctaText} onChangeText={(value) => updateDraft("ctaText", value)} placeholder="اكتشف الآن" placeholderTextColor={colors.textSecondary} textAlign="right" style={[styles.input, { color: colors.textPrimary, backgroundColor: colors.bgElevated, borderColor: colors.borderSubtle }]} />
           <TouchableOpacity onPress={chooseImage} disabled={saving} style={[styles.imageBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgElevated }]}><ImagePlus color={colors.primary} size={18} /><Text style={{ color: colors.textPrimary, fontWeight: "700" }}>{draft.imageUrl ? "تغيير الصورة" : "رفع صورة قوية"}</Text></TouchableOpacity>
