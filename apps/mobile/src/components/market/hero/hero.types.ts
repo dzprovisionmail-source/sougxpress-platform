@@ -1,6 +1,7 @@
 export type HeroSlideType = "STORE" | "PRODUCT" | "PROMOTION" | "APP" | "CUSTOM";
 export type HeroTargetType = "STORE" | "PRODUCT" | "CATEGORY" | "SCREEN" | "URL";
-export type HeroSlideSource = "FOUNDER" | "NEW_STORE" | "FEATURED_STORE" | "NEW_PRODUCT" | "FEATURED_PRODUCT" | "PROMOTION";
+/** Debuggable resolver source; values intentionally mirror the product requirement. */
+export type HeroSlideSource = "manual" | "promotion" | "featured_store" | "new_store" | "product";
 
 export interface HeroSlide {
   id: string;
@@ -20,6 +21,7 @@ export interface HeroSlide {
   endsAt?: string;
   createdAt?: string;
   updatedAt?: string;
+  pinToTop?: boolean;
 }
 
 export interface HeroSlideDraft {
@@ -34,4 +36,5 @@ export interface HeroSlideDraft {
   isActive: boolean;
   startsAt: string;
   endsAt: string;
+  pinToTop?: boolean;
 }

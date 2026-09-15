@@ -11,9 +11,14 @@ const slideTypeMap: Record<string, HeroSlideType> = {
 
 export const inferHeroSource = (value: unknown, type: HeroSlideType = "CUSTOM"): HeroSlideSource => {
   const normalized = String(value || "").toUpperCase();
-  if (["NEW_STORE", "FEATURED_STORE", "NEW_PRODUCT", "FEATURED_PRODUCT", "PROMOTION", "FOUNDER"].includes(normalized)) return normalized as HeroSlideSource;
-  if (type === "PROMOTION") return "PROMOTION";
-  return "FOUNDER";
+  const sourceMap: Record<string, HeroSlideSource> = {
+    MANUAL: "manual", FOUNDER: "manual", PROMOTION: "promotion",
+    FEATURED_STORE: "featured_store", NEW_STORE: "new_store",
+    NEW_PRODUCT: "product", FEATURED_PRODUCT: "product", PRODUCT: "product",
+  };
+  if (sourceMap[normalized]) return sourceMap[normalized];
+  if (type === "PROMOTION") return "promotion";
+  return "manual";
 };
 
 export const normalizeHeroSlide = (row: any): HeroSlide => {
@@ -44,6 +49,7 @@ export const normalizeHeroSlide = (row: any): HeroSlide => {
     endsAt: row.end_at || row.ends_at || undefined,
     createdAt: row.created_at || undefined,
     updatedAt: row.updated_at || undefined,
+    pinToTop: Boolean(row.pin_to_top),
   };
 };
 
