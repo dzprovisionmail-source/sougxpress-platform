@@ -12,6 +12,30 @@ config.projectRoot = projectRoot;
 // commands retain Expo's default workspace folders unchanged.
 if (process.argv.includes("--web")) {
   config.watchFolders = [projectRoot];
+  const workspaceRoot = path.resolve(projectRoot, "../..");
+  const mobilePnpmStore = path.resolve(projectRoot, "node_modules/.pnpm");
+  const escapedMobilePnpmStore = mobilePnpmStore.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const blockMobilePnpmStore = new RegExp(`^${escapedMobilePnpmStore}(?:[\\\\/]|$)`);
+  config.server = {
+    ...config.server,
+    unstable_serverRoot: workspaceRoot,
+  };
+  config.resolver = {
+    ...config.resolver,
+    nodeModulesPaths: [
+      path.resolve(projectRoot, "node_modules"),
+      path.resolve(workspaceRoot, "node_modules"),
+    ],
+    // Expo SDK 57's file-map fork lazily resolves symlinked pnpm packages
+    // outside the source root instead of recursively crawling them.
+    unstable_onDemandFilesystem: true,
+    blockList: [
+      ...(Array.isArray(config.resolver?.blockList)
+        ? config.resolver.blockList
+        : [config.resolver?.blockList].filter(Boolean)),
+      blockMobilePnpmStore,
+    ],
+  };
 }
 
 // Expo's development root wrapper calls expo-keep-awake automatically. On
