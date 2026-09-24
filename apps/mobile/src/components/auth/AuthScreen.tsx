@@ -588,7 +588,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           email,
           password,
           options: {
-            emailRedirectTo: "sougxpress://auth/callback",
+            emailRedirectTo:
+              Platform.OS === "web"
+                ? "https://sougxpress.com/auth/callback"
+                : "sougxpress://auth/callback",
             data: {
               role,
               full_name: fullName.trim(),

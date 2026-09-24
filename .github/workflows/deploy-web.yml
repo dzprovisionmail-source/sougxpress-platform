@@ -1,0 +1,132 @@
+name: Deploy Soug-XPRESS Web to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate public Supabase configuration
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -eu
+          test -n "${EXPO_PUBLIC_SUPABASE_URL:-}" || {
+            echo "Missing GitHub Actions secret: EXPO_PUBLIC_SUPABASE_URL" >&2
+            exit 1
+          }
+          if [ -z "${EXPO_PUBLIC_SUPABASE_ANON_KEY:-}" ] && [ -z "${EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}" ]; then
+            echo "Set EXPO_PUBLIC_SUPABASE_ANON_KEY or EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY in GitHub Actions secrets." >&2
+            exit 1
+          fi
+
+      - name: TypeScript check
+        working-directory: apps/mobile
+        run: pnpm exec tsc --noEmit --pretty false
+
+      - name: Export Expo Web
+        working-directory: apps/mobile
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          rm -rf dist
+          pnpm exec expo export --platform web
+
+      - name: Prepare GitHub Pages SPA artifact
+        working-directory: apps/mobile
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: |
+          set -eu
+          BASE_PATH="${PAGES_BASE_PATH:-}"
+          if [ "$BASE_PATH" = "/" ]; then BASE_PATH=""; fi
+          export BASE_PATH
+
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          base = os.environ.get("BASE_PATH", "").rstrip("/")
+          root = Path("dist")
+          text_extensions = {".html", ".js", ".css", ".json", ".map"}
+          prefixes = ("/_expo/", "/assets/")
+
+          for path in root.rglob("*"):
+              if not path.is_file() or path.suffix not in text_extensions:
+                  continue
+              try:
+                  content = path.read_text(encoding="utf-8")
+              except UnicodeDecodeError:
+                  continue
+              if base:
+                  for prefix in prefixes:
+                      content = content.replace(f'"{prefix}', f'"{base}{prefix}')
+                      content = content.replace(f"'{prefix}", f"'{base}{prefix}")
+                      content = content.replace(f"({prefix}", f"({base}{prefix}")
+                  content = content.replace('src="/', f'src="{base}/')
+                  content = content.replace("src='/", f"src='{base}/")
+                  content = content.replace('href="/', f'href="{base}/')
+                  content = content.replace("href='/", f"href='{base}/")
+                  path.write_text(content, encoding="utf-8")
+
+          index = root / "index.html"
+          if not index.exists():
+              raise SystemExit("dist/index.html was not generated")
+          (root / "404.html").write_bytes(index.read_bytes())
+          (root / ".nojekyll").write_text("", encoding="utf-8")
+          PY
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/mobile/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
