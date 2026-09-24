@@ -6,6 +6,13 @@ const config = getDefaultConfig(projectRoot);
 // This is a pnpm workspace; keep Metro's application root on the mobile app
 // instead of allowing workspace discovery to resolve it to the repository root.
 config.projectRoot = projectRoot;
+// Expo's SDK 57 monorepo defaults also add the hoisted workspace
+// node_modules directory to watchFolders. Web does not load source from the
+// workspace root, so keep its watcher scope limited to the app. Native
+// commands retain Expo's default workspace folders unchanged.
+if (process.argv.includes("--web")) {
+  config.watchFolders = [projectRoot];
+}
 
 // Expo's development root wrapper calls expo-keep-awake automatically. On
 // runtimes that do not expose the native keep-awake module this rejects as an
