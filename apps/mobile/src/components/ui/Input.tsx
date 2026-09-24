@@ -6,6 +6,7 @@ import {
   Text,
   TextInputProps,
   I18nManager,
+  Platform,
   StyleProp,
   ViewStyle,
 } from 'react-native';
@@ -72,10 +73,12 @@ export const Input: React.FC<InputProps> = ({
               textAlign: isRTL ? 'right' : 'left',
               fontFamily: TOKENS.typography.families.arabic,
             },
+            Platform.OS === 'web' && styles.webInput,
             style,
           ]}
           placeholderTextColor={defaultPlaceholderColor}
           {...rest}
+          autoComplete={Platform.OS === 'web' ? 'off' : rest.autoComplete}
         />
       </View>
       {error && (
@@ -129,6 +132,9 @@ const styles = StyleSheet.create({
     fontSize: TOKENS.typography.sizes.base,
     paddingVertical: TOKENS.spacing.sm,
     height: '100%',
+  },
+  webInput: {
+    outlineWidth: 0,
   },
   errorText: {
     fontSize: TOKENS.typography.sizes.xs,

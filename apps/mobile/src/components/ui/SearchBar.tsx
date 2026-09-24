@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   I18nManager,
+  Platform,
   StyleProp,
   ViewStyle,
 } from 'react-native';
@@ -74,7 +75,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             color: colors.textPrimary,
             fontFamily: TOKENS.typography.families.arabic,
           },
+          Platform.OS === 'web' && styles.webInput,
         ]}
+        autoComplete={Platform.OS === 'web' ? 'off' : undefined}
       />
 
       <View style={[styles.actionButtons, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
@@ -120,6 +123,9 @@ const styles = StyleSheet.create({
     fontSize: TOKENS.typography.sizes.sm,
     height: '100%',
     paddingHorizontal: TOKENS.spacing.xs,
+  },
+  webInput: {
+    outlineWidth: 0,
   },
   actionButtons: {
     alignItems: 'center',

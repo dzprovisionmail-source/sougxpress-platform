@@ -1,6 +1,6 @@
 import { useMarketPresence } from "@/hooks/useMarketPresence";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, StatusBar, FlatList, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Image, RefreshControl, I18nManager, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -847,6 +847,10 @@ const styles = StyleSheet.create({
     maxWidth: 70,
     textAlign: 'center',
       },
+  horizontalRtl: Platform.select({
+    web: { writingDirection: 'rtl' },
+    default: { direction: 'rtl' },
+  }),
   storesScroll: {
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
