@@ -847,9 +847,6 @@ const styles = StyleSheet.create({
     maxWidth: 70,
     textAlign: 'center',
       },
-  horizontalRtl: {
-    direction: 'rtl',
-      },
   storesScroll: {
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
