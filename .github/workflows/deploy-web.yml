@@ -100,10 +100,6 @@ jobs:
                       content = content.replace(f'"{prefix}', f'"{base}{prefix}')
                       content = content.replace(f"'{prefix}", f"'{base}{prefix}")
                       content = content.replace(f"({prefix}", f"({base}{prefix}")
-                  content = content.replace('src="/', f'src="{base}/')
-                  content = content.replace("src='/", f"src='{base}/")
-                  content = content.replace('href="/', f'href="{base}/')
-                  content = content.replace("href='/", f"href='{base}/")
                   path.write_text(content, encoding="utf-8")
 
           index = root / "index.html"
