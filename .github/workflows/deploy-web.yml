@@ -87,6 +87,40 @@ jobs:
           root = Path("dist")
           text_extensions = {".html", ".js", ".css", ".json", ".map"}
           prefixes = ("/_expo/", "/assets/")
+          router_path_helper = """
+          (() => {
+            const base = %r;
+            const stripBase = (pathname) => {
+              if (!base || pathname === base || pathname === `${base}/`) return "/";
+              return pathname.startsWith(`${base}/`) ? pathname.slice(base.length) || "/" : pathname;
+            };
+            const addBase = (url) => {
+              if (!base || typeof url !== "string" || !url.startsWith("/") || url === base || url.startsWith(`${base}/`)) return url;
+              return `${base}${url}`;
+            };
+            const originalReplaceState = window.history.replaceState.bind(window.history);
+            const originalPath = window.location.pathname;
+            const originalUrl = originalPath + window.location.search + window.location.hash;
+            const normalizedUrl = stripBase(originalUrl);
+            if (normalizedUrl !== originalUrl) originalReplaceState(window.history.state, "", normalizedUrl);
+            for (const method of ["pushState", "replaceState"]) {
+              const original = window.history[method].bind(window.history);
+              window.history[method] = (state, title, url) => original(state, title, addBase(url));
+            }
+            window.addEventListener("popstate", () => {
+              const path = window.location.pathname;
+              const normalized = stripBase(path + window.location.search + window.location.hash);
+              if (normalized !== path + window.location.search + window.location.hash) {
+                originalReplaceState(window.history.state, "", normalized);
+                setTimeout(() => originalReplaceState(window.history.state, "", path + window.location.search + window.location.hash), 0);
+              }
+            }, true);
+            if (normalizedUrl !== originalUrl) {
+              setTimeout(() => originalReplaceState(window.history.state, "", originalUrl), 0);
+            }
+          })();
+          """ % base
+          (root / "router-base.js").write_text(router_path_helper, encoding="utf-8")
 
           for path in root.rglob("*"):
               if not path.is_file() or path.suffix not in text_extensions:
@@ -105,6 +139,10 @@ jobs:
           index = root / "index.html"
           if not index.exists():
               raise SystemExit("dist/index.html was not generated")
+          index_content = index.read_text(encoding="utf-8")
+          router_script = f'<script src="{base}/router-base.js" defer></script>' if base else '<script src="/router-base.js" defer></script>'
+          index_content = index_content.replace("<script ", router_script + "\n  <script ", 1)
+          index.write_text(index_content, encoding="utf-8")
           (root / "404.html").write_bytes(index.read_bytes())
           (root / ".nojekyll").write_text("", encoding="utf-8")
           PY
