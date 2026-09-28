@@ -33,6 +33,7 @@ import { useMarketHeroSlides } from '@/hooks/useMarketHeroSlides';
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const marketDebug = (...args: unknown[]) => console.log('[MARKET-DEBUG]', new Date().toISOString(), ...args);
 const MARKET_SCROLL_STEP = SCREEN_WIDTH * 0.78 + spacing.sm;
+const APP_DOWNLOAD_URL = "https://dzprovisionmail-source.github.io/sougxpress-download/";
 
 type MarketArrowScrollViewProps = React.ComponentProps<typeof ScrollView> & {
   isRTL: boolean;
@@ -735,6 +736,17 @@ const HomeScreen = () => {
                 <View style={[styles.marketFooter, { borderTopColor: colors.borderSubtle }]}>
                   <Text style={[styles.marketFooterBrand, { color: colors.primary }]}>Soug XPRESS</Text>
                   <Text style={[styles.marketFooterText, { color: colors.textSecondary }]}>منصة تجارة محلية لمدينة عين الصفراء</Text>
+                  {Platform.OS === "web" ? (
+                    <TouchableOpacity
+                      style={[styles.downloadButton, { backgroundColor: colors.primary }]}
+                      onPress={() => window.location.assign(APP_DOWNLOAD_URL)}
+                      accessibilityRole="link"
+                      accessibilityLabel="تحميل تطبيق Soug-XPRESS"
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.downloadButtonText}>تحميل تطبيق Soug-XPRESS</Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
               </>;
             })()}
@@ -932,6 +944,18 @@ const styles = StyleSheet.create({
   marketFooterText: {
     ...typography.caption,
     marginTop: spacing.xs,
+  },
+  downloadButton: {
+    marginTop: spacing.md,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+  },
+  downloadButtonText: {
+    color: '#FFFFFF',
+    ...typography.caption,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   marketProductCard: {
     borderWidth: 1,
