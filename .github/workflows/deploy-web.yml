@@ -71,12 +71,10 @@ jobs:
 
       - name: Prepare GitHub Pages SPA artifact
         working-directory: apps/mobile
-        env:
-          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: |
           set -eu
-          BASE_PATH="${PAGES_BASE_PATH:-}"
-          if [ "$BASE_PATH" = "/" ]; then BASE_PATH=""; fi
+          # The custom domain is served from the root, not the repository project path.
+          BASE_PATH=""
           export BASE_PATH
 
           python3 - <<'PY'
